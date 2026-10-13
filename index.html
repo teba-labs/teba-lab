@@ -63,10 +63,14 @@ header{background:#fff;border-bottom:1px solid var(--border)}
 .feature .ico{width:60px;height:60px;border-radius:50%;background:#dcfce7;display:grid;place-items:center;font-size:1.7rem;margin:0 auto 14px}
 .feature h4{color:var(--primary-dark);margin-bottom:8px}
 .feature p{color:var(--muted);font-size:.9rem}
-.offer-cta{background:linear-gradient(135deg,#16a34a,#84cc16);color:#fff;border-radius:22px;padding:36px;text-align:center;box-shadow:var(--shadow)}
-.offer-cta h4{font-size:1.5rem;margin-bottom:10px}
-.offer-cta p{margin-bottom:20px}
-.offer-cta .btn{background:#fff;color:var(--primary-dark)}
+.offer-cta{background:linear-gradient(135deg,#15803d,#16a34a,#84cc16);color:#fff;border-radius:22px;padding:40px 30px;text-align:center;box-shadow:0 15px 40px rgba(22,163,74,.3);position:relative;overflow:hidden}
+.offer-cta::before{content:"";position:absolute;top:-50px;right:-50px;width:200px;height:200px;background:rgba(255,255,255,.1);border-radius:50%}
+.offer-cta::after{content:"";position:absolute;bottom:-80px;left:-50px;width:250px;height:250px;background:rgba(255,255,255,.08);border-radius:50%}
+.offer-cta .pct{font-size:clamp(4rem,12vw,6rem);font-weight:900;line-height:1;margin-bottom:10px;text-shadow:0 6px 20px rgba(0,0,0,.2);position:relative;z-index:1}
+.offer-cta h4{font-size:clamp(1.3rem,3vw,1.8rem);margin-bottom:10px;position:relative;z-index:1}
+.offer-cta p{font-size:1.05rem;margin-bottom:12px;position:relative;z-index:1}
+.offer-cta .date-badge{background:#fff;color:#15803d;display:inline-block;padding:10px 28px;border-radius:999px;font-weight:800;margin-bottom:22px;font-size:1.05rem;position:relative;z-index:1}
+.offer-cta .btn{background:#fff;color:var(--primary-dark);position:relative;z-index:1;font-weight:800;font-size:1rem}
 .results-box{max-width:700px;margin:auto;background:#fff;border:1px solid var(--border);border-radius:22px;padding:30px;box-shadow:var(--shadow)}
 .results-box h4{color:var(--primary-dark);margin-bottom:8px;text-align:center}
 .results-box p.sub{text-align:center;color:var(--muted);margin-bottom:20px}
@@ -134,14 +138,14 @@ footer p,footer a{color:#94a3b8;font-size:.9rem}
 <div class="sticky-top">
   <div class="offers-bar">
     <div class="offers-track">
-      <span>🎁 عروض جديدة قريبًا - <a href="https://wa.me/201099003494">تواصل واتساب للتفاصيل</a></span>
+      <span>🎉 خصم 20% بمناسبة إطلاق الموقع - <a href="https://wa.me/201099003494">احجز الآن</a></span>
       <span>🩺 معلومة طبية: الصيام قبل تحليل السكر 8-12 ساعة - الماء مسموح</span>
       <span>⚡ معظم التحاليل نتائجها في نفس اليوم</span>
-      <span>🩺 معلومة طبية: أخبر الفريق بكل الأدوية التي تتناولها قبل التحليل</span>
+      <span>🎉 خصم 20% على كل التحاليل - طوال شهر أكتوبر</span>
       <span>🏠 سحب من المنزل متاح - اتصل 01123702062</span>
       <span>🩺 معلومة طبية: فيتامين C بجرعات عالية يؤثر على قراءة السكر</span>
       <span>💉 اشرب ماء كافي قبل التحليل لتسهيل سحب الدم</span>
-      <span>🩺 معلومة طبية: بعض التحاليل تحتاج توقيت محدد (صبح أو مساء)</span>
+      <span>🎉 الخصم ساري في الفرعين - الجعافرة وبهتيم</span>
       <span>📄 استلم نتيجتك عبر واتساب</span>
       <span>🩺 معلومة طبية: لا توقف أي دواء من نفسك قبل التحليل</span>
     </div>
@@ -252,9 +256,13 @@ footer p,footer a{color:#94a3b8;font-size:.9rem}
   <div class="container">
     <div class="section-head"><h3>🎉 العروض والخصومات</h3></div>
     <div class="offer-cta">
-      <h4>🎁 عروض جديدة قريبًا</h4>
-      <p>تواصل واتساب لمعرفة آخر الأخبار.</p>
-      <a class="btn" href="https://wa.me/201099003494">💬 اسأل عن العروض</a>
+      <div class="pct">20%</div>
+      <h4>🎉 خصم خاص بمناسبة إطلاق الموقع</h4>
+      <p>خصم <strong>20%</strong> على كل التحاليل في الفرعين (الجعافرة وبهتيم)</p>
+      <div class="date-badge">📅 ساري طوال شهر أكتوبر</div>
+      <div>
+        <a class="btn" href="https://wa.me/201099003494?text=عايز%20أستفيد%20من%20خصم%2020%25" target="_blank">💬 احجز الآن واستفيد بالخصم</a>
+      </div>
     </div>
   </div>
 </section>
@@ -307,7 +315,7 @@ footer p,footer a{color:#94a3b8;font-size:.9rem}
     </div>
     <div class="share-bar">
       <a class="share-btn share-wa" href="https://wa.me/?text=معامل%20طيبة">📱 واتساب</a>
-      <a class="share-btn share-fb" href="https://www.facebook.com/sharer/sharer.php?u=teba-labs.netlify.app" target="_blank">📘 فيسبوك</a>
+      <a class="share-btn share-fb" href="https://www.facebook.com/sharer/sharer.php?u=teba-labs.github.io/teba-lab/" target="_blank">📘 فيسبوك</a>
       <button class="share-btn share-cp" onclick="copyLink()">🔗 نسخ الرابط</button>
     </div>
   </div>
@@ -1051,7 +1059,7 @@ function requestResult() {
 }
 
 function copyLink() {
-  navigator.clipboard.writeText("https://teba-labs.netlify.app/").then(() => alert("تم نسخ الرابط ✅"));
+  navigator.clipboard.writeText("https://teba-labs.github.io/teba-lab/").then(() => alert("تم نسخ الرابط ✅"));
 }
 
 searchInput.addEventListener("input", e => { currentSearch = e.target.value; render(); });
