@@ -4,360 +4,600 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>معامل طيبة | TEBA LABS</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-:root{--primary:#16a34a;--primary-dark:#15803d;--bg:#f7fbf7;--text:#0f172a;--muted:#64748b;--border:#dcf1dc;--shadow:0 10px 30px rgba(22,163,74,.10)}
+:root{--primary:#16a34a;--primary-dark:#15803d;--primary-light:#22c55e;--gold:#d4a843;--gold-dark:#b8902e;--cream:#fdfcf7;--warm-bg:#f5f0e6;--warm-bg-2:#faf7ee;--text:#1a2e1a;--muted:#6b7280;--border:#e5ddc8;--shadow:0 10px 30px rgba(22,163,74,.08);--shadow-warm:0 10px 30px rgba(212,168,67,.15);--radius:20px}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:'Cairo',system-ui,Tahoma,sans-serif;background:var(--bg);color:var(--text);line-height:1.8}
+body{font-family:'Cairo',system-ui,Tahoma,sans-serif;background:var(--cream);color:var(--text);line-height:1.8;overflow-x:hidden}
 a{text-decoration:none;color:inherit}
-.container{max-width:1200px;margin:auto;padding:0 18px}
-.sticky-top{position:sticky;top:0;z-index:1000}
-.offers-bar{background:linear-gradient(90deg,#15803d,#16a34a,#84cc16);color:#fff;padding:10px 0;overflow:hidden;position:relative}
+.offers-bar{background:linear-gradient(90deg,#15803d,#16a34a,#84cc16,#16a34a,#15803d);background-size:200% 100%;animation:offerSlide 10s linear infinite;color:#fff;padding:10px 0;overflow:hidden;position:relative;z-index:100}
+@keyframes offerSlide{0%{background-position:0% 50%}100%{background-position:200% 50%}}
 .offers-track{display:inline-flex;gap:80px;white-space:nowrap;animation:marquee 60s linear infinite;padding-left:100%}
-.offers-track span{font-weight:700;font-size:.9rem;display:inline-flex;align-items:center;gap:6px}
+.offers-track span{font-weight:700;font-size:.88rem}
 .offers-track a{color:#fef08a;text-decoration:underline}
 @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
-.offers-bar:hover .offers-track{animation-play-state:paused}
-header{background:#fff;border-bottom:1px solid var(--border)}
-.nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;flex-wrap:wrap}
+header.top-bar{position:sticky;top:0;z-index:99;background:rgba(253,252,247,.98);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,.03)}
+.nav-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 20px;max-width:1600px;margin:auto}
 .brand{display:flex;align-items:center;gap:14px}
-.logo{width:85px;height:85px;border-radius:50%;background:#fff;display:grid;place-items:center;overflow:hidden;border:3px solid var(--primary);padding:3px}
-.logo img{width:100%;height:100%;object-fit:contain;border-radius:50%}
-.brand-text h1{font-size:1.35rem;margin:0;color:var(--primary-dark)}
-.brand-text span{font-size:.88rem;color:var(--muted)}
-.nav-links{display:flex;gap:16px;flex-wrap:wrap;font-weight:600;font-size:.9rem}
-.nav-links a:hover{color:var(--primary)}
-.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:999px;font-weight:700;font-size:.95rem;transition:.2s;border:1px solid transparent;cursor:pointer;font-family:inherit}
-.btn-primary{background:var(--primary);color:#fff}
-.btn-whatsapp{background:#25D366;color:#fff}
-.btn-outline{border-color:var(--border);background:#fff;color:var(--text)}
-.hero{padding:50px 0;background:radial-gradient(circle at 15% 20%, rgba(22,163,74,.15), transparent 35%)}
-.hero-grid{display:grid;grid-template-columns:1.3fr .7fr;gap:30px;align-items:center}
-.badge{display:inline-block;background:#dcfce7;color:#15803d;border:1px solid #86efac;padding:7px 14px;border-radius:999px;font-size:.85rem;font-weight:700;margin-bottom:16px}
-.hero h2{font-size:clamp(1.7rem,4vw,2.6rem);line-height:1.3;margin-bottom:16px}
+.logo-box{width:70px;height:70px;border-radius:50%;background:#fff;border:2px solid var(--gold);box-shadow:0 4px 12px rgba(212,168,67,.25);display:grid;place-items:center;overflow:hidden;flex-shrink:0;padding:3px}
+.logo-box img{width:100%;height:100%;object-fit:contain;border-radius:50%}
+.brand-text h1{font-size:1.3rem;color:var(--primary-dark);line-height:1.2;font-weight:800}
+.brand-text span{font-size:.8rem;color:var(--muted);font-weight:600}
+.top-actions{display:flex;gap:10px;align-items:center}
+.action-btn{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border:0;height:50px;border-radius:14px;cursor:pointer;font-family:inherit;font-weight:700;font-size:.85rem;padding:0 16px;transition:.2s;display:flex;align-items:center;gap:8px;position:relative}
+.action-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(22,163,74,.3)}
+.action-btn.gold{background:linear-gradient(135deg,var(--gold),var(--gold-dark))}
+.action-btn.gold:hover{box-shadow:0 8px 20px rgba(212,168,67,.3)}
+.action-btn svg{width:20px;height:20px}
+.badge-num{position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;font-size:.7rem;font-weight:900;min-width:22px;height:22px;border-radius:50%;display:grid;place-items:center;padding:0 4px;border:2px solid #fff}
+.layout{display:grid;grid-template-columns:280px 1fr 320px;gap:20px;max-width:1600px;margin:20px auto;padding:0 20px;align-items:start}
+.sidebar-right{position:sticky;top:100px;background:var(--warm-bg);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);max-height:calc(100vh - 120px);overflow-y:auto;transition:.3s}
+.sidebar-right.collapsed{margin-right:-300px;opacity:0;pointer-events:none}
+.sidebar-right h3{font-size:1rem;color:var(--primary-dark);margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--gold);display:flex;justify-content:space-between;align-items:center}
+.sidebar-right h3 button,.sidebar-left h3 button{background:transparent;border:0;color:var(--muted);font-size:1.1rem;cursor:pointer}
+.nav-list{list-style:none;display:grid;gap:6px}
+.nav-list li a{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;font-weight:600;font-size:.9rem;color:var(--text);transition:.2s;border:1px solid transparent}
+.nav-list li a:hover{background:#fff;border-color:var(--gold);color:var(--primary-dark);transform:translateX(-4px);box-shadow:0 3px 10px rgba(212,168,67,.12)}
+.nav-list li a.active{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border-color:var(--primary)}
+.sidebar-left{position:sticky;top:100px;background:linear-gradient(180deg,#fff,var(--warm-bg-2));border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-warm);max-height:calc(100vh - 120px);overflow-y:auto;transition:.3s}
+.sidebar-left.collapsed{margin-left:-340px;opacity:0;pointer-events:none}
+.sidebar-left h3{font-size:1rem;color:var(--primary-dark);margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--gold);display:flex;justify-content:space-between;align-items:center}
+.cart-empty{text-align:center;padding:30px 10px;color:var(--muted);font-size:.88rem}
+.cart-empty div{font-size:2.5rem;margin-bottom:10px;opacity:.4}
+.cart-list{list-style:none;display:grid;gap:8px;margin-bottom:14px}
+.cart-item{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.82rem;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.cart-item .name{font-weight:700;color:var(--text);flex:1;line-height:1.3}
+.cart-item .price{font-weight:800;color:var(--primary-dark);white-space:nowrap}
+.cart-item .remove{background:#fee2e2;color:#dc2626;border:0;width:22px;height:22px;border-radius:50%;font-size:.75rem;font-weight:800;cursor:pointer;display:grid;place-items:center}
+.cart-total{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#fff;border-radius:14px;padding:14px;text-align:center;margin-bottom:12px}
+.cart-total small{display:block;font-size:.75rem;opacity:.9;margin-bottom:4px}
+.cart-total strong{font-size:1.6rem;font-weight:900}
+.cart-total .count{font-size:.8rem;display:block;margin-top:4px;opacity:.9}
+.cart-actions{display:grid;gap:8px}
+.cart-actions button,.cart-actions a{padding:12px;border-radius:12px;font-family:inherit;font-weight:700;font-size:.85rem;cursor:pointer;border:0;text-align:center;transition:.2s}
+.btn-send{background:var(--primary);color:#fff}
+.btn-send:hover{background:var(--primary-dark)}
+.btn-clear{background:#f1f5f9;color:#334155}
+.main-content{min-height:70vh}
+.section{display:none;animation:sectionFade .4s}
+.section.active{display:block}
+@keyframes sectionFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.section-head{text-align:center;margin-bottom:30px}
+.section-head h2{font-size:clamp(1.6rem,3vw,2.2rem);color:var(--primary-dark);margin-bottom:8px;font-weight:800}
+.section-head h2 span{color:var(--gold)}
+.section-head p{color:var(--muted);max-width:600px;margin:auto}
+.hero{background:linear-gradient(135deg,var(--warm-bg) 0%,var(--cream) 50%,var(--warm-bg-2) 100%);border-radius:var(--radius);padding:50px 30px 40px;margin-bottom:25px;border:1px solid var(--border);position:relative;overflow:hidden;text-align:center}
+.hero::before{content:"";position:absolute;top:-80px;left:-80px;width:250px;height:250px;background:radial-gradient(circle,rgba(212,168,67,.15),transparent 70%);border-radius:50%}
+.hero::after{content:"";position:absolute;bottom:-100px;right:-100px;width:300px;height:300px;background:radial-gradient(circle,rgba(22,163,74,.1),transparent 70%);border-radius:50%}
+.hero-inner{position:relative;z-index:1}
+.hero-logo{width:140px;height:140px;margin:0 auto 18px;border-radius:50%;background:#fff;border:3px solid var(--gold);box-shadow:0 15px 40px rgba(212,168,67,.3);padding:8px;display:grid;place-items:center;overflow:hidden}
+.hero-logo img{width:100%;height:100%;object-fit:contain;border-radius:50%}
+.hero-badge{display:inline-block;background:#fff;color:var(--gold-dark);border:1px solid var(--gold);padding:6px 18px;border-radius:999px;font-size:.82rem;font-weight:700;margin-bottom:16px}
+.hero h2{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;line-height:1.3;margin-bottom:14px}
 .hero h2 span{color:var(--primary)}
-.hero p{color:var(--muted);font-size:1.05rem;margin-bottom:20px}
-.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
-.hero-card{background:#fff;border:1px solid var(--border);border-radius:22px;padding:24px;box-shadow:var(--shadow);text-align:center}
-.hero-logo-big{width:130px;height:130px;margin:0 auto 16px;border-radius:50%;background:#fff;border:3px solid var(--primary);padding:6px}
-.hero-logo-big img{width:100%;height:100%;object-fit:contain;border-radius:50%}
-.hero-card h3{color:var(--primary-dark);margin-bottom:12px;font-size:1.05rem}
-.hero-card .doctor-name{background:#f0fdf4;border-radius:12px;padding:10px;margin-bottom:14px;font-weight:800;color:var(--primary-dark)}
-.quick-list{list-style:none;text-align:right;font-size:.88rem}
-.quick-list li{display:flex;gap:10px;padding-bottom:10px;border-bottom:1px dashed var(--border);margin-bottom:10px;align-items:flex-start}
-.quick-list li:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
-.quick-list .ico-big{font-size:1.2rem;line-height:1.3}
-.quick-list strong{display:block;font-size:.92rem;color:var(--primary-dark);margin-bottom:2px}
-.quick-list small{color:var(--muted);font-size:.78rem;display:block;line-height:1.5}
-.quick-list .hours{color:var(--primary);font-weight:700;font-size:.78rem;display:block;margin-top:3px}
-.section{padding:55px 0}
-.section-head{text-align:center;margin:0 auto 30px;max-width:760px}
-.section-head h3{font-size:clamp(1.5rem,3vw,2rem);color:var(--primary-dark);margin-bottom:10px}
-.section-head p{color:var(--muted)}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
-.card{background:#fff;border:1px solid var(--border);border-radius:22px;padding:24px;box-shadow:var(--shadow)}
-.card h4{color:var(--primary-dark);margin-bottom:12px}
-.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
-.feature{background:#fff;border:1px solid var(--border);border-radius:18px;padding:24px;text-align:center;box-shadow:var(--shadow)}
-.feature .ico{width:60px;height:60px;border-radius:50%;background:#dcfce7;display:grid;place-items:center;font-size:1.7rem;margin:0 auto 14px}
-.feature h4{color:var(--primary-dark);margin-bottom:8px}
-.feature p{color:var(--muted);font-size:.9rem}
-.offer-cta{background:linear-gradient(135deg,#15803d,#16a34a,#84cc16);color:#fff;border-radius:22px;padding:40px 30px;text-align:center;box-shadow:0 15px 40px rgba(22,163,74,.3);position:relative;overflow:hidden}
-.offer-cta::before{content:"";position:absolute;top:-50px;right:-50px;width:200px;height:200px;background:rgba(255,255,255,.1);border-radius:50%}
-.offer-cta::after{content:"";position:absolute;bottom:-80px;left:-50px;width:250px;height:250px;background:rgba(255,255,255,.08);border-radius:50%}
-.offer-cta .pct{font-size:clamp(4rem,12vw,6rem);font-weight:900;line-height:1;margin-bottom:10px;text-shadow:0 6px 20px rgba(0,0,0,.2);position:relative;z-index:1}
-.offer-cta h4{font-size:clamp(1.3rem,3vw,1.8rem);margin-bottom:10px;position:relative;z-index:1}
-.offer-cta p{font-size:1.05rem;margin-bottom:12px;position:relative;z-index:1}
-.offer-cta .date-badge{background:#fff;color:#15803d;display:inline-block;padding:10px 28px;border-radius:999px;font-weight:800;margin-bottom:22px;font-size:1.05rem;position:relative;z-index:1}
-.offer-cta .btn{background:#fff;color:var(--primary-dark);position:relative;z-index:1;font-weight:800;font-size:1rem}
-.results-box{max-width:700px;margin:auto;background:#fff;border:1px solid var(--border);border-radius:22px;padding:30px;box-shadow:var(--shadow)}
-.results-box h4{color:var(--primary-dark);margin-bottom:8px;text-align:center}
-.results-box p.sub{text-align:center;color:var(--muted);margin-bottom:20px}
-.results-box input{width:100%;padding:14px;border:2px solid var(--border);border-radius:14px;font-family:inherit;font-size:1rem;margin-bottom:12px;outline:none}
-.results-box .btn{width:100%}
-.faq-item{background:#fff;border:1px solid var(--border);border-radius:16px;margin-bottom:12px;overflow:hidden}
-.faq-item summary{padding:18px 22px;cursor:pointer;font-weight:700;color:var(--primary-dark);list-style:none}
-.faq-item summary::-webkit-details-marker{display:none}
-.faq-item p{padding:16px 22px;color:#475569;font-size:.94rem;margin:0}
-.share-bar{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px}
-.share-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;font-weight:700;font-size:.88rem;color:#fff}
-.share-wa{background:#25D366}
-.share-fb{background:#1877f2}
-.share-tw{background:#000}
-.share-cp{background:#64748b;cursor:pointer;border:0;font-family:inherit}
-.map-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
-.map-card{background:#fff;border:1px solid var(--border);border-radius:22px;overflow:hidden;box-shadow:var(--shadow)}
-.map-card h4{padding:16px 20px;color:var(--primary-dark);margin:0;background:#f0fdf4}
-.map-card iframe{width:100%;height:250px;border:0;display:block}
-.tests-controls{background:#fff;border:1px solid var(--border);border-radius:20px;padding:20px;box-shadow:var(--shadow);margin-bottom:25px}
-.search-box{position:relative;margin-bottom:16px}
-.search-box input{width:100%;padding:14px 45px 14px 18px;border:2px solid var(--border);border-radius:14px;font-family:inherit;font-size:1rem;outline:none}
+.hero p{color:var(--muted);font-size:1rem;max-width:550px;margin:0 auto 24px}
+.hero-buttons{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:30px}
+.btn-wa,.btn-green,.btn-gold{padding:12px 26px;border-radius:999px;font-weight:700;display:inline-flex;align-items:center;gap:8px;transition:.2s;border:0;cursor:pointer;font-family:inherit;font-size:.95rem}
+.btn-wa{background:#25D366;color:#fff}
+.btn-green{background:var(--primary);color:#fff}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#fff}
+.btn-wa:hover,.btn-green:hover,.btn-gold:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.15)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;max-width:700px;margin:0 auto}
+.stat-box{background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px;text-align:center;transition:.3s}
+.stat-box:hover{transform:translateY(-3px);box-shadow:var(--shadow-warm);border-color:var(--gold)}
+.stat-box .num{font-size:1.9rem;font-weight:900;color:var(--primary);line-height:1}
+.stat-box .lbl{font-size:.78rem;color:var(--muted);font-weight:600;margin-top:6px}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:20px}
+.feature-card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:24px 20px;text-align:center;transition:.3s;position:relative;overflow:hidden}
+.feature-card::before{content:"";position:absolute;top:0;right:0;width:60px;height:60px;background:linear-gradient(135deg,var(--gold),transparent);opacity:.15;border-radius:50%}
+.feature-card:hover{transform:translateY(-5px);box-shadow:var(--shadow-warm);border-color:var(--gold)}
+.feature-card .icon{width:60px;height:60px;border-radius:18px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;display:grid;place-items:center;margin:0 auto 14px;box-shadow:0 6px 15px rgba(22,163,74,.25);font-size:1.6rem}
+.feature-card h4{color:var(--primary-dark);margin-bottom:8px;font-size:1.05rem;font-weight:800}
+.feature-card p{color:var(--muted);font-size:.88rem}
+.offer-box{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border-radius:24px;padding:40px 30px;text-align:center;position:relative;overflow:hidden;box-shadow:0 20px 50px rgba(22,163,74,.3)}
+.offer-box::before{content:"";position:absolute;top:-60px;right:-60px;width:250px;height:250px;background:rgba(212,168,67,.25);border-radius:50%}
+.offer-box .inner{position:relative;z-index:1}
+.offer-box .pct{font-size:clamp(4rem,12vw,7rem);font-weight:900;line-height:1;text-shadow:0 8px 25px rgba(0,0,0,.2);margin-bottom:10px}
+.offer-box h3{font-size:clamp(1.3rem,3vw,1.9rem);margin-bottom:10px;font-weight:800}
+.offer-box p{font-size:1.05rem;margin-bottom:16px}
+.offer-box .badge-white{background:#fff;color:var(--primary-dark);padding:10px 26px;border-radius:999px;font-weight:800;display:inline-block;margin-bottom:20px}
+.offer-box .btn-w{background:#fff;color:var(--primary-dark);padding:13px 30px;border-radius:999px;font-weight:800;display:inline-block}
+.tests-controls{background:linear-gradient(135deg,#fff,var(--warm-bg-2));border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:20px;box-shadow:var(--shadow)}
+.search-box{position:relative;margin-bottom:14px}
+.search-box input{width:100%;padding:14px 45px 14px 18px;border:2px solid var(--border);border-radius:14px;font-family:inherit;font-size:.95rem;outline:none;background:#fff;transition:.2s}
+.search-box input:focus{border-color:var(--gold);box-shadow:0 0 0 4px rgba(212,168,67,.15)}
 .search-box::before{content:"🔍";position:absolute;right:16px;top:50%;transform:translateY(-50%);pointer-events:none}
-.view-toggle{display:flex;gap:8px;justify-content:center;margin-bottom:14px;background:#f0fdf4;padding:5px;border-radius:999px;width:fit-content;margin-left:auto;margin-right:auto;flex-wrap:wrap}
-.view-toggle button{background:transparent;border:0;padding:8px 18px;border-radius:999px;font-family:inherit;font-weight:700;font-size:.88rem;cursor:pointer;color:#475569}
-.view-toggle button.active{background:var(--primary);color:#fff}
-.cats{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
-.cat-btn{background:#f0fdf4;border:1px solid var(--border);color:#334155;padding:8px 16px;border-radius:999px;cursor:pointer;font-family:inherit;font-weight:700;font-size:.85rem}
-.cat-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
-.results-info{text-align:center;color:var(--muted);font-weight:600;margin-bottom:20px}
-.results-info strong{color:var(--primary-dark);font-size:1.15rem}
-.tests-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
-.test-item{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
-.test-item h5{font-size:.82rem;font-weight:700;margin:0;line-height:1.35;min-height:2.3em;display:flex;align-items:center}
-.test-item .test-cat{font-size:.68rem;color:var(--muted);font-weight:600}
-.test-item .test-foot{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:auto;padding-top:6px;border-top:1px dashed var(--border)}
-.test-item .price{font-weight:800;color:var(--primary-dark);font-size:.95rem}
-.test-item .price small{font-size:.6rem;color:var(--muted);display:block}
-.wa-mini,.info-mini{padding:5px 9px;border-radius:999px;font-size:.68rem;font-weight:700;cursor:pointer;border:0;font-family:inherit}
-.wa-mini{background:#25D366;color:#fff}
-.info-mini{background:#e0f2fe;color:#0369a1}
-.test-actions{display:flex;gap:6px}
-.no-results{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--muted);background:#fff;border:2px dashed var(--border);border-radius:20px}
-.prep-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;padding:20px}
-.prep-modal.show{display:flex}
-.prep-modal-content{background:#fff;border-radius:22px;padding:30px;max-width:520px;width:100%;max-height:80vh;overflow-y:auto;position:relative}
-.prep-modal-content h3{color:var(--primary-dark);margin-bottom:16px}
-.prep-close{position:absolute;top:15px;left:15px;background:#fee2e2;color:#dc2626;border:0;width:32px;height:32px;border-radius:50%;font-size:1.1rem;cursor:pointer;font-weight:800}
-.prep-modal-content ul{list-style:none;padding:0}
-.prep-modal-content ul li{padding:10px 0 10px 24px;border-bottom:1px dashed var(--border);position:relative;font-size:.94rem}
-.prep-modal-content ul li::before{content:"✓";position:absolute;right:0;color:var(--primary);font-weight:800}
-.drug-warning{background:#fef3c7;border:1px solid #fde68a;color:#92400e;padding:14px;border-radius:12px;margin-top:16px;font-size:.88rem}
-.drug-warning strong{display:block;margin-bottom:6px;color:#78350f}
-footer{background:#0f2a17;color:#cbd5e1;padding:40px 0 20px;margin-top:40px}
-.footer-grid{display:grid;grid-template-columns:1.2fr .8fr .8fr;gap:24px;margin-bottom:25px}
-footer h4{color:#fff;margin-bottom:10px}
-footer p,footer a{color:#94a3b8;font-size:.9rem}
-.copyright{border-top:1px solid #1e293b;padding-top:18px;text-align:center;font-size:.85rem;color:#64748b}
-.float-wa{position:fixed;bottom:20px;left:20px;width:58px;height:58px;border-radius:50%;background:#25D366;color:#fff;display:grid;place-items:center;font-size:1.5rem;box-shadow:0 10px 25px rgba(37,211,102,.4);z-index:999}
-@media(max-width:850px){.hero-grid{grid-template-columns:1fr}.footer-grid{grid-template-columns:1fr}.nav-links{display:none}.logo{width:70px;height:70px}}
+.view-toggle{display:flex;gap:6px;justify-content:center;background:#fff;padding:5px;border-radius:999px;width:fit-content;margin:0 auto 14px;flex-wrap:wrap;border:1px solid var(--border)}
+.view-toggle button{background:transparent;border:0;padding:8px 18px;border-radius:999px;font-family:inherit;font-weight:700;font-size:.85rem;cursor:pointer;color:var(--muted);transition:.2s}
+.view-toggle button.active{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff}
+.cats{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.cat-btn{background:#fff;border:1px solid var(--border);color:#334155;padding:7px 15px;border-radius:999px;cursor:pointer;font-family:inherit;font-weight:700;font-size:.82rem;transition:.2s}
+.cat-btn.active{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#fff;border-color:var(--gold)}
+.results-info{text-align:center;color:var(--muted);font-weight:600;font-size:.88rem;margin-bottom:16px}
+.results-info strong{color:var(--primary-dark);font-size:1.05rem}
+.tests-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.test-item{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;transition:.2s;position:relative;overflow:hidden}
+.test-item:hover{border-color:var(--gold);box-shadow:var(--shadow-warm);transform:translateY(-2px)}
+.test-item .cat-icon{position:absolute;top:8px;left:8px;font-size:1.1rem;opacity:.6}
+.test-item h5{font-size:.85rem;font-weight:800;line-height:1.4;min-height:2.4em;display:flex;align-items:center;padding-left:26px}
+.test-item .cat-tag{font-size:.68rem;color:var(--gold-dark);font-weight:700;background:rgba(212,168,67,.1);padding:3px 8px;border-radius:8px;width:fit-content}
+.test-item .price-row{display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px dashed var(--border);margin-top:auto}
+.test-item .price{font-weight:900;color:var(--primary-dark);font-size:1rem}
+.test-item .price small{font-size:.65rem;color:var(--muted);display:block;font-weight:600}
+.test-item .add-btn{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border:0;padding:6px 12px;border-radius:999px;font-size:.72rem;font-weight:800;cursor:pointer;font-family:inherit;transition:.2s}
+.test-item .add-btn.added{background:linear-gradient(135deg,var(--gold),var(--gold-dark))}
+.branches-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+.branch-card{background:#fff;border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:var(--shadow)}
+.branch-card h4{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:16px 20px;font-size:1.05rem}
+.branch-card .content{padding:20px}
+.branch-card .content p{font-size:.9rem;color:#334155;margin-bottom:10px}
+.branch-card iframe{width:100%;height:220px;border:0;display:block}
+.faq-item{background:#fff;border:1px solid var(--border);border-radius:16px;margin-bottom:12px;overflow:hidden;transition:.2s}
+.faq-item[open]{box-shadow:var(--shadow-warm);border-color:var(--gold)}
+.faq-item summary{padding:16px 20px;cursor:pointer;font-weight:700;color:var(--primary-dark);list-style:none;display:flex;justify-content:space-between;align-items:center}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{content:"+";font-size:1.4rem;color:var(--gold)}
+.faq-item[open] summary::after{content:"−"}
+.faq-item p{padding:0 20px 18px;color:#475569;font-size:.9rem;margin:0}
+.contact-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.contact-card{background:linear-gradient(135deg,#fff,var(--warm-bg-2));border:1px solid var(--border);border-radius:18px;padding:22px;text-align:center;transition:.2s}
+.contact-card:hover{border-color:var(--gold);transform:translateY(-3px);box-shadow:var(--shadow-warm)}
+.contact-card .ico{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#fff;display:grid;place-items:center;margin:0 auto 12px;font-size:1.4rem}
+.contact-card h4{color:var(--primary-dark);font-size:1rem;margin-bottom:8px}
+.contact-card a,.contact-card p{color:var(--muted);font-size:.9rem}
+.results-form{max-width:600px;margin:auto;background:#fff;border:1px solid var(--border);border-radius:22px;padding:30px;box-shadow:var(--shadow-warm)}
+.results-form h3{text-align:center;color:var(--primary-dark);margin-bottom:10px}
+.results-form p.sub{text-align:center;color:var(--muted);margin-bottom:22px;font-size:.9rem}
+.results-form input{width:100%;padding:14px 16px;border:2px solid var(--border);border-radius:12px;font-family:inherit;font-size:.95rem;margin-bottom:12px;outline:none}
+.results-form input:focus{border-color:var(--gold);box-shadow:0 0 0 4px rgba(212,168,67,.15)}
+.results-form button{width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border:0;font-family:inherit;font-weight:800;font-size:1rem;cursor:pointer}
+.about-box{background:#fff;border:1px solid var(--border);border-radius:20px;padding:35px;box-shadow:var(--shadow)}
+.about-box p{color:#475569;font-size:1.02rem;margin-bottom:14px}
+.about-box strong{color:var(--primary-dark)}
+.about-list{list-style:none;display:grid;gap:10px;margin-top:14px}
+.about-list li{display:flex;gap:10px;align-items:flex-start}
+.about-list .diamond{color:var(--gold);font-weight:900}
+footer{background:linear-gradient(135deg,#0f2a17,#1a3d24);color:#cbd5e1;padding:40px 20px 20px;margin-top:40px}
+.footer-grid{max-width:1200px;margin:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:24px;margin-bottom:25px}
+footer h4{color:#fff;margin-bottom:12px;font-size:1rem;border-bottom:2px solid var(--gold);padding-bottom:8px;display:inline-block}
+footer p,footer a{color:#94a3b8;font-size:.88rem;line-height:1.9;display:block}
+footer a:hover{color:var(--gold)}
+.social-row{display:flex;gap:10px;margin-top:10px}
+.social-row a{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.08);display:grid;place-items:center;color:#fff;font-size:1rem;transition:.2s}
+.social-row a:hover{background:var(--gold);transform:translateY(-3px)}
+.copyright{text-align:center;border-top:1px solid #1e3a2a;padding-top:18px;font-size:.82rem;color:#64748b;max-width:1200px;margin:auto}
+.float-wa{position:fixed;bottom:20px;right:20px;background:#25D366;color:#fff;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font-size:1.6rem;box-shadow:0 10px 25px rgba(37,211,102,.5);z-index:98}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150}
+.sidebar-overlay.show{display:block}
+@media(max-width:1200px){.layout{grid-template-columns:250px 1fr 280px;gap:14px;padding:0 14px}}
+@media(max-width:1000px){
+.layout{grid-template-columns:1fr;padding:0 14px}
+.sidebar-right,.sidebar-left{position:fixed;top:0;height:100vh;max-height:100vh;z-index:200;border-radius:0}
+.sidebar-right{right:0;width:290px;border-radius:20px 0 0 20px}
+.sidebar-left{left:0;width:320px;border-radius:0 20px 20px 0}
+.sidebar-right:not(.collapsed){margin-right:0}
+.sidebar-left:not(.collapsed){margin-left:0}
+.action-btn .label{display:none}
+}
+@media(max-width:500px){
+.brand-text h1{font-size:1.05rem}
+.brand-text span{font-size:.72rem}
+.logo-box{width:55px;height:55px}
+}
 </style>
 </head>
 <body>
 
-<div class="sticky-top">
-  <div class="offers-bar">
-    <div class="offers-track">
-      <span>🎉 خصم 20% بمناسبة إطلاق الموقع - <a href="https://wa.me/201099003494">احجز الآن</a></span>
-      <span>🩺 معلومة طبية: الصيام قبل تحليل السكر 8-12 ساعة - الماء مسموح</span>
-      <span>⚡ معظم التحاليل نتائجها في نفس اليوم</span>
-      <span>🎉 خصم 20% على كل التحاليل - طوال شهر أكتوبر</span>
-      <span>🏠 سحب من المنزل متاح - اتصل 01123702062</span>
-      <span>🩺 معلومة طبية: فيتامين C بجرعات عالية يؤثر على قراءة السكر</span>
-      <span>💉 اشرب ماء كافي قبل التحليل لتسهيل سحب الدم</span>
-      <span>🎉 الخصم ساري في الفرعين - الجعافرة وبهتيم</span>
-      <span>📄 استلم نتيجتك عبر واتساب</span>
-      <span>🩺 معلومة طبية: لا توقف أي دواء من نفسك قبل التحليل</span>
-    </div>
+<div class="offers-bar">
+  <div class="offers-track">
+    <span>🎉 خصم 20% بمناسبة إطلاق الموقع - <a href="https://wa.me/201099003494">احجز الآن</a></span>
+    <span>🩺 معلومة طبية: الصيام قبل تحليل السكر 8-12 ساعة - الماء مسموح</span>
+    <span>⚡ معظم التحاليل نتائجها في نفس اليوم</span>
+    <span>🎉 خصم 20% على كل التحاليل - طوال شهر أكتوبر</span>
+    <span>🏠 سحب من المنزل متاح - اتصل 01123702062</span>
+    <span>🎉 الخصم ساري في الفرعين - الجعافرة وبهتيم</span>
+    <span>📄 استلم نتيجتك عبر واتساب</span>
   </div>
-  <header>
-    <div class="container nav">
-      <a href="#home" class="brand">
-        <div class="logo">
-          <img id="mainLogo" src="logo.png" alt="شعار" onerror="tryNextLogo(this)">
-          <span class="logo-fallback" style="display:none;width:100%;height:100%;place-items:center;background:var(--primary);color:#fff;font-size:2rem;font-weight:bold;border-radius:50%;">T</span>
+</div>
+
+<header class="top-bar">
+  <div class="nav-row">
+    <button class="action-btn" id="toggleRight"><span>☰</span><span class="label">القائمة</span></button>
+    <a href="#" class="brand" onclick="showSection('home');return false;">
+      <div class="logo-box"><img src="logo.png" alt="شعار" onerror="tryNextLogo(this)"></div>
+      <div class="brand-text"><h1>معامل طيبة</h1><span>TEBA LABS - د/ أحمد طه أبوندا</span></div>
+    </a>
+    <button class="action-btn gold" id="toggleLeft">
+      <span>🛒</span><span class="label">السلة</span>
+      <span class="badge-num" id="cartBadge" style="display:none">0</span>
+    </button>
+  </div>
+</header>
+
+<div class="sidebar-overlay" id="overlay"></div>
+
+<div class="layout">
+  <aside class="sidebar-right" id="sidebarRight">
+    <h3><span>📋 الأقسام</span><button onclick="closeAllSidebars()">✕</button></h3>
+    <ul class="nav-list">
+      <li><a href="#" onclick="showSection('home');return false;" class="active" data-section="home">🏠 الرئيسية</a></li>
+      <li><a href="#" onclick="showSection('about');return false;" data-section="about">ℹ️ عن المعمل</a></li>
+      <li><a href="#" onclick="showSection('features');return false;" data-section="features">⭐ خدماتنا</a></li>
+      <li><a href="#" onclick="showSection('tests');return false;" data-section="tests">🔬 التحاليل والأسعار</a></li>
+      <li><a href="#" onclick="showSection('offers');return false;" data-section="offers">🎉 العروض والخصومات</a></li>
+      <li><a href="#" onclick="showSection('results');return false;" data-section="results">📄 استلام النتائج</a></li>
+      <li><a href="#" onclick="showSection('branches');return false;" data-section="branches">📍 الفروع</a></li>
+      <li><a href="#" onclick="showSection('faq');return false;" data-section="faq">❓ الأسئلة الشائعة</a></li>
+      <li><a href="#" onclick="showSection('contact');return false;" data-section="contact">📞 تواصل معنا</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <section id="section-home" class="section active">
+      <div class="hero">
+        <div class="hero-inner">
+          <div class="hero-logo"><img src="logo.png" alt="شعار" onerror="tryNextLogo(this)"></div>
+          <div class="hero-badge">🔬 معامل طيبة للتحاليل الطبية</div>
+          <h2>دقة تطمنك، ونتيجة <span>تطمن عليك</span></h2>
+          <p>معامل طيبة - TEBA LABS، بإشراف د/ أحمد طه أبوندا. تحاليل طبية بأحدث الأجهزة، سحب من المنزل، ونتائج سريعة.</p>
+          <div class="hero-buttons">
+            <a href="https://wa.me/201099003494" target="_blank" class="btn-wa">💬 واتساب</a>
+            <a href="tel:+201123702062" class="btn-green">📞 اتصل الآن</a>
+            <a href="#" onclick="showSection('tests');return false;" class="btn-gold">🔬 تصفح التحاليل</a>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-box"><div class="num" id="testCount">525</div><div class="lbl">تحليل متوفر</div></div>
+            <div class="stat-box"><div class="num">2</div><div class="lbl">فرع لخدمتك</div></div>
+            <div class="stat-box"><div class="num">24</div><div class="lbl">ساعة للنتائج</div></div>
+            <div class="stat-box"><div class="num">20%</div><div class="lbl">خصم الإطلاق</div></div>
+          </div>
         </div>
-        <div class="brand-text"><h1>معامل طيبة</h1><span>TEBA LABS - د/ أحمد طه أبوندا</span></div>
-      </a>
-      <nav class="nav-links">
-        <a href="#about">عن المعمل</a><a href="#features">خدماتنا</a><a href="#tests">التحاليل</a><a href="#results">النتائج</a><a href="#faq">أسئلة</a><a href="#contact">تواصل</a>
-      </nav>
+      </div>
+      <div class="section-head" style="margin-top:40px">
+        <h2>ليه تختار <span>معامل طيبة؟</span></h2>
+        <p>مزايا تجعلنا الخيار الأول لأهل شبين القناطر</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card"><div class="icon">🏠</div><h4>سحب من المنزل</h4><p>فريق متخصص يجيلك البيت في أي وقت.</p></div>
+        <div class="feature-card"><div class="icon">⚡</div><h4>نتائج سريعة</h4><p>معظم التحاليل نتائجها في نفس اليوم.</p></div>
+        <div class="feature-card"><div class="icon">🔬</div><h4>أجهزة عالمية</h4><p>أحدث الأجهزة الطبية لضمان الدقة.</p></div>
+        <div class="feature-card"><div class="icon">💰</div><h4>أسعار مناسبة</h4><p>كاش أو محفظة إلكترونية.</p></div>
+        <div class="feature-card"><div class="icon">👨‍⚕️</div><h4>إشراف طبي</h4><p>إشراف د/ أحمد طه أبوندا.</p></div>
+        <div class="feature-card"><div class="icon">📄</div><h4>نتائج عبر واتساب</h4><p>استلم نتيجتك بضغطة واحدة.</p></div>
+      </div>
+    </section>
+
+    <section id="section-about" class="section">
+      <div class="section-head"><h2>نبذة عن <span>معامل طيبة</span></h2></div>
+      <div class="about-box">
+        <p>معامل طيبة (TEBA LABS) صرح طبي متكامل يقدم خدمات التحاليل الطبية بأعلى جودة ودقة. بقيادة <strong>د/ أحمد طه أبوندا</strong>، نلتزم بأحدث المعايير العالمية لضمان نتائج موثوقة.</p>
+        <p>نخدم أهل شبين القناطر والقليوبية من خلال فرعين:</p>
+        <ul class="about-list">
+          <li><span class="diamond">◆</span><span><strong>فرع الجعافرة</strong> — الطريق العمومي، أعلى صيدلية الصحابة</span></li>
+          <li><span class="diamond">◆</span><span><strong>فرع بهتيم</strong> — مساكن اسكو، أمام مدرسة بن الخطاب</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="section-features" class="section">
+      <div class="section-head"><h2>خدماتنا <span>المميزة</span></h2><p>كل ما تحتاجه من خدمات التحاليل الطبية في مكان واحد</p></div>
+      <div class="features-grid">
+        <div class="feature-card"><div class="icon">🏠</div><h4>سحب من المنزل</h4><p>فريق متخصص يجيلك البيت في أي وقت.</p></div>
+        <div class="feature-card"><div class="icon">⚡</div><h4>نتائج سريعة</h4><p>نفس اليوم لمعظم التحاليل.</p></div>
+        <div class="feature-card"><div class="icon">🔬</div><h4>أجهزة عالمية</h4><p>أحدث الأجهزة الطبية.</p></div>
+        <div class="feature-card"><div class="icon">💰</div><h4>أسعار مناسبة</h4><p>كاش أو محفظة إلكترونية.</p></div>
+        <div class="feature-card"><div class="icon">👨‍⚕️</div><h4>إشراف طبي</h4><p>د/ أحمد طه أبوندا.</p></div>
+        <div class="feature-card"><div class="icon">📄</div><h4>نتائج عبر واتساب</h4><p>بضغطة واحدة.</p></div>
+      </div>
+    </section>
+
+    <section id="section-tests" class="section">
+      <div class="section-head"><h2>التحاليل <span>والأسعار</span></h2><p>اضغط على "أضف" لإضافة التحليل للسلة وحساب الإجمالي</p></div>
+      <div class="tests-controls">
+        <div class="search-box"><input type="text" id="searchInput" placeholder="ابحث بالعربي أو الإنجليزي..."></div>
+        <div class="view-toggle" id="viewToggle">
+          <button data-view="featured" class="active">الأكثر طلباً</button>
+          <button data-view="core">الأساسية</button>
+          <button data-view="all">كل التحاليل</button>
+        </div>
+        <div class="cats" id="catsBox"></div>
+      </div>
+      <div class="results-info">عدد النتائج: <strong id="resultsCount">0</strong> تحليل</div>
+      <div class="tests-grid" id="testsGrid"></div>
+    </section>
+
+    <section id="section-offers" class="section">
+      <div class="section-head"><h2>🎉 العروض <span>والخصومات</span></h2></div>
+      <div class="offer-box">
+        <div class="inner">
+          <div class="pct">20%</div>
+          <h3>خصم خاص بمناسبة إطلاق الموقع</h3>
+          <p>خصم <strong>20%</strong> على كل التحاليل في الفرعين</p>
+          <div class="badge-white">📅 ساري طوال شهر أكتوبر</div>
+          <div><a href="https://wa.me/201099003494?text=عايز%20أستفيد%20من%20خصم%2020%25" target="_blank" class="btn-w">💬 احجز الآن واستفيد</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="section-results" class="section">
+      <div class="section-head"><h2>📄 استلام <span>النتائج</span></h2><p>أدخل بياناتك وسيتم توصيلك بالمعمل</p></div>
+      <div class="results-form">
+        <h3>استعلام عن نتيجة</h3>
+        <p class="sub">أدخل بياناتك للحصول على نتيجتك</p>
+        <input type="text" id="rName" placeholder="الاسم بالكامل (كما في المعمل)">
+        <input type="tel" id="rPhone" placeholder="رقم الموبايل المسجل بالمعمل" inputmode="numeric">
+        <button onclick="requestResult()">📄 استلام النتيجة</button>
+      </div>
+    </section>
+
+    <section id="section-branches" class="section">
+      <div class="section-head"><h2>📍 فروعنا</h2><p>فرعان لخدمتك</p></div>
+      <div class="branches-grid">
+        <div class="branch-card">
+          <h4>🏥 فرع الجعافرة</h4>
+          <iframe src="https://www.google.com/maps?q=معامل+طيبة+الجعافرة+شبين+القناطر&output=embed" loading="lazy"></iframe>
+          <div class="content">
+            <p><strong>📍</strong> الطريق العمومي، أعلى صيدلية الصحابة</p>
+            <p><strong>🕒</strong> السبت-الخميس: 11ص-11م | الجمعة: 4م-10م</p>
+          </div>
+        </div>
+        <div class="branch-card">
+          <h4>🏥 فرع بهتيم</h4>
+          <iframe src="https://www.google.com/maps?q=مساكن+اسكو+بهتيم+شبين+القناطر&output=embed" loading="lazy"></iframe>
+          <div class="content">
+            <p><strong>📍</strong> مساكن اسكو، أمام مدرسة بن الخطاب</p>
+            <p><strong>🕒</strong> السبت-الخميس: 12م-12ص | الجمعة: إجازة</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="section-faq" class="section">
+      <div class="section-head"><h2>❓ الأسئلة <span>الشائعة</span></h2></div>
+      <details class="faq-item"><summary>إمتى هتستلم نتيجة التحليل؟</summary><p>معظم التحاليل الروتينية في نفس اليوم. المتخصصة من 24-72 ساعة. المزارع من 3-5 أيام.</p></details>
+      <details class="faq-item"><summary>هل يوجد سحب من المنزل؟</summary><p>نعم. للحجز اتصل على 01123702062 أو واتساب 01099003494.</p></details>
+      <details class="faq-item"><summary>إيه طرق الدفع المتاحة؟</summary><p>كاش أو محفظة إلكترونية.</p></details>
+      <details class="faq-item"><summary>هل لازم صيام قبل التحليل؟</summary><p>بعض التحاليل فقط تحتاج صيام 8-12 ساعة. اضغط ℹ️ بجانب أي تحليل.</p></details>
+      <details class="faq-item"><summary>إزاي أحجز موعد؟</summary><p>اتصل على 01123702062 أو واتساب 01099003494.</p></details>
+    </section>
+
+    <section id="section-contact" class="section">
+      <div class="section-head"><h2>📞 تواصل <span>معنا</span></h2></div>
+      <div class="contact-grid">
+        <div class="contact-card"><div class="ico">📞</div><h4>هاتف</h4><a href="tel:+201123702062">01123702062</a></div>
+        <div class="contact-card"><div class="ico">💬</div><h4>واتساب</h4><a href="https://wa.me/201099003494" target="_blank">01099003494</a></div>
+        <div class="contact-card"><div class="ico">📘</div><h4>فيسبوك</h4><a href="https://www.facebook.com/share/1KW67J8b44/" target="_blank">صفحة معامل طيبة</a></div>
+        <div class="contact-card"><div class="ico">📍</div><h4>العنوان</h4><p>الصحابة، شبين القناطر، القليوبية</p></div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="sidebar-left" id="sidebarLeft">
+    <h3><span>🛒 سلة التحاليل</span><button onclick="closeAllSidebars()">✕</button></h3>
+    <div id="cartContent">
+      <div class="cart-empty"><div>🛒</div>السلة فاضية<br><small>اضغط "أضف" على أي تحليل</small></div>
     </div>
-  </header>
+  </aside>
 </div>
 
-<main>
-<section id="home" class="hero">
-  <div class="container hero-grid">
-    <div>
-      <div class="badge">🔬 معامل طيبة للتحاليل الطبية - TEBA LABS</div>
-      <h2>دقة تطمنك، ونتيجة <span>تطمن عليك</span></h2>
-      <p>معامل طيبة - TEBA LABS، بإشراف <strong>د/ أحمد طه أبوندا</strong>. تحاليل طبية بأحدث الأجهزة، سحب من المنزل، ونتائج سريعة في نفس اليوم أو اليوم التالي.</p>
-      <div class="hero-actions">
-        <a class="btn btn-whatsapp" href="https://wa.me/201099003494">💬 واتساب</a>
-        <a class="btn btn-outline" href="tel:+201123702062">📞 اتصل الآن</a>
-      </div>
-    </div>
-    <div class="hero-card">
-      <div class="hero-logo-big">
-        <img id="bigLogo" src="logo.png" alt="شعار" onerror="tryNextBigLogo(this)">
-        <div class="logo-fallback" style="display:none;width:100%;height:100%;place-items:center;background:var(--primary);color:#fff;font-size:3rem;font-weight:bold;border-radius:50%;">T</div>
-      </div>
-      <div class="doctor-name">👨‍⚕️ د/ أحمد طه أبوندا</div>
-      <h3>معلومات سريعة</h3>
-      <ul class="quick-list">
-        <li>
-          <span class="ico-big">📍</span>
-          <div>
-            <strong>فرع الجعافرة</strong>
-            <small>أعلى صيدلية الصحابة</small>
-            <span class="hours">🕒 السبت-الخميس: 11ص-11م | الجمعة: 4م-10م</span>
-          </div>
-        </li>
-        <li>
-          <span class="ico-big">📍</span>
-          <div>
-            <strong>فرع بهتيم</strong>
-            <small>مساكن اسكو - عيادة د/ محمد رمضان</small>
-            <span class="hours">🕒 السبت-الخميس: 12م-12ص | الجمعة: إجازة</span>
-          </div>
-        </li>
-        <li>
-          <span class="ico-big">📞</span>
-          <div>
-            <strong>01123702062</strong>
-            <small>هاتف المعمل</small>
-          </div>
-        </li>
-        <li>
-          <span class="ico-big">📱</span>
-          <div>
-            <strong>01099003494</strong>
-            <small>واتساب</small>
-          </div>
-        </li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<section id="about" class="section" style="background:#fff">
-  <div class="container"><div class="section-head"><h3>نبذة عن معامل طيبة</h3><p>معامل طيبة (TEBA LABS) صرح طبي متكامل يقدم خدمات التحاليل الطبية بأعلى جودة ودقة. بقيادة د/ أحمد طه أبوندا.</p></div></div>
-</section>
-
-<section id="features" class="section">
-  <div class="container">
-    <div class="section-head"><h3>خدماتنا</h3></div>
-    <div class="feature-grid">
-      <div class="feature"><div class="ico">🏠</div><h4>سحب من المنزل</h4><p>خدمة سحب العينات من منزلك.</p></div>
-      <div class="feature"><div class="ico">⚡</div><h4>نتائج سريعة</h4><p>معظم التحاليل في نفس اليوم.</p></div>
-      <div class="feature"><div class="ico">🔬</div><h4>أجهزة حديثة</h4><p>أحدث الأجهزة العالمية.</p></div>
-      <div class="feature"><div class="ico">💰</div><h4>أسعار مناسبة</h4><p>كاش أو محفظة إلكترونية.</p></div>
-      <div class="feature"><div class="ico">👨‍⚕️</div><h4>إشراف طبي</h4><p>إشراف د/ أحمد طه أبوندا.</p></div>
-      <div class="feature"><div class="ico">📄</div><h4>نتائج عبر واتساب</h4><p>استلم نتيجتك بسهولة.</p></div>
-    </div>
-  </div>
-</section>
-
-<section id="results" class="section" style="background:#fff">
-  <div class="container">
-    <div class="section-head"><h3>📄 استلام النتائج</h3></div>
-    <div class="results-box">
-      <h4>استعلام عن نتيجة</h4>
-      <p class="sub">أدخل بياناتك وسيتم توصيلك بالمعمل</p>
-      <input type="text" id="rName" placeholder="الاسم بالكامل (كما في المعمل)">
-      <input type="tel" id="rPhone" placeholder="رقم الموبايل المسجل بالمعمل">
-      <button class="btn btn-primary" onclick="requestResult()">📄 استلام النتيجة</button>
-    </div>
-  </div>
-</section>
-
-<section id="offers" class="section">
-  <div class="container">
-    <div class="section-head"><h3>🎉 العروض والخصومات</h3></div>
-    <div class="offer-cta">
-      <div class="pct">20%</div>
-      <h4>🎉 خصم خاص بمناسبة إطلاق الموقع</h4>
-      <p>خصم <strong>20%</strong> على كل التحاليل في الفرعين (الجعافرة وبهتيم)</p>
-      <div class="date-badge">📅 ساري طوال شهر أكتوبر</div>
-      <div>
-        <a class="btn" href="https://wa.me/201099003494?text=عايز%20أستفيد%20من%20خصم%2020%25" target="_blank">💬 احجز الآن واستفيد بالخصم</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="tests" class="section" style="background:#fff">
-  <div class="container">
-    <div class="section-head"><h3>التحاليل والأسعار</h3><p>ابحث بالعربي أو الإنجليزي، واضغط ℹ️ لمعرفة تعليمات التحضير وتداخلات الأدوية</p></div>
-    <div class="tests-controls">
-      <div class="search-box"><input type="text" id="searchInput" placeholder="اكتب اسم التحليل بالعربي أو الإنجليزي..."></div>
-      <div class="view-toggle" id="viewToggle">
-        <button data-view="featured" class="active">الأكثر طلباً</button>
-        <button data-view="core">الأساسية</button>
-        <button data-view="all">كل التحاليل</button>
-      </div>
-      <div class="cats" id="catsBox"></div>
-    </div>
-    <div class="results-info">عدد النتائج: <strong id="resultsCount">0</strong> تحليل</div>
-    <div class="tests-grid" id="testsGrid"></div>
-  </div>
-</section>
-
-<section id="branches" class="section">
-  <div class="container">
-    <div class="section-head"><h3>📍 فروعنا</h3></div>
-    <div class="map-grid">
-      <div class="map-card"><h4>فرع الجعافرة</h4><iframe src="https://www.google.com/maps?q=معامل+طيبة+الجعافرة+شبين+القناطر&output=embed" loading="lazy"></iframe><div style="padding:16px"><p><strong>📍</strong> الطريق العمومي أعلى صيدلية الصحابة</p><p><strong>🕒</strong> السبت-الخميس: 11ص-11م | الجمعة: 4م-10م</p></div></div>
-      <div class="map-card"><h4>فرع بهتيم</h4><iframe src="https://www.google.com/maps?q=مساكن+اسكو+بهتيم+شبين+القناطر&output=embed" loading="lazy"></iframe><div style="padding:16px"><p><strong>📍</strong> مساكن اسكو أمام مدرسة بن الخطاب</p><p><strong>🕒</strong> السبت-الخميس: 12م-12ص | الجمعة: إجازة</p></div></div>
-    </div>
-  </div>
-</section>
-
-<section id="faq" class="section" style="background:#fff">
-  <div class="container" style="max-width:900px">
-    <div class="section-head"><h3>❓ الأسئلة الشائعة</h3></div>
-    <details class="faq-item"><summary>إمتى هتستلم نتيجة التحليل؟</summary><p>معظم التحاليل الروتينية في نفس اليوم. المتخصصة من 24-72 ساعة. المزارع من 3-5 أيام.</p></details>
-    <details class="faq-item"><summary>هل يوجد سحب من المنزل؟</summary><p>نعم. للحجز اتصل على 01123702062 أو واتساب 01099003494.</p></details>
-    <details class="faq-item"><summary>إيه طرق الدفع المتاحة؟</summary><p>كاش أو محفظة إلكترونية.</p></details>
-    <details class="faq-item"><summary>هل لازم صيام قبل التحليل؟</summary><p>بعض التحاليل فقط تحتاج صيام 8-12 ساعة. اضغط ℹ️ بجانب أي تحليل.</p></details>
-    <details class="faq-item"><summary>إزاي أحجز موعد؟</summary><p>اتصل على 01123702062 أو واتساب 01099003494.</p></details>
-  </div>
-</section>
-
-<section id="contact" class="section">
-  <div class="container">
-    <div class="section-head"><h3>تواصل معنا</h3></div>
-    <div class="cards">
-      <div class="card" style="text-align:center"><h4>📞 هاتف</h4><p><a href="tel:+201123702062" style="color:var(--primary)">01123702062</a></p></div>
-      <div class="card" style="text-align:center"><h4>💬 واتساب</h4><p><a href="https://wa.me/201099003494" style="color:var(--primary)">01099003494</a></p></div>
-      <div class="card" style="text-align:center"><h4>📘 فيسبوك</h4><p><a href="https://www.facebook.com/share/1KW67J8b44/" style="color:var(--primary)">صفحة معامل طيبة</a></p></div>
-    </div>
-    <div class="share-bar">
-      <a class="share-btn share-wa" href="https://wa.me/?text=معامل%20طيبة">📱 واتساب</a>
-      <a class="share-btn share-fb" href="https://www.facebook.com/sharer/sharer.php?u=teba-labs.github.io/teba-lab/" target="_blank">📘 فيسبوك</a>
-      <button class="share-btn share-cp" onclick="copyLink()">🔗 نسخ الرابط</button>
-    </div>
-  </div>
-</section>
-</main>
-
-<div class="prep-modal" id="prepModal" onclick="if(event.target===this)closePrep()">
-  <div class="prep-modal-content">
-    <button class="prep-close" onclick="closePrep()">×</button>
-    <h3 id="prepTitle">تعليمات التحضير</h3>
-    <ul id="prepList"></ul>
-    <div id="drugWarning"></div>
-  </div>
-</div>
+<a class="float-wa" href="https://wa.me/201099003494" target="_blank" title="واتساب">💬</a>
 
 <footer>
-  <div class="container footer-grid">
-    <div><h4>معامل طيبة | TEBA LABS</h4><p>د/ أحمد طه أبوندا. تحاليل طبية دقيقة.</p></div>
-    <div><h4>روابط سريعة</h4><p><a href="#tests">التحاليل</a></p><p><a href="#faq">الأسئلة الشائعة</a></p><p><a href="#branches">الفروع</a></p></div>
-    <div><h4>تواصل</h4><p>📞 01123702062</p><p>💬 01099003494</p></div>
+  <div class="footer-grid">
+    <div>
+      <h4>معامل طيبة | TEBA LABS</h4>
+      <p>د/ أحمد طه أبوندا</p>
+      <p>تحاليل طبية دقيقة</p>
+      <p>سحب من المنزل • نتائج سريعة</p>
+      <div class="social-row">
+        <a href="https://wa.me/201099003494" target="_blank" title="واتساب">💬</a>
+        <a href="https://www.facebook.com/share/1KW67J8b44/" target="_blank" title="فيسبوك">📘</a>
+        <a href="tel:+201123702062" title="هاتف">📞</a>
+      </div>
+    </div>
+    <div>
+      <h4>روابط سريعة</h4>
+      <a href="#" onclick="showSection('tests');return false;">التحاليل والأسعار</a>
+      <a href="#" onclick="showSection('offers');return false;">العروض والخصومات</a>
+      <a href="#" onclick="showSection('results');return false;">استلام النتائج</a>
+      <a href="#" onclick="showSection('faq');return false;">الأسئلة الشائعة</a>
+    </div>
+    <div>
+      <h4>الفروع</h4>
+      <p><strong style="color:#fff">الجعافرة:</strong> الطريق العمومي، أعلى صيدلية الصحابة</p>
+      <p><strong style="color:#fff">بهتيم:</strong> مساكن اسكو، أمام مدرسة بن الخطاب</p>
+    </div>
+    <div>
+      <h4>تواصل</h4>
+      <p>📞 01123702062</p>
+      <p>💬 01099003494</p>
+      <p>📍 الصحابة، شبين القناطر، القليوبية</p>
+    </div>
   </div>
-  <div class="container copyright">© 2026 معامل طيبة - TEBA LABS. جميع الحقوق محفوظة.</div>
+  <div class="copyright">© <span id="year"></span> معامل طيبة - TEBA LABS. جميع الحقوق محفوظة.</div>
 </footer>
 
-<a class="float-wa" href="https://wa.me/201099003494">💬</a>
-
 <script>
-const LOGO_NAMES = ['logo.png','Logo.png','logo.PNG','LOGO.png','logo.jpg','logo.jpeg','logo.webp','Logo.jpg','TaibaLogo.png','teba-logo.png'];
+const LOGO_NAMES = ['logo.png','Logo.png','logo.PNG','LOGO.png','logo.jpg'];
 function tryNextLogo(img){
   const idx = parseInt(img.dataset.tryIdx || '-1') + 1;
-  if(idx >= LOGO_NAMES.length){ img.style.display='none'; const fb = img.nextElementSibling; if(fb) fb.style.display='grid'; return; }
-  img.dataset.tryIdx = idx; img.src = LOGO_NAMES[idx];
-}
-function tryNextBigLogo(img){
-  const idx = parseInt(img.dataset.tryIdx || '-1') + 1;
-  if(idx >= LOGO_NAMES.length){ img.style.display='none'; const fb = img.nextElementSibling; if(fb) fb.style.display='grid'; return; }
-  img.dataset.tryIdx = idx; img.src = LOGO_NAMES[idx];
+  if(idx >= LOGO_NAMES.length){ img.style.display='none'; return; }
+  img.dataset.tryIdx = idx;
+  img.src = LOGO_NAMES[idx];
 }
 
-const RAW_TESTS=`17-Alpha Hydroxy Progesteron|200|هرمونات|0|17-OHP
+const sidebarRight = document.getElementById('sidebarRight');
+const sidebarLeft = document.getElementById('sidebarLeft');
+const overlay = document.getElementById('overlay');
+
+document.getElementById('toggleRight').addEventListener('click', ()=>{
+  const isMobile = window.innerWidth <= 1000;
+  if(isMobile){
+    sidebarRight.classList.toggle('collapsed');
+    if(!sidebarRight.classList.contains('collapsed')){ sidebarLeft.classList.add('collapsed'); overlay.classList.add('show'); }
+    else { overlay.classList.remove('show'); }
+  } else { sidebarRight.classList.toggle('collapsed'); }
+});
+document.getElementById('toggleLeft').addEventListener('click', ()=>{
+  const isMobile = window.innerWidth <= 1000;
+  if(isMobile){
+    sidebarLeft.classList.toggle('collapsed');
+    if(!sidebarLeft.classList.contains('collapsed')){ sidebarRight.classList.add('collapsed'); overlay.classList.add('show'); }
+    else { overlay.classList.remove('show'); }
+  } else { sidebarLeft.classList.toggle('collapsed'); }
+});
+function closeAllSidebars(){ sidebarRight.classList.add('collapsed'); sidebarLeft.classList.add('collapsed'); overlay.classList.remove('show'); }
+overlay.addEventListener('click', closeAllSidebars);
+
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  const target = document.getElementById('section-'+id);
+  if(target) target.classList.add('active');
+  document.querySelectorAll('.nav-list a').forEach(a=>{ a.classList.toggle('active', a.dataset.section === id); });
+  window.scrollTo({top:0, behavior:'smooth'});
+  if(window.innerWidth <= 1000){ sidebarRight.classList.add('collapsed'); overlay.classList.remove('show'); }
+}
+
+/* ============ TESTS DATA ============ */
+const RAW_TESTS = `
+صورة دم كاملة|100|دم|1|CBC
+سرعة ترسيب|50|دم|1|ESR
+هيموجلوبين|50|دم|1|HB
+هيماتوكريت|60|دم|1|HCT
+عدد الصفائح|60|دم|1|Platelets
+كرات الدم البيضاء|60|دم|1|WBCs
+عدد كرات الدم|50|دم|1|TLC
+فيلم دم|100|دم|1|Blood Film
+خلايا شبكية|175|دم|1|Retics
+فصيلة الدم|50|دم|1|ABO
+عامل RH|50|دم|1|Rh
+كومبس مباشر|200|دم|1|Coombs Direct
+كومبس غير مباشر|200|دم|1|Coombs Indirect
+الأنيميا المنجلية|150|دم|1|Sickling
+أنزيم الجلوكوز|225|دم|1|G6PD
+سكر صائم|50|سكر|1|FBS
+سكر عشوائي|50|سكر|1|RBS
+سكر بعد الأكل|50|سكر|1|2PPH
+سكر تراكمي|150|سكر|1|HbA1c
+أنسولين صائم|225|سكر|1|Insulin Fasting
+أنسولين بعد الأكل|225|سكر|1|Insulin PP
+أنسولين عشوائي|200|سكر|1|Insulin Random
+C-Peptide صائم|250|سكر|1|C-Peptide Fasting
+C-Peptide عشوائي|250|سكر|1|C-Peptide Random
+مقاومة الأنسولين|250|سكر|1|HOMA IR
+فركتوزامين|200|سكر|1|Fructosamine
+إنزيم الكبد ALT|50|كبد|1|ALT
+إنزيم الكبد AST|50|كبد|1|AST
+فوسفاتيز قلوي|125|كبد|1|ALP
+إنزيم جاما|100|كبد|1|GGT
+بيليروبين كلي|50|كبد|1|Bilirubin Total
+بيليروبين مباشر|50|كبد|1|Bilirubin Direct
+ألبيومين|50|كبد|1|Albumin
+جلوبيولين|100|كبد|1|Globulin
+بروتين كلي|150|كبد|1|Total Protein
+نسبة A/G|100|كبد|1|A/G Ratio
+أمونيا|250|كبد|0|Ammonia
+سيرولوبلازمين|225|كبد|0|Ceruloplasmin
+يوريا|50|كلى|1|Urea
+يوريا BUN|50|كلى|1|BUN
+كرياتينين|50|كلى|1|Creatinine
+حمض البوليك|50|كلى|1|Uric Acid
+معدل الترشيح|150|كلى|1|GFR
+تصفية الكرياتينين|150|كلى|1|Creat Clearance
+سيستاتين سي|350|كلى|0|Cystatin C
+كوليسترول|50|دهون|1|Cholesterol
+دهون ثلاثية|50|دهون|1|Triglycerides
+كوليسترول نافع|50|دهون|1|HDL
+كوليسترول ضار|50|دهون|1|LDL
+كوليسترول ضار جدا|80|دهون|1|VLDL
+دهون كاملة|250|دهون|1|Lipid Profile
+هرمون الغدة الدرقية|100|غدة درقية|1|TSH
+هرمون T3 الكلي|100|غدة درقية|1|T3 Total
+هرمون T4 الكلي|100|غدة درقية|1|T4 Total
+هرمون T3 الحر|100|غدة درقية|1|Free T3
+هرمون T4 الحر|100|غدة درقية|1|Free T4
+أجسام مضادة للغدة TPO|300|غدة درقية|1|Anti TPO
+أجسام مضادة للتيروجلوبيولين|300|غدة درقية|1|Anti TG
+هرمون محفز للجريب FSH|150|هرمونات|1|FSH
+هرمون ملوتن LH|150|هرمونات|1|LH
+هرمون الحليب|150|هرمونات|1|Prolactin
+هرمون الذكورة الكلي|175|هرمونات|1|Testosterone Total
+هرمون الذكورة الحر|225|هرمونات|1|Testosterone Free
+هرمون الأنوثة E2|250|هرمونات|1|Estradiol
+هرمون البروجستيرون|250|هرمونات|1|Progesterone
+DHEA|350|هرمونات|1|DHEA
+DHEA-S|350|هرمونات|1|DHEA-S
+الكورتيزول صباحاً|250|هرمونات|1|Cortisol AM
+الكورتيزول مساءً|250|هرمونات|1|Cortisol PM
+هرمون الحمل|75|هرمونات|1|HCG
+هرمون الحمل الكمي|175|هرمونات|1|Beta HCG
+هرمون مخزون المبيض|650|هرمونات|1|AMH
+فيتامين د3|450|فيتامينات|1|Vitamin D3
+فيتامين B12|450|فيتامينات|1|Vitamin B12
+حمض الفوليك|550|فيتامينات|1|Folic Acid
+حديد|150|فيتامينات|1|Iron
+مخزون الحديد|250|فيتامينات|1|Ferritin
+سعة ارتباط الحديد|150|فيتامينات|1|TIBC
+كالسيوم كلي|125|فيتامينات|1|Calcium Total
+فوسفور|125|فيتامينات|1|Phosphorus
+ماغنسيوم|150|فيتامينات|1|Magnesium
+زنك|250|فيتامينات|1|Zinc
+بروتين سي التفاعلي CRP|75|مناعة|1|CRP
+CRP عالي الحساسية|250|مناعة|1|hs-CRP
+ASOT|75|مناعة|1|ASOT
+الروماتويد|75|مناعة|1|RF
+مضاد CCP|350|مناعة|1|Anti CCP
+ANA IF|450|مناعة|1|ANA IF
+ANA ELISA|350|مناعة|1|ANA
+مضاد الحمض النووي|300|مناعة|1|Anti DNA
+كومبلمنت 3|250|مناعة|1|C3
+كومبلمنت 4|250|مناعة|1|C4
+جلوبيولين مناعي IgE|200|مناعة|1|IgE
+جلوبيولين مناعي IgG|200|مناعة|1|IgG
+جلوبيولين مناعي IgM|200|مناعة|1|IgM
+جلوبيولين مناعي IgA|200|مناعة|1|IgA
+فيروس بي HBs Ag|125|فيروسات|1|HBs Ag
+فيروس سي HCV|125|فيروسات|1|HCV
+فيروس نقص المناعة HIV|125|فيروسات|1|HIV
+جرثومة المعدة أجسام مضادة|200|فيروسات|1|H.Pylori Abs
+جرثومة المعدة أنتيجين|150|فيروسات|1|H.Pylori Ag
+توكسوبلازما IgG|225|فيروسات|1|Toxoplasma IgG
+توكسوبلازما IgM|225|فيروسات|1|Toxoplasma IgM
+حصبة ألمانية IgG|200|فيروسات|1|Rubella IgG
+حصبة ألمانية IgM|200|فيروسات|1|Rubella IgM
+فيروس مضخم CMV IgG|250|فيروسات|1|CMV IgG
+فيروس مضخم CMV IgM|250|فيروسات|1|CMV IgM
+تحليل التيفود|150|فيروسات|1|Widal
+بروسيلا|150|فيروسات|1|Brucella
+VDRL|180|فيروسات|1|VDRL
+دلالة البروستاتا الكلي|225|أورام|1|PSA Total
+دلالة البروستاتا الحر|225|أورام|1|PSA Free
+دلالة أورام القولون|250|أورام|1|CEA
+دلالة أورام الكبد|225|أورام|1|AFP
+دلالة أورام المبيض|250|أورام|1|CA 125
+دلالة أورام الثدي|250|أورام|1|CA 15.3
+دلالة أورام البنكرياس|250|أورام|1|CA 19.9
+تحليل بول|50|بول وبراز|1|Urine
+تحليل براز|50|بول وبراز|1|Stool
+دم خفي في البراز|175|بول وبراز|1|Occult Blood
+مزرعة بول|250|بول وبراز|1|Urine C/S
+مزرعة براز|200|بول وبراز|1|Stool C/S
+تحليل السائل المنوي|250|بول وبراز|1|Semen
+ألبومين مجهري|150|بول وبراز|1|Microalbumin
+زمن البروثرومبين PT|75|سيولة وقلب|1|PT
+زمن PTT|75|سيولة وقلب|1|PTT
+فيبرينوجين|150|سيولة وقلب|1|Fibrinogen
+دي دايمر|300|سيولة وقلب|1|D-dimer
+إنزيم اللاكتيك LDH|150|سيولة وقلب|1|LDH
+كرياتين كيناز CPK|150|سيولة وقلب|1|CPK
+إنزيم القلب CK-MB|200|سيولة وقلب|1|CK-MB
+تروبونين نوعي|175|سيولة وقلب|1|Troponin I
+تروبونين كمي|400|سيولة وقلب|1|Troponin Quant
+هوموسيستين|500|سيولة وقلب|1|Homocysteine
+17-Alpha Hydroxy Progesteron|200|هرمونات|0|17-OHP
 5-HIAA|800|تحاليل متخصصة|0|5-HIAA
-فصيلة الدم ABO|50|دم|1|ABO
 أسيتون في الدم|1000|تحاليل متخصصة|0|Acetone Serum
 أسيتون في البول|50|بول وبراز|0|Acetone Urine
 أستيل كولين مستقبلات|2000|تحاليل متخصصة|0|AChR
@@ -368,35 +608,25 @@ ADA|350|تحاليل متخصصة|0|ADA
 ADA في السائل البريتوني|350|تحاليل متخصصة|0|ADA Ascitic
 ADA في السائل الجنبي|350|تحاليل متخصصة|0|ADA Pleural
 أدرينالين|2000|هرمونات|0|Adrenaline
-AFB للبلغم|150|فيروسات|0|AFB Sputum
-ألبيومين|50|كبد|1|Albumin
-ألبيومين في البول|50|بول وبراز|0|Urine Albumin
-نسبة ألبيومين كرياتينين|225|بول وبراز|0|Alb/Creat
-ألبيومين في السائل البريتوني|100|بول وبراز|0|Albumin Ascitic
-ألبيومين في السائل النخاعي|150|بول وبراز|0|Albumin CSF
-ألبيومين في السائل الجنبي|100|بول وبراز|0|Albumin Pleural
+AFB للبلغم|150|فيروسات|0|AFB
+ألبيومين في السائل البريتوني|100|تحاليل متخصصة|0|Albumin Ascitic
+ألبيومين في السائل النخاعي|150|تحاليل متخصصة|0|Albumin CSF
+ألبيومين في السائل الجنبي|100|تحاليل متخصصة|0|Albumin Pleural
 ألبيومين في البول عشوائي|40|بول وبراز|0|Albumin Random
-ألبيومين في البول 24 ساعة|100|بول وبراز|0|Albumin 24h
-نسبة A/G|100|كبد|1|A/G Ratio
-كحول في البول|500|بول وبراز|0|Alcohol Urine
+ألبيومين في البول 24س|100|بول وبراز|0|Albumin 24h
+نسبة ألبيومين كرياتينين|225|بول وبراز|0|Alb/Creat
+كحول في البول|500|بول وبراز|0|Alcohol
 ألدولاز|450|تحاليل متخصصة|0|Aldolase
 الألدوستيرون|750|هرمونات|0|Aldosterone
 نسبة ألدوستيرون رينين|2000|هرمونات|0|Aldo/Renin
-فوسفاتيز قلوي|125|كبد|1|ALP
-Alpha Feto Protein|225|أورام|1|AFP
 ألفا 1 أنتي تريبسين|2000|تحاليل متخصصة|0|A1AT
 ألفا 1 أنتي تريبسين في البراز|1000|تحاليل متخصصة|0|A1AT Stool
 ألفا 2 ماكروجلوبيولين|900|تحاليل متخصصة|0|A2M
-إنزيم الكبد ALT|50|كبد|1|ALT
 AMA|500|مناعة|0|AMA
-هرمون مخزون المبيض|650|هرمونات|1|AMH
-أمونيا|250|تحاليل متخصصة|0|Ammonia
 أمفيتامين|180|بول وبراز|0|Amphetamine
 أميليز في الدم|175|تحاليل متخصصة|0|Amylase Serum
 أميليز في البول|175|تحاليل متخصصة|0|Amylase Urine
 بروتين أميلويد A|800|تحاليل متخصصة|0|Amyloid A
-ANA IF|450|مناعة|1|ANA IF
-ANA ELISA|350|مناعة|1|ANA
 ANCA-C|450|مناعة|0|ANCA-C
 ANCA-P|450|مناعة|0|ANCA-P
 أندروجين|2000|هرمونات|0|Androgen
@@ -405,7 +635,6 @@ ACE|1000|تحاليل متخصصة|0|ACE
 فجوة الأنيون|500|تحاليل متخصصة|0|Anion Gap
 كارديوليبين IgG|352|مناعة|0|Cardiolipin IgG
 كارديوليبين IgM|350|مناعة|0|Cardiolipin IgM
-مضاد CCP|350|مناعة|1|Anti CCP
 Anti DNase B|1250|تحاليل متخصصة|0|Anti DNase B
 Anti GAD|2000|تحاليل متخصصة|0|Anti GAD
 جليادين IgA|450|مناعة|0|Gliadin IgA
@@ -419,7 +648,6 @@ Anti Ro SSA|425|مناعة|0|Anti Ro
 Anti Scl 70|500|مناعة|0|Anti Scl70
 تصلب الجلد|2000|مناعة|0|Scleroderma
 Anti Thrombin III|325|سيولة وقلب|0|AT III
-Anti Thyroglobulin|300|غدة درقية|1|Anti TG
 أجسام مضادة للغدة|250|غدة درقية|0|Anti Thyroid
 ترانسجلوتامينيز IgA|500|مناعة|0|TTG IgA
 ترانسجلوتامينيز IgG|500|مناعة|0|TTG IgG
@@ -427,7 +655,6 @@ Anti Thyroglobulin|300|غدة درقية|1|Anti TG
 ADH|2000|هرمونات|0|ADH
 جليكوبروتين IgA|550|مناعة|0|GP2 IgA
 جليكوبروتين IgG|550|مناعة|0|GP2 IgG
-Anti TPO|300|غدة درقية|1|Anti TPO
 Anti MCV|2000|مناعة|0|Anti MCV
 خلايا جداري IgA|350|مناعة|0|APA
 فوسفوليبد IgG|300|مناعة|0|Phospholipid IgG
@@ -443,65 +670,44 @@ RNP|650|مناعة|0|Anti U1 RNP
 ASCA IgA|750|مناعة|0|ASCA IgA
 ASCA IgG|750|مناعة|0|ASCA IgG
 ASMA|450|مناعة|0|ASMA
-ASOT|75|مناعة|1|ASOT
-إنزيم الكبد AST|50|كبد|1|AST
 عامل انعدام الحيوانات المنوية|1750|تحاليل متخصصة|0|AZF
-B2 ميكروجلوبيولين في الدم|350|تحاليل متخصصة|0|B2M Serum
-B2 ميكروجلوبيولين في البول|350|تحاليل متخصصة|0|B2M Urine
+B2 ميكروجلوبيولين|350|تحاليل متخصصة|0|B2M
 باربيتيورات|100|بول وبراز|0|Barbiturates
 BCR-ABL|3500|تحاليل متخصصة|0|BCR-ABL
 بروتين بينس جونز|100|بول وبراز|0|Bence Jones
 بنزوديازيبين|100|بول وبراز|0|Benzodiazepines
 بيتا جالاكتوزيديز|1500|تحاليل متخصصة|0|Beta-Gal
-هرمون الحمل|75|هرمونات|1|HCG
-هرمون الحمل الكمي|175|هرمونات|1|Beta HCG
 بيكربونات|400|تحاليل متخصصة|0|Bicarbonate
 أحماض الصفراء|550|كبد|0|Bile Acids
 أملاح الصفراء|550|كبد|0|Bile Salts
 بلهارسيا IgG|275|فيروسات|0|Bilharzia Ab
 بلهارسيا Ag|275|فيروسات|0|Bilharzia Ag
-بيليروبين كلي|50|كبد|1|Bilirubin Total
-بيليروبين مباشر|50|كبد|1|Bilirubin Direct
 بيوتينيديز|1750|تحاليل متخصصة|0|Biotinidase
 غازات الدم ABG|300|تحاليل متخصصة|0|ABG
 مزرعة دم|350|بول وبراز|0|Blood C/S
 بيتا 2 جليكوبروتين IgG|500|مناعة|0|B2GP IgG
 بيتا 2 جليكوبروتين IgM|500|مناعة|0|B2GP IgM
-بيتا ترانسفيرين|750|تحاليل متخصصة|0|Beta Transferrin
-فيلم دم|100|دم|1|Blood Film
-سكر صائم|50|سكر|1|FBS
-سكر بعد الأكل بساعتين|50|سكر|1|2PPH
-سكر عشوائي|50|سكر|1|RBS
-يوريا|50|كلى|1|Urea
+بيتا ترانسفيرين|750|تحاليل متخصصة|0|B2 Transferrin
 بوريلا IgG|1500|فيروسات|0|Borrelia IgG
 بوريلا IgM|1500|فيروسات|0|Borrelia IgM
 BRCA 1|راجع الطبيب|تحاليل متخصصة|0|BRCA 1
 BRCA 2|راجع الطبيب|تحاليل متخصصة|0|BRCA 2
 إفرازات الثدي|150|تحاليل متخصصة|0|Breast Discharge
 تحليل لبن الأم|200|تحاليل متخصصة|0|Breast Milk
-بروسيلا|150|فيروسات|1|Brucella
 بروسيلا IgG|450|فيروسات|0|Brucella IgG
 بروسيلا IgM|450|فيروسات|0|Brucella IgM
-يوريا الدم BUN|50|كلى|1|BUN
-CK-MB|200|سيولة وقلب|1|CK-MB
 مثبط C1 إستيريز|1000|مناعة|0|C1 Inhibitor
-CA 125|250|أورام|1|CA 125
-CA 15.3|250|أورام|1|CA 15.3
-CA 19.9|250|أورام|1|CA 19.9
 CA 50|2000|أورام|0|CA 50
 CA 72.4|1250|أورام|0|CA 72.4
 كالسيتونين|800|غدة درقية|0|Calcitonin
-كالسيوم متأين|125|فيتامينات|1|Calcium Ionised
+كالسيوم متأين|125|فيتامينات|0|Calcium Ionised
 نسبة كالسيوم كرياتينين|175|بول وبراز|0|Ca/Creat
 نسبة كالسيوم أوكسالات|1500|تحاليل متخصصة|0|Ca/Oxalate
 كالسيوم في البول|100|فيتامينات|0|Calcium Urine
-كالسيوم في البول 24س|100|فيتامينات|0|Calcium 24h
-كالسيوم كلي|125|فيتامينات|1|Calcium Total
 كالبوبروتكتين|650|تحاليل متخصصة|0|Calprotectin
 كانابينويد|120|بول وبراز|0|Cannabinoids
-CEA|250|أورام|1|CEA
 كاتيكولامينات|1750|هرمونات|0|Catecholamines
-كاتيكولامينات في البول|1750|هرمونات|0|Urine Catecholamines
+كاتيكولامينات في البول|1750|هرمونات|0|Urine Catechol
 CD3|750|تحاليل متخصصة|0|CD3
 CD4|750|تحاليل متخصصة|0|CD4
 CD5|750|تحاليل متخصصة|0|CD5
@@ -519,122 +725,72 @@ CD103|750|تحاليل متخصصة|0|CD103
 CD138|750|تحاليل متخصصة|0|CD138
 CD200|750|تحاليل متخصصة|0|CD200
 CD1a|750|تحاليل متخصصة|0|CD1a
-سيرولوبلازمين|225|كبد|0|Ceruloplasmin
 CH50|800|مناعة|0|CH50
 كلاميديا Ag|450|فيروسات|0|Chlamydia Ag
 كلاميديا IgG|450|فيروسات|0|Chlamydia IgG
 كلاميديا IgM|450|فيروسات|0|Chlamydia IgM
-كلوريد في السائل النخاعي|120|بول وبراز|0|Cl CSF
-كلوريد في الدم|120|تحاليل متخصصة|0|Chloride Serum
-كلوريد في السائل الزلالي|120|بول وبراز|0|Cl Synovial
-كلوريد في البول|120|بول وبراز|0|Cl Urine
+كلوريد|120|تحاليل متخصصة|0|Chloride
 كروموسوم Y PCR|2500|تحاليل متخصصة|0|Chr Y
-CK Total|150|سيولة وقلب|1|CPK
 كلوستريديم صعب|1000|تحاليل متخصصة|0|C Difficile
-CMV IgG Avidity|450|فيروسات|0|CMV Avidity
-CMV IgG|250|فيروسات|1|CMV IgG
-CMV IgM|250|فيروسات|1|CMV IgM
 CMV DNA PCR|1750|فيروسات|0|CMV PCR
 التراص البارد|350|دم|0|Cold Agglutinins
 C1|2000|مناعة|0|C1
 C2|2000|مناعة|0|C2
-C3|250|مناعة|1|C3
-C4|250|مناعة|1|C4
 C5|1750|مناعة|0|C5
-صورة دم كاملة|100|دم|1|CBC
-كومبس مباشر|200|دم|1|Coombs Direct
-كومبس غير مباشر|200|دم|1|Coombs Indirect
-نحاس في الدم|225|فيتامينات|1|Copper Serum
+نحاس في الدم|225|فيتامينات|0|Copper Serum
 نحاس في البول|225|فيتامينات|0|Copper Urine
-الكورتيزول صباحاً|250|هرمونات|1|Cortisol AM
-الكورتيزول مساءً|250|هرمونات|1|Cortisol PM
 الكورتيزول الحر في البول|225|هرمونات|0|Cortisol Free Urine
 الكورتيزول عشوائي|225|هرمونات|0|Cortisol Random
 الكورتيزول في البول 24س|225|هرمونات|0|Cortisol 24h
-C-Peptide صائم|250|سكر|1|C-Peptide Fasting
-C-Peptide عشوائي|250|سكر|1|C-Peptide Random
-C-Peptide بعد الأكل|250|سكر|1|C-Peptide PP
-بروتين سي التفاعلي CRP|75|مناعة|1|CRP
-CRP عالي الحساسية|250|مناعة|1|hs-CRP
-كرياتينين|50|كلى|1|Creatinine
-تصفية الكرياتينين|150|كلى|1|Creat Clearance
 كرياتينين في البول|125|كلى|0|Urine Creatinine
 كرايو جلوبيولين|250|مناعة|0|Cryoglobulin
 مزرعة هوائية|250|بول وبراز|0|Aerobic C/S
 مزرعة لاهوائية|350|بول وبراز|0|Anaerobic C/S
 سيكلوسبورين|650|تحاليل متخصصة|0|Cyclosporine
-سيستاتين سي|350|كلى|0|Cystatin C
-دي دايمر|300|سيولة وقلب|1|D-dimer
 ديباكين|300|تحاليل متخصصة|0|Depakine
-DHEA|350|هرمونات|1|DHEA
-DHEA-S|350|هرمونات|1|DHEA-S
 ديجوكسين|350|تحاليل متخصصة|0|Digoxin
 ديهيدروتستوستيرون|850|هرمونات|0|DHT
-Anti DNA|300|مناعة|1|Anti DNA
-Anti DNA IF|450|مناعة|0|Anti DNA IF
 تكسير DNA الحيوانات المنوية|1750|تحاليل متخصصة|0|DFI
 كريات دموية مشوهة|275|بول وبراز|0|Dysmorphic RBCs
-EBV IgG EBNA|300|فيروسات|0|EBV EBNA IgG
-EBV IgG VCA|300|فيروسات|0|EBV VCA IgG
+EBV IgG EBNA|300|فيروسات|0|EBV EBNA
+EBV IgG VCA|300|فيروسات|0|EBV VCA
 EBV IgM EBNA|300|فيروسات|0|EBV EBNA IgM
 EBV IgM VCA|300|فيروسات|0|EBV VCA IgM
 إندوميسيال|1500|مناعة|0|EMA
-إندوميسيال IgA|650|مناعة|0|EMA IgA
-إندوميسيال IgG|650|مناعة|0|EMA IgG
-إندوميسيال IgM|650|مناعة|0|EMA IgM
-أميبا IgG|300|فيروسات|0|Entamoeba Ab
-أميبا Ag|350|فيروسات|0|Entamoeba Ag
+أميبا IgG|300|فيروسات|0|Entamoeba
 إيبانوتين|250|تحاليل متخصصة|0|Epanutin
 إرثروبويتين|1350|دم|0|EPO
-سرعة ترسيب|50|دم|1|ESR
-إستراديول|250|هرمونات|1|E2
+إستراديول|250|هرمونات|0|E2
 إسترون|1250|هرمونات|0|E1
-فحص أيضي موسع|4000|تحاليل متخصصة|0|Metabolic Screen
+فحص أيضي موسع|4000|تحاليل متخصصة|0|Metabolic
 فاكتور 7|800|سيولة وقلب|0|Factor VII
 فاكتور 5 لايدن|1500|سيولة وقلب|0|Factor V Leiden
 فاكتور 2 طفرة|1250|سيولة وقلب|0|Factor II Mut
 فاكتور 8|1000|سيولة وقلب|0|Factor VIII
 حمى البحر المتوسط|1750|تحاليل متخصصة|0|FMF
 فاشيولا|500|فيروسات|0|Fasciola
-فيريتين|250|فيتامينات|1|Ferritin
 FDP|200|سيولة وقلب|0|FDP
-فيبرينوجين|150|سيولة وقلب|1|Fibrinogen
-فيلاريا Ag|400|فيروسات|0|Filaria Ag
-فيلاريا|150|فيروسات|0|Filaria Film
-فيلاريا IgG|400|فيروسات|0|Filaria IgG
-فيلاريا IgM|400|فيروسات|0|Filaria IgM
+فيلاريا|400|فيروسات|0|Filaria
 حمض الفوليك في كرات الدم|550|فيتامينات|0|Folate RBC
-حمض الفوليك|550|فيتامينات|1|Folic Acid
 أندروجين حر|375|هرمونات|0|Free Androgen
-كابا لايت حر في الدم|2250|تحاليل متخصصة|0|Free Kappa Serum
-كابا لايت حر في البول|2250|تحاليل متخصصة|0|Free Kappa Urine
-لامبدا لايت حر في الدم|2250|تحاليل متخصصة|0|Free Lambda Serum
-لامبدا لايت حر في البول|2250|تحاليل متخصصة|0|Free Lambda Urine
-هرمون T3 الحر|100|غدة درقية|1|Free T3
-هرمون T4 الحر|100|غدة درقية|1|Free T4
+كابا لايت حر|2250|تحاليل متخصصة|0|Free Kappa
+لامبدا لايت حر|2250|تحاليل متخصصة|0|Free Lambda
 مؤشر الثيروكسين الحر|225|غدة درقية|0|FTI
-فركتوزامين|200|سكر|1|Fructosamine
 فركتوز في السائل المنوي|200|بول وبراز|0|Fructose
-هرمون FSH|150|هرمونات|1|FSH
 مزرعة فطريات|300|بول وبراز|0|Fungus C/S
-G6PD نوعي|225|دم|1|G6PD
 G6PD كمي|225|دم|0|G6PD Quant
 جالاكتومانان|2500|تحاليل متخصصة|0|Galactomannan
 مستقبلات GABA|1200|تحاليل متخصصة|0|GABA R
 جاسترين|1250|هرمونات|0|Gastrin
-معدل الترشيح|150|كلى|1|GFR
-إنزيم جاما|100|كبد|1|GGT
 جيارديا|450|فيروسات|0|Giardia
-جلوبيولين|100|كبد|1|Globulin
-جلوكوز في السائل البريتوني|100|بول وبراز|0|Glucose Ascitic
-جلوكوز في السائل النخاعي|100|بول وبراز|0|Glucose CSF
-جلوكوز في السائل الجنبي|100|بول وبراز|0|Glucose Pleural
+جلوكوز في السائل البريتوني|100|تحاليل متخصصة|0|Glucose Ascitic
+جلوكوز في السائل النخاعي|100|تحاليل متخصصة|0|Glucose CSF
+جلوكوز في السائل الجنبي|100|تحاليل متخصصة|0|Glucose Pleural
 جلوتين IgG|600|مناعة|0|Gluten IgG
-سكر تراكمي|150|سكر|1|HbA1c
 هرمون النمو|250|هرمونات|0|Growth Hormone
-هرمون النمو بعد 60 دقيقة|225|هرمونات|0|GH 60min
-هرمون النمو بعد 90 دقيقة|225|هرمونات|0|GH 90min
-هرمون النمو بعد 120 دقيقة|225|هرمونات|0|GH 120min
+هرمون النمو 60د|225|هرمونات|0|GH 60min
+هرمون النمو 90د|225|هرمونات|0|GH 90min
+هرمون النمو 120د|225|هرمونات|0|GH 120min
 هابتوجلوبين|300|تحاليل متخصصة|0|Haptoglobin
 HAV IgG|200|فيروسات|0|HAV IgG
 HAV IgM|200|فيروسات|0|HAV IgM
@@ -643,53 +799,35 @@ HBc IgM|200|فيروسات|0|HBc IgM
 HBe Abs|200|فيروسات|0|HBe Abs
 HBe Ags|200|فيروسات|0|HBe Ags
 HBs Abs|200|فيروسات|0|HBs Abs
-HBs Ag كارت|125|فيروسات|1|HBs Ag Card
-HBs Ag ELISA|175|فيروسات|1|HBs Ag ELISA
+HBs Ag ELISA|175|فيروسات|0|HBs ELISA
 HBV PCR|500|فيروسات|0|HBV PCR
-HCV Abs كارت|125|فيروسات|1|HCV Card
-HCV Abs ELISA|175|فيروسات|1|HCV ELISA
+HCV ELISA|175|فيروسات|0|HCV ELISA
 HCV IgM|450|فيروسات|0|HCV IgM
 HCV PCR|500|فيروسات|0|HCV PCR
-كوليسترول نافع|50|دهون|1|HDL
-هيليكوباكتر بيلوري|200|فيروسات|1|H.Pylori Abs
-H.Pylori Ag|150|فيروسات|1|H.Pylori Ag
 H.Pylori IgA|200|فيروسات|0|H.Pylori IgA
 H.Pylori IgM|200|فيروسات|0|H.Pylori IgM
 خط H.Pylori|1000|فيروسات|0|H.Pylori Line
-هيماتوكريت|60|دم|1|HCT
 كهربية الهيموجلوبين|500|دم|0|Hb Electrophoresis
-هيموجلوبين|50|دم|1|Hemoglobin
 HEV Ab|1500|فيروسات|0|HEV Ab
 HEV IgM|1500|فيروسات|0|HEV IgM
 هيستامين|3000|هرمونات|0|Histamine
-HIV كارت|125|فيروسات|1|HIV Card
-HIV ELISA|200|فيروسات|1|HIV ELISA
+HIV ELISA|200|فيروسات|0|HIV ELISA
 HIV PCR|2000|فيروسات|0|HIV PCR
 HLA B51|2000|تحاليل متخصصة|0|HLA B51
-مقاومة الأنسولين|250|سكر|1|HOMA IR
 هوموسيستين|500|فيتامينات|0|Homocysteine
 HSV I IgG|175|فيروسات|0|HSV I IgG
 HSV I IgM|175|فيروسات|0|HSV I IgM
 HSV II IgG|175|فيروسات|0|HSV II IgG
 HSV II IgM|175|فيروسات|0|HSV II IgM
-هيداتيد ELISA|400|فيروسات|0|Hydatid ELISA
 هيداتيد|250|فيروسات|0|Hydatid
 حساسية اللبن|450|مناعة|0|IgE Milk
 IgG في السائل النخاعي|250|مناعة|0|CSF IgG
 مؤشر IgG|650|مناعة|0|IgG Index
-IgM|200|مناعة|1|IgM
-IgG|200|مناعة|1|IgG
-IgE|200|مناعة|1|IgE
-IgA|200|مناعة|1|IgA
 إنهيبين A|2750|هرمونات|0|Inhibin A
 إنهيبين B|2750|هرمونات|0|Inhibin B
 أنسولين مضاد|800|سكر|0|Insulin Ab
-أنسولين صائم|225|سكر|1|Insulin Fasting
-أنسولين بعد الأكل|225|سكر|1|Insulin PP
-أنسولين عشوائي|200|سكر|1|Insulin Random
 IGF-1|1250|هرمونات|0|IGF-1
 إنترلوكين 6|600|مناعة|0|IL-6
-حديد|150|فيتامينات|1|Iron
 JAK2|2500|تحاليل متخصصة|0|JAK2
 بوتاسيوم في البول|125|بول وبراز|0|K Urine
 كاروتايب|1250|تحاليل متخصصة|0|Karyotyping
@@ -697,15 +835,11 @@ JAK2|2500|تحاليل متخصصة|0|JAK2
 نسبة لاكتات بيروفات|1000|تحاليل متخصصة|0|Lactate/Pyruvate
 لاكتات في الدم|250|تحاليل متخصصة|0|Lactate
 لاكتوفيرين|2000|تحاليل متخصصة|0|Lactoferrin
-LDH|150|سيولة وقلب|1|LDH
 LDH في السائل البريتوني|150|تحاليل متخصصة|0|LDH Ascitic
 LDH في السائل النخاعي|150|تحاليل متخصصة|0|LDH CSF
 LDH في السائل الجنبي|150|تحاليل متخصصة|0|LDH Pleural
-كوليسترول ضار|50|دهون|1|LDL
 ليفيتيراسيتام|راجع الطبيب|تحاليل متخصصة|0|Levetiracetam
-هرمون LH|150|هرمونات|1|LH
 ليباز|175|تحاليل متخصصة|0|Lipase
-دهون كاملة|250|دهون|1|Lipid Profile
 ليبوبروتين A|300|كبد|0|LpA
 ليبوبروتين B|350|كبد|0|LpB
 رحلان ليبوبروتين|2250|كبد|0|Lp Electrophoresis
@@ -713,33 +847,25 @@ LDH في السائل الجنبي|150|تحاليل متخصصة|0|LDH Pleural
 LKM|450|مناعة|0|LKM
 مانع التجلط الذئبي|250|سيولة وقلب|0|Lupus AC
 لايزوزيم|800|مناعة|0|Lysozyme
-ماغنسيوم|150|فيتامينات|1|Magnesium
 ملاريا|175|فيروسات|0|Malaria
-حشيش|150|بول وبراز|0|Cannabinoids
-ميتانيفرين في الدم|2000|هرمونات|0|Metanephrines Blood
-ميتانيفرين في البول|2000|هرمونات|0|Metanephrines Urine
-ألبومين مجهري|150|بول وبراز|1|Microalbumin
-ألبومين مجهري 24س|150|بول وبراز|1|Microalbumin 24h
+حشيش|150|بول وبراز|0|Cannabinoids Urine
+ميتانيفرين|2000|هرمونات|0|Metanephrines
+ألبومين مجهري 24س|150|بول وبراز|0|Microalbumin 24h
 MLPA SMA|راجع الطبيب|تحاليل متخصصة|0|MLPA SMA
 مونوسبوت|150|فيروسات|0|MonoSpot
 مورفين|150|بول وبراز|0|Morphine
 MTHFR|1250|تحاليل متخصصة|0|MTHFR
 درن PCR|3000|تحاليل متخصصة|0|TB PCR
-ميوجلوبين في الدم|400|سيولة وقلب|0|Myoglobin Serum
-ميوجلوبين في البول|400|سيولة وقلب|0|Myoglobin Urine
+ميوجلوبين|400|سيولة وقلب|0|Myoglobin
 ميوباثي|300|مناعة|0|Myopathy
-نسبة صوديوم بوتاسيوم في البول|250|بول وبراز|0|Na/K Urine
+نسبة Na/K في البول|250|بول وبراز|0|Na/K Urine
 NSE|1000|أورام|0|NSE
 نيكوتين|750|تحاليل متخصصة|0|Nicotine
-نيكوتين كمي|800|تحاليل متخصصة|0|Nicotine Quant
-نور ميتانيفرين في الدم|2000|هرمونات|0|Normetanephrine Blood
-نور ميتانيفرين في البول|2500|هرمونات|0|Normetanephrine Urine
-دم خفي في البراز|175|بول وبراز|1|Occult Blood
+نور ميتانيفرين|2000|هرمونات|0|Normetanephrine
 أوليغوكلونال|2500|تحاليل متخصصة|0|Oligoclonal
 أفيون|150|بول وبراز|0|Opiate
 أحماض عضوية|2500|تحاليل متخصصة|0|Organic Acids
-أوسمولالتي في الدم|200|تحاليل متخصصة|0|Osmolality Serum
-أوسمولالتي في البول|225|تحاليل متخصصة|0|Osmolality Urine
+أوسمولالتي|200|تحاليل متخصصة|0|Osmolality
 هشاشة كرات الدم|225|دم|0|Osmotic Fragility
 أوستيوكالسين|450|تحاليل متخصصة|0|Osteocalcin
 أوكسالات في البول|1000|بول وبراز|0|Oxalate
@@ -754,235 +880,99 @@ Ph السائل الجنبي|100|تحاليل متخصصة|0|Ph Pleural
 Ph البراز|50|بول وبراز|0|Ph Stool
 فينيل كيتونيوريا|350|تحاليل متخصصة|0|PKU
 فينيل ألانين|800|تحاليل متخصصة|0|Phenylalanine
-فوسفور|125|فيتامينات|1|Phosphorus
-فوسفور في البول 24س|120|فيتامينات|0|Phosphorus 24h
+فوسفور في البول|120|فيتامينات|0|Phosphorus Urine
 وظائف الصفائح|1000|سيولة وقلب|0|Platelet Function
-عدد الصفائح|60|دم|1|Platelets
 مزرعة السائل الجنبي|225|بول وبراز|0|Pleural C/S
 تحليل السائل الجنبي|450|بول وبراز|0|Pleural Exam
 اختبار PCT|300|بول وبراز|0|Post Coital
 بوتاسيوم|125|تحاليل متخصصة|0|Potassium
 Pro-BNP|1000|سيولة وقلب|0|Pro-BNP
 بروكالسيتونين|850|تحاليل متخصصة|0|Procalcitonin
-هرمون الحليب|150|هرمونات|1|Prolactin
 بروتين C|550|سيولة وقلب|0|Protein C
 بروتين S|550|سيولة وقلب|0|Protein S
 نسبة بروتين كرياتينين|200|بول وبراز|0|Protein/Creat
 يود بروتيني|200|تحاليل متخصصة|0|PBI
 رحلان كهربي للبروتين|500|تحاليل متخصصة|0|Protein Electrophoresis
 إمنيوفيكسيشن|3000|تحاليل متخصصة|0|Immunofixation
-بروتين في السائل النخاعي|100|بول وبراز|0|Protein CSF
-بروتين في السائل الجنبي|100|بول وبراز|0|Protein Pleural
+بروتين في السائل النخاعي|100|تحاليل متخصصة|0|Protein CSF
+بروتين في السائل الجنبي|100|تحاليل متخصصة|0|Protein Pleural
 بروتين في البول|100|بول وبراز|0|Urine Protein
-بروتين في البول 24س|125|بول وبراز|1|Urine Protein 24h
+بروتين في البول 24س|125|بول وبراز|0|Urine Protein 24h
 بروتين في البول عشوائي|50|بول وبراز|0|Urine Protein Random
 طفرة بروثرومبين|1250|سيولة وقلب|0|Prothrombin Mut
-زمن البروثرومبين PT|75|سيولة وقلب|1|PT
-PSA Free|225|أورام|1|PSA Free
-PSA Total|225|أورام|1|PSA Total
-هرمون الجار درقية|300|هرمونات|0|PTH
-PTT|75|سيولة وقلب|1|PTT
 مزرعة صديد|225|بول وبراز|0|Pus C/S
 بيروفات|500|تحاليل متخصصة|0|Pyruvate
 بيروفات كيناز|2250|تحاليل متخصصة|0|Pyruvate Kinase
 RAST Food|2500|تحاليل متخصصة|0|RAST Food
 RAST Inhalant|2500|تحاليل متخصصة|0|RAST Inhalant
-كرات دم حمراء في السائل البريتوني|100|بول وبراز|0|RBCs Ascitic
-كرات دم حمراء في السائل الجنبي|100|بول وبراز|0|RBCs Pleural
+كرات دم حمراء في السائل البريتوني|100|تحاليل متخصصة|0|RBCs Ascitic
+كرات دم حمراء في السائل الجنبي|100|تحاليل متخصصة|0|RBCs Pleural
 RPR|175|فيروسات|0|RPR
-سكر مختزل في البراز|200|بول وبراز|1|Reducing Sugar
+سكر مختزل في البراز|200|بول وبراز|0|Reducing Sugar
 رينين|1500|هرمونات|0|Renin
-عدد الخلايا الشبكية|175|دم|1|Reticulocytes
-عامل RH|50|دم|1|Rh
-الروماتويد|75|مناعة|1|RF
 روز ويلر|150|مناعة|0|Rose Waaler
 روتا فيروس|275|فيروسات|0|Rotavirus
 RPR كمي|150|فيروسات|0|RPR Quant
-حصبة ألمانية IgG|200|فيروسات|1|Rubella IgG
-حصبة ألمانية IgM|200|فيروسات|1|Rubella IgM
 بلهارسيا IHA|350|فيروسات|0|IHA
 بلهارسيا في البراز|200|فيروسات|0|Schistosoma Stool
 سيلينيوم|راجع الطبيب|فيتامينات|0|Selenium
-تحليل السائل المنوي|250|بول وبراز|1|Semen
-كوليسترول كلي|50|دهون|1|Cholesterol
-بروجستيرون|250|هرمونات|1|Progesterone
 SHBG|650|هرمونات|0|SHBG
-الأنيميا المنجلية|150|دم|1|Sickling
 صوديوم|125|تحاليل متخصصة|0|Sodium
 كثافة البول|40|بول وبراز|0|Urine SG
 تحليل حصوات|200|بول وبراز|0|Stone Analysis
-مزرعة براز|200|بول وبراز|1|Stool C/S
-تحليل براز|50|بول وبراز|1|Stool
 سيوفلس|350|فيروسات|0|Syphilis Ab
 T.B|150|فيروسات|0|TB Exam
 T.B Gold|2250|فيروسات|0|TB Gold
 T.B DNA PCR|1000|فيروسات|0|TB DNA
-T3 الكلي|100|غدة درقية|1|T3 Total
 امتصاص T3|200|غدة درقية|0|T3 Uptake
-T4 الكلي|100|غدة درقية|1|T4 Total
 تاكروليمس|1250|تحاليل متخصصة|0|Tacrolimus
-تيجريتول Peak|250|تحاليل متخصصة|0|Tegretol Peak
-تيجريتول Random|250|تحاليل متخصصة|0|Tegretol Random
-تيجريتول Trough|250|تحاليل متخصصة|0|Tegretol Trough
-تستوستيرون حر|225|هرمونات|1|Testosterone Free
-تستوستيرون كلي|175|هرمونات|1|Testosterone Total
+تيجريتول|250|تحاليل متخصصة|0|Tegretol
 زمن الثرومبين|225|سيولة وقلب|0|Thrombin Time
 فحص الجينات للتجلط|2500|تحاليل متخصصة|0|Thrombophilia
 ثيروجلوبيولين|500|غدة درقية|0|Thyroglobulin
 TBG|600|غدة درقية|0|TBG
-سعة ارتباط الحديد|150|فيتامينات|1|TIBC
-عدد كرات الدم|50|دم|1|TLC
-TLC في السائل البريتوني|50|بول وبراز|0|TLC Ascitic
-TLC في السائل|50|بول وبراز|0|TLC Fluid
-كابا كلي في الدم|2000|تحاليل متخصصة|0|Kappa Serum
-كابا كلي في البول|2000|تحاليل متخصصة|0|Kappa Urine
-لامبدا كلي في الدم|350|تحاليل متخصصة|0|Lambda Serum
-لامبدا كلي في البول|350|تحاليل متخصصة|0|Lambda Urine
-بروتين كلي|150|كبد|1|Total Protein
+TLC في السائل البريتوني|50|تحاليل متخصصة|0|TLC Ascitic
+TLC في السائل|50|تحاليل متخصصة|0|TLC Fluid
+كابا كلي|2000|تحاليل متخصصة|0|Kappa
+لامبدا كلي|350|تحاليل متخصصة|0|Lambda
 بروتين كلي في البول|120|بول وبراز|0|Urine Total Protein
-بروتين كلي في السائل البريتوني|100|بول وبراز|0|Protein Ascitic
-بروتين كلي في السائل النخاعي|100|بول وبراز|0|Protein CSF
-بروتين كلي في السائل الجنبي|100|بول وبراز|0|Protein Pleural
+بروتين كلي في السائل البريتوني|100|تحاليل متخصصة|0|Protein Ascitic
+بروتين كلي في السائل الجنبي|100|تحاليل متخصصة|0|Protein Pleural
 توكسوكارا|750|فيروسات|0|Toxocara
-توكسوبلازما IgG|225|فيروسات|1|Toxoplasma IgG
-توكسوبلازما IgM|225|فيروسات|1|Toxoplasma IgM
 ترامادول|اسأل|بول وبراز|0|Tramadol
 ترانسفيرين|200|فيتامينات|0|Transferrin
-تشبع الترانسفيرين|250|فيتامينات|1|Transferrin Sat
+تشبع الترانسفيرين|250|فيتامينات|0|Transferrin Sat
 TPHA|400|فيروسات|0|TPHA
-دهون ثلاثية|50|دهون|1|Triglycerides
 تربل تست|850|تحاليل متخصصة|0|Triple Test
-تروبونين نوعي|175|سيولة وقلب|1|Troponin I
-تروبونين كمي|400|سيولة وقلب|1|Troponin Quant
-هرمون الغدة الدرقية|100|غدة درقية|1|TSH
 UIBC|175|تحاليل متخصصة|0|UIBC
-حمض البوليك|50|كلى|1|Uric Acid
-تحليل بول|50|بول وبراز|1|Urine
-مزرعة بول|250|بول وبراز|1|Urine C/S
 بول بلهارسيا|175|بول وبراز|0|Schistosoma Urine
 مزرعة مهبلية|200|بول وبراز|0|Vaginal C/S
 جدري الماء IgG|500|فيروسات|0|Varicella IgG
 جدري الماء IgM|500|فيروسات|0|Varicella IgM
-VDRL|180|فيروسات|1|VDRL
 فيتامين ب6|2500|فيتامينات|0|Vitamin B6
 فيتامين A|2500|فيتامينات|0|Vitamin A
 فيتامين B1|2500|فيتامينات|0|Vitamin B1
-فيتامين B12|450|فيتامينات|1|Vitamin B12
 فيتامين C|2500|فيتامينات|0|Vitamin C
-فيتامين د 1,25|450|فيتامينات|1|Vitamin D 1,25
-فيتامين د3|450|فيتامينات|1|Vitamin D3
 فيتامين E|2500|فيتامينات|0|Vitamin E
-VLDL|80|دهون|1|VLDL
-VMA|600|هرمونات|0|VMA
 عامل فون ويلبراند نشاط|1250|سيولة وقلب|0|vWF Activity
 عامل فون ويلبراند تركيز|1250|سيولة وقلب|0|vWF Antigen
-كرات الدم البيضاء|60|دم|1|WBCs
-WBCs في السائل النخاعي|50|بول وبراز|0|WBCs CSF
-WBCs في السائل الجنبي|50|بول وبراز|0|WBCs Pleural
-تحليل التيفود|150|فيروسات|1|Widal
-زنك|250|فيتامينات|1|Zinc`;
+WBCs في السائل النخاعي|50|تحاليل متخصصة|0|WBCs CSF
+WBCs في السائل الجنبي|50|تحاليل متخصصة|0|WBCs Pleural
+زنك|250|فيتامينات|0|Zn
+`;
 
-const PREP_SPECIFIC = {
-"دم خفي في البراز":["تجنب أكل اللحوم الحمراء قبل التحليل 3 أيام","تجنب فيتامين C والحديد 3 أيام","أخبر الفريق بأدوية السيولة والمسكنات","لا تعمل التحليل أثناء الدورة الشهرية"],
-"سكر صائم":["صيام 8-12 ساعة","الماء مسموح","لا سكريات أو عصائر","أخبر الفريق بأدوية السكر"],
-"سكر عشوائي":["لا يحتاج صيام","يمكن عمله أي وقت"],
-"سكر بعد الأكل بساعتين":["يتم بعد ساعتين بالظبط من بداية الأكل"],
-"سكر تراكمي":["لا يحتاج صيام","يفضل في الصباح"],
-"أنسولين صائم":["صيام 8-12 ساعة","أخبر الفريق بأدوية السكر"],
-"كوليسترول":["صيام 12-14 ساعة","تجنب الأكل الدسم 24 ساعة"],
-"دهون ثلاثية":["صيام 12-14 ساعة","تجنب الأكل الدسم 24 ساعة"],
-"دهون كاملة":["صيام 12-14 ساعة","تجنب الأكل الدسم 24 ساعة"],
-"هرمون الغدة الدرقية":["لا يحتاج صيام","يفضل في الصباح","تجنب أخذ دواء الثيروكسين قبل التحليل"],
-"هرمون T3 الحر":["لا يحتاج صيام","يفضل في الصباح"],
-"هرمون T4 الحر":["لا يحتاج صيام","يفضل في الصباح"],
-"هرمون FSH":["يوم 2-5 من الدورة الشهرية"],
-"هرمون LH":["يوم 2-5 من الدورة الشهرية"],
-"إستراديول":["يوم 2-5 من الدورة الشهرية"],
-"بروجستيرون":["يوم 21 من الدورة الشهرية"],
-"الكورتيزول صباحاً":["العينة 8-10 صباحًا"],
-"الكورتيزول مساءً":["العينة 4-6 مساءً"],
-"هرمون الحمل الكمي":["لا يحتاج صيام","يفضل في الصباح"],
-"هرمون مخزون المبيض":["أي يوم من الدورة (يفضل يوم 3)"],
-"فيتامين د3":["لا يحتاج صيام","أخبر الفريق بالمكملات"],
-"فيتامين B12":["لا يحتاج صيام","أخبر الفريق بالمكملات"],
-"فيريتين":["لا يحتاج صيام","أخبر الفريق بمكملات الحديد"],
-"هيليكوباكتر بيلوري":["لا يحتاج صيام","أوقف المضادات الحيوية 4 أسابيع قبل"],
-"H.Pylori Ag":["أوقف المضادات الحيوية 4 أسابيع","أوقف أدوية المعدة 2 أسبوع"],
-"HIV ELISA":["لا يحتاج صيام","الفترة النافذة 4-6 أسابيع","النتيجة سرية"],
-"PSA Total":["لا يحتاج صيام","تجنب الجماع والرياضة العنيفة 48 ساعة قبل"],
-"PSA Free":["تجنب الجماع والرياضة 48 ساعة قبل"],
-"تحليل بول":["أول عينة في الصباح أفضل","استخدم وعاء نظيف","خد العينة الوسطى"],
-"تحليل براز":["عينة طازجة في وعاء نظيف","تجنب الملينات"],
-"مزرعة بول":["أول عينة صباحية","وعاء معقم","يفضل قبل المضادات الحيوية"],
-"مزرعة براز":["عينة طازجة في وعاء معقم","يفضل قبل المضادات الحيوية"],
-"تحليل السائل المنوي":["امتناع عن الجماع 3-5 أيام","سلّم العينة خلال ساعة"],
-"زمن البروثرومبين PT":["لا يحتاج صيام","أخبر الفريق بأدوية السيولة","لا توقف أي دواء"],
-"PTT":["لا يحتاج صيام","أخبر الفريق بأدوية السيولة"],
-"إنزيم الكبد ALT":["لا يحتاج صيام","تجنب الكحول 48 ساعة"],
-"إنزيم الكبد AST":["لا يحتاج صيام","تجنب الكحول 48 ساعة"],
-"يوريا":["صيام 8 ساعات","اشرب ماء كافي"],
-"كرياتينين":["صيام 8 ساعات","اشرب ماء كافي"],
-"حمض البوليك":["صيام 8 ساعات","تجنب البروتين 24 ساعة"],
-"صورة دم كاملة":["لا يحتاج صيام","اشرب ماء كافي"],
-"فصيلة الدم ABO":["لا يحتاج صيام"],
-"عامل RH":["لا يحتاج صيام","مهم للحوامل"],
-"سرعة ترسيب":["لا يحتاج صيام","أخبر الفريق بأي التهاب"],
-"بروتين سي التفاعلي CRP":["لا يحتاج صيام","أخبر الفريق بأي التهاب"],
-"ASOT":["لا يحتاج صيام","أخبر الفريق بأي عدوى حديثة"],
-"تحليل التيفود":["لا يحتاج صيام","يفضل الأسبوع الثاني من الحمى"],
-"هوموسيستين":["صيام 8-12 ساعة"]
+const CAT_ICONS = {
+  "دم":"🩸","سكر":"🍬","كبد":"🫀","كلى":"🫘","دهون":"🧈","غدة درقية":"🦋",
+  "هرمونات":"⚗️","فيتامينات":"💊","مناعة":"🛡️","فيروسات":"🦠","أورام":"🎗️",
+  "بول وبراز":"🚽","سيولة وقلب":"❤️","تحاليل متخصصة":"🔬"
 };
 
-const PREP_CATEGORY = {
-"دم":["لا يحتاج صيام غالبًا","اشرب ماء كافي","أخبر الفريق بالأدوية"],
-"سكر":["صيام 8-12 ساعة (للصائم)","الماء مسموح","أخبر الفريق بأدوية السكر"],
-"كبد":["صيام 8-12 ساعة لبعض التحاليل","تجنب الكحول 24-48 ساعة","أخبر الفريق بالأدوية"],
-"كلى":["صيام 8-12 ساعة لبعض التحاليل","اشرب ماء كافي"],
-"دهون":["صيام 12-14 ساعة","الماء مسموح","تجنب الأكل الدسم"],
-"غدة درقية":["لا يحتاج صيام","يفضل في الصباح","أخبر الفريق بأدوية الغدة"],
-"هرمونات":["توقيت التحليل مهم","هرمونات الأنوثة: يوم 2-5 من الدورة","البروجستيرون: يوم 21"],
-"فيتامينات":["لا يحتاج صيام غالبًا","أخبر الفريق بالمكملات"],
-"مناعة":["لا يحتاج صيام","أخبر الفريق بالأدوية"],
-"فيروسات":["لا يحتاج صيام","بعض التحاليل تحتاج فترة نافذة"],
-"أورام":["لا يحتاج صيام","بعض الدلالات تتأثر بالدورة"],
-"بول وبراز":["عينة البول: الأولى صباحًا","عينة البراز: طازجة"],
-"سيولة وقلب":["صيام 12 ساعة لبعض التحاليل","أخبر الفريق بأدوية السيولة"],
-"تحاليل متخصصة":["اسأل المعمل عن التعليمات","أخبر الفريق بالأدوية"]
-};
-
-const DRUG_INTERACTIONS = {
-"سكر صائم":["الكورتيزون يرفع السكر","مدرات البول ترفع السكر"],
-"سكر تراكمي":["فيتامين C بجرعات عالية يعطي قراءة أقل"],
-"كوليسترول":["أدوية منع الحمل ترفع الكوليسترول","الستاتينات تخفضه"],
-"دهون ثلاثية":["الكحول يرفع الدهون الثلاثية","الاستروجين يرفع الدهون"],
-"هرمون الغدة الدرقية":["الحديد والكالسيوم يقللان امتصاص الثيروكسين"],
-"إنزيم الكبد ALT":["الباراسيتامول بجرعات عالية يرفع الإنزيم","المضادات الحيوية قد ترفع الإنزيم"],
-"إنزيم الكبد AST":["الأسبرين قد يرفع الإنزيم"],
-"يوريا":["الكورتيزون يرفع اليوريا","مدرات البول تؤثر"],
-"كرياتينين":["الكورتيزون يرفع الكرياتينين"],
-"حمض البوليك":["مدرات البول ترفع حمض البوليك","الأسبرين بجرعات صغيرة يرفعه"],
-"زمن البروثرومبين PT":["الأسبرين والمارفان يطيلان الزمن"],
-"PTT":["الهيبارين يطيل الزمن"],
-"سرعة ترسيب":["الكورتيزون يخفض النتيجة","أدوية منع الحمل ترفعها"],
-"CRP":["الكورتيزون يخفض النتيجة"],
-"ASOT":["المضادات الحيوية تخفض النتيجة"],
-"حديد":["فيتامين C يرفع الامتصاص","الشاي والقهوة يقللان الامتصاص"],
-"فيتامين B12":["الميتفورمين يخفض B12","أدوية الحموضة تقلل الامتصاص"],
-"فيريتين":["مكملات الحديد ترفع النتيجة","التهاب حاد يرفع الفيريتين"],
-"فيتامين د3":["مكملات فيتامين د ترفع النتيجة"],
-"هرمون الحليب":["أدوية الاكتئاب ترفع البرولاكتين","أدوية الضغط ترفع البرولاكتين"],
-"تستوستيرون كلي":["الكورتيزون يخفض التستوستيرون"],
-"تحليل بول":["فيتامين C يؤثر على القراءة"],
-"مزرعة بول":["المضادات الحيوية تخفض نتيجة المزرعة"]
-};
-
-const TESTS = RAW_TESTS.trim().split("\n").map(line => {
+const TESTS = RAW_TESTS.trim().split("\n").map(line=>{
   const p = line.split("|");
-  return { ar: p[0]||"", price: p[1]||"", cat: p[2]||"أخرى", core: p[3]==="1", en: p[4]||"" };
-});
+  return { ar:p[0]||"", price:p[1]||"", cat:p[2]||"أخرى", core:p[3]==="1", en:p[4]||"" };
+}).filter(t=>t.ar);
 
-const waNumber = "201099003494";
-const FEATURED_NAMES = ["صورة دم كاملة","سرعة ترسيب","سكر صائم","سكر عشوائي","سكر تراكمي","إنزيم الكبد ALT","إنزيم الكبد AST","يوريا","كرياتينين","حمض البوليك","كوليسترول","دهون ثلاثية","كوليسترول نافع","كوليسترول ضار","دهون كاملة","هرمون الغدة الدرقية","هرمون T3 الحر","هرمون T4 الحر","فيتامين د3","فيتامين B12","فيريتين","بروتين سي التفاعلي CRP","ASOT","تحليل بول","تحليل براز","PSA Total"];
+document.getElementById('testCount').textContent = TESTS.length;
 
 const grid = document.getElementById("testsGrid");
 const searchInput = document.getElementById("searchInput");
@@ -990,82 +980,143 @@ const catsBox = document.getElementById("catsBox");
 const resultsCount = document.getElementById("resultsCount");
 const viewToggle = document.getElementById("viewToggle");
 
+const FEATURED_NAMES = ["صورة دم كاملة","سرعة ترسيب","سكر صائم","سكر عشوائي","سكر تراكمي","إنزيم الكبد ALT","إنزيم الكبد AST","يوريا","كرياتينين","حمض البوليك","كوليسترول","دهون ثلاثية","كوليسترول نافع","كوليسترول ضار","دهون كاملة","هرمون الغدة الدرقية","هرمون T3 الحر","هرمون T4 الحر","فيتامين د3","فيتامين B12","مخزون الحديد","بروتين سي التفاعلي CRP","ASOT","تحليل بول","تحليل براز","دلالة البروستاتا الكلي"];
+
 let currentCat = "الكل", currentSearch = "", currentView = "featured";
 
-const cats = ["الكل", ...new Set(TESTS.map(t => t.cat))];
-cats.forEach(c => {
+const cats = ["الكل", ...new Set(TESTS.map(t=>t.cat))];
+cats.forEach(c=>{
   const btn = document.createElement("button");
   btn.className = "cat-btn" + (c === "الكل" ? " active" : "");
   btn.textContent = c;
-  btn.onclick = () => {
+  btn.onclick = ()=>{
     currentCat = c;
-    document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".cat-btn").forEach(b=>b.classList.remove("active"));
     btn.classList.add("active");
-    render();
+    renderTests();
   };
   catsBox.appendChild(btn);
 });
 
-viewToggle.querySelectorAll("button").forEach(btn => {
-  btn.onclick = () => {
+viewToggle.querySelectorAll("button").forEach(btn=>{
+  btn.onclick = ()=>{
     currentView = btn.dataset.view;
-    viewToggle.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+    viewToggle.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
     btn.classList.add("active");
-    render();
+    renderTests();
   };
 });
 
-function render() {
+function renderTests(){
   const search = currentSearch.trim().toLowerCase();
-  const filtered = TESTS.filter(t => {
-    if (currentView === "featured" && !FEATURED_NAMES.includes(t.ar)) return false;
-    if (currentView === "core" && !t.core) return false;
-    if (currentCat !== "الكل" && t.cat !== currentCat) return false;
-    if (search && !t.ar.toLowerCase().includes(search) && !t.en.toLowerCase().includes(search) && !t.cat.includes(search)) return false;
+  const filtered = TESTS.filter(t=>{
+    if(currentView === "featured" && !FEATURED_NAMES.includes(t.ar)) return false;
+    if(currentView === "core" && !t.core) return false;
+    if(currentCat !== "الكل" && t.cat !== currentCat) return false;
+    if(search && !t.ar.toLowerCase().includes(search) && !t.en.toLowerCase().includes(search) && !t.cat.includes(search)) return false;
     return true;
   });
   resultsCount.textContent = filtered.length;
-  if (filtered.length === 0) {
-    grid.innerHTML = '<div class="no-results"><strong>مفيش نتائج</strong>جرب تكتب اسم تاني</div>';
+  if(filtered.length === 0){
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);background:#fff;border:2px dashed var(--border);border-radius:16px"><strong style="color:var(--primary-dark);display:block;font-size:1.1rem;margin-bottom:8px">مفيش نتائج</strong>جرب تكتب اسم تاني</div>';
     return;
   }
-  grid.innerHTML = filtered.map(t => {
-    const msg = 'مرحبًا دكتور أحمد، عايز أستفسر عن سعر تحليل: ' + t.ar;
-    return '<div class="test-item"><h5>'+t.ar+'</h5><div class="test-cat">'+(t.en ? t.en + ' — ' : '')+t.cat+'</div><div class="test-foot"><div class="price">'+t.price+' ج<small>السعر</small></div><div class="test-actions"><button class="info-mini" onclick="showPrep(\''+t.ar.replace(/'/g,"\\'")+'\', \''+t.cat.replace(/'/g,"\\'")+'\')">ℹ️</button><a class="wa-mini" target="_blank" href="https://wa.me/'+waNumber+'?text='+encodeURIComponent(msg)+'">اسأل</a></div></div></div>';
+  grid.innerHTML = filtered.map(t=>{
+    const inCart = cart.some(c=>c.ar === t.ar);
+    const icon = CAT_ICONS[t.cat] || "🔬";
+    return `<div class="test-item">
+      <span class="cat-icon">${icon}</span>
+      <h5>${t.ar}</h5>
+      <div class="cat-tag">${t.en ? t.en + ' • ' : ''}${t.cat}</div>
+      <div class="price-row">
+        <div class="price">${t.price === "اسأل" || t.price === "راجع الطبيب" ? "استفسر" : t.price + " ج"}<small>${t.price === "اسأل" ? "بالاستفسار" : t.price === "راجع الطبيب" ? "تواصل" : "السعر"}</small></div>
+        <button class="add-btn ${inCart ? 'added' : ''}" onclick='toggleCart(${JSON.stringify(t).replace(/'/g,"&#39;")})'>${inCart ? '✓ مضاف' : '+ أضف'}</button>
+      </div>
+    </div>`;
   }).join("");
 }
 
-function showPrep(testName, cat) {
-  const list = PREP_SPECIFIC[testName] || PREP_CATEGORY[cat] || ["اسأل المعمل عن التعليمات"];
-  document.getElementById("prepTitle").textContent = "تعليمات التحضير - " + testName;
-  document.getElementById("prepList").innerHTML = list.map(x => '<li>'+x+'</li>').join("");
-  const drugs = DRUG_INTERACTIONS[testName];
-  const drugBox = document.getElementById("drugWarning");
-  if (drugs && drugs.length) {
-    drugBox.innerHTML = '<div class="drug-warning"><strong>⚠️ تداخلات دوائية:</strong>'+drugs.map(d => '• '+d).join('<br>')+'</div>';
-  } else {
-    drugBox.innerHTML = '';
-  }
-  document.getElementById("prepModal").classList.add("show");
-}
-function closePrep() { document.getElementById("prepModal").classList.remove("show"); }
+searchInput.addEventListener("input", e=>{ currentSearch = e.target.value; renderTests(); });
 
-function requestResult() {
+/* Cart */
+let cart = [];
+
+function toggleCart(test){
+  const idx = cart.findIndex(c=>c.ar === test.ar);
+  if(idx >= 0){ cart.splice(idx,1); } else { cart.push(test); }
+  renderCart();
+  renderTests();
+}
+
+function renderCart(){
+  const cartContent = document.getElementById("cartContent");
+  const badge = document.getElementById("cartBadge");
+
+  if(cart.length === 0){
+    cartContent.innerHTML = '<div class="cart-empty"><div>🛒</div>السلة فاضية<br><small>اضغط "أضف" على أي تحليل</small></div>';
+    badge.style.display = "none";
+    return;
+  }
+
+  let total = 0;
+  cart.forEach(t=>{ const p = parseInt(t.price); if(!isNaN(p)) total += p; });
+
+  cartContent.innerHTML = `
+    <ul class="cart-list">
+      ${cart.map(t=>`
+        <li class="cart-item">
+          <span class="name">${t.ar}</span>
+          <span class="price">${t.price === "اسأل" ? "—" : t.price + " ج"}</span>
+          <button class="remove" onclick='removeFromCart("${t.ar.replace(/"/g,'&quot;')}")'>✕</button>
+        </li>
+      `).join("")}
+    </ul>
+    <div class="cart-total">
+      <small>الإجمالي التقريبي</small>
+      <strong>${total} ج</strong>
+      <span class="count">${cart.length} تحليل مختار</span>
+    </div>
+    <div class="cart-actions">
+      <a class="btn-send" href="https://wa.me/201099003494?text=${encodeURIComponent('مرحبًا دكتور أحمد، عايز أحجز التحاليل دي:\n' + cart.map(t=>'• ' + t.ar + ' (' + t.price + ' ج)').join('\n') + '\n\nالإجمالي التقريبي: ' + total + ' ج')}" target="_blank">💬 أرسل الحجز على واتساب</a>
+      <button class="btn-clear" onclick="clearCart()">🗑️ تفريغ السلة</button>
+    </div>
+  `;
+  badge.style.display = "grid";
+  badge.textContent = cart.length;
+}
+
+function removeFromCart(name){
+  cart = cart.filter(c=>c.ar !== name);
+  renderCart();
+  renderTests();
+}
+function clearCart(){
+  if(confirm("تفريغ السلة؟")){
+    cart = [];
+    renderCart();
+    renderTests();
+  }
+}
+
+function requestResult(){
   const name = document.getElementById("rName").value.trim();
   const phone = document.getElementById("rPhone").value.trim();
-  if (!name || !phone) { alert("من فضلك اكتب الاسم ورقم الموبايل"); return; }
-  const msg = 'السلام عليكم، أريد استلام نتيجة تحليل:\nالاسم: '+name+'\nالموبايل: '+phone;
-  window.open('https://wa.me/'+waNumber+'?text='+encodeURIComponent(msg), '_blank');
+  if(!name || !phone){ alert("من فضلك اكتب الاسم ورقم الموبايل"); return; }
+  const msg = 'السلام عليكم، أريد استلام نتيجة تحليل:\nالاسم: ' + name + '\nالموبايل: ' + phone;
+  window.open('https://wa.me/201099003494?text=' + encodeURIComponent(msg), '_blank');
 }
 
-function copyLink() {
-  navigator.clipboard.writeText("https://teba-labs.github.io/teba-lab/").then(() => alert("تم نسخ الرابط ✅"));
-}
+document.getElementById("year").textContent = new Date().getFullYear();
+renderTests();
+renderCart();
 
-searchInput.addEventListener("input", e => { currentSearch = e.target.value; render(); });
-render();
+if(window.innerWidth > 1000){
+  sidebarRight.classList.remove('collapsed');
+  sidebarLeft.classList.remove('collapsed');
+} else {
+  sidebarRight.classList.add('collapsed');
+  sidebarLeft.classList.add('collapsed');
+}
 </script>
-<script data-goatcounter="https://teba-labs.goatcounter.com/count"
-        async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
