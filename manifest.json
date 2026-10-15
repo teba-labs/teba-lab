@@ -1,0 +1,23 @@
+﻿{
+  "name": "معامل طيبة | TEBA LABS",
+  "short_name": "معامل طيبة",
+  "description": "معامل طيبة للتحاليل الطبية - د/ أحمد طه أبوندا",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0a0e0a",
+  "background_color": "#0a0e0a",
+  "categories": ["medical", "health", "lifestyle"],
+  "icons": [
+    {"src":"images/logo.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"images/logo.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ],
+  "shortcuts": [
+    {"name":"التحاليل","url":"./index.html","description":"تصفح التحاليل والأسعار"},
+    {"name":"الباقات","url":"./index.html","description":"باقات الفحص الشامل"},
+    {"name":"روشتتي","url":"./index.html","description":"عرض روشتتك"}
+  ]
+}

@@ -1,0 +1,4 @@
+﻿User-agent: *
+Allow: /
+
+Sitemap: https://teba-labs.github.io/teba-lab/sitemap.xml
