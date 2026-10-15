@@ -575,7 +575,7 @@ body{background:#fff;color:#000}
 .fade-in{animation:fadeIn .5s ease-out}
 
 /* ============= COMPACT MODE ============= */
-@media (max-width: 1440px) {
+@media (min-width: 601px) and (max-width: 1440px) {
   .nav-row, .layout { max-width: 1280px; }
   .layout { grid-template-columns: 230px 1fr 270px; gap: 14px; padding: 0 14px; }
   .logo-box { width: 85px; height: 85px; }
