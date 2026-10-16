@@ -559,3 +559,127 @@ body:not(.light-mode) .sidebar-right .cart-empty,
 body:not(.light-mode) .sidebar-left .cart-empty {
   color: #8a9a8a !important;
 }
+/* ============================================================
+   FIX: Dark Mode Complete Override
+   إصلاح شامل للوضع الليلي
+   ============================================================ */
+
+/* ==== كل النصوص في الوضع الليلي تبقى فاتحة ==== */
+body:not(.light-mode) {
+  color: #e8f0e8 !important;
+}
+
+body:not(.light-mode) h1,
+body:not(.light-mode) h2,
+body:not(.light-mode) h3,
+body:not(.light-mode) h4,
+body:not(.light-mode) h5,
+body:not(.light-mode) h6 {
+  color: #fff !important;
+}
+
+body:not(.light-mode) p,
+body:not(.light-mode) span,
+body:not(.light-mode) a,
+body:not(.light-mode) li,
+body:not(.light-mode) div {
+  color: #e8f0e8;
+}
+
+/* ==== الأزرار والنصوص في الهيرو ==== */
+body:not(.light-mode) .hero h2 { color: #fff !important; }
+body:not(.light-mode) .hero p { color: #b8c5b8 !important; }
+
+/* ==== الميزات (features) ==== */
+body:not(.light-mode) .feature-card h4 { color: #fff !important; }
+body:not(.light-mode) .feature-card p { color: #b8c5b8 !important; }
+
+/* ==== الباقات ==== */
+body:not(.light-mode) .package-title { color: #fff !important; }
+body:not(.light-mode) .package-desc { color: #b8c5b8 !important; }
+body:not(.light-mode) .package-tests-preview li { color: #e8f0e8 !important; }
+
+/* ==== التحاليل ==== */
+body:not(.light-mode) .test-item h5 { color: #fff !important; }
+body:not(.light-mode) .test-item .price { color: #00ff7f !important; }
+body:not(.light-mode) .test-item .price small { color: #8a9a8a !important; }
+
+/* ==== العناوين (section-head) ==== */
+body:not(.light-mode) .section-head h2 { color: #fff !important; }
+body:not(.light-mode) .section-head p { color: #b8c5b8 !important; }
+
+/* ==== آراء العملاء ==== */
+body:not(.light-mode) .testimonial-card .text { color: #e8f0e8 !important; }
+body:not(.light-mode) .testimonial-card .author-info strong { color: #fff !important; }
+body:not(.light-mode) .testimonial-card .author-info span { color: #b8c5b8 !important; }
+
+/* ==== الفروع ==== */
+body:not(.light-mode) .branch-card h4 { color: #fff !important; }
+body:not(.light-mode) .branch-card .content p { color: #e8f0e8 !important; }
+
+/* ==== قائمة الروشتة (السلة) ==== */
+body:not(.light-mode) .cart-item .name { color: #fff !important; }
+body:not(.light-mode) .cart-empty { color: #b8c5b8 !important; }
+
+/* ==== الأسئلة الشائعة ==== */
+body:not(.light-mode) .faq-item summary { color: #00ff7f !important; }
+body:not(.light-mode) .faq-item p { color: #b8c5b8 !important; }
+
+/* ==== المعلومات الطبية ==== */
+body:not(.light-mode) .article-card h4 { color: #fff !important; }
+body:not(.light-mode) .article-card p { color: #b8c5b8 !important; }
+body:not(.light-mode) .med-info-header h3 { color: #00ff7f !important; }
+body:not(.light-mode) .med-info-header p { color: #b8c5b8 !important; }
+
+/* ==== الباقات في العروض ==== */
+body:not(.light-mode) .offer-box h3 { color: #fff !important; }
+body:not(.light-mode) .offer-box p { color: #fff !important; }
+
+/* ==== الفوتر ==== */
+body:not(.light-mode) footer h4 { color: #00ff7f !important; }
+body:not(.light-mode) footer p,
+body:not(.light-mode) footer a { color: #94a3b8 !important; }
+
+/* ==== القائمة الجانبية - تباين قوي ==== */
+body:not(.light-mode) .sidebar-right,
+body:not(.light-mode) .sidebar-left {
+  background: #0f1a0f !important;
+  border: 2px solid rgba(0,255,127,.4) !important;
+  box-shadow: -10px 0 40px rgba(0,0,0,.9), 0 0 30px rgba(0,255,127,.15) !important;
+}
+
+body:not(.light-mode) .sidebar-right h3,
+body:not(.light-mode) .sidebar-left h3 {
+  color: #00ff7f !important;
+  border-bottom: 2px solid #22c55e !important;
+  text-shadow: 0 0 10px rgba(0,255,127,.6) !important;
+}
+
+body:not(.light-mode) .nav-list li a {
+  background: rgba(0,255,127,.1) !important;
+  border: 1px solid rgba(0,255,127,.25) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+}
+
+body:not(.light-mode) .nav-list li a:hover,
+body:not(.light-mode) .nav-list li a.active {
+  background: linear-gradient(135deg, #22c55e, #15803d) !important;
+  border-color: #00ff7f !important;
+  color: #fff !important;
+}
+
+body:not(.light-mode) .sidebar-overlay.show {
+  background: rgba(0,0,0,.9) !important;
+}
+
+/* ==== الأزرار في الهيدر ==== */
+body:not(.light-mode) .action-btn {
+  color: #fff !important;
+}
+
+/* ==== زر الروشتة (السلة) ==== */
+body:not(.light-mode) .cart-total strong { color: #fff !important; }
+body:not(.light-mode) .cart-total small { color: #fff !important; }
+body:not(.light-mode) .cart-total .count { color: #fff !important; }
