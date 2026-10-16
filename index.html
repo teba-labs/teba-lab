@@ -87,7 +87,7 @@
       <li><a onclick="showSection('packages')" data-section="packages" tabindex="0">📦 باقات الفحص</a></li>
       <li><a onclick="showSection('tests')" data-section="tests" tabindex="0">🔬 التحاليل والأسعار</a></li>
       <li><a onclick="showSection('booking')" data-section="booking" tabindex="0">🏠 سحب من المنزل</a></li>
-      <li><a onclick="showSection('about')" data-section="about" tabindex="0">ℹ️ عن المعمل</a></li>
+      <li><a onclick="showSection('about')" data-section="about" tabindex="0">ℹ️ عن المعمل ومعرض الصور</a></li>
       <li><a onclick="showSection('features')" data-section="features" tabindex="0">⭐ خدماتنا</a></li>
       <li><a onclick="showSection('offers')" data-section="offers" tabindex="0">🎉 العروض والخصومات</a></li>
       <li><a onclick="showSection('results')" data-section="results" tabindex="0">📄 استلام النتائج</a></li>
@@ -120,6 +120,13 @@
         </div>
       </div>
 
+      <!-- أوسمة الجودة والاعتماد -->
+      <div class="accreditation-badges" style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap; margin:25px 0; text-align:center;">
+        <div style="background:var(--card-bg, #121812); border:1px solid var(--border-color, #2a382a); padding:10px 18px; border-radius:10px; font-size:0.85rem; font-weight:700;">🛡️ أعلى معايير التعقيم</div>
+        <div style="background:var(--card-bg, #121812); border:1px solid var(--border-color, #2a382a); padding:10px 18px; border-radius:10px; font-size:0.85rem; font-weight:700;">🔬 أحدث الأجهزة الرقمية</div>
+        <div style="background:var(--card-bg, #121812); border:1px solid var(--border-color, #2a382a); padding:10px 18px; border-radius:10px; font-size:0.85rem; font-weight:700;">👨‍⚕️ إشراف طبي متخصص</div>
+      </div>
+
       <div class="trust-strip" id="trustStrip"></div>
 
       <div class="section-head" style="margin-top:40px">
@@ -141,6 +148,9 @@
       </div>
       <div class="testimonials-wrapper">
         <div class="testimonials-track" id="testimonialsTrack"></div>
+      </div>
+      <div style="text-align:center; margin-top:15px;">
+        <a href="https://www.google.com/maps/search/?api=1&query=معامل+طيبة+شبين+القناطر" target="_blank" rel="noopener" style="display:inline-block; background:var(--card-bg, #121812); border:1px solid var(--gold, #d4af37); color:var(--gold, #d4af37); padding:8px 16px; border-radius:8px; text-decoration:none; font-weight:700; font-size:0.85rem;">⭐ شاهد تقييماتنا على Google Maps</a>
       </div>
       <div class="testimonials-nav">
         <button onclick="slideTestimonials(-1)" aria-label="السابق">❮</button>
@@ -254,8 +264,30 @@
           <li><span class="diamond">◆</span><span><strong>فرع الجعافرة</strong> — الطريق العمومي، أعلى صيدلية الصحابة</span></li>
           <li><span class="diamond">◆</span><span><strong>فرع بهتيم</strong> — مساكن اسكو، أمام مدرسة بن الخطاب</span></li>
         </ul>
+
+        <!-- معرض صور الفروع والأجهزة الطبية -->
+        <div style="margin-top:25px; padding-top:20px; border-top:1px solid var(--border-color, #2a382a);">
+          <h3 style="margin-bottom:12px; color:var(--gold, #d4af37);">📸 معرض المعمل والأجهزة الطبية</h3>
+          <p style="font-size:0.9rem; margin-bottom:15px;">نستخدم أحدث الأجهزة الرقمية والآلية لضمان أعلى مستويات السرعة والدقة.</p>
+          <button onclick="toggleGalleryModal()" style="background:var(--accent-green, #10b981); color:#fff; border:none; padding:10px 20px; border-radius:8px; font-weight:700; cursor:pointer;">🖼️ استعرض صور المعمل والأجهزة</button>
+        </div>
       </div>
     </section>
+
+    <!-- Modal معرض الصور -->
+    <div id="galleryModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; padding:20px;">
+      <div style="background:var(--card-bg, #121812); border:1px solid var(--border-color, #2a382a); border-radius:12px; max-width:600px; width:100%; padding:20px; position:relative; text-align:center;">
+        <button onclick="toggleGalleryModal()" style="position:absolute; top:10px; left:15px; background:none; border:none; color:#fff; font-size:1.5rem; cursor:pointer;">✕</button>
+        <h3 style="color:var(--gold, #d4af37); margin-bottom:15px;">معامل طيبة - بيئة حديثة وأجهزة دقيقة</h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div style="background:#1a231a; padding:30px 10px; border-radius:8px; font-weight:700; font-size:0.85rem;">🏥 فرع الجعافرة</div>
+          <div style="background:#1a231a; padding:30px 10px; border-radius:8px; font-weight:700; font-size:0.85rem;">🏥 فرع بهتيم</div>
+          <div style="background:#1a231a; padding:30px 10px; border-radius:8px; font-weight:700; font-size:0.85rem;">🔬 أجهزة أوتوماتيكية بالكامل</div>
+          <div style="background:#1a231a; padding:30px 10px; border-radius:8px; font-weight:700; font-size:0.85rem;">🧪 أدوات سحب ومعاينة معقمة</div>
+        </div>
+        <p style="font-size:0.8rem; opacity:0.8; margin-top:15px;">نرحب بزيارتكم في أي وقت لفرعينا الجعافرة وبهتيم</p>
+      </div>
+    </div>
 
     <section id="section-features" class="section">
       <div class="section-head"><h2>خدماتنا <span>المميزة</span></h2><p>كل ما تحتاجه من خدمات التحاليل الطبية في مكان واحد</p></div>
@@ -373,7 +405,6 @@
       <h3 style="margin: 0;"><span>📋 روشتتي</span></h3>
       <button onclick="closeAllSidebars()" aria-label="إغلاق" style="background:none; border:none; color:var(--text); font-size:1.2rem; cursor:pointer;">✕</button>
     </div>
-    <!-- أزرار التحكم الجديدة: طباعة أو تصدير روشتتي -->
     <div style="display: flex; gap: 8px; margin-bottom: 15px;">
       <button onclick="window.print()" style="flex:1; background:var(--gold); color:#000; border:none; padding:8px; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.85rem;">🖨️ طباعة الروشتة</button>
       <button onclick="exportPrescriptionText()" style="flex:1; background:var(--accent-green); color:#fff; border:none; padding:8px; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.85rem;">📋 نسخ كصيغة نصية</button>
@@ -433,7 +464,6 @@
 </footer>
 
 <script>
-  // وظيفة إضافية لنسخ الروشتة كنص لمشاركتها بسهولة
   function exportPrescriptionText() {
     const cartItems = document.querySelectorAll('#cartContent .cart-item-title, #cartContent .item-title');
     if(!cartItems || cartItems.length === 0) {
@@ -447,6 +477,13 @@
     navigator.clipboard.writeText(text).then(() => {
       alert('تم نسخ محتوى الروشتة بنجاح، يمكنك لصقها وإرسالها لمن تريد!');
     });
+  }
+
+  function toggleGalleryModal() {
+    const modal = document.getElementById('galleryModal');
+    if (modal) {
+      modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+    }
   }
 </script>
 
