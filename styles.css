@@ -1,4 +1,4 @@
-/* ===== TEBA LABS - Complete Stylesheet ===== */
+ ===== TEBA LABS - Complete Stylesheet ===== */
 :root{
   --primary:#22c55e;--primary-glow:#00ff7f;--primary-dark:#15803d;--accent:#00ff7f;
   --bg-dark:#0a0e0a;--bg-darker:#050805;--bg-card:#12181a;--bg-elevated:#1a2320;
@@ -495,4 +495,29 @@ body.light-mode .legal-content h2{color:var(--primary-dark)}
   -ms-user-select: none;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+}
+/* --- الشعار الرئيسي الاحترافي --- */
+.logo-box img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--gold, #d4af37);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.4), 0 2px 6px rgba(0,0,0,0.5);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.logo-box img:hover {
+  transform: scale(1.08) rotate(3deg);
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.8), 0 4px 12px rgba(0,0,0,0.6);
+}
+
+.hero-logo img {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--gold, #d4af37);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3), 0 0 10px rgba(212, 175, 55, 0.5);
+  margin-bottom: 15px;
 }
