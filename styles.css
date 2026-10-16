@@ -521,3 +521,41 @@ body.light-mode .legal-content h2{color:var(--primary-dark)}
   box-shadow: 0 0 20px rgba(16, 185, 129, 0.3), 0 0 10px rgba(212, 175, 55, 0.5);
   margin-bottom: 15px;
 }
+/* ============= FIX: Dark Mode Sidebar ============= */
+body:not(.light-mode) .sidebar-right,
+body:not(.light-mode) .sidebar-left {
+  background: linear-gradient(180deg, #1a2a1a 0%, #0f1a0f 100%) !important;
+  border: 1px solid rgba(0,255,127,.3) !important;
+  box-shadow: -10px 0 40px rgba(0,0,0,.8), inset 0 0 60px rgba(0,255,127,.05) !important;
+}
+
+body:not(.light-mode) .sidebar-overlay.show {
+  background: rgba(0,0,0,.92) !important;
+}
+
+body:not(.light-mode) .sidebar-right h3,
+body:not(.light-mode) .sidebar-left h3 {
+  color: #00ff7f !important;
+  text-shadow: 0 0 15px rgba(0,255,127,.5) !important;
+  border-bottom: 2px solid #22c55e !important;
+}
+
+body:not(.light-mode) .nav-list li a {
+  background: rgba(0,255,127,.08) !important;
+  border: 1px solid rgba(0,255,127,.2) !important;
+  color: #e8f0e8 !important;
+  font-weight: 700 !important;
+}
+
+body:not(.light-mode) .nav-list li a:hover,
+body:not(.light-mode) .nav-list li a:active,
+body:not(.light-mode) .nav-list li a.active {
+  background: linear-gradient(135deg, #22c55e, #15803d) !important;
+  color: #fff !important;
+  border-color: #00ff7f !important;
+}
+
+body:not(.light-mode) .sidebar-right .cart-empty,
+body:not(.light-mode) .sidebar-left .cart-empty {
+  color: #8a9a8a !important;
+}
