@@ -13,7 +13,7 @@
 <meta property="og:title" content="معامل طيبة | TEBA LABS - تحاليل طبية دقيقة">
 <meta property="og:description" content="تحاليل طبية بأحدث الأجهزة، سحب من المنزل بالحجز المسبق، ونتائج سريعة. باقات فحص شامل بخصم 25%.">
 <meta property="og:url" content="https://teba-labs.github.io/teba-lab/">
-<meta property="og:image" content="https://teba-labs.github.io/teba-lab/logo.png">
+<meta property="og:image" content="https://teba-labs.github.io/teba-lab/images/logo.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="ar_EG">
@@ -21,15 +21,38 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="معامل طيبة | TEBA LABS">
 <meta name="twitter:description" content="تحاليل طبية دقيقة - شبين القناطر">
-<meta name="twitter:image" content="https://teba-labs.github.io/teba-lab/logo.png">
+<meta name="twitter:image" content="https://teba-labs.github.io/teba-lab/images/logo.png">
 <link rel="manifest" href="manifest.json">
-<link rel="icon" type="image/png" href="logo.png">
-<link rel="apple-touch-icon" href="logo.png">
+<link rel="icon" type="image/png" href="images/logo.png">
+<link rel="apple-touch-icon" href="images/logo.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="معامل طيبة">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="css/styles.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "MedicalBusiness",
+  "name": "معامل طيبة - TEBA LABS",
+  "description": "معمل تحاليل طبية بأحدث الأجهزة",
+  "image": "https://teba-labs.github.io/teba-lab/images/logo.png",
+  "url": "https://teba-labs.github.io/teba-lab/",
+  "telephone": "+201123702062",
+  "priceRange": "EGP",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "الصحابة، شبين القناطر",
+    "addressLocality": "شبين القناطر",
+    "addressRegion": "القليوبية",
+    "addressCountry": "EG"
+  },
+  "openingHoursSpecification": [
+    {"@type":"OpeningHoursSpecification","dayOfWeek":["Saturday","Sunday","Monday","Tuesday","Wednesday","Thursday"],"opens":"11:00","closes":"23:00"},
+    {"@type":"OpeningHoursSpecification","dayOfWeek":"Friday","opens":"16:00","closes":"22:00"}
+  ]
+}
+</script>
 </head>
 <body>
 
@@ -41,7 +64,7 @@
   <div class="nav-row">
     <button class="action-btn" id="toggleRight" aria-label="فتح القائمة"><span>☰</span><span class="label">القائمة</span></button>
     <a href="#" class="brand" onclick="showSection('home');return false;">
-      <div class="logo-box"><img src="logo.png" alt="شعار معامل طيبة" onerror="tryNextLogo(this)"></div>
+      <div class="logo-box"><img src="images/logo.png" alt="شعار معامل طيبة" onerror="tryNextLogo(this)"></div>
       <div class="brand-text"><h1>معامل طيبة</h1><span>TEBA LABS - د/ أحمد طه أبوندا</span></div>
     </a>
     <div class="top-actions">
@@ -81,7 +104,7 @@
       <div class="hero">
         <div class="hero-inner">
           <div class="greeting" id="greeting">👋 أهلًا بيك في معامل طيبة</div>
-          <div class="hero-logo"><img src="logo.png" alt="شعار معامل طيبة" onerror="tryNextLogo(this)"></div>
+          <div class="hero-logo"><img src="images/logo.png" alt="شعار معامل طيبة" onerror="tryNextLogo(this)"></div>
           <h2>دقة تطمنك، ونتيجة <span>تطمن عليك</span></h2>
           <p>معامل طيبة - TEBA LABS، بإشراف د/ أحمد طه أبوندا. تحاليل طبية بأحدث الأجهزة، سحب من المنزل بالحجز المسبق، ونتائج سريعة.</p>
           <div class="hero-buttons">
@@ -95,220 +118,211 @@
             <div class="stat-box"><div class="num">25%</div><div class="lbl">خصم الباقات</div></div>
           </div>
         </div>
-  </div>
-    <div class="trust-strip" id="trustStrip"></div>
+      </div>
 
-  <div class="section-head" style="margin-top:40px">
-    <h2>ليه تختار <span>معامل طيبة؟</span></h2>
-    <p>مزايا تجعلنا الخيار الأول لأهل شبين القناطر</p>
-  </div>
-  <div class="features-grid">
-    <div class="feature-card"><div class="icon">🏠</div><h4>سحب من المنزل</h4><p>سحب من المنزل بالحجز المسبق ووفق مواعيد الخدمة المتاحة.</p></div>
-    <div class="feature-card"><div class="icon">⚡</div><h4>نتائج سريعة</h4><p>معظم التحاليل نتائجها في نفس اليوم.</p></div>
-    <div class="feature-card"><div class="icon">📦</div><h4>باقات موفرة</h4><p>باقات فحص شامل بخصم يصل إلى 25%.</p></div>
-    <div class="feature-card"><div class="icon">💰</div><h4>أسعار مناسبة</h4><p>كاش أو محفظة إلكترونية.</p></div>
-    <div class="feature-card"><div class="icon">👨‍⚕️</div><h4>إشراف طبي</h4><p>إشراف د/ أحمد طه أبوندا.</p></div>
-    <div class="feature-card"><div class="icon">📄</div><h4>نتائج عبر واتساب</h4><p>استلم نتيجتك بضغطة واحدة.</p></div>
-  </div>
+      <div class="trust-strip" id="trustStrip"></div>
 
-  <div class="section-head" style="margin-top:50px">
-    <h2>💬 آراء <span>عملائنا</span></h2>
-    <p>ثقة عملائنا هي سر نجاحنا</p>
-  </div>
-  <div class="testimonials-wrapper">
-    <div class="testimonials-track" id="testimonialsTrack"></div>
-  </div>
-  <div class="testimonials-nav">
-    <button onclick="slideTestimonials(-1)" aria-label="السابق">❮</button>
-    <button onclick="slideTestimonials(1)" aria-label="التالي">❯</button>
-  </div>
-</section>
+      <div class="section-head" style="margin-top:40px">
+        <h2>ليه تختار <span>معامل طيبة؟</span></h2>
+        <p>مزايا تجعلنا الخيار الأول لأهل شبين القناطر</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card"><div class="icon">🏠</div><h4>سحب من المنزل</h4><p>سحب من المنزل بالحجز المسبق ووفق مواعيد الخدمة المتاحة.</p></div>
+        <div class="feature-card"><div class="icon">⚡</div><h4>نتائج سريعة</h4><p>معظم التحاليل نتائجها في نفس اليوم.</p></div>
+        <div class="feature-card"><div class="icon">📦</div><h4>باقات موفرة</h4><p>باقات فحص شامل بخصم يصل إلى 25%.</p></div>
+        <div class="feature-card"><div class="icon">💰</div><h4>أسعار مناسبة</h4><p>كاش أو محفظة إلكترونية.</p></div>
+        <div class="feature-card"><div class="icon">👨‍⚕️</div><h4>إشراف طبي</h4><p>إشراف د/ أحمد طه أبوندا.</p></div>
+        <div class="feature-card"><div class="icon">📄</div><h4>نتائج عبر واتساب</h4><p>استلم نتيجتك بضغطة واحدة.</p></div>
+      </div>
 
-<section id="section-packages" class="section">
-  <div class="section-head">
-    <h2>📦 باقات <span>الفحص الشامل</span></h2>
-    <p>وفر 25% مع الباقات المتخصصة — الأسعار شاملة كل الرسوم</p>
-  </div>
-  <div class="packages-grid" id="packagesGrid"></div>
-  <p style="text-align:center;color:var(--muted);font-size:.82rem;margin-top:10px;opacity:.8">* الأسعار قابلة للتحديث بدون إشعار مسبق</p>
-</section>
-
-<section id="section-tests" class="section">
-  <div class="section-head"><h2>التحاليل <span>والأسعار</span></h2><p>اضغط "!" لمعرفة شروط التحليل قبل الحجز</p></div>
-  <div class="tests-controls">
-    <div class="search-box">
-      <input type="text" id="searchInput" placeholder="ابحث بالعربي أو الإنجليزي..." aria-label="بحث في التحاليل">
-      <button class="search-clear" id="searchClear" aria-label="مسح البحث">✕</button>
-    </div>
-    <div class="view-toggle" id="viewToggle">
-      <button data-view="featured" class="active">الأكثر طلباً</button>
-      <button data-view="core">الأساسية</button>
-      <button data-view="all">كل التحاليل</button>
-    </div>
-    <div class="cats" id="catsBox"></div>
-  </div>
-  <div class="results-info">عدد النتائج: <strong id="resultsCount">0</strong> تحليل</div>
-  <div class="tests-grid" id="testsGrid"></div>
+      <div class="section-head" style="margin-top:50px">
+        <h2>💬 آراء <span>عملائنا</span></h2>
+        <p>ثقة عملائنا هي سر نجاحنا</p>
+      </div>
+      <div class="testimonials-wrapper">
+        <div class="testimonials-track" id="testimonialsTrack"></div>
+      </div>
+      <div class="testimonials-nav">
+        <button onclick="slideTestimonials(-1)" aria-label="السابق">❮</button>
+        <button onclick="slideTestimonials(1)" aria-label="التالي">❯</button>
+      </div>
     </section>
+
+    <section id="section-packages" class="section">
+      <div class="section-head">
+        <h2>📦 باقات <span>الفحص الشامل</span></h2>
+        <p>وفر 25% مع الباقات المتخصصة — الأسعار شاملة كل الرسوم</p>
+      </div>
+      <div class="packages-grid" id="packagesGrid"></div>
+      <p style="text-align:center;color:var(--muted);font-size:.82rem;margin-top:10px;opacity:.8">* الأسعار قابلة للتحديث بدون إشعار مسبق</p>
+    </section>
+
+    <section id="section-tests" class="section">
+      <div class="section-head"><h2>التحاليل <span>والأسعار</span></h2><p>اضغط "!" لمعرفة شروط التحليل قبل الحجز</p></div>
+      <div class="tests-controls">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="ابحث بالعربي أو الإنجليزي..." aria-label="بحث في التحاليل">
+          <button class="search-clear" id="searchClear" aria-label="مسح البحث">✕</button>
+        </div>
+        <div class="view-toggle" id="viewToggle">
+          <button data-view="featured" class="active">الأكثر طلباً</button>
+          <button data-view="core">الأساسية</button>
+          <button data-view="all">كل التحاليل</button>
+        </div>
+        <div class="cats" id="catsBox"></div>
+      </div>
+      <div class="results-info">عدد النتائج: <strong id="resultsCount">0</strong> تحليل</div>
+      <div class="tests-grid" id="testsGrid"></div>
+    </section>
+
     <section id="section-booking" class="section">
-  <div class="section-head">
-    <h2>🏠 حجز <span>سحب من المنزل</span></h2>
-    <p>اطلب سحب عينة من منزلك بالحجز المسبق</p>
-  </div>
-  <div class="booking-container">
-    <div class="booking-steps">
-      <div class="booking-step active" data-step="1"><div class="step-num">1</div><div class="step-label">بياناتك</div></div>
-      <div class="booking-step" data-step="2"><div class="step-num">2</div><div class="step-label">العنوان</div></div>
-      <div class="booking-step" data-step="3"><div class="step-num">3</div><div class="step-label">الموعد</div></div>
-      <div class="booking-step" data-step="4"><div class="step-num">4</div><div class="step-label">التأكيد</div></div>
-    </div>
-    <div class="booking-page active" data-step="1">
-      <h3>بياناتك الأساسية</h3>
-      <input type="text" id="bkName" placeholder="الاسم بالكامل" required>
-      <input type="tel" id="bkPhone" placeholder="رقم الموبايل" inputmode="numeric" required>
-      <div class="booking-nav"><button class="btn-next" onclick="goToBookingStep(2)">التالي ←</button></div>
-    </div>
-    <div class="booking-page" data-step="2">
-      <h3>عنوان السحب</h3>
-      <select id="bkGovernorate">
-        <option value="">اختر المحافظة</option>
-        <option value="القليوبية">القليوبية</option>
-        <option value="القاهرة">القاهرة</option>
-        <option value="الجيزة">الجيزة</option>
-        <option value="الشرقية">الشرقية</option>
-        <option value="الدقهلية">الدقهلية</option>
-      </select>
-      <input type="text" id="bkArea" placeholder="المنطقة / الحي" required>
-      <textarea id="bkAddress" placeholder="العنوان بالتفصيل (اسم الشارع، رقم العمارة، الدور، علامة مميزة)" required></textarea>
-      <div class="booking-nav">
-        <button class="btn-prev" onclick="goToBookingStep(1)">→ السابق</button>
-        <button class="btn-next" onclick="goToBookingStep(3)">التالي ←</button>
+      <div class="section-head">
+        <h2>🏠 حجز <span>سحب من المنزل</span></h2>
+        <p>اطلب سحب عينة من منزلك بالحجز المسبق</p>
       </div>
-    </div>
-    <div class="booking-page" data-step="3">
-      <h3>الموعد المناسب</h3>
-      <input type="date" id="bkDate" required>
-      <select id="bkTime">
-        <option value="">اختر الوقت المناسب</option>
-        <option value="11:00 ص">11:00 ص</option>
-        <option value="12:00 م">12:00 م</option>
-        <option value="1:00 م">1:00 م</option>
-        <option value="2:00 م">2:00 م</option>
-        <option value="3:00 م">3:00 م</option>
-        <option value="4:00 م">4:00 م</option>
-        <option value="5:00 م">5:00 م</option>
-        <option value="6:00 م">6:00 م</option>
-        <option value="7:00 م">7:00 م</option>
-        <option value="8:00 م">8:00 م</option>
-        <option value="9:00 م">9:00 م</option>
-        <option value="10:00 م">10:00 م</option>
-      </select>
-      <textarea id="bkNotes" placeholder="ملاحظات إضافية (اختياري)"></textarea>
-      <div class="booking-nav">
-        <button class="btn-prev" onclick="goToBookingStep(2)">→ السابق</button>
-        <button class="btn-next" onclick="goToBookingStep(4)">التالي ←</button>
-      </div>
-    </div>
-    <div class="booking-page" data-step="4">
-      <h3>تأكيد الحجز</h3>
-      <div id="bookingSummary"></div>
-      <div class="booking-nav">
-        <button class="btn-prev" onclick="goToBookingStep(3)">→ السابق</button>
-        <button class="btn-next" onclick="submitBooking()">💬 تأكيد وإرسال على واتساب</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="section-about" class="section">
-  <div class="section-head"><h2>نبذة عن <span>معامل طيبة</span></h2></div>
-  <div class="about-box">
-    <p>معامل طيبة (TEBA LABS) صرح طبي متكامل يقدم خدمات التحاليل الطبية بأعلى جودة ودقة. بقيادة <strong>د/ أحمد طه أبوندا</strong>، نلتزم بأحدث المعايير العالمية لضمان نتائج موثوقة.</p>
-    <p>نخدم أهل شبين القناطر والقليوبية من خلال فرعين:</p>
-    <ul class="about-list">
-      <li><span class="diamond">◆</span><span><strong>فرع الجعافرة</strong> — الطريق العمومي، أعلى صيدلية الصحابة</span></li>
-      <li><span class="diamond">◆</span><span><strong>فرع بهتيم</strong> — مساكن اسكو، أمام مدرسة بن الخطاب</span></li>
-    </ul>
-  </div>
-</section>
-
-<section id="section-features" class="section">
-  <div class="section-head"><h2>خدماتنا <span>المميزة</span></h2><p>كل ما تحتاجه من خدمات التحاليل الطبية في مكان واحد</p></div>
-  <div class="features-grid">
-    <div class="feature-card"><div class="icon">🏠</div><h4>سحب من المنزل</h4><p>سحب من المنزل بالحجز المسبق ووفق مواعيد الخدمة المتاحة.</p></div>
-    <div class="feature-card"><div class="icon">⚡</div><h4>نتائج سريعة</h4><p>نفس اليوم لمعظم التحاليل.</p></div>
-    <div class="feature-card"><div class="icon">📦</div><h4>باقات موفرة</h4><p>خصم 25% على باقات الفحص الشامل.</p></div>
-    <div class="feature-card"><div class="icon">💰</div><h4>أسعار مناسبة</h4><p>كاش أو محفظة إلكترونية.</p></div>
-    <div class="feature-card"><div class="icon">👨‍⚕️</div><h4>إشراف طبي</h4><p>د/ أحمد طه أبوندا.</p></div>
-    <div class="feature-card"><div class="icon">📄</div><h4>نتائج عبر واتساب</h4><p>بضغطة واحدة.</p></div>
-  </div>
-</section>
-
-<section id="section-offers" class="section">
-  <div class="section-head"><h2>🎉 العروض <span>والخصومات</span></h2></div>
-  <div class="offer-box" id="offerActive">
-    <div class="inner">
-      <div class="pct" id="offerPct">20%</div>
-      <h3 id="offerTitle">خصم خاص</h3>
-      <p id="offerDesc">خصم على كل التحاليل في الفرعين</p>
-      <div class="badge-white" id="offerPeriod">📅</div>
-      <div><a id="offerCta" href="#" target="_blank" rel="noopener" class="btn-w">💬 احجز الآن واستفيد</a></div>
-    </div>
-  </div>
-  <div class="offer-box" id="offerExpired" style="display:none;background:linear-gradient(135deg,#6b7280,#4b5563)">
-    <div class="inner">
-      <div style="font-size:4rem;margin-bottom:15px">⏰</div>
-      <h3>انتهى العرض الحالي</h3>
-      <p>تابعنا لمعرفة العروض الجديدة القادمة</p>
-      <div style="margin-top:20px"><a href="https://wa.me/201099003494?text=عايز%20أعرف%20العروض%20الحالية" target="_blank" rel="noopener" class="btn-w">💬 تواصل للاستفسار</a></div>
-    </div>
-  </div>
-</section>
-
-<section id="section-results" class="section">
-  <div class="section-head"><h2>📄 استلام <span>النتائج</span></h2><p>أدخل بياناتك وسنتواصل معك عبر واتساب</p></div>
-  <div class="results-form">
-    <h3>استعلام عن نتيجة</h3>
-    <p class="sub">سنتواصل معك عبر واتساب لتسليم النتيجة بعد التحقق من بياناتك</p>
-    <input type="text" id="rName" placeholder="الاسم بالكامل (كما في المعمل)" aria-label="الاسم">
-    <input type="tel" id="rPhone" placeholder="رقم الموبايل المسجل بالمعمل" inputmode="numeric" aria-label="رقم الموبايل">
-    <button onclick="requestResult()">💬 اطلب نتيجتك عبر واتساب</button>
-  </div>
-</section>
-
-<section id="section-branches" class="section">
-  <div class="section-head"><h2>📍 فروعنا</h2><p>فرعان لخدمتك</p></div>
-  <div class="branches-grid">
-    <div class="branch-card">
-      <h4>🏥 فرع الجعافرة <span class="branch-status" data-branch="jaafra"></span></h4>
-      <a class="branch-map-link" href="https://www.google.com/maps/search/?api=1&query=معامل+طيبة+الجعافرة+شبين+القناطر" target="_blank" rel="noopener">
-        <div class="branch-map-preview">
-          <span class="map-pin">📍</span>
-          <span class="map-text">اضغط لفتح الموقع على الخريطة</span>
+      <div class="booking-container">
+        <div class="booking-steps">
+          <div class="booking-step active" data-step="1"><div class="step-num">1</div><div class="step-label">بياناتك</div></div>
+          <div class="booking-step" data-step="2"><div class="step-num">2</div><div class="step-label">العنوان</div></div>
+          <div class="booking-step" data-step="3"><div class="step-num">3</div><div class="step-label">الموعد</div></div>
+          <div class="booking-step" data-step="4"><div class="step-num">4</div><div class="step-label">التأكيد</div></div>
         </div>
-      </a>
-      <div class="content">
-        <p><strong>📍</strong> الطريق العمومي، أعلى صيدلية الصحابة</p>
-        <p><strong>🕒</strong> السبت-الخميس: 11ص-11م | الجمعة: 4م-10م</p>
-        <a href="https://www.google.com/maps/search/?api=1&query=معامل+طيبة+الجعافرة+شبين+القناطر" target="_blank" rel="noopener" class="btn-map">🗺️ افتح على الخريطة</a>
-      </div>
-    </div>
-    <div class="branch-card">
-      <h4>🏥 فرع بهتيم <span class="branch-status" data-branch="bahtim"></span></h4>
-      <a class="branch-map-link" href="https://www.google.com/maps/search/?api=1&query=مساكن+اسكو+بهتيم+شبين+القناطر" target="_blank" rel="noopener">
-        <div class="branch-map-preview">
-          <span class="map-pin">📍</span>
-          <span class="map-text">اضغط لفتح الموقع على الخريطة</span>
+        <div class="booking-page active" data-step="1">
+          <h3>بياناتك الأساسية</h3>
+          <input type="text" id="bkName" placeholder="الاسم بالكامل" required>
+          <input type="tel" id="bkPhone" placeholder="رقم الموبايل" inputmode="numeric" required>
+          <div class="booking-nav"><button class="btn-next" onclick="goToBookingStep(2)">التالي ←</button></div>
         </div>
-      </a>
-      <div class="content">
-        <p><strong>📍</strong> مساكن اسكو، أمام مدرسة بن الخطاب</p>
-        <p><strong>🕒</strong> السبت-الخميس: 12م-12ص | الجمعة: إجازة</p>
-        <a href="https://www.google.com/maps/search/?api=1&query=مساكن+اسكو+بهتيم+شبين+القناطر" target="_blank" rel="noopener" class="btn-map">🗺️ افتح على الخريطة</a>
+        <div class="booking-page" data-step="2">
+          <h3>عنوان السحب</h3>
+          <select id="bkGovernorate">
+            <option value="">اختر المحافظة</option>
+            <option value="القليوبية">القليوبية</option>
+            <option value="القاهرة">القاهرة</option>
+            <option value="الجيزة">الجيزة</option>
+            <option value="الشرقية">الشرقية</option>
+            <option value="الدقهلية">الدقهلية</option>
+          </select>
+          <input type="text" id="bkArea" placeholder="المنطقة / الحي" required>
+          <textarea id="bkAddress" placeholder="العنوان بالتفصيل (اسم الشارع، رقم العمارة، الدور، علامة مميزة)" required></textarea>
+          <div class="booking-nav">
+            <button class="btn-prev" onclick="goToBookingStep(1)">→ السابق</button>
+            <button class="btn-next" onclick="goToBookingStep(3)">التالي ←</button>
+          </div>
+        </div>
+        <div class="booking-page" data-step="3">
+          <h3>الموعد المناسب</h3>
+          <input type="date" id="bkDate" required>
+          <select id="bkTime">
+            <option value="">اختر الوقت المناسب</option>
+            <option value="11:00 ص">11:00 ص</option>
+            <option value="12:00 م">12:00 م</option>
+            <option value="1:00 م">1:00 م</option>
+            <option value="2:00 م">2:00 م</option>
+            <option value="3:00 م">3:00 م</option>
+            <option value="4:00 م">4:00 م</option>
+            <option value="5:00 م">5:00 م</option>
+            <option value="6:00 م">6:00 م</option>
+            <option value="7:00 م">7:00 م</option>
+            <option value="8:00 م">8:00 م</option>
+            <option value="9:00 م">9:00 م</option>
+            <option value="10:00 م">10:00 م</option>
+          </select>
+          <textarea id="bkNotes" placeholder="ملاحظات إضافية (اختياري)"></textarea>
+          <div class="booking-nav">
+            <button class="btn-prev" onclick="goToBookingStep(2)">→ السابق</button>
+            <button class="btn-next" onclick="goToBookingStep(4)">التالي ←</button>
+          </div>
+        </div>
+        <div class="booking-page" data-step="4">
+          <h3>تأكيد الحجز</h3>
+          <div id="bookingSummary"></div>
+          <div class="booking-nav">
+            <button class="btn-prev" onclick="goToBookingStep(3)">→ السابق</button>
+            <button class="btn-next" onclick="submitBooking()">💬 تأكيد وإرسال على واتساب</button>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</section>
+    </section>
+
+    <section id="section-about" class="section">
+      <div class="section-head"><h2>نبذة عن <span>معامل طيبة</span></h2></div>
+      <div class="about-box">
+        <p>معامل طيبة (TEBA LABS) صرح طبي متكامل يقدم خدمات التحاليل الطبية بأعلى جودة ودقة. بقيادة <strong>د/ أحمد طه أبوندا</strong>، نلتزم بأحدث المعايير العالمية لضمان نتائج موثوقة.</p>
+        <p>نخدم أهل شبين القناطر والقليوبية من خلال فرعين:</p>
+        <ul class="about-list">
+          <li><span class="diamond">◆</span><span><strong>فرع الجعافرة</strong> — الطريق العمومي، أعلى صيدلية الصحابة</span></li>
+          <li><span class="diamond">◆</span><span><strong>فرع بهتيم</strong> — مساكن اسكو، أمام مدرسة بن الخطاب</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="section-features" class="section">
+      <div class="section-head"><h2>خدماتنا <span>المميزة</span></h2><p>كل ما تحتاجه من خدمات التحاليل الطبية في مكان واحد</p></div>
+      <div class="features-grid">
+        <div class="feature-card"><div class="icon">🏠</div><h4>سحب من المنزل</h4><p>سحب من المنزل بالحجز المسبق ووفق مواعيد الخدمة المتاحة.</p></div>
+        <div class="feature-card"><div class="icon">⚡</div><h4>نتائج سريعة</h4><p>نفس اليوم لمعظم التحاليل.</p></div>
+        <div class="feature-card"><div class="icon">📦</div><h4>باقات موفرة</h4><p>خصم 25% على باقات الفحص الشامل.</p></div>
+        <div class="feature-card"><div class="icon">💰</div><h4>أسعار مناسبة</h4><p>كاش أو محفظة إلكترونية.</p></div>
+        <div class="feature-card"><div class="icon">👨‍⚕️</div><h4>إشراف طبي</h4><p>د/ أحمد طه أبوندا.</p></div>
+        <div class="feature-card"><div class="icon">📄</div><h4>نتائج عبر واتساب</h4><p>بضغطة واحدة.</p></div>
+      </div>
+    </section>
+
+    <section id="section-offers" class="section">
+      <div class="section-head"><h2>🎉 العروض <span>والخصومات</span></h2></div>
+      <div class="offer-box" id="offerActive">
+        <div class="inner">
+          <div class="pct" id="offerPct">20%</div>
+          <h3 id="offerTitle">خصم خاص</h3>
+          <p id="offerDesc">خصم على كل التحاليل في الفرعين</p>
+          <div class="badge-white" id="offerPeriod">📅</div>
+          <div><a id="offerCta" href="#" target="_blank" rel="noopener" class="btn-w">💬 احجز الآن واستفيد</a></div>
+        </div>
+      </div>
+      <div class="offer-box" id="offerExpired" style="display:none;background:linear-gradient(135deg,#6b7280,#4b5563)">
+        <div class="inner">
+          <div style="font-size:4rem;margin-bottom:15px">⏰</div>
+          <h3>انتهى العرض الحالي</h3>
+          <p>تابعنا لمعرفة العروض الجديدة القادمة</p>
+          <div style="margin-top:20px"><a href="https://wa.me/201099003494?text=عايز%20أعرف%20العروض%20الحالية" target="_blank" rel="noopener" class="btn-w">💬 تواصل للاستفسار</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="section-results" class="section">
+      <div class="section-head"><h2>📄 استلام <span>النتائج</span></h2><p>أدخل بياناتك وسنتواصل معك عبر واتساب</p></div>
+      <div class="results-form">
+        <h3>استعلام عن نتيجة</h3>
+        <p class="sub">سنتواصل معك عبر واتساب لتسليم النتيجة بعد التحقق من بياناتك</p>
+        <input type="text" id="rName" placeholder="الاسم بالكامل (كما في المعمل)" aria-label="الاسم">
+        <input type="tel" id="rPhone" placeholder="رقم الموبايل المسجل بالمعمل" inputmode="numeric" aria-label="رقم الموبايل">
+        <button onclick="requestResult()">💬 اطلب نتيجتك عبر واتساب</button>
+      </div>
+    </section>
+
+    <section id="section-branches" class="section">
+      <div class="section-head"><h2>📍 فروعنا</h2><p>فرعان لخدمتك</p></div>
+      <div class="branches-grid">
+        <div class="branch-card">
+          <h4>🏥 فرع الجعافرة <span class="branch-status" data-branch="jaafra"></span></h4>
+          <iframe src="https://www.google.com/maps?q=معامل+طيبة+الجعافرة+شبين+القناطر&output=embed" loading="lazy" title="خريطة فرع الجعافرة"></iframe>
+          <div class="content">
+            <p><strong>📍</strong> الطريق العمومي، أعلى صيدلية الصحابة</p>
+            <p><strong>🕒</strong> السبت-الخميس: 11ص-11م | الجمعة: 4م-10م</p>
+          </div>
+        </div>
+        <div class="branch-card">
+          <h4>🏥 فرع بهتيم <span class="branch-status" data-branch="bahtim"></span></h4>
+          <iframe src="https://www.google.com/maps?q=مساكن+اسكو+بهتيم+شبين+القناطر&output=embed" loading="lazy" title="خريطة فرع بهتيم"></iframe>
+          <div class="content">
+            <p><strong>📍</strong> مساكن اسكو، أمام مدرسة بن الخطاب</p>
+            <p><strong>🕒</strong> السبت-الخميس: 12م-12ص | الجمعة: إجازة</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="section-faq" class="section">
       <div class="section-head"><h2>❓ الأسئلة <span>الشائعة</span></h2></div>
       <details class="faq-item"><summary>إمتى هتستلم نتيجة التحليل؟</summary><p>معظم التحاليل الروتينية في نفس اليوم. المتخصصة من 24-72 ساعة. المزارع من 3-5 أيام.</p></details>
@@ -355,7 +369,15 @@
   </main>
 
   <aside class="sidebar-left" id="sidebarLeft">
-    <h3><span>📋 روشتتي</span><button onclick="closeAllSidebars()" aria-label="إغلاق">✕</button></h3>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h3 style="margin: 0;"><span>📋 روشتتي</span></h3>
+      <button onclick="closeAllSidebars()" aria-label="إغلاق" style="background:none; border:none; color:var(--text); font-size:1.2rem; cursor:pointer;">✕</button>
+    </div>
+    <!-- أزرار التحكم الجديدة: طباعة أو تصدير روشتتي -->
+    <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+      <button onclick="window.print()" style="flex:1; background:var(--gold); color:#000; border:none; padding:8px; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.85rem;">🖨️ طباعة الروشتة</button>
+      <button onclick="exportPrescriptionText()" style="flex:1; background:var(--accent-green); color:#fff; border:none; padding:8px; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.85rem;">📋 نسخ كصيغة نصية</button>
+    </div>
     <div id="cartContent">
       <div class="cart-empty"><div>📋</div>روشتتك فاضية<br><small>اضغط "أضف" على أي تحليل أو باقة</small></div>
     </div>
@@ -410,9 +432,27 @@
   </div>
 </footer>
 
-<script src="data.js"></script>
-<script src="app.js"></script>
-<script src="features.js"></script>
+<script>
+  // وظيفة إضافية لنسخ الروشتة كنص لمشاركتها بسهولة
+  function exportPrescriptionText() {
+    const cartItems = document.querySelectorAll('#cartContent .cart-item-title, #cartContent .item-title');
+    if(!cartItems || cartItems.length === 0) {
+      alert('روشتتك فارغة حالياً!');
+      return;
+    }
+    let text = "روشتة التحاليل المطلوبة - معامل طيبة (د. أحمد طه أبوندا):\n";
+    cartItems.forEach((el, index) => {
+      text += `${index + 1}. ${el.innerText}\n`;
+    });
+    navigator.clipboard.writeText(text).then(() => {
+      alert('تم نسخ محتوى الروشتة بنجاح، يمكنك لصقها وإرسالها لمن تريد!');
+    });
+  }
+</script>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/features.js"></script>
 <script data-goatcounter="https://teba-labs.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
