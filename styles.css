@@ -683,3 +683,70 @@ body:not(.light-mode) .action-btn {
 body:not(.light-mode) .cart-total strong { color: #fff !important; }
 body:not(.light-mode) .cart-total small { color: #fff !important; }
 body:not(.light-mode) .cart-total .count { color: #fff !important; }
+/* ============= FIX: Dark Mode - Offers & Results & Missing ============= */
+body:not(.light-mode) .offer-box,
+body:not(.light-mode) #offerActive {
+  background: linear-gradient(135deg, #0a2e15, #15803d) !important;
+  color: #fff !important;
+}
+
+body:not(.light-mode) .offer-box h3,
+body:not(.light-mode) .offer-box p,
+body:not(.light-mode) .offer-box .pct,
+body:not(.light-mode) .offer-box .badge-white {
+  color: #fff !important;
+}
+
+body:not(.light-mode) .offer-box .badge-white,
+body:not(.light-mode) .offer-box .btn-w {
+  color: #15803d !important;
+  background: #fff !important;
+}
+
+body:not(.light-mode) .results-form h3 { color: #00ff7f !important; }
+body:not(.light-mode) .results-form p.sub { color: #b8c5b8 !important; }
+body:not(.light-mode) .results-form input { color: #e8f0e8 !important; }
+body:not(.light-mode) .results-form input::placeholder { color: #8a9a8a !important; }
+
+body:not(.light-mode) .results-info { color: #b8c5b8 !important; }
+body:not(.light-mode) .results-info strong { color: #00ff7f !important; }
+
+body:not(.light-mode) .about-box p { color: #b8c5b8 !important; }
+
+body:not(.light-mode) .trust-item span { color: #b8c5b8 !important; }
+
+body:not(.light-mode) .branches-grid .content p { color: #e8f0e8 !important; }
+
+body:not(.light-mode) .faq-item[open] summary { color: #00ff7f !important; }
+
+body:not(.light-mode) .booking-page h3 { color: #00ff7f !important; }
+body:not(.light-mode) .booking-page input,
+body:not(.light-mode) .booking-page select,
+body:not(.light-mode) .booking-page textarea { color: #e8f0e8 !important; }
+body:not(.light-mode) .booking-page input::placeholder,
+body:not(.light-mode) .booking-page textarea::placeholder { color: #8a9a8a !important; }
+
+body:not(.light-mode) .booking-step .step-label { color: #b8c5b8 !important; }
+
+body:not(.light-mode) .article-card h4 { color: #fff !important; }
+body:not(.light-mode) .article-card .read-more { color: #00ff7f !important; }
+
+body:not(.light-mode) .warning-box h4 { color: #fbbf24 !important; }
+body:not(.light-mode) .warning-box p { color: #fde68a !important; }
+
+body:not(.light-mode) .modal-art-content p,
+body:not(.light-mode) .modal-art-content li,
+body:not(.light-mode) .modal-art-content h4 { color: #e8f0f8 !important; }
+
+body:not(.light-mode) .prep-modal-content li { color: #e8f0e8 !important; }
+/* ============= QUICK WIN: Better Phone Display ============= */
+@media (max-width: 600px) {
+  body { font-size: 15px; }
+  .hero h2 { font-size: 1.7rem; line-height: 1.3; }
+  .section-head h2 { font-size: 1.5rem; }
+  .packages-grid { gap: 14px; }
+  .package-image { height: 180px; }
+  .test-item { padding: 12px; }
+  .test-item h5 { font-size: .82rem; }
+  .stat-box .num { font-size: 1.5rem; }
+ }
