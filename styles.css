@@ -1,11 +1,12 @@
 /* =====================================================
-   TEBA LABS - Complete Stylesheet (Refactored v2)
+   TEBA LABS - Complete Stylesheet (Refactored v2.1)
    معامل طيبة - ورقة الأنماط الكاملة
    =====================================================
    - كل الألوان في متغيرات CSS
    - الوضع الليلي/النهاري بيتغير من :root فقط
    - مفيش !important
    - Media queries موحّدة
+   - شريط العروض بيلف في لوب مستمر (Infinite Loop)
    ===================================================== */
 
 /* ============= 1. CSS VARIABLES ============= */
@@ -170,7 +171,7 @@ body.light-mode .section-head h2 span {
 }
 .section-head p { color: var(--text-muted); max-width: 600px; margin: auto; font-size: .95rem; }
 
-/* ============= 4. OFFERS TICKER ============= */
+/* ============= 4. OFFERS TICKER (Updated for Infinite Loop) ============= */
 .offers-bar {
   background: linear-gradient(90deg, #0a2e15, #15803d, #00ff7f, #15803d, #0a2e15);
   background-size: 200% 100%;
@@ -185,21 +186,35 @@ body.light-mode .section-head h2 span {
   0% { background-position: 0% 50%; }
   100% { background-position: 200% 50%; }
 }
+
 .offers-track {
-  display: inline-flex;
-  gap: 80px;
+  display: flex;
+  gap: 50px;
   white-space: nowrap;
-  animation: marquee 60s linear infinite;
-  padding-left: 100%;
+  width: max-content;
+  animation: marquee 60s linear infinite; /* سرعة الشريط */
   will-change: transform;
 }
-.offers-track span { font-weight: 700; font-size: .88rem; }
-.offers-track a { color: #fef08a; text-decoration: underline; }
-.offers-track .ticker-item { cursor: pointer; transition: var(--transition); }
-.offers-track .ticker-item:hover { color: #fef08a; text-decoration: underline; }
+
+.offers-track .ticker-item {
+  font-weight: 700;
+  font-size: .88rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.offers-track .ticker-item:hover {
+  color: #fef08a;
+  text-decoration: underline;
+}
+
+/* ميزة: لو المستخدم حط الماوس عليه، بيقف عشان يقدر يقرأ */
+.offers-track:hover {
+  animation-play-state: paused;
+}
+
 @keyframes marquee {
   0% { transform: translateX(0); }
-  100% { transform: translateX(-100%); }
+  100% { transform: translateX(-33.333%); } /* بيلف مسافة التكرار الواحد بالظبط */
 }
 
 /* ============= 5. HEADER ============= */
@@ -1731,6 +1746,6 @@ footer a { cursor: pointer; }
   .toast-container { left: 10px; right: 10px; top: 80px; }
   .toast { min-width: auto; max-width: 100%; }
 
-  .offers-track span { font-size: .78rem; }
-  .offers-track { gap: 50px; }
+  .offers-track .ticker-item { font-size: .78rem; }
+  .offers-track { gap: 30px; }
 }
