@@ -118,9 +118,9 @@
         `<span class="ticker-item" onclick="showSection('medical')">🩺 معلومة: الكشف المبكر عن السكر بيحميك من مضاعفات خطيرة</span>`
       ];
 
-      // تكرار الرسائل 3 مرات عشان الشريط يملا الشاشة ويلف في لوب مستمر
-      const tickerHTML = tickerItems.join('');
-      offersTrack.innerHTML = tickerHTML + tickerHTML + tickerHTML;
+      // تكرار الرسائل مرتين بالظبط داخل كتلة واحدة عشان نعمل لوب مثالي (TV Style)
+      const tickerHTML = `<div class="ticker-block">${tickerItems.join('')}</div>`;
+      offersTrack.innerHTML = tickerHTML + tickerHTML;
     }
 
     if(offerActive) offerActive.style.display = active ? '' : 'none';
