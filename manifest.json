@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "معامل طيبة | TEBA LABS",
   "short_name": "معامل طيبة",
   "description": "معامل طيبة للتحاليل الطبية - د/ أحمد طه أبوندا",
@@ -12,12 +12,27 @@
   "background_color": "#0a0e0a",
   "categories": ["medical", "health", "lifestyle"],
   "icons": [
-    {"src":"images/logo.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
-    {"src":"images/logo.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+    {"src": "logo.png", "sizes": "72x72", "type": "image/png", "purpose": "any"},
+    {"src": "logo.png", "sizes": "96x96", "type": "image/png", "purpose": "any"},
+    {"src": "logo.png", "sizes": "144x144", "type": "image/png", "purpose": "any"},
+    {"src": "logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
   ],
   "shortcuts": [
-    {"name":"التحاليل","url":"./index.html","description":"تصفح التحاليل والأسعار"},
-    {"name":"الباقات","url":"./index.html","description":"باقات الفحص الشامل"},
-    {"name":"روشتتي","url":"./index.html","description":"عرض روشتتك"}
+    {
+      "name": "التحاليل",
+      "url": "./index.html#tests",
+      "description": "تصفح التحاليل والأسعار"
+    },
+    {
+      "name": "الباقات",
+      "url": "./index.html#packages",
+      "description": "باقات الفحص الشامل"
+    },
+    {
+      "name": "استلام النتائج",
+      "url": "./index.html#results",
+      "description": "استلام نتائج التحاليل"
+    }
   ]
 }
