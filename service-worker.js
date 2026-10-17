@@ -1,17 +1,17 @@
-﻿/* =====================================================
+/* =====================================================
    TEBA LABS - Service Worker
    معامل طيبة - ملف PWA للعمل بدون إنترنت
    ===================================================== */
 
-const CACHE_NAME = 'teba-labs-v1';
+const CACHE_NAME = 'teba-labs-v2';
 const STATIC_ASSETS = [
   './',
   './index.html',
-  './css/styles.css',
-  './js/data.js',
-  './js/app.js',
-  './js/features.js',
-  './images/logo.png',
+  './styles.css',
+  './data.js',
+  './app.js',
+  './features.js',
+  './logo.png',
   './manifest.json'
 ];
 
@@ -40,37 +40,54 @@ self.addEventListener('activate', event => {
   );
 });
 
-/* ============= FETCH ============= */
+/* ============= FETCH (Network-first for HTML, Cache-first for assets) ============= */
 self.addEventListener('fetch', event => {
   const { request } = event;
 
-  if(request.method !== 'GET') return;
+  if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
-  if(url.origin !== self.location.origin){
+  if (url.origin !== self.location.origin) {
     return;
   }
 
+  // Network-first for navigation requests (pages)
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  // Cache-first for assets with background update
   event.respondWith(
     caches.match(request).then(cached => {
-      if(cached){
+      if (cached) {
         fetch(request).then(response => {
-          if(response && response.status === 200){
+          if (response && response.status === 200) {
             caches.open(CACHE_NAME).then(cache => cache.put(request, response));
           }
-        }).catch(()=>{});
+        }).catch(() => {});
         return cached;
       }
 
       return fetch(request).then(response => {
-        if(!response || response.status !== 200 || response.type === 'opaque'){
+        if (!response || response.status !== 200 || response.type === 'opaque') {
           return response;
         }
         const responseClone = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(request, responseClone));
         return response;
       }).catch(() => {
-        if(request.mode === 'navigate'){
+        if (request.mode === 'navigate') {
           return caches.match('./index.html');
         }
       });
