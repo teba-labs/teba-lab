@@ -1,4 +1,4 @@
-﻿/* =====================================================
+/* =====================================================
    TEBA LABS - Data Layer
    معامل طيبة - ملف البيانات
    ===================================================== */
@@ -531,47 +531,47 @@ const FEATURED_NAMES = [
   "تحليل بول","تحليل براز","دلالة البروستاتا الكلي"
 ];
 
-/* ============= 5. PACKAGES ============= */
+/* ============= 5. PACKAGES (Fixed image URLs) ============= */
 const PACKAGES = [
   {
-    id:'full',icon:'🩺',name:'باقة الفحص الشامل',
+    id:'full', icon:'🩺', name:'باقة الفحص الشامل',
     desc:'فحص عام متكامل لأجهزة الجسم الأساسية',
-    image:'https://source.unsplash.com/600x400/?medical,doctor,stethoscope',
-    featured:true,count:16,
+    image:'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=400&fit=crop&q=80',
+    featured:true, count:16,
     tests:['صورة دم كاملة','بروتين سي التفاعلي CRP','سكر صائم','سكر تراكمي','إنزيم الكبد ALT','إنزيم الكبد AST','كرياتينين','يوريا','دهون كاملة','هرمون الغدة الدرقية']
   },
   {
-    id:'hair',icon:'💇',name:'باقة تساقط الشعر والفيتامينات',
+    id:'hair', icon:'💇', name:'باقة تساقط الشعر والفيتامينات',
     desc:'تشخيص دقيق لأسباب تساقط الشعر ونقص الفيتامينات',
-    image:'https://source.unsplash.com/600x400/?woman,hair,beauty',
+    image:'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&h=400&fit=crop&q=80',
     count:7,
     tests:['صورة دم كاملة','فيتامين د3','زنك','هرمون الغدة الدرقية','مخزون الحديد','حديد','ماغنسيوم']
   },
   {
-    id:'sugar',icon:'🍬',name:'باقة السكر والدهون',
+    id:'sugar', icon:'🍬', name:'باقة السكر والدهون',
     desc:'متابعة شاملة للسكر ومستوى الدهون ووظائف الأعضاء',
-    image:'https://source.unsplash.com/600x400/?healthy,fitness,food',
+    image:'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600&h=400&fit=crop&q=80',
     count:15,
     tests:['سكر صائم','سكر عشوائي','سكر تراكمي','دهون كاملة','صورة دم كاملة','تحليل بول','إنزيم الكبد ALT','إنزيم الكبد AST','يوريا','كرياتينين']
   },
   {
-    id:'thyroid',icon:'🦋',name:'باقة صحة الغدة الدرقية',
+    id:'thyroid', icon:'🦋', name:'باقة صحة الغدة الدرقية',
     desc:'تقييم شامل لوظائف الغدة الدرقية والمناعة الذاتية',
-    image:'https://source.unsplash.com/600x400/?medical,wellness,doctor',
+    image:'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=600&h=400&fit=crop&q=80',
     count:6,
     tests:['هرمون الغدة الدرقية','هرمون T3 الحر','هرمون T4 الحر','هرمون T3 الكلي','هرمون T4 الكلي','أجسام مضادة للغدة TPO']
   },
   {
-    id:'pregnancy',icon:'🤰',name:'باقة متابعة الحمل',
+    id:'pregnancy', icon:'🤰', name:'باقة متابعة الحمل',
     desc:'الفحوصات الأساسية لمتابعة صحتك وصحة الجنين',
-    image:'https://source.unsplash.com/600x400/?pregnancy,mother,baby',
+    image:'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&h=400&fit=crop&q=80',
     count:9,
     tests:['صورة دم كاملة','فصيلة الدم','عامل RH','سكر عشوائي','تحليل بول','فيروس بي HBs Ag','فيروس سي HCV','فيروس نقص المناعة HIV','هرمون الغدة الدرقية']
   },
   {
-    id:'heart',icon:'❤️',name:'باقة القلب والضغط',
+    id:'heart', icon:'❤️', name:'باقة القلب والضغط',
     desc:'تقييم شامل لصحة القلب وعوامل الخطر القلبية',
-    image:'https://source.unsplash.com/600x400/?heart,running,cardio',
+    image:'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&h=400&fit=crop&q=80',
     count:15,
     tests:['دهون كاملة','CRP عالي الحساسية','هوموسيستين','سكر صائم','سكر تراكمي','يوريا','كرياتينين','حمض البوليك','صورة دم كاملة']
   }
@@ -708,10 +708,20 @@ const APP_CONFIG = {
   startYear: 2020
 };
 
-/* ============= 11. WORKING HOURS ============= */
+/* ============= 11. WORKING HOURS (with closedDay) ============= */
 const WORKING_HOURS = {
-  jaafra: {name:'فرع الجعافرة',satToThu:{open:11,close:23},friday:{open:16,close:22}},
-  bahtim: {name:'فرع بهتيم',satToThu:{open:12,close:24},friday:null}
+  jaafra: {
+    name: 'فرع الجعافرة',
+    satToThu: { open: 11, close: 23 },
+    friday: { open: 16, close: 22 },
+    closedDay: null
+  },
+  bahtim: {
+    name: 'فرع بهتيم',
+    satToThu: { open: 12, close: 24 },
+    friday: null,
+    closedDay: 5
+  }
 };
 
 /* ============= 12. OFFER CONFIG ============= */
@@ -726,22 +736,47 @@ const OFFER_CONFIG = {
 
 /* ============= 13. HELPER FUNCTIONS ============= */
 function isNumericPrice(p){
-  const n = parseInt(p);
-  return !isNaN(n) && String(n) === String(p).trim();
+  return /^\d+$/.test(String(p).trim());
 }
+
 function getTestByName(name){ return TESTS.find(t => t.ar === name); }
+
 function getPackagePrice(pkg){
   let total = 0, available = 0;
   pkg.tests.forEach(name => {
     const t = getTestByName(name);
     if(t && isNumericPrice(t.price)){ total += parseInt(t.price); available++; }
   });
-  return { total, available, discounted: Math.round(total * (1 - PACKAGE_DISCOUNT/100)) };
+  return {
+    total,
+    available,
+    hasInquiry: available < pkg.tests.length,
+    discounted: Math.round(total * (1 - PACKAGE_DISCOUNT/100))
+  };
 }
+
 function isOfferActive(){
   if(!OFFER_CONFIG.enabled) return false;
   const now = new Date();
   return now >= new Date(OFFER_CONFIG.startDate) && now <= new Date(OFFER_CONFIG.endDate);
+}
+
+/* ============= 14. ARABIC NORMALIZATION (shared utility) ============= */
+function normalizeArabic(str){
+  if(!str) return '';
+  return str
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[\u064B-\u065F\u0670]/g, '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/ؤ/g, 'و')
+    .replace(/ئ/g, 'ي')
+    .replace(/[^\u0600-\u06FF\w\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /* ============= EXPORT ============= */
@@ -749,5 +784,5 @@ window.TEBA_DATA = {
   RAW_TESTS, CAT_ICONS, TESTS, FEATURED_NAMES, PACKAGES, PACKAGE_DISCOUNT,
   TEST_PREPARATION, MEDICAL_ARTICLES, TESTIMONIALS, TRUST_BADGES,
   APP_CONFIG, WORKING_HOURS, OFFER_CONFIG,
-  isNumericPrice, getTestByName, getPackagePrice, isOfferActive
+  isNumericPrice, getTestByName, getPackagePrice, isOfferActive, normalizeArabic
 };
