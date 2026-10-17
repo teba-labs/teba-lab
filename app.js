@@ -1,11 +1,6 @@
 /* =====================================================
    TEBA LABS - Main Application (Refactored v2)
    معامل طيبة - التطبيق الرئيسي
-   =====================================================
-   - Ticker: عروض + باقات + شروط تحاليل (ديناميكي وقابل للنقر)
-   - Smart Search: يدعم البحث بالعربي مع تجاهل الهمزات والتشكيل
-   - Working Hours: دعم الإجازات الأسبوعية (فرع بهتيم الجمعة)
-   - Packages: تعامل صحيح مع الباقات اللي فيها تحاليل "استفسر"
    ===================================================== */
 
 (function(){
@@ -91,7 +86,7 @@
   }
 
   /* =====================================================
-   2. OFFER & TICKER MANAGEMENT
+   2. OFFER & TICKER MANAGEMENT (Updated 12 Messages)
    ===================================================== */
   function renderOffer(){
     const active = isOfferActive();
@@ -100,29 +95,32 @@
     const offerExpired = document.getElementById('offerExpired');
 
     if(offersTrack){
-      // بناء الشريط الديناميكي
+      // الرسائل الـ 12 المختارة (3 عروض، 4 شروط، 2 خدمات، 3 معلومات)
       const tickerItems = [
-        active && `<span class="ticker-item"><a href="https://wa.me/${APP_CONFIG.whatsapp}?text=${encodeURIComponent('عايز أستفيد من خصم ' + OFFER_CONFIG.discount + '%')}" style="color:#fef08a;text-decoration:underline">🎉 خصم ${OFFER_CONFIG.discount}% ${OFFER_CONFIG.periodText} - احجز الآن</a></span>`,
+        // 1. العروض والباقات
+        `<span class="ticker-item" onclick="showSection('packages')">🎉 خصم 25% على باقات الفحص الشامل — احجز الآن</span>`,
+        `<span class="ticker-item" onclick="showSection('packages')">📦 باقة الفحص الشامل (16 تحليل) وفر فلوسك واطمن على صحتك</span>`,
+        `<span class="ticker-item" onclick="showSection('packages')">🍬 باقة السكر والدهون لمتابعة صحتك باستمرار</span>`,
         
-        // الباقات
-        ...PACKAGES.slice(0, 3).map(p => 
-          `<span class="ticker-item" onclick="showSection('packages')">📦 ${p.name} — وفر ${PACKAGE_DISCOUNT}%</span>`
-        ),
+        // 2. شروط التحاليل
+        `<span class="ticker-item" onclick="showSection('tests')">🧪 سكر صائم: صيام 8-12 ساعة (الماء مسموح)</span>`,
+        `<span class="ticker-item" onclick="showSection('tests')">🧪 دهون كاملة: صيام 9-12 ساعة (تجنب الكحول)</span>`,
+        `<span class="ticker-item" onclick="showSection('tests')">🧪 صورة دم كاملة: مش محتاجة صيام، تقدر تعملها في أي وقت</span>`,
+        `<span class="ticker-item" onclick="showSection('tests')">🧪 تحليل السائل المنوي: لازم امتناع عن الجماع من 2 لـ 5 أيام</span>`,
         
-        // شروط التحاليل
-        '<span class="ticker-item" onclick="showSection(\'tests\')">🧪 سكر صائم: صيام 8–12 ساعة — الماء مسموح</span>',
-        '<span class="ticker-item" onclick="showSection(\'tests\')">🧪 دهون كاملة: صيام 9–12 ساعة — تجنب الكحول 24 ساعة</span>',
-        '<span class="ticker-item" onclick="showSection(\'tests\')">🧪 فيتامين د3: بدون صيام — بلّغ عن المكملات</span>',
-        '<span class="ticker-item" onclick="showSection(\'tests\')">🧪 صورة دم كاملة: بدون صيام — أي وقت</span>',
+        // 3. الخدمات
+        `<span class="ticker-item" onclick="showSection('booking')">🏠 سحب من المنزل بالحجز المسبق — كلمنا واتساب</span>`,
+        `<span class="ticker-item" onclick="showSection('results')">📱 استلم نتيجتك عبر واتساب بضغطة واحدة ومجاناً</span>`,
         
-        // خدمات
-        `<span class="ticker-item" onclick="showSection('booking')">🏠 سحب من المنزل — احجز على ${APP_CONFIG.phoneDisplay}</span>`,
-        '<span class="ticker-item" onclick="showSection(\'features\')">⚡ نتائج معظم التحاليل في نفس اليوم</span>',
-        '<span class="ticker-item" onclick="showSection(\'results\')">📄 استلم نتيجتك عبر واتساب</span>',
-        '<span class="ticker-item" onclick="showSection(\'about\')">🔬 أحدث الأجهزة العالمية</span>'
-      ].filter(Boolean); // إزالة العناصر الفارغة لو العرض مش نشط
+        // 4. معلومات طبية
+        `<span class="ticker-item" onclick="showSection('medical')">🩺 معلومة: الصيام قبل تحليل السكر بيمنع قراءات خاطئة بتأثر على العلاج</span>`,
+        `<span class="ticker-item" onclick="showSection('medical')">🩺 معلومة: تحليل فيتامين د مهم جداً للمناعة وصحة العظام</span>`,
+        `<span class="ticker-item" onclick="showSection('medical')">🩺 معلومة: الكشف المبكر عن السكر بيحميك من مضاعفات خطيرة</span>`
+      ];
 
-      offersTrack.innerHTML = tickerItems.join('');
+      // تكرار الرسائل 3 مرات عشان الشريط يملا الشاشة ويلف في لوب مستمر
+      const tickerHTML = tickerItems.join('');
+      offersTrack.innerHTML = tickerHTML + tickerHTML + tickerHTML;
     }
 
     if(offerActive) offerActive.style.display = active ? '' : 'none';
@@ -255,7 +253,6 @@
       const displayCount = pkg.count || price.available;
       const imgFallback = `this.onerror=null;this.style.display='none';this.parentElement.querySelector('.fallback-icon').style.display='block';`;
       
-      // معالجة التحاليل اللي سعرها مش ثابت
       let saveText = '';
       if (price.hasInquiry) {
         saveText = `<span class="package-save" style="background:linear-gradient(135deg,#d4a843,#b8902e)">سعر خاص — استفسر</span>`;
@@ -418,7 +415,6 @@
       if(currentView === 'core' && !t.core) return false;
       if(currentCat !== 'الكل' && t.cat !== currentCat) return false;
       
-      // البحث الذكي
       if(searchNorm){
         const testAr = normalizeArabic(t.ar);
         const testCat = normalizeArabic(t.cat);
@@ -696,7 +692,7 @@
   };
 
   /* =====================================================
-   16. WORKING HOURS STATUS (Fixed Task 9)
+   16. WORKING HOURS STATUS
    ===================================================== */
   function updateBranchStatus(){
     document.querySelectorAll('[data-branch]').forEach(el=>{
@@ -705,25 +701,20 @@
       if(!hours) return;
       
       const now = new Date();
-      const day = now.getDay(); // 0 = الأحد، 5 = الجمعة
+      const day = now.getDay();
       const hour = now.getHours() + now.getMinutes()/60;
       
-      // 1. التحقق من الإجازة الأسبوعية (بهتيم يوم الجمعة)
       if(hours.closedDay !== null && day === hours.closedDay) {
         el.textContent = '🔴 إجازة أسبوعية';
         el.className = 'branch-status holiday';
         return;
       }
 
-      // 2. التحقق من المواعيد
       let status = 'closed';
       
       if(day === 5) {
-        // الجمعة
         if(hours.friday && hour >= hours.friday.open && hour < hours.friday.close) status = 'open';
       } else {
-        // باقي الأيام
-        // لو close = 24، معناها 12 بالليل، فـ hour هتكون دايماً أقل من 24
         const end = hours.satToThu.close === 24 ? 24 : hours.satToThu.close;
         if(hour >= hours.satToThu.open && hour < end) status = 'open';
       }
@@ -756,7 +747,6 @@
     sidebarLeft.classList.add('collapsed');
   }
 
-  // تسجيل في الكونسول (للتأكد من التحميل أثناء التطوير فقط)
   if(location.hostname === 'localhost' || location.hostname === '127.0.0.1'){
     console.log('%c✅ معامل طيبة - app.js loaded', 'color:#00ff7f;font-weight:bold');
   }
