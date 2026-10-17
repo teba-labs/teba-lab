@@ -1,15 +1,11 @@
-﻿/* =====================================================
-   TEBA LABS - Main Application
+/* =====================================================
+   TEBA LABS - Main Application (Refactored v2)
    معامل طيبة - التطبيق الرئيسي
    =====================================================
-   يحتوي على:
-   - الوضع الليلي / النهاري
-   - التنقل بين الأقسام
-   - القوائم الجانبية
-   - التحاليل والفلترة
-   - السلة (روشتتي)
-   - المودالات
-   - عرض الباقات والمقالات والآراء
+   - Ticker: عروض + باقات + شروط تحاليل (ديناميكي وقابل للنقر)
+   - Smart Search: يدعم البحث بالعربي مع تجاهل الهمزات والتشكيل
+   - Working Hours: دعم الإجازات الأسبوعية (فرع بهتيم الجمعة)
+   - Packages: تعامل صحيح مع الباقات اللي فيها تحاليل "استفسر"
    ===================================================== */
 
 (function(){
@@ -21,16 +17,17 @@
     TESTS, CAT_ICONS, FEATURED_NAMES, PACKAGES, PACKAGE_DISCOUNT,
     TEST_PREPARATION, MEDICAL_ARTICLES, TESTIMONIALS, TRUST_BADGES,
     APP_CONFIG, OFFER_CONFIG,
-    isNumericPrice, getTestByName, getPackagePrice, isOfferActive
+    isNumericPrice, getTestByName, getPackagePrice, isOfferActive,
+    normalizeArabic
   } = D;
 
   /* ============= LOGO FALLBACK ============= */
-  const LOGO_NAMES = ['logo.png','Logo.png','logo.PNG','LOGO.png','logo.jpg'];
   window.tryNextLogo = function(img){
-    const idx = parseInt(img.dataset.tryIdx || '-1') + 1;
-    if(idx >= LOGO_NAMES.length){ img.style.display='none'; return; }
-    img.dataset.tryIdx = idx;
-    img.src = 'images/' + LOGO_NAMES[idx];
+    const names = ['logo.png', 'Logo.png', 'logo.jpg'];
+    let idx = parseInt(img.dataset.tryIdx || '0');
+    if(idx >= names.length){ img.style.display = 'none'; return; }
+    img.dataset.tryIdx = idx + 1;
+    img.src = names[idx];
   };
 
   /* ============= STATE ============= */
@@ -49,56 +46,53 @@
   /* =====================================================
    1. THEME (Auto + Manual)
    ===================================================== */
-const THEME_KEY = 'teba_theme_user';
+  const THEME_KEY = 'teba_theme_user';
 
-function applyTheme(isLight, isManual){
-  document.body.classList.toggle('light-mode', isLight);
+  function applyTheme(isLight, isManual){
+    document.body.classList.toggle('light-mode', isLight);
+    if(themeToggle){
+      themeToggle.textContent = isLight ? '🌙' : '☀️';
+      themeToggle.setAttribute('aria-label', isLight ? 'الوضع الليلي' : 'الوضع النهاري');
+    }
+    if(isManual){
+      localStorage.setItem(THEME_KEY, isLight ? 'light' : 'dark');
+    }
+  }
+
+  function detectSystemTheme(){
+    const userChoice = localStorage.getItem(THEME_KEY);
+    if(userChoice === 'light') return true;
+    if(userChoice === 'dark') return false;
+    if(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches){
+      return false;
+    }
+    if(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches){
+      return true;
+    }
+    const hour = new Date().getHours();
+    return (hour >= 6 && hour < 18);
+  }
+
+  if(window.matchMedia){
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>{
+      if(!localStorage.getItem(THEME_KEY)){ applyTheme(detectSystemTheme(), false); }
+    });
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', ()=>{
+      if(!localStorage.getItem(THEME_KEY)){ applyTheme(detectSystemTheme(), false); }
+    });
+  }
+
+  applyTheme(detectSystemTheme(), false);
+
   if(themeToggle){
-    themeToggle.textContent = isLight ? '🌙' : '☀️';
-    themeToggle.setAttribute('aria-label', isLight ? 'الوضع الليلي' : 'الوضع النهاري');
+    themeToggle.addEventListener('click', ()=>{
+      applyTheme(!document.body.classList.contains('light-mode'), true);
+    });
   }
-  if(isManual){
-    localStorage.setItem(THEME_KEY, isLight ? 'light' : 'dark');
-  }
-}
 
-function detectSystemTheme(){
-  const userChoice = localStorage.getItem(THEME_KEY);
-  if(userChoice === 'light') return true;
-  if(userChoice === 'dark') return false;
-  if(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches){
-    return false;
-  }
-  if(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches){
-    return true;
-  }
-  const hour = new Date().getHours();
-  return (hour >= 6 && hour < 18);
-}
-
-if(window.matchMedia){
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>{
-    if(!localStorage.getItem(THEME_KEY)){
-      applyTheme(detectSystemTheme(), false);
-    }
-  });
-  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', ()=>{
-    if(!localStorage.getItem(THEME_KEY)){
-      applyTheme(detectSystemTheme(), false);
-    }
-  });
-}
-
-applyTheme(detectSystemTheme(), false);
-
-if(themeToggle){
-  themeToggle.addEventListener('click', ()=>{
-    applyTheme(!document.body.classList.contains('light-mode'), true);
-  });
-}
-    /* =====================================================
-     2. OFFER MANAGEMENT
-     ===================================================== */
+  /* =====================================================
+   2. OFFER & TICKER MANAGEMENT
+   ===================================================== */
   function renderOffer(){
     const active = isOfferActive();
     const offersTrack = document.getElementById('offersTrack');
@@ -106,18 +100,29 @@ if(themeToggle){
     const offerExpired = document.getElementById('offerExpired');
 
     if(offersTrack){
-      const base = [
-        '🩺 معلومة طبية: الصيام قبل تحليل السكر 8-12 ساعة - الماء مسموح',
-        '⚡ معظم التحاليل نتائجها في نفس اليوم',
-        '🏠 سحب من المنزل بالحجز المسبق - اتصل ' + APP_CONFIG.phoneDisplay,
-        '📄 استلم نتيجتك عبر واتساب',
-        '📦 باقات فحص شامل بخصم 25%',
-        '🔬 تحاليل بأحدث الأجهزة العالمية'
-      ];
-      const messages = active
-        ? [`🎉 خصم ${OFFER_CONFIG.discount}% ${OFFER_CONFIG.periodText} - <a href="https://wa.me/${APP_CONFIG.whatsapp}">احجز الآن</a>`, ...base]
-        : base;
-      offersTrack.innerHTML = messages.map(m=>`<span>${m}</span>`).join('');
+      // بناء الشريط الديناميكي
+      const tickerItems = [
+        active && `<span class="ticker-item"><a href="https://wa.me/${APP_CONFIG.whatsapp}?text=${encodeURIComponent('عايز أستفيد من خصم ' + OFFER_CONFIG.discount + '%')}" style="color:#fef08a;text-decoration:underline">🎉 خصم ${OFFER_CONFIG.discount}% ${OFFER_CONFIG.periodText} - احجز الآن</a></span>`,
+        
+        // الباقات
+        ...PACKAGES.slice(0, 3).map(p => 
+          `<span class="ticker-item" onclick="showSection('packages')">📦 ${p.name} — وفر ${PACKAGE_DISCOUNT}%</span>`
+        ),
+        
+        // شروط التحاليل
+        '<span class="ticker-item" onclick="showSection(\'tests\')">🧪 سكر صائم: صيام 8–12 ساعة — الماء مسموح</span>',
+        '<span class="ticker-item" onclick="showSection(\'tests\')">🧪 دهون كاملة: صيام 9–12 ساعة — تجنب الكحول 24 ساعة</span>',
+        '<span class="ticker-item" onclick="showSection(\'tests\')">🧪 فيتامين د3: بدون صيام — بلّغ عن المكملات</span>',
+        '<span class="ticker-item" onclick="showSection(\'tests\')">🧪 صورة دم كاملة: بدون صيام — أي وقت</span>',
+        
+        // خدمات
+        `<span class="ticker-item" onclick="showSection('booking')">🏠 سحب من المنزل — احجز على ${APP_CONFIG.phoneDisplay}</span>`,
+        '<span class="ticker-item" onclick="showSection(\'features\')">⚡ نتائج معظم التحاليل في نفس اليوم</span>',
+        '<span class="ticker-item" onclick="showSection(\'results\')">📄 استلم نتيجتك عبر واتساب</span>',
+        '<span class="ticker-item" onclick="showSection(\'about\')">🔬 أحدث الأجهزة العالمية</span>'
+      ].filter(Boolean); // إزالة العناصر الفارغة لو العرض مش نشط
+
+      offersTrack.innerHTML = tickerItems.join('');
     }
 
     if(offerActive) offerActive.style.display = active ? '' : 'none';
@@ -141,8 +146,8 @@ if(themeToggle){
   setInterval(renderOffer, 60 * 60 * 1000);
 
   /* =====================================================
-     3. SIDEBARS
-     ===================================================== */
+   3. SIDEBARS
+   ===================================================== */
   const toggleRightBtn = document.getElementById('toggleRight');
   const toggleLeftBtn = document.getElementById('toggleLeft');
 
@@ -190,15 +195,15 @@ if(themeToggle){
   document.addEventListener('keydown', e=>{
     if(e.key === 'Escape'){
       window.closeAllSidebars();
-      closeArticle();
-      closePrep();
-      closePkg();
+      if(window.closeArticle) closeArticle();
+      if(window.closePrep) closePrep();
+      if(window.closePkg) closePkg();
     }
   });
 
   /* =====================================================
-     4. NAVIGATION
-     ===================================================== */
+   4. NAVIGATION
+   ===================================================== */
   window.showSection = function(id){
     document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
     const t = document.getElementById('section-'+id);
@@ -209,13 +214,14 @@ if(themeToggle){
     window.scrollTo({top:0, behavior:'smooth'});
     if(window.innerWidth <= 1000){
       sidebarRight.classList.add('collapsed');
+      sidebarLeft.classList.add('collapsed');
       overlay.classList.remove('show');
     }
   };
 
   /* =====================================================
-     5. GREETING
-     ===================================================== */
+   5. GREETING
+   ===================================================== */
   function setGreeting(){
     const h = new Date().getHours();
     const el = document.getElementById('greeting');
@@ -230,23 +236,33 @@ if(themeToggle){
   setGreeting();
 
   /* =====================================================
-     6. BACK TO TOP
-     ===================================================== */
+   6. BACK TO TOP
+   ===================================================== */
   window.addEventListener('scroll', ()=>{
     if(backTop) backTop.classList.toggle('show', window.scrollY > 400);
   });
 
   /* =====================================================
-     7. RENDER PACKAGES
-     ===================================================== */
+   7. RENDER PACKAGES
+   ===================================================== */
   function renderPackages(){
     const grid = document.getElementById('packagesGrid');
     if(!grid) return;
+    
     grid.innerHTML = PACKAGES.map(pkg => {
       const price = getPackagePrice(pkg);
       const featuredClass = pkg.featured ? ' featured' : '';
       const displayCount = pkg.count || price.available;
       const imgFallback = `this.onerror=null;this.style.display='none';this.parentElement.querySelector('.fallback-icon').style.display='block';`;
+      
+      // معالجة التحاليل اللي سعرها مش ثابت
+      let saveText = '';
+      if (price.hasInquiry) {
+        saveText = `<span class="package-save" style="background:linear-gradient(135deg,#d4a843,#b8902e)">سعر خاص — استفسر</span>`;
+      } else {
+        saveText = `<span class="package-save">وفر ${price.total - price.discounted} ج (${PACKAGE_DISCOUNT}%)</span>`;
+      }
+
       return `
         <div class="package-card${featuredClass}">
           <div class="package-image">
@@ -269,7 +285,7 @@ if(themeToggle){
             <div class="package-price-area">
               <span class="package-price-old">${price.total} ج</span>
               <span class="package-price-new">${price.discounted}<small> ج</small></span>
-              <div><span class="package-save">وفر ${price.total - price.discounted} ج (${PACKAGE_DISCOUNT}%)</span></div>
+              <div>${saveText}</div>
             </div>
             <div class="package-actions">
               <button class="btn-add-pkg" onclick='window.addPackageToCart(${JSON.stringify(pkg.id)})'>📋 أضف لروشتتي</button>
@@ -282,8 +298,8 @@ if(themeToggle){
   }
 
   /* =====================================================
-     8. PACKAGE CART
-     ===================================================== */
+   8. PACKAGE CART
+   ===================================================== */
   window.addPackageToCart = function(pkgId){
     const pkg = PACKAGES.find(p => p.id === pkgId);
     if(!pkg) return;
@@ -328,7 +344,7 @@ if(themeToggle){
     }
     document.getElementById('pkgTitle').textContent = pkg.icon + ' ' + pkg.name;
     document.getElementById('pkgBody').innerHTML = `
-      <p style="color:var(--muted);margin-bottom:15px">${pkg.desc}</p>
+      <p style="color:var(--text-muted);margin-bottom:15px">${pkg.desc}</p>
       <ul style="list-style:none;padding:0">
         ${pkg.tests.map(t => {
           const test = getTestByName(t);
@@ -336,10 +352,12 @@ if(themeToggle){
           return `<li style="padding:10px 0;border-bottom:1px dashed var(--border);display:flex;justify-content:space-between;gap:10px"><span>${t}</span><strong style="color:var(--primary-glow)">${p}</strong></li>`;
         }).join('')}
       </ul>
-      <div style="margin-top:20px;background:rgba(0,0,0,.3);border:1px solid var(--border-glow);border-radius:14px;padding:15px;text-align:center">
-        <div style="color:var(--muted);font-size:.85rem;text-decoration:line-through">${price.total} ج</div>
+      <div style="margin-top:20px;background:var(--bg-input);border:1px solid var(--border-glow);border-radius:14px;padding:15px;text-align:center">
+        <div style="color:var(--text-muted);font-size:.85rem;text-decoration:line-through">${price.total} ج</div>
         <div style="color:var(--primary-glow);font-size:1.8rem;font-weight:900">${price.discounted} ج</div>
-        <div style="color:#f87171;font-weight:800;font-size:.85rem;margin-top:5px">وفر ${price.total - price.discounted} ج (${PACKAGE_DISCOUNT}% خصم)</div>
+        <div style="color:#f87171;font-weight:800;font-size:.85rem;margin-top:5px">
+          ${price.hasInquiry ? 'السعر يشمل التحاليل المحددة فقط — استفسر عن الباقي' : `وفر ${price.total - price.discounted} ج (${PACKAGE_DISCOUNT}% خصم)`}
+        </div>
       </div>
       <button class="btn-add-pkg" style="width:100%;padding:14px;border-radius:12px;margin-top:15px;font-weight:800;font-size:1rem" onclick='window.addPackageToCart(${JSON.stringify(pkg.id)});window.closePkg()'>📋 أضف لروشتتي</button>
     `;
@@ -352,8 +370,8 @@ if(themeToggle){
   };
 
   /* =====================================================
-     9. RENDER TESTS
-     ===================================================== */
+   9. RENDER TESTS & SMART SEARCH
+   ===================================================== */
   const grid = document.getElementById('testsGrid');
   const searchInput = document.getElementById('searchInput');
   const searchClear = document.getElementById('searchClear');
@@ -393,17 +411,26 @@ if(themeToggle){
 
   function renderTests(){
     if(!grid) return;
-    const search = currentSearch.trim().toLowerCase();
+    const searchNorm = normalizeArabic(currentSearch);
+    
     const filtered = TESTS.filter(t=>{
       if(currentView === 'featured' && !FEATURED_NAMES.includes(t.ar)) return false;
       if(currentView === 'core' && !t.core) return false;
       if(currentCat !== 'الكل' && t.cat !== currentCat) return false;
-      if(search && !t.ar.toLowerCase().includes(search) && !t.en.toLowerCase().includes(search) && !t.cat.includes(search)) return false;
+      
+      // البحث الذكي
+      if(searchNorm){
+        const testAr = normalizeArabic(t.ar);
+        const testCat = normalizeArabic(t.cat);
+        const testEn = t.en.toLowerCase();
+        if(!testAr.includes(searchNorm) && !testEn.includes(searchNorm) && !testCat.includes(searchNorm)) return false;
+      }
       return true;
     });
+
     if(resultsCount) resultsCount.textContent = filtered.length;
     if(filtered.length === 0){
-      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);background:var(--card-bg);border:2px dashed var(--border);border-radius:16px"><strong style="color:var(--primary-glow);display:block;font-size:1.1rem;margin-bottom:8px">مفيش نتائج</strong>جرب تكتب اسم تاني</div>';
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);background:var(--bg-card);border:2px dashed var(--border);border-radius:16px"><strong style="color:var(--primary-glow);display:block;font-size:1.1rem;margin-bottom:8px">مفيش نتائج</strong>جرب تكتب اسم تاني</div>';
       return;
     }
     grid.innerHTML = filtered.map(t=>{
@@ -445,8 +472,8 @@ if(themeToggle){
   }
 
   /* =====================================================
-     10. CART
-     ===================================================== */
+   10. CART
+   ===================================================== */
   function saveCart(){
     localStorage.setItem('teba_cart', JSON.stringify(cart));
   }
@@ -499,7 +526,7 @@ if(themeToggle){
         <span class="count">${cart.length} عنصر في روشتتك</span>
       </div>
       <div class="cart-actions">
-        <a class="btn-send" href="https://wa.me/${APP_CONFIG.whatsapp}?text=${encodeURIComponent(waMsg)}" target="_blank" rel="noopener">💬 أرسل الحجز على واتساب</a>
+        <a class="btn-send" href="https://wa.me/${APP_CONFIG.whatsapp}?text=${encodeURIComponent(waMsg)}" target="_blank" rel="noopener noreferrer">💬 أرسل الحجز على واتساب</a>
         <button class="btn-clear" onclick="window.clearCart()">🗑️ تفريغ روشتتي</button>
       </div>
     `;
@@ -527,8 +554,8 @@ if(themeToggle){
   };
 
   /* =====================================================
-     11. REQUEST RESULT
-     ===================================================== */
+   11. REQUEST RESULT
+   ===================================================== */
   window.requestResult = function(){
     const nameEl = document.getElementById('rName');
     const phoneEl = document.getElementById('rPhone');
@@ -546,8 +573,8 @@ if(themeToggle){
   };
 
   /* =====================================================
-     12. PREP MODAL
-     ===================================================== */
+   12. PREP MODAL
+   ===================================================== */
   window.showPrep = function(testName){
     const prep = TEST_PREPARATION[testName];
     if(!prep) return;
@@ -581,8 +608,8 @@ if(themeToggle){
   };
 
   /* =====================================================
-     13. MEDICAL ARTICLES
-     ===================================================== */
+   13. MEDICAL ARTICLES
+   ===================================================== */
   function renderMedicalArticles(){
     const gridEl = document.getElementById('medicalArticlesGrid');
     if(!gridEl) return;
@@ -618,8 +645,8 @@ if(themeToggle){
   }
 
   /* =====================================================
-     14. TRUST STRIP
-     ===================================================== */
+   14. TRUST STRIP
+   ===================================================== */
   function renderTrustStrip(){
     const el = document.getElementById('trustStrip');
     if(!el) return;
@@ -633,8 +660,8 @@ if(themeToggle){
   }
 
   /* =====================================================
-     15. TESTIMONIALS SLIDER
-     ===================================================== */
+   15. TESTIMONIALS SLIDER
+   ===================================================== */
   let testimonialIndex = 0;
   let testimonialTrack = null;
 
@@ -669,23 +696,38 @@ if(themeToggle){
   };
 
   /* =====================================================
-     16. WORKING HOURS STATUS
-     ===================================================== */
+   16. WORKING HOURS STATUS (Fixed Task 9)
+   ===================================================== */
   function updateBranchStatus(){
     document.querySelectorAll('[data-branch]').forEach(el=>{
       const branchKey = el.dataset.branch;
       const hours = D.WORKING_HOURS[branchKey];
       if(!hours) return;
+      
       const now = new Date();
-      const day = now.getDay();
+      const day = now.getDay(); // 0 = الأحد، 5 = الجمعة
       const hour = now.getHours() + now.getMinutes()/60;
-      const isFriday = day === 5;
+      
+      // 1. التحقق من الإجازة الأسبوعية (بهتيم يوم الجمعة)
+      if(hours.closedDay !== null && day === hours.closedDay) {
+        el.textContent = '🔴 إجازة أسبوعية';
+        el.className = 'branch-status holiday';
+        return;
+      }
+
+      // 2. التحقق من المواعيد
       let status = 'closed';
-      if(isFriday){
+      
+      if(day === 5) {
+        // الجمعة
         if(hours.friday && hour >= hours.friday.open && hour < hours.friday.close) status = 'open';
       } else {
-        if(hour >= hours.satToThu.open && hour < hours.satToThu.close) status = 'open';
+        // باقي الأيام
+        // لو close = 24، معناها 12 بالليل، فـ hour هتكون دايماً أقل من 24
+        const end = hours.satToThu.close === 24 ? 24 : hours.satToThu.close;
+        if(hour >= hours.satToThu.open && hour < end) status = 'open';
       }
+      
       el.textContent = status === 'open' ? '🟢 مفتوح الآن' : '🔴 مغلق';
       el.className = 'branch-status ' + status;
     });
@@ -694,8 +736,8 @@ if(themeToggle){
   setInterval(updateBranchStatus, 5 * 60 * 1000);
 
   /* =====================================================
-     17. INIT
-     ===================================================== */
+   17. INIT
+   ===================================================== */
   document.getElementById('year') && (document.getElementById('year').textContent = new Date().getFullYear());
   buildCategories();
   bindViewToggle();
@@ -714,6 +756,9 @@ if(themeToggle){
     sidebarLeft.classList.add('collapsed');
   }
 
-  console.log('%c✅ معامل طيبة - app.js loaded', 'color:#00ff7f;font-weight:bold');
+  // تسجيل في الكونسول (للتأكد من التحميل أثناء التطوير فقط)
+  if(location.hostname === 'localhost' || location.hostname === '127.0.0.1'){
+    console.log('%c✅ معامل طيبة - app.js loaded', 'color:#00ff7f;font-weight:bold');
+  }
 
 })();
