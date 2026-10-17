@@ -218,16 +218,9 @@ body.light-mode .section-head h2 span {
 .offers-track:hover {
   animation-play-state: paused;
 }
-
 @keyframes marquee {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); } /* بيلف مسافة الكتلة الأولى بالظبط */
-}
-}
-
-@keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-33.333%); } /* بيلف مسافة التكرار الواحد بالظبط */
 }
 
 /* ============= 5. HEADER ============= */
