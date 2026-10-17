@@ -1,4 +1,8 @@
-﻿User-agent: *
+User-agent: *
 Allow: /
+
+Disallow: /google*.html
+Disallow: /manifest.json
+Disallow: /service-worker.js
 
 Sitemap: https://teba-labs.github.io/teba-lab/sitemap.xml
