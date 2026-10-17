@@ -189,11 +189,16 @@ body.light-mode .section-head h2 span {
 
 .offers-track {
   display: flex;
-  gap: 50px;
-  white-space: nowrap;
   width: max-content;
-  animation: marquee 60s linear infinite; /* سرعة الشريط */
+  animation: marquee 50s linear infinite; /* سرعة الشريط */
   will-change: transform;
+}
+
+/* الحاوية اللي شايلة الرسائل عشان تضمن المسافات الصح */
+.ticker-block {
+  display: flex;
+  gap: 50px;
+  padding-right: 50px; /* مسافة في آخر الكتلة عشان ميبقاش ملزوق */
 }
 
 .offers-track .ticker-item {
@@ -201,7 +206,9 @@ body.light-mode .section-head h2 span {
   font-size: .88rem;
   cursor: pointer;
   transition: var(--transition);
+  display: inline-block;
 }
+
 .offers-track .ticker-item:hover {
   color: #fef08a;
   text-decoration: underline;
@@ -210,6 +217,12 @@ body.light-mode .section-head h2 span {
 /* ميزة: لو المستخدم حط الماوس عليه، بيقف عشان يقدر يقرأ */
 .offers-track:hover {
   animation-play-state: paused;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); } /* بيلف مسافة الكتلة الأولى بالظبط */
+}
 }
 
 @keyframes marquee {
