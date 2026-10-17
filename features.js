@@ -1,13 +1,11 @@
-﻿/* =====================================================
-   TEBA LABS - Advanced Features
+/* =====================================================
+   TEBA LABS - Advanced Features (Refactored v2)
    معامل طيبة - الميزات المتقدمة
    =====================================================
-   يحتوي على:
    - Toast Notifications
-   - Smart Search (Arabic Normalization)
-   - Booking System (حجز السحب المنزلي)
-   - Legal Pages (سياسات)
-   - PWA Registration
+   - Booking System (with Validation)
+   - Legal Pages
+   - PWA Registration & Install Prompt
    ===================================================== */
 
 (function(){
@@ -57,46 +55,57 @@
   };
 
   /* =====================================================
-     2. SMART SEARCH - Arabic Normalization
-     ===================================================== */
-  function normalizeArabic(str){
-    if(!str) return '';
-    return str
-      .toString()
-      .trim()
-      .toLowerCase()
-      .replace(/[\u064B-\u065F\u0670]/g, '')   // إزالة التشكيل
-      .replace(/[أإآٱ]/g, 'ا')                 // توحيد الهمزات
-      .replace(/ى/g, 'ي')                       // الألف المقصورة
-      .replace(/ة/g, 'ه')                       // التاء المربوطة
-      .replace(/ؤ/g, 'و')
-      .replace(/ئ/g, 'ي')
-      .replace(/[^\u0600-\u06FF\w\s]/g, '')    // إزالة الرموز
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  window.normalizeArabic = normalizeArabic;
-
-  // Enhance search with smart matching
-  function initSmartSearch(){
-    const searchInput = document.getElementById('searchInput');
-    if(!searchInput) return;
-    const originalRender = window.renderTests;
-
-    searchInput.addEventListener('input', function(){
-      // البحث العادي هيشتغل من app.js
-    });
-  }
-
-  /* =====================================================
-     3. BOOKING SYSTEM
+     2. BOOKING SYSTEM (With Validation)
      ===================================================== */
   let currentBookingStep = 1;
   const totalBookingSteps = 4;
 
+  function validateStep(step){
+    if(step === 1){
+      const name = document.getElementById('bkName')?.value.trim();
+      const phone = document.getElementById('bkPhone')?.value.trim();
+      if(!name || name.length < 3){
+        window.showToast('من فضلك اكتب الاسم بالكامل (3 حروف على الأقل)', 'error');
+        return false;
+      }
+      // التحقق من صحة رقم الموبايل المصري
+      const phoneRegex = /^01[0125][0-9]{8}$/;
+      if(!phone || !phoneRegex.test(phone)){
+        window.showToast('من فضلك اكتب رقم موبايل مصري صحيح (مثال: 01012345678)', 'error');
+        return false;
+      }
+    }
+    
+    if(step === 2){
+      const gov = document.getElementById('bkGovernorate')?.value;
+      const area = document.getElementById('bkArea')?.value.trim();
+      const address = document.getElementById('bkAddress')?.value.trim();
+      if(!gov || !area || !address){
+        window.showToast('من فضلك أكمل بيانات العنوان (المحافظة، المنطقة، العنوان بالتفصيل)', 'error');
+        return false;
+      }
+    }
+
+    if(step === 3){
+      const date = document.getElementById('bkDate')?.value;
+      const time = document.getElementById('bkTime')?.value;
+      if(!date || !time){
+        window.showToast('من فضلك اختر تاريخ ووقت السحب', 'error');
+        return false;
+      }
+    }
+    
+    return true;
+  }
+
   function goToBookingStep(step){
     if(step < 1 || step > totalBookingSteps) return;
+    
+    // تحقق قبل الانتقال للأمام
+    if(step > currentBookingStep){
+      if(!validateStep(currentBookingStep)) return;
+    }
+
     currentBookingStep = step;
     document.querySelectorAll('.booking-page').forEach(p=>p.classList.remove('active'));
     const target = document.querySelector(`.booking-page[data-step="${step}"]`);
@@ -146,6 +155,9 @@
   }
 
   function submitBooking(){
+    // تحقق نهائي من جميع البيانات قبل الإرسال
+    if(!validateStep(1) || !validateStep(2) || !validateStep(3)) return;
+
     const name = document.getElementById('bkName')?.value.trim();
     const phone = document.getElementById('bkPhone')?.value.trim();
     const governorate = document.getElementById('bkGovernorate')?.value;
@@ -153,13 +165,8 @@
     const address = document.getElementById('bkAddress')?.value.trim();
     const date = document.getElementById('bkDate')?.value;
     const time = document.getElementById('bkTime')?.value;
-
-    if(!name || !phone || !governorate || !area || !address || !date || !time){
-      window.showToast('من فضلك اكمل جميع البيانات', 'error');
-      return;
-    }
-
     const notes = document.getElementById('bkNotes')?.value.trim() || '';
+
     const items = JSON.parse(localStorage.getItem('teba_cart') || '[]');
     const itemsText = items.length > 0
       ? items.map(i=>'• ' + i.ar).join('\n')
@@ -179,7 +186,7 @@
   }
 
   /* =====================================================
-     4. LEGAL PAGES
+     3. LEGAL PAGES
      ===================================================== */
   const LEGAL_CONTENT = {
     privacy: {
@@ -281,18 +288,18 @@
   };
 
   /* =====================================================
-     5. PWA REGISTRATION
+     4. PWA REGISTRATION
      ===================================================== */
   if('serviceWorker' in navigator){
     window.addEventListener('load', ()=>{
       navigator.serviceWorker.register('service-worker.js')
-        .then(reg => console.log('✅ PWA registered'))
+        .then(() => console.log('✅ PWA registered'))
         .catch(err => console.log('PWA registration failed:', err));
     });
   }
 
   /* =====================================================
-     6. INSTALL PROMPT (PWA)
+     5. INSTALL PROMPT (PWA)
      ===================================================== */
   let deferredPrompt = null;
   window.addEventListener('beforeinstallprompt', (e)=>{
@@ -309,19 +316,18 @@
     banner.id = 'installBanner';
     banner.style.cssText = `
       position:fixed;bottom:20px;left:20px;right:20px;max-width:400px;margin:auto;
-      background:linear-gradient(135deg,#12181a,#0a0e0a);border:1px solid var(--border-glow);
+      background:var(--bg-card-gradient);border:1px solid var(--border-glow);
       border-radius:16px;padding:16px 20px;z-index:4000;display:flex;gap:12px;align-items:center;
-      box-shadow:0 10px 40px rgba(0,0,0,.5),0 0 25px rgba(0,255,127,.2);
-      animation:toastIn .4s ease-out;
+      box-shadow:var(--shadow);animation:toastIn .4s ease-out;
     `;
     banner.innerHTML = `
       <span style="font-size:1.8rem">📱</span>
       <div style="flex:1">
         <strong style="color:var(--primary-glow);font-size:.9rem;display:block">ثبّت التطبيق</strong>
-        <span style="color:var(--muted);font-size:.78rem">للوصول السريع من شاشة الموبايل</span>
+        <span style="color:var(--text-muted);font-size:.78rem">للوصول السريع من شاشة الموبايل</span>
       </div>
       <button id="installBtn" style="background:var(--primary);color:#fff;border:0;padding:8px 16px;border-radius:10px;font-weight:800;font-size:.82rem">تثبيت</button>
-      <button id="dismissInstall" style="background:transparent;border:0;color:var(--muted);font-size:1.2rem;padding:4px 8px">✕</button>
+      <button id="dismissInstall" style="background:transparent;border:0;color:var(--text-muted);font-size:1.2rem;padding:4px 8px">✕</button>
     `;
     document.body.appendChild(banner);
 
@@ -340,11 +346,8 @@
   }
 
   /* =====================================================
-     7. INIT
+     6. EXPORT FUNCTIONS FOR HTML
      ===================================================== */
-  console.log('%c✅ معامل طيبة - features.js loaded', 'color:#00ff7f;font-weight:bold');
-
-  // Export booking functions
   window.goToBookingStep = goToBookingStep;
   window.submitBooking = submitBooking;
 
