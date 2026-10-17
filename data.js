@@ -531,12 +531,12 @@ const FEATURED_NAMES = [
   "تحليل بول","تحليل براز","دلالة البروستاتا الكلي"
 ];
 
-/* ============= 5. PACKAGES (Fixed image URLs) ============= */
+/* ============= 5. PACKAGES (Updated Realistic Images) ============= */
 const PACKAGES = [
   {
     id:'full', icon:'🩺', name:'باقة الفحص الشامل',
     desc:'فحص عام متكامل لأجهزة الجسم الأساسية',
-    image:'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=400&fit=crop&q=80',
+    image:'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=600&h=400&fit=crop&q=80',
     featured:true, count:16,
     tests:['صورة دم كاملة','بروتين سي التفاعلي CRP','سكر صائم','سكر تراكمي','إنزيم الكبد ALT','إنزيم الكبد AST','كرياتينين','يوريا','دهون كاملة','هرمون الغدة الدرقية']
   },
@@ -550,7 +550,7 @@ const PACKAGES = [
   {
     id:'sugar', icon:'🍬', name:'باقة السكر والدهون',
     desc:'متابعة شاملة للسكر ومستوى الدهون ووظائف الأعضاء',
-    image:'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600&h=400&fit=crop&q=80',
+    image:'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&h=400&fit=crop&q=80',
     count:15,
     tests:['سكر صائم','سكر عشوائي','سكر تراكمي','دهون كاملة','صورة دم كاملة','تحليل بول','إنزيم الكبد ALT','إنزيم الكبد AST','يوريا','كرياتينين']
   },
@@ -571,7 +571,7 @@ const PACKAGES = [
   {
     id:'heart', icon:'❤️', name:'باقة القلب والضغط',
     desc:'تقييم شامل لصحة القلب وعوامل الخطر القلبية',
-    image:'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&h=400&fit=crop&q=80',
+    image:'https://images.unsplash.com/photo-1628348070889-cb656235b4eb?w=600&h=400&fit=crop&q=80',
     count:15,
     tests:['دهون كاملة','CRP عالي الحساسية','هوموسيستين','سكر صائم','سكر تراكمي','يوريا','كرياتينين','حمض البوليك','صورة دم كاملة']
   }
