@@ -1,8 +1,8 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://teba-labs.github.io/teba-lab/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2024-05-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -22,14 +22,14 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://teba-labs.github.io/teba-lab/#medical</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://teba-labs.github.io/teba-lab/#branches</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://teba-labs.github.io/teba-lab/#medical</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://teba-labs.github.io/teba-lab/#contact</loc>
