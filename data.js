@@ -1,5 +1,5 @@
 /* =====================================================
-   TEBA LABS - Data Layer
+   TEBA LABS - Data Layer (v3.1)
    معامل طيبة - ملف البيانات
    ===================================================== */
 
@@ -531,7 +531,7 @@ const FEATURED_NAMES = [
   "تحليل بول","تحليل براز","دلالة البروستاتا الكلي"
 ];
 
-/* ============= 5. PACKAGES (Updated Realistic Images) ============= */
+/* ============= 5. PACKAGES (Fixed image URLs) ============= */
 const PACKAGES = [
   {
     id:'full', icon:'🩺', name:'باقة الفحص الشامل',
@@ -682,11 +682,11 @@ const MEDICAL_ARTICLES = [
 /* ============= 8. TESTIMONIALS ============= */
 const TESTIMONIALS = [
   {name:'أحمد م.',area:'شبين القناطر',initial:'أ',rating:5,text:'خدمة ممتازة وسريعة. النتيجة وصلتني في نفس اليوم عبر واتساب، والتعامل كان محترم جداً. أنصح الجميع بمعامل طيبة.'},
-  {name:'فاطمة ع.',area:'الجعافرة',initial:'ف',rating:5,text:'أخذت باقة الفحص الشامل وكانت تجربة رائعة. الفريق محترف والأسعار مناسبة جداً. شكراً دكتور أحمد على المتابعة.'},
-  {name:'محمد س.',area:'بهتيم',initial:'م',rating:5,text:'طلبت سحب من المنزل، وجاؤوا في الميعاد بالظبط. التحاليل كانت دقيقة والأسعار شفافة بدون رسوم خفية. تجربة احترافية.'},
-  {name:'سارة أ.',area:'القليوبية',initial:'س',rating:5,text:'باقة تساقط الشعر ساعدتني أعرف سبب المشكلة. بعد ما عملت التحاليل وبدأت العلاج، شعري رجع أحسن من الأول. شكراً معامل طيبة.'},
-  {name:'خالد إ.',area:'شبين القناطر',initial:'خ',rating:5,text:'المكان نظيف والأجهزة حديثة. النتائج مضمونة ودقيقة. الأمانة والشفافية في التعامل معاهم حاجة مميزة.'},
-  {name:'نورهان م.',area:'الجعافرة',initial:'ن',rating:5,text:'عملت باقة متابعة الحمل عندهم، وكانت تجربة مريحة جداً. الدكتور أحمد متابع معايا خطوة بخطوة. ربنا يبارك فيهم.'}
+  {name:'محمود ع.',area:'بهتيم',initial:'م',rating:5,text:'أخذت باقة الفحص الشامل وكانت تجربة رائعة. الفريق محترف والأسعار مناسبة جداً. شكراً دكتور أحمد على المتابعة.'},
+  {name:'سارة أ.',area:'مساكن اسكو',initial:'س',rating:5,text:'طلبت سحب من المنزل، وجاؤوا في الميعاد بالظبط. التحاليل كانت دقيقة والأسعار شفافة بدون رسوم خفية. تجربة احترافية.'},
+  {name:'نورهان م.',area:'شبرا الخيمة',initial:'ن',rating:5,text:'باقة تساقط الشعر ساعدتني أعرف سبب المشكلة. بعد ما عملت التحاليل وبدأت العلاج، شعري رجع أحسن من الأول. شكراً معامل طيبة.'},
+  {name:'خالد إ.',area:'كوم السمن',initial:'خ',rating:5,text:'المكان نظيف والأجهزة حديثة. النتائج مضمونة ودقيقة. الأمانة والشفافية في التعامل معاهم حاجة مميزة.'},
+  {name:'فاطمة ح.',area:'السلمانية',initial:'ف',rating:5,text:'عملت باقة متابعة الحمل عندهم، وكانت تجربة مريحة جداً. الدكتور أحمد متابع معايا خطوة بخطوة. ربنا يبارك فيهم.'}
 ];
 
 /* ============= 9. TRUST BADGES ============= */
@@ -708,7 +708,7 @@ const APP_CONFIG = {
   startYear: 2020
 };
 
-/* ============= 11. WORKING HOURS (with closedDay) ============= */
+/* ============= 11. WORKING HOURS ============= */
 const WORKING_HOURS = {
   jaafra: {
     name: 'فرع الجعافرة',
@@ -738,9 +738,7 @@ const OFFER_CONFIG = {
 function isNumericPrice(p){
   return /^\d+$/.test(String(p).trim());
 }
-
 function getTestByName(name){ return TESTS.find(t => t.ar === name); }
-
 function getPackagePrice(pkg){
   let total = 0, available = 0;
   pkg.tests.forEach(name => {
@@ -754,20 +752,16 @@ function getPackagePrice(pkg){
     discounted: Math.round(total * (1 - PACKAGE_DISCOUNT/100))
   };
 }
-
 function isOfferActive(){
   if(!OFFER_CONFIG.enabled) return false;
   const now = new Date();
   return now >= new Date(OFFER_CONFIG.startDate) && now <= new Date(OFFER_CONFIG.endDate);
 }
 
-/* ============= 14. ARABIC NORMALIZATION (shared utility) ============= */
+/* ============= 14. ARABIC NORMALIZATION ============= */
 function normalizeArabic(str){
   if(!str) return '';
-  return str
-    .toString()
-    .trim()
-    .toLowerCase()
+  return str.toString().trim().toLowerCase()
     .replace(/[\u064B-\u065F\u0670]/g, '')
     .replace(/[أإآٱ]/g, 'ا')
     .replace(/ى/g, 'ي')
@@ -775,8 +769,7 @@ function normalizeArabic(str){
     .replace(/ؤ/g, 'و')
     .replace(/ئ/g, 'ي')
     .replace(/[^\u0600-\u06FF\w\s]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+    .replace(/\s+/g, ' ').trim();
 }
 
 /* ============= EXPORT ============= */
