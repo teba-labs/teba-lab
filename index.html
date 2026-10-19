@@ -77,46 +77,62 @@
 
   <main class="main-content">
 
+    <!-- بداية قسم الرئيسية المطور -->
     <section id="section-home" class="section active">
-      <div class="hero">
-        <div class="hero-inner">
+      
+      <!-- Hero Split Design -->
+      <div class="hero-split reveal">
+        <div class="hero-content">
           <div class="greeting" id="greeting">👋 أهلًا بيك في معامل طيبة</div>
-          <div class="hero-logo"><img src="logo.png" alt="شعار معامل طيبة" onerror="tryNextLogo(this)" loading="lazy"></div>
           <h2>دقة تطمنك، ونتيجة <span>تطمن عليك</span></h2>
-          <p>معامل طيبة - TEBA LABS، بإشراف د/ أحمد طه أبوندا. تحاليل طبية بأحدث الأجهزة، سحب من المنزل بالحجز المسبق، ونتائج سريعة.</p>
+          <p>معامل طيبة - TEBA LABS، بإشراف د/ أحمد طه أبوندا. تحاليل طبية بأحدث الأجهزة العالمية، سحب من المنزل بالحجز المسبق، ونتائج سريعة تضمن لك الاطمئنان.</p>
           <div class="hero-buttons">
-            <a href="https://wa.me/201099003494" target="_blank" rel="noopener noreferrer" class="btn-wa">💬 واتساب</a>
-            <a href="tel:+201123702062" class="btn-green">📞 اتصل الآن</a>
-            <a onclick="showSection('packages')" class="btn-gold" tabindex="0">📦 الباقات</a>
+            <a href="https://wa.me/201099003494" target="_blank" rel="noopener noreferrer" class="btn-wa">💬 احجز واتساب</a>
+            <a onclick="showSection('packages')" class="btn-gold" tabindex="0">📦 شوف الباقات</a>
           </div>
           <div class="stats-grid">
-            <div class="stat-box"><div class="num">2</div><div class="lbl">فرع لخدمتك</div></div>
-            <div class="stat-box"><div class="num">⚡</div><div class="lbl">نتائج سريعة</div></div>
-            <div class="stat-box"><div class="num">25%</div><div class="lbl">خصم الباقات</div></div>
+            <div class="stat-box">
+              <div class="num"><span class="counter" data-target="2">0</span></div>
+              <div class="lbl">فرع لخدمتك</div>
+            </div>
+            <div class="stat-box">
+              <div class="num"><span class="counter" data-target="25">0</span>%</div>
+              <div class="lbl">خصم الباقات</div>
+            </div>
+            <div class="stat-box">
+              <div class="num"><span class="counter" data-target="100">0</span>+</div>
+              <div class="lbl">تحليل طبي</div>
+            </div>
+          </div>
+        </div>
+        <div class="hero-image-wrapper">
+          <div class="hero-image-box">
+             <!-- استبدل الرابط ده بصورة حقيقية من المعمل أو دكتور لو حبيت -->
+            <img src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?q=80&w=800&auto=format&fit=crop" alt="معامل طيبة" loading="lazy">
           </div>
         </div>
       </div>
 
-      <div class="trust-strip" id="trustStrip"></div>
+      <div class="trust-strip reveal" id="trustStrip"></div>
 
-      <div class="section-head" style="margin-top:40px">
+      <div class="section-head reveal" style="margin-top:50px">
         <h2>ليه تختار <span>معامل طيبة؟</span></h2>
         <p>مزايا تجعلنا الخيار الأول لأهل شبين القناطر</p>
       </div>
       <div class="features-grid">
-        <div class="feature-card"><div class="icon">🏠</div><h4>سحب من المنزل</h4><p>سحب من المنزل بالحجز المسبق ووفق مواعيد الخدمة المتاحة.</p></div>
-        <div class="feature-card"><div class="icon">⚡</div><h4>نتائج سريعة</h4><p>معظم التحاليل نتائجها في نفس اليوم.</p></div>
-        <div class="feature-card"><div class="icon">📦</div><h4>باقات موفرة</h4><p>باقات فحص شامل بخصم يصل إلى 25%.</p></div>
-        <div class="feature-card"><div class="icon">💰</div><h4>أسعار مناسبة</h4><p>كاش أو محفظة إلكترونية.</p></div>
-        <div class="feature-card"><div class="icon">👨‍⚕️</div><h4>إشراف طبي</h4><p>إشراف د/ أحمد طه أبوندا.</p></div>
-        <div class="feature-card"><div class="icon">📄</div><h4>نتائج عبر واتساب</h4><p>استلم نتيجتك بضغطة واحدة.</p></div>
+        <div class="feature-card glass-card reveal"><div class="icon">🏠</div><h4>سحب من المنزل</h4><p>سحب من المنزل بالحجز المسبق ووفق مواعيد الخدمة المتاحة.</p></div>
+        <div class="feature-card glass-card reveal"><div class="icon">⚡</div><h4>نتائج سريعة</h4><p>معظم التحاليل نتائجها في نفس اليوم.</p></div>
+        <div class="feature-card glass-card reveal"><div class="icon">📦</div><h4>باقات موفرة</h4><p>باقات فحص شامل بخصم يصل إلى 25%.</p></div>
+        <div class="feature-card glass-card reveal"><div class="icon">💰</div><h4>أسعار مناسبة</h4><p>كاش أو محفظة إلكترونية.</p></div>
+        <div class="feature-card glass-card reveal"><div class="icon">👨‍⚕️</div><h4>إشراف طبي</h4><p>إشراف د/ أحمد طه أبوندا.</p></div>
+        <div class="feature-card glass-card reveal"><div class="icon">📄</div><h4>نتائج عبر واتساب</h4><p>استلم نتيجتك بضغطة واحدة.</p></div>
       </div>
 
-      <div class="section-head" style="margin-top:50px">
+      <div class="section-head reveal" style="margin-top:50px">
         <h2>💬 آراء <span>عملائنا</span></h2>
         <p>ثقة عملائنا هي سر نجاحنا</p>
       </div>
-      <div class="testimonials-wrapper">
+      <div class="testimonials-wrapper reveal">
         <div class="testimonials-track" id="testimonialsTrack"></div>
       </div>
       <div class="testimonials-nav">
@@ -124,6 +140,7 @@
         <button onclick="slideTestimonials(1)" aria-label="التالي">❯</button>
       </div>
     </section>
+    <!-- نهاية قسم الرئيسية المطور -->
         
     <section id="section-packages" class="section">
       <div class="section-head">
@@ -237,12 +254,12 @@
     <section id="section-features" class="section">
       <div class="section-head"><h2>خدماتنا <span>المميزة</span></h2><p>كل ما تحتاجه من خدمات التحاليل الطبية في مكان واحد</p></div>
       <div class="features-grid">
-        <div class="feature-card"><div class="icon">🏠</div><h4>سحب من المنزل</h4><p>سحب من المنزل بالحجز المسبق ووفق مواعيد الخدمة المتاحة.</p></div>
-        <div class="feature-card"><div class="icon">⚡</div><h4>نتائج سريعة</h4><p>نفس اليوم لمعظم التحاليل.</p></div>
-        <div class="feature-card"><div class="icon">📦</div><h4>باقات موفرة</h4><p>خصم 25% على باقات الفحص الشامل.</p></div>
-        <div class="feature-card"><div class="icon">💰</div><h4>أسعار مناسبة</h4><p>كاش أو محفظة إلكترونية.</p></div>
-        <div class="feature-card"><div class="icon">👨‍⚕️</div><h4>إشراف طبي</h4><p>د/ أحمد طه أبوندا.</p></div>
-        <div class="feature-card"><div class="icon">📄</div><h4>نتائج عبر واتساب</h4><p>بضغطة واحدة.</p></div>
+        <div class="feature-card glass-card"><div class="icon">🏠</div><h4>سحب من المنزل</h4><p>سحب من المنزل بالحجز المسبق ووفق مواعيد الخدمة المتاحة.</p></div>
+        <div class="feature-card glass-card"><div class="icon">⚡</div><h4>نتائج سريعة</h4><p>نفس اليوم لمعظم التحاليل.</p></div>
+        <div class="feature-card glass-card"><div class="icon">📦</div><h4>باقات موفرة</h4><p>خصم 25% على باقات الفحص الشامل.</p></div>
+        <div class="feature-card glass-card"><div class="icon">💰</div><h4>أسعار مناسبة</h4><p>كاش أو محفظة إلكترونية.</p></div>
+        <div class="feature-card glass-card"><div class="icon">👨‍⚕️</div><h4>إشراف طبي</h4><p>د/ أحمد طه أبوندا.</p></div>
+        <div class="feature-card glass-card"><div class="icon">📄</div><h4>نتائج عبر واتساب</h4><p>بضغطة واحدة.</p></div>
       </div>
     </section>
 
@@ -281,10 +298,9 @@
     <section id="section-branches" class="section">
       <div class="section-head"><h2>📍 فروعنا</h2><p>فرعان لخدمتك</p></div>
       <div class="branches-grid">
-        <!-- فرع الجعافرة -->
         <div class="branch-card">
           <h4>🏥 فرع الجعافرة <span class="branch-status" data-branch="jaafra"></span></h4>
-          <a class="branch-map-link" href="https://www.google.com/maps?q=30.205103423661413,31.28252830357078" target="_blank" rel="noopener noreferrer">
+          <a class="branch-map-link" href="https://www.google.com/maps/search/?api=1&query=معامل+طيبة+د/احمد+طه+ابوندا+شبين+القناطر" target="_blank" rel="noopener noreferrer">
             <div class="branch-map-preview">
               <span class="map-pin">📍</span>
               <span class="map-text">اضغط لفتح الموقع على الخريطة</span>
@@ -296,11 +312,9 @@
             <a href="https://www.google.com/maps/dir/?api=1&destination=30.205103423661413,31.28252830357078" target="_blank" rel="noopener noreferrer" class="btn-map">🗺️ الاتجاهات على الخريطة</a>
           </div>
         </div>
-        
-        <!-- فرع بهتيم -->
         <div class="branch-card">
           <h4>🏥 فرع بهتيم <span class="branch-status" data-branch="bahtim"></span></h4>
-          <a class="branch-map-link" href="https://www.google.com/maps?q=30.154034951369837,31.278476534038386" target="_blank" rel="noopener noreferrer">
+          <a class="branch-map-link" href="https://www.google.com/maps/search/?api=1&query=معامل+طيبة+د/احمد+طه+ابوندا+بهتيم" target="_blank" rel="noopener noreferrer">
             <div class="branch-map-preview">
               <span class="map-pin">📍</span>
               <span class="map-text">اضغط لفتح الموقع على الخريطة</span>
@@ -368,9 +382,20 @@
   </aside>
 </div>
 
-<a class="float-wa" href="https://wa.me/201099003494" target="_blank" rel="noopener noreferrer" title="واتساب" aria-label="واتساب">💬</a>
+<a class="float-wa pulse-wa" href="https://wa.me/201099003494" target="_blank" rel="noopener noreferrer" title="واتساب" aria-label="واتساب">💬</a>
 <a class="float-emergency" href="https://wa.me/201099003494?text=تحليل%20عاجل" target="_blank" rel="noopener noreferrer" title="تحليل عاجل">🚨 تحليل عاجل</a>
 <button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="العودة للأعلى">⬆</button>
+
+<!-- Popup Offer Modal -->
+<div class="popup-overlay" id="offerPopup">
+  <div class="popup-content">
+    <button class="popup-close" onclick="closePopupOffer()">✕</button>
+    <div class="popup-icon">🎁</div>
+    <h2>عرض خاص!</h2>
+    <p>احصل على خصم <strong>25%</strong> على باقات الفحص الشامل عند حجزك اليوم.</p>
+    <a href="#" onclick="showSection('packages'); closePopupOffer(); return false;" class="btn-primary">تصفح الباقات الآن</a>
+  </div>
+</div>
 
 <footer>
   <div class="footer-grid">
