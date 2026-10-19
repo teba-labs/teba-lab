@@ -28,8 +28,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="معامل طيبة">
-<!-- تم إضافة خط Tajawal للخطوط -->
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<!-- تم تغيير الخط هنا إلى Tajawal -->
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -86,7 +86,7 @@
         <div class="hero-content">
           <div class="greeting" id="greeting">👋 أهلًا بيك في معامل طيبة</div>
           <h2>دقة تطمنك، ونتيجة <span>تطمن عليك</span></h2>
-          <p>معامل طيبة - TEBA LABS، بإشراف د/ أحمد طه أبوندا. نقدم خدمات التحاليل الطبية بأعلى معايير الدقة والأمانة باستخدام أحدث الأجهزة والتقنيات.</p>
+          <p>معامل طيبة - TEBA LABS، بإشراف د/ أحمد طه أبوندا. نقدم تحاليل طبية بأحدث الأجهزة العالمية، سحب من المنزل بالحجز المسبق، ونتائج سريعة تضمن لك الاطمئنان.</p>
           <div class="hero-buttons">
             <a href="https://wa.me/201099003494" target="_blank" rel="noopener noreferrer" class="btn-wa">💬 احجز واتساب</a>
             <a onclick="showSection('packages')" class="btn-gold" tabindex="0">📦 شوف الباقات</a>
@@ -102,14 +102,14 @@
             </div>
             <div class="stat-box">
               <div class="num"><span class="counter" data-target="495">0</span>+</div>
-              <div class="lbl">تحليل طبي</div>
+              <div class="lbl">تحليل متوفر</div>
             </div>
           </div>
         </div>
         <div class="hero-image-wrapper">
           <div class="hero-image-box">
-             <!-- صورة معمل تحاليل حقيقية -->
-            <img src="https://images.unsplash.com/photo-1579154204601-01588f351e67?q=80&w=800&auto=format&fit=crop" alt="معامل طيبة - تحاليل طبية" loading="lazy">
+             <!-- صورة معمل تحاليل بدل العمليات -->
+            <img src="https://images.unsplash.com/photo-1582719508461-905c673771fd?q=80&w=800&auto=format&fit=crop" alt="معامل طيبة - أجهزة تحاليل" loading="lazy">
           </div>
         </div>
       </div>
@@ -243,7 +243,8 @@
     <section id="section-about" class="section">
       <div class="section-head"><h2>نبذة عن <span>معامل طيبة</span></h2></div>
       <div class="about-box">
-        <p>معامل طيبة (TEBA LABS) هو <strong>معمل تحاليل طبية متخصص</strong> يقدم خدماته بأعلى معايير الدقة والأمانة. بقيادة <strong>د/ أحمد طه أبوندا</strong>، نلتزم بأحدث الأجهزة والتقنيات العالمية لضمان نتائج موثوقة تطمئن قلوبكم.</p>
+        <!-- تم تعديل النص هنا -->
+        <p>معامل طيبة (TEBA LABS) هو معمل تحاليل طبية متخصص يقدم خدمات التحاليل بأعلى جودة ودقة. بقيادة <strong>د/ أحمد طه أبوندا</strong>، نلتزم بأحدث المعايير العالمية لضمان نتائج موثوقة.</p>
         <p>نخدم أهل شبين القناطر والقليوبية من خلال فرعين:</p>
         <ul class="about-list">
           <li><span class="diamond">◆</span><span><strong>فرع الجعافرة</strong> — الطريق العمومي، أعلى صيدلية الصحابة</span></li>
@@ -264,30 +265,23 @@
       </div>
     </section>
 
-    <!-- قسم العروض بعد التنسيق الجديد للهيكل -->
     <section id="section-offers" class="section">
       <div class="section-head"><h2>🎉 العروض <span>والخصومات</span></h2></div>
-      <div class="offer-box" id="offerActive">
-        <div class="inner offer-grid">
-          <div class="offer-visual">
-            <div class="pct" id="offerPct">20%</div>
-            <div class="pct-label">خصم</div>
-          </div>
-          <div class="offer-details">
-            <h3 id="offerTitle">خصم خاص</h3>
-            <p id="offerDesc">خصم على كل التحاليل في الفرعين</p>
-            <div class="badge-white" id="offerPeriod">📅</div>
-            <a id="offerCta" href="#" target="_blank" rel="noopener noreferrer" class="btn-w">💬 احجز الآن واستفيد</a>
-          </div>
-        </div>
+      
+      <!-- تم تعديل تنسيق العروض هنا ليكون أنيق -->
+      <div class="offer-box" id="offerActive" style="background:linear-gradient(135deg, #0a2e15, #15803d); border-radius:20px; padding:40px 20px; text-align:center; color:#fff; border:1px solid var(--border-glow);">
+        <div class="pct" id="offerPct" style="font-size:3.5rem; font-weight:900; color:#fef08a; line-height:1; margin-bottom:10px;">20%</div>
+        <h3 id="offerTitle" style="font-size:1.8rem; margin-bottom:15px; color:#fff;">خصم خاص بمناسبة إطلاق الموقع</h3>
+        <p id="offerDesc" style="font-size:1.1rem; margin-bottom:20px; color:#e2e8f0;">خصم <strong>20%</strong> على كل التحاليل في الفرعين</p>
+        <div class="badge-white" id="offerPeriod" style="display:inline-block; background:rgba(255,255,255,0.1); padding:8px 20px; border-radius:50px; font-size:0.9rem; margin-bottom:30px;">📅 طوال شهر أكتوبر 2026</div>
+        <div><a id="offerCta" href="#" target="_blank" rel="noopener noreferrer" class="btn-wa" style="font-size:1.1rem; padding:15px 40px;">💬 احجز الآن واستفيد</a></div>
       </div>
-      <div class="offer-box" id="offerExpired" style="display:none;background:linear-gradient(135deg,#6b7280,#4b5563)">
-        <div class="inner" style="text-align:center; padding: 30px;">
-          <div style="font-size:4rem;margin-bottom:15px">⏰</div>
-          <h3>انتهى العرض الحالي</h3>
-          <p style="margin-bottom:20px;">تابعنا لمعرفة العروض الجديدة القادمة</p>
-          <a href="https://wa.me/201099003494?text=عايز%20أعرف%20العروض%20الحالية" target="_blank" rel="noopener noreferrer" class="btn-w">💬 تواصل للاستفسار</a>
-        </div>
+
+      <div class="offer-box" id="offerExpired" style="display:none;background:linear-gradient(135deg,#6b7280,#4b5563); border-radius:20px; padding:40px 20px; text-align:center; color:#fff;">
+        <div style="font-size:4rem;margin-bottom:15px">⏰</div>
+        <h3 style="font-size:1.8rem; margin-bottom:10px;">انتهى العرض الحالي</h3>
+        <p style="font-size:1.1rem; margin-bottom:20px;">تابعنا لمعرفة العروض الجديدة القادمة</p>
+        <div style="margin-top:20px"><a href="https://wa.me/201099003494?text=عايز%20أعرف%20العروض%20الحالية" target="_blank" rel="noopener noreferrer" class="btn-wa" style="padding:12px 30px;">💬 تواصل للاستفسار</a></div>
       </div>
     </section>
 
@@ -308,7 +302,7 @@
         <!-- فرع الجعافرة -->
         <div class="branch-card">
           <h4>🏥 فرع الجعافرة <span class="branch-status" data-branch="jaafra"></span></h4>
-          <a class="branch-map-link" href="https://www.google.com/maps?q=30.205103423661413,31.28252830357078" target="_blank" rel="noopener noreferrer">
+          <a class="branch-map-link" href="https://www.google.com/maps/search/?api=1&query=معامل+طيبة+د/احمد+طه+ابوندا+شبين+القناطر" target="_blank" rel="noopener noreferrer">
             <div class="branch-map-preview">
               <span class="map-pin">📍</span>
               <span class="map-text">اضغط لفتح الموقع على الخريطة</span>
@@ -321,7 +315,7 @@
           </div>
         </div>
         
-        <!-- فرع بهتيم -->
+        <!-- فرع بهتيم (تم تعديل الرابط ليستخدم الإحداثيات مباشرة) -->
         <div class="branch-card">
           <h4>🏥 فرع بهتيم <span class="branch-status" data-branch="bahtim"></span></h4>
           <a class="branch-map-link" href="https://www.google.com/maps?q=30.154034951369837,31.278476534038386" target="_blank" rel="noopener noreferrer">
@@ -392,9 +386,12 @@
   </aside>
 </div>
 
-<a class="float-wa pulse-wa" href="https://wa.me/201099003494" target="_blank" rel="noopener noreferrer" title="واتساب" aria-label="واتساب">💬</a>
-<a class="float-emergency" href="https://wa.me/201099003494?text=تحليل%20عاجل" target="_blank" rel="noopener noreferrer" title="تحليل عاجل">🚨 تحليل عاجل</a>
-<button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="العودة للأعلى">⬆</button>
+<!-- تم تعديل أماكن الأزرار العائمة لتكون مرتبة -->
+<div class="floating-buttons-container">
+    <a class="float-wa pulse-wa" href="https://wa.me/201099003494" target="_blank" rel="noopener noreferrer" title="واتساب" aria-label="واتساب">💬</a>
+    <a class="float-emergency" href="https://wa.me/201099003494?text=تحليل%20عاجل" target="_blank" rel="noopener noreferrer" title="تحليل عاجل">🚨 تحليل عاجل</a>
+    <button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="العودة للأعلى">⬆</button>
+</div>
 
 <!-- Popup Offer Modal -->
 <div class="popup-overlay" id="offerPopup">
