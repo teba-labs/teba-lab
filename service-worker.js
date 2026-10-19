@@ -3,7 +3,7 @@
    معامل طيبة - ملف PWA للعمل بدون إنترنت
    ===================================================== */
 
-const CACHE_NAME = 'teba-labs-v4';
+const CACHE_NAME = 'teba-labs-v5';
 const STATIC_ASSETS = [
   './',
   './index.html',
