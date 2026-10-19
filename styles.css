@@ -297,8 +297,8 @@ body.light-mode .section-head h2 span {
 }
 
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
 }
 
 /* ============= 6. HEADER ============= */
