@@ -28,7 +28,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="معامل طيبة">
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<!-- تم إضافة خط Tajawal للخطوط -->
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -85,7 +86,7 @@
         <div class="hero-content">
           <div class="greeting" id="greeting">👋 أهلًا بيك في معامل طيبة</div>
           <h2>دقة تطمنك، ونتيجة <span>تطمن عليك</span></h2>
-          <p>معامل طيبة - TEBA LABS، بإشراف د/ أحمد طه أبوندا. تحاليل طبية بأحدث الأجهزة العالمية، سحب من المنزل بالحجز المسبق، ونتائج سريعة تضمن لك الاطمئنان.</p>
+          <p>معامل طيبة - TEBA LABS، بإشراف د/ أحمد طه أبوندا. نقدم خدمات التحاليل الطبية بأعلى معايير الدقة والأمانة باستخدام أحدث الأجهزة والتقنيات.</p>
           <div class="hero-buttons">
             <a href="https://wa.me/201099003494" target="_blank" rel="noopener noreferrer" class="btn-wa">💬 احجز واتساب</a>
             <a onclick="showSection('packages')" class="btn-gold" tabindex="0">📦 شوف الباقات</a>
@@ -100,15 +101,15 @@
               <div class="lbl">خصم الباقات</div>
             </div>
             <div class="stat-box">
-              <div class="num"><span class="counter" data-target="100">0</span>+</div>
+              <div class="num"><span class="counter" data-target="495">0</span>+</div>
               <div class="lbl">تحليل طبي</div>
             </div>
           </div>
         </div>
         <div class="hero-image-wrapper">
           <div class="hero-image-box">
-             <!-- استبدل الرابط ده بصورة حقيقية من المعمل أو دكتور لو حبيت -->
-            <img src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?q=80&w=800&auto=format&fit=crop" alt="معامل طيبة" loading="lazy">
+             <!-- صورة معمل تحاليل حقيقية -->
+            <img src="https://images.unsplash.com/photo-1579154204601-01588f351e67?q=80&w=800&auto=format&fit=crop" alt="معامل طيبة - تحاليل طبية" loading="lazy">
           </div>
         </div>
       </div>
@@ -242,7 +243,7 @@
     <section id="section-about" class="section">
       <div class="section-head"><h2>نبذة عن <span>معامل طيبة</span></h2></div>
       <div class="about-box">
-        <p>معامل طيبة (TEBA LABS) صرح طبي متكامل يقدم خدمات التحاليل الطبية بأعلى جودة ودقة. بقيادة <strong>د/ أحمد طه أبوندا</strong>، نلتزم بأحدث المعايير العالمية لضمان نتائج موثوقة.</p>
+        <p>معامل طيبة (TEBA LABS) هو <strong>معمل تحاليل طبية متخصص</strong> يقدم خدماته بأعلى معايير الدقة والأمانة. بقيادة <strong>د/ أحمد طه أبوندا</strong>، نلتزم بأحدث الأجهزة والتقنيات العالمية لضمان نتائج موثوقة تطمئن قلوبكم.</p>
         <p>نخدم أهل شبين القناطر والقليوبية من خلال فرعين:</p>
         <ul class="about-list">
           <li><span class="diamond">◆</span><span><strong>فرع الجعافرة</strong> — الطريق العمومي، أعلى صيدلية الصحابة</span></li>
@@ -263,23 +264,29 @@
       </div>
     </section>
 
+    <!-- قسم العروض بعد التنسيق الجديد للهيكل -->
     <section id="section-offers" class="section">
       <div class="section-head"><h2>🎉 العروض <span>والخصومات</span></h2></div>
       <div class="offer-box" id="offerActive">
-        <div class="inner">
-          <div class="pct" id="offerPct">20%</div>
-          <h3 id="offerTitle">خصم خاص</h3>
-          <p id="offerDesc">خصم على كل التحاليل في الفرعين</p>
-          <div class="badge-white" id="offerPeriod">📅</div>
-          <div><a id="offerCta" href="#" target="_blank" rel="noopener noreferrer" class="btn-w">💬 احجز الآن واستفيد</a></div>
+        <div class="inner offer-grid">
+          <div class="offer-visual">
+            <div class="pct" id="offerPct">20%</div>
+            <div class="pct-label">خصم</div>
+          </div>
+          <div class="offer-details">
+            <h3 id="offerTitle">خصم خاص</h3>
+            <p id="offerDesc">خصم على كل التحاليل في الفرعين</p>
+            <div class="badge-white" id="offerPeriod">📅</div>
+            <a id="offerCta" href="#" target="_blank" rel="noopener noreferrer" class="btn-w">💬 احجز الآن واستفيد</a>
+          </div>
         </div>
       </div>
       <div class="offer-box" id="offerExpired" style="display:none;background:linear-gradient(135deg,#6b7280,#4b5563)">
-        <div class="inner">
+        <div class="inner" style="text-align:center; padding: 30px;">
           <div style="font-size:4rem;margin-bottom:15px">⏰</div>
           <h3>انتهى العرض الحالي</h3>
-          <p>تابعنا لمعرفة العروض الجديدة القادمة</p>
-          <div style="margin-top:20px"><a href="https://wa.me/201099003494?text=عايز%20أعرف%20العروض%20الحالية" target="_blank" rel="noopener noreferrer" class="btn-w">💬 تواصل للاستفسار</a></div>
+          <p style="margin-bottom:20px;">تابعنا لمعرفة العروض الجديدة القادمة</p>
+          <a href="https://wa.me/201099003494?text=عايز%20أعرف%20العروض%20الحالية" target="_blank" rel="noopener noreferrer" class="btn-w">💬 تواصل للاستفسار</a>
         </div>
       </div>
     </section>
@@ -298,9 +305,10 @@
     <section id="section-branches" class="section">
       <div class="section-head"><h2>📍 فروعنا</h2><p>فرعان لخدمتك</p></div>
       <div class="branches-grid">
+        <!-- فرع الجعافرة -->
         <div class="branch-card">
           <h4>🏥 فرع الجعافرة <span class="branch-status" data-branch="jaafra"></span></h4>
-          <a class="branch-map-link" href="https://www.google.com/maps/search/?api=1&query=معامل+طيبة+د/احمد+طه+ابوندا+شبين+القناطر" target="_blank" rel="noopener noreferrer">
+          <a class="branch-map-link" href="https://www.google.com/maps?q=30.205103423661413,31.28252830357078" target="_blank" rel="noopener noreferrer">
             <div class="branch-map-preview">
               <span class="map-pin">📍</span>
               <span class="map-text">اضغط لفتح الموقع على الخريطة</span>
@@ -312,9 +320,11 @@
             <a href="https://www.google.com/maps/dir/?api=1&destination=30.205103423661413,31.28252830357078" target="_blank" rel="noopener noreferrer" class="btn-map">🗺️ الاتجاهات على الخريطة</a>
           </div>
         </div>
+        
+        <!-- فرع بهتيم -->
         <div class="branch-card">
           <h4>🏥 فرع بهتيم <span class="branch-status" data-branch="bahtim"></span></h4>
-          <a class="branch-map-link" href="https://www.google.com/maps/search/?api=1&query=معامل+طيبة+د/احمد+طه+ابوندا+بهتيم" target="_blank" rel="noopener noreferrer">
+          <a class="branch-map-link" href="https://www.google.com/maps?q=30.154034951369837,31.278476534038386" target="_blank" rel="noopener noreferrer">
             <div class="branch-map-preview">
               <span class="map-pin">📍</span>
               <span class="map-text">اضغط لفتح الموقع على الخريطة</span>
