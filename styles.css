@@ -1332,3 +1332,10 @@ footer a { cursor: pointer; }
   .offers-track { gap: 30px; }
   .popup-content { padding: 30px 20px; }
 }
+/* حل مشكلة ظهور اللوجو في الوضع الليلي */
+body:not(.light-mode) .brand img {
+  background: #ffffff;
+  padding: 6px 15px;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0, 255, 127, 0.3);
+}
