@@ -28,8 +28,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="معامل طيبة">
-<!-- تم تغيير الخط هنا إلى Tajawal -->
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<!-- خط ألماري الفخم -->
+<link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -43,7 +43,7 @@
     <button class="action-btn" id="toggleRight" aria-label="فتح القائمة"><span>☰</span><span class="label">القائمة</span></button>
     <a href="#" class="brand" onclick="showSection('home');return false;">
       <div class="logo-box"><img src="logo.png" alt="شعار معامل طيبة" onerror="tryNextLogo(this)"></div>
-      <div class="brand-text"><h1>معامل طيبة</h1><span>TEBA LABS - د/ أحمد طه أبوندا</span></div>
+      <div class="brand-text"><h1 style="font-family:'Almarai', sans-serif; font-weight:800;">معامل طيبة</h1><span>TEBA LABS - د/ أحمد طه أبوندا</span></div>
     </a>
     <div class="top-actions">
       <button class="action-btn icon-btn" id="themeToggle" aria-label="تبديل المظهر">🌙</button>
@@ -108,8 +108,8 @@
         </div>
         <div class="hero-image-wrapper">
           <div class="hero-image-box">
-             <!-- صورة معمل تحاليل بدل العمليات -->
-            <img src="https://images.unsplash.com/photo-1582719508461-905c673771fd?q=80&w=800&auto=format&fit=crop" alt="معامل طيبة - أجهزة تحاليل" loading="lazy">
+             <!-- صورة معمل تحاليل وأنابيب دم حقيقية -->
+            <img src="https://images.unsplash.com/photo-1579154204601-01588f351e67?q=80&w=800&auto=format&fit=crop" alt="معامل طيبة - أجهزة تحاليل" loading="lazy">
           </div>
         </div>
       </div>
@@ -243,7 +243,6 @@
     <section id="section-about" class="section">
       <div class="section-head"><h2>نبذة عن <span>معامل طيبة</span></h2></div>
       <div class="about-box">
-        <!-- تم تعديل النص هنا -->
         <p>معامل طيبة (TEBA LABS) هو معمل تحاليل طبية متخصص يقدم خدمات التحاليل بأعلى جودة ودقة. بقيادة <strong>د/ أحمد طه أبوندا</strong>، نلتزم بأحدث المعايير العالمية لضمان نتائج موثوقة.</p>
         <p>نخدم أهل شبين القناطر والقليوبية من خلال فرعين:</p>
         <ul class="about-list">
@@ -268,7 +267,7 @@
     <section id="section-offers" class="section">
       <div class="section-head"><h2>🎉 العروض <span>والخصومات</span></h2></div>
       
-      <!-- تم تعديل تنسيق العروض هنا ليكون أنيق -->
+      <!-- تنسيق العروض الجديد -->
       <div class="offer-box" id="offerActive" style="background:linear-gradient(135deg, #0a2e15, #15803d); border-radius:20px; padding:40px 20px; text-align:center; color:#fff; border:1px solid var(--border-glow);">
         <div class="pct" id="offerPct" style="font-size:3.5rem; font-weight:900; color:#fef08a; line-height:1; margin-bottom:10px;">20%</div>
         <h3 id="offerTitle" style="font-size:1.8rem; margin-bottom:15px; color:#fff;">خصم خاص بمناسبة إطلاق الموقع</h3>
@@ -315,7 +314,7 @@
           </div>
         </div>
         
-        <!-- فرع بهتيم (تم تعديل الرابط ليستخدم الإحداثيات مباشرة) -->
+        <!-- فرع بهتيم (بالإحداثيات) -->
         <div class="branch-card">
           <h4>🏥 فرع بهتيم <span class="branch-status" data-branch="bahtim"></span></h4>
           <a class="branch-map-link" href="https://www.google.com/maps?q=30.154034951369837,31.278476534038386" target="_blank" rel="noopener noreferrer">
@@ -386,7 +385,7 @@
   </aside>
 </div>
 
-<!-- تم تعديل أماكن الأزرار العائمة لتكون مرتبة -->
+<!-- الأزرار العائمة -->
 <div class="floating-buttons-container">
     <a class="float-wa pulse-wa" href="https://wa.me/201099003494" target="_blank" rel="noopener noreferrer" title="واتساب" aria-label="واتساب">💬</a>
     <a class="float-emergency" href="https://wa.me/201099003494?text=تحليل%20عاجل" target="_blank" rel="noopener noreferrer" title="تحليل عاجل">🚨 تحليل عاجل</a>
