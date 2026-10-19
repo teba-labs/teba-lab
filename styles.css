@@ -1,5 +1,5 @@
 /* =====================================================
-   TEBA LABS - Complete Stylesheet (v3.3 Full Expanded)
+   TEBA LABS - Complete Stylesheet (v3.6)
    معامل طيبة - ورقة الأنماط الكاملة
    ===================================================== */
 
@@ -56,7 +56,6 @@
   --radius-lg: 24px;
   --transition: .25s cubic-bezier(.4, 0, .2, 1);
   
-  /* تم تغيير الخط هنا */
   --font: 'Almarai', system-ui, Tahoma, sans-serif;
 
   --section-heading-color: #ffffff;
@@ -133,18 +132,57 @@ body {
   overflow-x: hidden;
 }
 
-a { text-decoration: none; color: inherit; }
-button, input, select, textarea { font-family: inherit; font-size: inherit; }
-button { cursor: pointer; border: 0; background: transparent; }
-img { max-width: 100%; height: auto; display: block; }
-ul, ol { list-style: none; }
+a {
+  text-decoration: none;
+  color: inherit;
+}
 
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: var(--bg-darker); }
-::-webkit-scrollbar-thumb { background: var(--primary-dark); border-radius: 10px; }
-::selection { background: var(--primary); color: #0a0e0a; }
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
 
-h1, h2, h3, h4, h5 { font-weight: 800; line-height: 1.3; color: var(--text-strong); }
+button {
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-darker);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-dark);
+  border-radius: 10px;
+}
+
+::selection {
+  background: var(--primary);
+  color: #0a0e0a;
+}
+
+h1, h2, h3, h4, h5 {
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--text-strong);
+}
+
 h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); }
 h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); }
 h3 { font-size: clamp(1.2rem, 2.5vw, 1.5rem); }
@@ -174,14 +212,42 @@ p { color: var(--text-muted); }
 }
 
 /* ============= 4. COMMON COMPONENTS ============= */
-.section-head { text-align: center; margin-bottom: 30px; }
-.section-head h2 { color: var(--section-heading-color); margin-bottom: 8px; text-shadow: 0 0 20px rgba(0, 255, 127, .3); }
-body.light-mode .section-head h2 { text-shadow: none; }
-.section-head h2 span { background: var(--section-heading-accent); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-body.light-mode .section-head h2 span { background: none; -webkit-text-fill-color: var(--gold); color: var(--gold); }
-.section-head p { color: var(--text-muted); max-width: 600px; margin: auto; font-size: .95rem; }
+.section-head {
+  text-align: center;
+  margin-bottom: 30px;
+}
 
-/* ============= 5. OFFERS TICKER ============= */
+.section-head h2 {
+  color: var(--section-heading-color);
+  margin-bottom: 8px;
+  text-shadow: 0 0 20px rgba(0, 255, 127, .3);
+}
+
+body.light-mode .section-head h2 {
+  text-shadow: none;
+}
+
+.section-head h2 span {
+  background: var(--section-heading-accent);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+body.light-mode .section-head h2 span {
+  background: none;
+  -webkit-text-fill-color: var(--gold);
+  color: var(--gold);
+}
+
+.section-head p {
+  color: var(--text-muted);
+  max-width: 600px;
+  margin: auto;
+  font-size: .95rem;
+}
+
+/* ============= 5. OFFERS TICKER (FIXED INFINITE LOOP) ============= */
 .offers-bar {
   background: linear-gradient(90deg, #0a2e15, #15803d, #00ff7f, #15803d, #0a2e15);
   background-size: 200% 100%;
@@ -191,6 +257,7 @@ body.light-mode .section-head h2 span { background: none; -webkit-text-fill-colo
   overflow: hidden;
   position: relative;
   z-index: 100;
+  direction: ltr; /* السر عشان الشريط ميقفش */
 }
 
 @keyframes offerSlide {
@@ -201,7 +268,7 @@ body.light-mode .section-head h2 span { background: none; -webkit-text-fill-colo
 .offers-track {
   display: flex;
   width: max-content;
-  animation: marquee 50s linear infinite;
+  animation: marquee 40s linear infinite;
   will-change: transform;
 }
 
@@ -217,6 +284,7 @@ body.light-mode .section-head h2 span { background: none; -webkit-text-fill-colo
   cursor: pointer;
   transition: var(--transition);
   display: inline-block;
+  direction: rtl; /* إرجاع النص لعربي */
 }
 
 .offers-track .ticker-item:hover {
@@ -257,7 +325,11 @@ body.light-mode header.top-bar {
   margin: auto;
 }
 
-.brand { display: flex; align-items: center; gap: 14px; }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
 
 .logo-box {
   width: 64px;
@@ -746,13 +818,23 @@ body.light-mode .stat-box .num {
   text-align: center;
 }
 
-.trust-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.trust-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
 
 .trust-item .trust-icon {
-  width: 44px; height: 44px; border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
   background: linear-gradient(135deg, var(--primary-dark), #0a2e15);
-  color: var(--primary-glow); display: grid; place-items: center;
-  font-size: 1.3rem; border: 1px solid var(--border-glow);
+  color: var(--primary-glow);
+  display: grid;
+  place-items: center;
+  font-size: 1.3rem;
+  border: 1px solid var(--border-glow);
 }
 
 .trust-item strong { color: var(--text-strong); font-size: .92rem; font-weight: 800; }
@@ -784,10 +866,15 @@ body.light-mode .stat-box .num {
 }
 
 .glass-card .icon {
-  width: 60px; height: 60px; border-radius: 16px;
-  background: var(--btn-primary-bg); color: #fff;
-  display: grid; place-items: center;
-  margin: 0 auto 18px; font-size: 1.8rem;
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: var(--btn-primary-bg);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 18px;
+  font-size: 1.8rem;
   box-shadow: var(--shadow-glow);
 }
 
@@ -1124,67 +1211,12 @@ footer a { cursor: pointer; }
 .footer-legal a:hover { color: var(--primary-glow); }
 
 /* ============= 26. FLOATING BUTTONS ============= */
-/* تم تعديل حاوية الأزرار العائمة لتكون مرتبة */
-.floating-buttons-container {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 98;
-    display: flex;
-    flex-direction: column-reverse;
-    align-items: center;
-    gap: 15px;
-}
-
-.float-wa {
-  position: relative;
-  background: #25D366;
-  color: #fff;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 1.8rem;
-  box-shadow: 0 0 30px rgba(37, 211, 102, .6);
-  transition: transform .3s;
-}
-
+.floating-buttons-container { position: fixed; bottom: 20px; right: 20px; z-index: 98; display: flex; flex-direction: column-reverse; align-items: center; gap: 15px; }
+.float-wa { position: relative; background: #25D366; color: #fff; width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; font-size: 1.8rem; box-shadow: 0 0 30px rgba(37, 211, 102, .6); transition: transform .3s; }
 .float-wa:hover { transform: scale(1.1); }
-
-.float-emergency {
-  position: relative;
-  background: linear-gradient(135deg, #dc2626, #991b1b);
-  color: #fff;
-  padding: 8px 18px;
-  border-radius: 999px;
-  font-size: .85rem;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  animation: pulse 2s infinite;
-  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-}
-
-.back-top {
-  position: relative;
-  background: var(--btn-gold-bg);
-  color: #fff;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: none;
-  place-items: center;
-  font-size: 1.3rem;
-  border: 2px solid #fff;
-}
-
+.float-emergency { position: relative; background: linear-gradient(135deg, #dc2626, #991b1b); color: #fff; padding: 8px 18px; border-radius: 999px; font-size: .85rem; font-weight: 800; display: flex; align-items: center; gap: 6px; animation: pulse 2s infinite; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4); }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+.back-top { position: relative; background: var(--btn-gold-bg); color: #fff; width: 50px; height: 50px; border-radius: 50%; display: none; place-items: center; font-size: 1.3rem; border: 2px solid #fff; }
 .back-top.show { display: grid; }
 
 /* ============= 27. OVERLAY ============= */
