@@ -1,6 +1,6 @@
 /* =====================================================
-   TEBA LABS - Main Application (Refactored v2)
-   معامل طيبة - التطبيق الرئيسي
+   TEBA LABS - Main Application (v3.0 Final)
+   معامل طيبة - التطبيق الرئيسي (تحديث التصميم والحركات)
    ===================================================== */
 
 (function(){
@@ -86,7 +86,7 @@
   }
 
   /* =====================================================
-   2. OFFER & TICKER MANAGEMENT (Updated 12 Messages)
+   2. OFFER & TICKER MANAGEMENT (12 Messages)
    ===================================================== */
   function renderOffer(){
     const active = isOfferActive();
@@ -95,30 +95,21 @@
     const offerExpired = document.getElementById('offerExpired');
 
     if(offersTrack){
-      // الرسائل الـ 12 المختارة (3 عروض، 4 شروط، 2 خدمات، 3 معلومات)
       const tickerItems = [
-        // 1. العروض والباقات
         `<span class="ticker-item" onclick="showSection('packages')">🎉 خصم 25% على باقات الفحص الشامل — احجز الآن</span>`,
         `<span class="ticker-item" onclick="showSection('packages')">📦 باقة الفحص الشامل (16 تحليل) وفر فلوسك واطمن على صحتك</span>`,
         `<span class="ticker-item" onclick="showSection('packages')">🍬 باقة السكر والدهون لمتابعة صحتك باستمرار</span>`,
-        
-        // 2. شروط التحاليل
         `<span class="ticker-item" onclick="showSection('tests')">🧪 سكر صائم: صيام 8-12 ساعة (الماء مسموح)</span>`,
         `<span class="ticker-item" onclick="showSection('tests')">🧪 دهون كاملة: صيام 9-12 ساعة (تجنب الكحول)</span>`,
         `<span class="ticker-item" onclick="showSection('tests')">🧪 صورة دم كاملة: مش محتاجة صيام، تقدر تعملها في أي وقت</span>`,
         `<span class="ticker-item" onclick="showSection('tests')">🧪 تحليل السائل المنوي: لازم امتناع عن الجماع من 2 لـ 5 أيام</span>`,
-        
-        // 3. الخدمات
         `<span class="ticker-item" onclick="showSection('booking')">🏠 سحب من المنزل بالحجز المسبق — كلمنا واتساب</span>`,
         `<span class="ticker-item" onclick="showSection('results')">📱 استلم نتيجتك عبر واتساب بضغطة واحدة ومجاناً</span>`,
-        
-        // 4. معلومات طبية
         `<span class="ticker-item" onclick="showSection('medical')">🩺 معلومة: الصيام قبل تحليل السكر بيمنع قراءات خاطئة بتأثر على العلاج</span>`,
         `<span class="ticker-item" onclick="showSection('medical')">🩺 معلومة: تحليل فيتامين د مهم جداً للمناعة وصحة العظام</span>`,
         `<span class="ticker-item" onclick="showSection('medical')">🩺 معلومة: الكشف المبكر عن السكر بيحميك من مضاعفات خطيرة</span>`
       ];
 
-      // تكرار الرسائل مرتين بالظبط داخل كتلة واحدة عشان نعمل لوب مثالي (TV Style)
       const tickerHTML = `<div class="ticker-block">${tickerItems.join('')}</div>`;
       offersTrack.innerHTML = tickerHTML + tickerHTML;
     }
@@ -727,7 +718,65 @@
   setInterval(updateBranchStatus, 5 * 60 * 1000);
 
   /* =====================================================
-   17. INIT
+   17. NEW FEATURES (Counters, Scroll Reveal, Popup)
+   ===================================================== */
+  function initCounters() {
+    const counters = document.querySelectorAll('.counter');
+    const speed = 200; 
+    const observer = new IntersectionObserver((entries, obs) => {
+      entries.forEach(entry => {
+        if(entry.isIntersecting) {
+          const counter = entry.target;
+          const updateCount = () => {
+            const target = +counter.getAttribute('data-target');
+            const count = +counter.innerText;
+            const inc = target / speed;
+            if (count < target) {
+              counter.innerText = Math.ceil(count + inc);
+              setTimeout(updateCount, 1);
+            } else {
+              counter.innerText = target;
+            }
+          };
+          updateCount();
+          obs.unobserve(counter);
+        }
+      });
+    }, { threshold: 0.5 });
+    counters.forEach(counter => observer.observe(counter));
+  }
+
+  function initScrollReveal() {
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries, obs) => {
+      entries.forEach(entry => {
+        if(entry.isIntersecting) {
+          entry.target.classList.add('active');
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    reveals.forEach(reveal => observer.observe(reveal));
+  }
+
+  function initPopupOffer() {
+    if(localStorage.getItem('teba_popup_shown') === 'yes') return;
+    setTimeout(() => {
+      const popup = document.getElementById('offerPopup');
+      if(popup) {
+        popup.classList.add('show');
+        localStorage.setItem('teba_popup_shown', 'yes');
+      }
+    }, 3000);
+  }
+
+  window.closePopupOffer = function() {
+    const popup = document.getElementById('offerPopup');
+    if(popup) popup.classList.remove('show');
+  };
+
+  /* =====================================================
+   18. INIT
    ===================================================== */
   document.getElementById('year') && (document.getElementById('year').textContent = new Date().getFullYear());
   buildCategories();
@@ -738,6 +787,11 @@
   renderMedicalArticles();
   renderTrustStrip();
   renderTestimonials();
+  
+  // تشغيل الميزات الجديدة
+  initCounters();
+  initScrollReveal();
+  initPopupOffer();
 
   if(window.innerWidth > 1000){
     sidebarRight.classList.remove('collapsed');
