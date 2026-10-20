@@ -1,0 +1,202 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة التحكم | معامل طيبة - TEBA LABS</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="admin.css">
+<style>
+  .fin-table { width: 100%; border-collapse: collapse; text-align: center; color: var(--text); margin-top: 15px; }
+  .fin-table th { background: rgba(0,255,127,0.1); color: var(--primary-glow); padding: 12px; border-bottom: 2px solid var(--border-glow); font-size: 1rem; }
+  .fin-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+  .fin-table tr:hover { background: rgba(255,255,255,0.02); }
+  .branch-title { color: var(--gold); font-size: 1.1rem; margin: 15px 0 5px; text-align: right; border-right: 4px solid var(--gold); padding-right: 10px; }
+  .filter-group { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; background: var(--bg-card); padding: 15px; border-radius: 12px; border: 1px solid var(--border); }
+  .filter-group label { color: var(--text-muted); font-weight: bold; }
+  .filter-group select { padding: 10px 15px; border-radius: 8px; background: var(--bg-input); color: var(--text); border: 1px solid var(--border); font-family: inherit; font-size: 1rem; }
+</style>
+</head>
+<body class="admin-body">
+
+<!-- شاشة تسجيل الدخول -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <div class="login-logo"><img src="logo.png" alt="معامل طيبة"></div>
+    <h2>لوحة التحكم</h2>
+    <p>معامل طيبة - TEBA LABS</p>
+    <input type="password" id="adminPassword" placeholder="أدخل كلمة المرور">
+    <button onclick="checkAdminPassword()">دخول</button>
+    <div id="loginError" class="login-error"></div>
+  </div>
+</div>
+
+<!-- لوحة التحكم -->
+<div id="adminDashboard" class="admin-dashboard" style="display:none;">
+  <header class="admin-header">
+    <div class="admin-header-left">
+      <button class="admin-menu-btn" onclick="toggleAdminSidebar()">☰</button>
+      <h1>📊 لوحة التحكم</h1>
+    </div>
+    <div class="admin-header-right">
+      <span class="admin-user">👨‍⚕️ د/ أحمد طه</span>
+      <button class="admin-logout" onclick="logoutAdmin()">خروج</button>
+    </div>
+  </header>
+
+  <div class="admin-layout">
+    <aside class="admin-sidebar" id="adminSidebar">
+      <h3>📈 التقارير</h3>
+      <ul class="admin-nav">
+        <li><button class="active" data-report="financial" onclick="showReport('financial')">💰 التقرير الشهري</button></li>
+        <li><button data-report="annual" onclick="showReport('annual')">📅 التقرير السنوي</button></li>
+        <li><button data-report="topSellers" onclick="showReport('topSellers')">🏆 الأكثر مبيعاً</button></li>
+        <li><button data-report="needOffers" onclick="showReport('needOffers')">🎯 محتاجة عروض</button></li>
+        <li><button data-report="mostProfitable" onclick="showReport('mostProfitable')">💎 الأكثر ربحاً</button></li>
+      </ul>
+      <h3>📂 الملفات</h3>
+      <ul class="admin-nav">
+        <li><button data-report="upload" onclick="showReport('upload')">📤 رفع ملف إكسيل</button></li>
+      </ul>
+    </aside>
+
+    <main class="admin-content">
+      
+      <!-- قسم رفع الملف -->
+      <section class="admin-section active" id="report-upload">
+        <div class="admin-section-head">
+          <h2>📤 رفع ملف بيانات المبيعات</h2>
+          <p>ارفع ملف "المتابعه اليومية" لقراءة الأرقام</p>
+        </div>
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+          <div class="upload-icon">📁</div>
+          <h3>اسحب الملف هنا أو اضغط للاختيار</h3>
+          <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFileUpload(event)">
+        </div>
+        <div id="uploadStatus" class="upload-status"></div>
+        <button onclick="clearData()" style="margin-top: 20px; background: rgba(220,38,38,0.2); color: #f87171; border: 1px solid #f87171; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold;">🗑️ مسح البيانات المحفوظة</button>
+      </section>
+
+      <!-- التقرير الشهري -->
+      <section class="admin-section" id="report-financial">
+        <div class="admin-section-head">
+          <h2>💰 التقرير الشهري</h2>
+          <p>اختر الفرع والسنة والشهر لعرض النتائج الدقيقة من شيت المتابعة السنوية</p>
+        </div>
+
+        <div class="filter-group" style="margin-bottom: 20px;">
+          <div>
+            <label>الفرع:</label>
+            <select id="branchSelector" onchange="renderFinancialReport()">
+              <option value="combined">🏥 إجمالي الفرعين</option>
+              <option value="jaafara">🏥 فرع الجعافرة</option>
+              <option value="bahtim">🏥 فرع بهتيم</option>
+            </select>
+          </div>
+          <div>
+            <label>السنة:</label>
+            <select id="yearSelector" onchange="renderFinancialReport()">
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+              <option value="2024">2024</option>
+            </select>
+          </div>
+          <div>
+            <label>الشهر:</label>
+            <select id="monthSelector" onchange="renderFinancialReport()">
+              <option value="all">كل السنة (الإجمالي)</option>
+              <option value="1">يناير</option>
+              <option value="2">فبراير</option>
+              <option value="3">مارس</option>
+              <option value="4">ابريل</option>
+              <option value="5">مايو</option>
+              <option value="6">يونيو</option>
+              <option value="7">يوليو</option>
+              <option value="8">اغسطس</option>
+              <option value="9">سبتمبر</option>
+              <option value="10">اكتوبر</option>
+              <option value="11">نوفمبر</option>
+              <option value="12">ديسمبر</option>
+            </select>
+          </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+          <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border-glow); text-align: center;">
+            <h4 style="color: var(--text-muted); font-size: 0.9rem;">إجمالي الإيراد</h4>
+            <div id="fin-revenue" style="font-size: 2rem; font-weight: bold; color: #00ff7f;">0</div>
+          </div>
+          <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid #f87171; text-align: center;">
+            <h4 style="color: var(--text-muted); font-size: 0.9rem;">إجمالي المصروفات</h4>
+            <div id="fin-expenses" style="font-size: 2rem; font-weight: bold; color: #f87171;">0</div>
+          </div>
+          <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid #fbbf24; text-align: center;">
+            <h4 style="color: var(--text-muted); font-size: 0.9rem;">صافي الربح</h4>
+            <div id="fin-profit" style="font-size: 2rem; font-weight: bold; color: #fbbf24;">0</div>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
+          <canvas id="financeChart" height="100"></canvas>
+        </div>
+      </section>
+
+      <!-- التقرير السنوي -->
+      <section class="admin-section" id="report-annual">
+        <div class="admin-section-head">
+          <h2>📅 التقرير السنوي (تفصيل الفروع)</h2>
+          <p>مقارنة شاملة لإجمالي الإيرادات وصافي الربح لكل فرع</p>
+        </div>
+        
+        <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 20px;">
+          <h3 class="branch-title">🏥 فرع الجعافرة</h3>
+          <table class="fin-table">
+            <thead><tr><th>السنة</th><th>إجمالي الإيراد</th><th>إجمالي المصروفات</th><th>صافي الربح</th></tr></thead>
+            <tbody id="annualTableJaafara"></tbody>
+          </table>
+
+          <h3 class="branch-title" style="margin-top: 30px;">🏥 فرع بهتيم</h3>
+          <table class="fin-table">
+            <thead><tr><th>السنة</th><th>إجمالي الإيراد</th><th>إجمالي المصروفات</th><th>صافي الربح</th></tr></thead>
+            <tbody id="annualTableBahtim"></tbody>
+          </table>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+          <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
+            <h4 style="text-align:center; color:var(--text-muted); margin-bottom:15px;">مقارنة الإيرادات</h4>
+            <canvas id="annualRevChart" height="200"></canvas>
+          </div>
+          <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
+            <h4 style="text-align:center; color:var(--text-muted); margin-bottom:15px;">مقارنة صافي الربح</h4>
+            <canvas id="annualProfitChart" height="200"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- باقي الأقسام (قريباً) -->
+      <section class="admin-section" id="report-topSellers">
+        <div class="admin-section-head"><h2>🏆 الأكثر مبيعاً</h2></div>
+        <div class="admin-placeholder"><div class="placeholder-icon">🏆</div><h3>قريباً...</h3></div>
+      </section>
+      <section class="admin-section" id="report-needOffers">
+        <div class="admin-section-head"><h2>🎯 محتاجة عروض</h2></div>
+        <div class="admin-placeholder"><div class="placeholder-icon">🎯</div><h3>قريباً...</h3></div>
+      </section>
+      <section class="admin-section" id="report-mostProfitable">
+        <div class="admin-section-head"><h2>💎 الأكثر ربحاً</h2></div>
+        <div class="admin-placeholder"><div class="placeholder-icon">💎</div><h3>قريباً...</h3></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- المكتبات (تم التأكد من اللينكات) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
