@@ -1,5 +1,5 @@
-﻿/* =====================================================
-   TEBA LABS - Admin Logic (v17 - TRUE FIX)
+/* =====================================================
+   TEBA LABS - Admin Logic (v19 - All 3 Reports)
    ===================================================== */
 
 (function(){
@@ -16,6 +16,9 @@
     
     if(reportName === 'annual') renderAnnualReport();
     if(reportName === 'financial') renderFinancialReport();
+    if(reportName === 'topSellers') renderTopSellers();
+    if(reportName === 'mostProfitable') renderMostProfitable();
+    if(reportName === 'needOffers') renderNeedOffers();
     
     if(window.innerWidth <= 900) document.getElementById('adminSidebar').classList.remove('open');
   };
@@ -46,261 +49,230 @@
 
   window.clearData = function() {
     if(confirm('هل أنت متأكد من مسح البيانات المحفوظة؟')) {
-      localStorage.removeItem('teba_excel_data');
+      localStorage.removeItem('teba_sales_data');
+      localStorage.removeItem('teba_prices_data');
       location.reload();
     }
   };
 
-  window.handleFileUpload = function(event){
+  window.handleFileUpload = function(event, type){
     const file = event.target.files[0];
-    if(file) processFile(file);
-  };
-
-  function processFile(file){
-    const status = document.getElementById('uploadStatus');
-    status.className = 'upload-status';
-    status.textContent = '⏳ جاري قراءة الملف...';
+    if(!file) return;
+    
+    const statusEl = document.getElementById(type === 'sales' ? 'uploadStatusSales' : 'uploadStatusPrices');
+    statusEl.className = 'upload-status';
+    statusEl.textContent = '⏳ جاري القراءة...';
 
     const reader = new FileReader();
     reader.onload = function(e) {
       try {
         const data = new Uint8Array(e.target.result);
-        
         const base64 = btoa(data.reduce((data, byte) => data + String.fromCharCode(byte), ''));
-        try { localStorage.setItem('teba_excel_data', base64); } catch(err) {}
+        localStorage.setItem(type === 'sales' ? 'teba_sales_data' : 'teba_prices_data', base64);
 
         const workbook = XLSX.read(data, { type: 'array' });
         
-        status.className = 'upload-status success';
-        status.innerHTML = `✅ تم قراءة الملف بنجاح!<br><small>(البيانات محفوظة)</small>`;
+        statusEl.className = 'upload-status success';
+        statusEl.innerHTML = `✅ تم رفع الملف بنجاح!`;
         
-        window.uploadedWorkbook = workbook; 
-        renderFinancialReport();
-        renderAnnualReport();
+        if(type === 'sales') window.salesWorkbook = workbook;
+        if(type === 'prices') window.pricesWorkbook = workbook;
+        
+        renderAllReports();
         
       } catch (error) {
-        status.className = 'upload-status error';
-        status.textContent = '❌ حدث خطأ: ' + error.message;
+        statusEl.className = 'upload-status error';
+        statusEl.textContent = '❌ حدث خطأ: ' + error.message;
       }
     };
     reader.readAsArrayBuffer(file);
-  }
+  };
 
   function loadSavedData() {
-    const base64 = localStorage.getItem('teba_excel_data');
-    if(!base64) return;
-    try {
-        const workbook = XLSX.read(base64, { type: 'base64' });
-        window.uploadedWorkbook = workbook;
-        renderFinancialReport();
-        renderAnnualReport();
-        document.getElementById('uploadStatus').className = 'upload-status success';
-        document.getElementById('uploadStatus').innerHTML = '✅ تم تحميل البيانات المحفوظة سابقاً.';
-    } catch(err) { console.error("خطأ في التحميل:", err); }
+    const salesB64 = localStorage.getItem('teba_sales_data');
+    const pricesB64 = localStorage.getItem('teba_prices_data');
+    
+    if(salesB64) {
+        window.salesWorkbook = XLSX.read(salesB64, { type: 'base64' });
+        document.getElementById('uploadStatusSales').className = 'upload-status success';
+        document.getElementById('uploadStatusSales').innerHTML = '✅ ملف المبيعات محمل.';
+    }
+    if(pricesB64) {
+        window.pricesWorkbook = XLSX.read(pricesB64, { type: 'base64' });
+        document.getElementById('uploadStatusPrices').className = 'upload-status success';
+        document.getElementById('uploadStatusPrices').innerHTML = '✅ ملف الأسعار محمل.';
+    }
+    renderAllReports();
+  }
+
+  function renderAllReports() {
+      renderFinancialReport();
+      renderAnnualReport();
+      renderTopSellers();
+      renderMostProfitable();
+      renderNeedOffers();
   }
 
   window.renderFinancialReport = function() {
     try {
-      if (!window.uploadedWorkbook) return;
-
+      if (!window.salesWorkbook || !window.salesWorkbook.Sheets['المتابعة السنوية']) return;
       const selectedYear = document.getElementById('yearSelector').value;
       const selectedMonth = document.getElementById('monthSelector').value;
       const selectedBranch = document.getElementById('branchSelector').value;
-      
-      const sheetName = 'المتابعة السنوية';
-      if (!window.uploadedWorkbook.Sheets[sheetName]) return;
-
-      const ws = window.uploadedWorkbook.Sheets[sheetName];
+      const ws = window.salesWorkbook.Sheets['المتابعة السنوية'];
       const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
-      let startRow = 0;
-      if (selectedYear === '2024') startRow = 29; // صف 30
-      else if (selectedYear === '2025') startRow = 46; // صف 47
-      else if (selectedYear === '2026') startRow = 63; // صف 64
-
-      let totalRevenue = 0;
-      let totalExpenses = 0;
-
-      const getNum = (val) => {
-          if (typeof val === 'number') return Math.round(val);
-          if (typeof val === 'string') {
-              const parsed = parseFloat(val.replace(/,/g, ''));
-              return isNaN(parsed) ? 0 : Math.round(parsed);
-          }
-          return 0;
-      };
+      let startRow = selectedYear === '2024' ? 29 : selectedYear === '2025' ? 46 : 63;
+      let totalRevenue = 0, totalExpenses = 0;
+      const getNum = (val) => Math.round(Number(val) || 0);
 
       const processMonth = (monthIndex) => {
           const row = data[startRow + monthIndex - 1] || [];
-          
-          // بهتيم: الإيراد (Index 0)، المصاريف (Index 2)
-          const bRev = getNum(row[0]); 
-          const bExp = getNum(row[2]); 
-          
-          // الجعافرة: الإيراد (Index 14)، المصاريف (Index 12)
-          const jRev = getNum(row[14]); 
-          const jExp = getNum(row[12]); 
-
-          if (selectedBranch === 'combined') {
-              totalRevenue += (jRev + bRev);
-              totalExpenses += (jExp + bExp);
-          } else if (selectedBranch === 'jaafara') {
-              totalRevenue += jRev;
-              totalExpenses += jExp;
-          } else if (selectedBranch === 'bahtim') {
-              totalRevenue += bRev;
-              totalExpenses += bExp;
-          }
+          const bRev = getNum(row[0]), bExp = getNum(row[2]);
+          const jRev = getNum(row[14]), jExp = getNum(row[12]);
+          if (selectedBranch === 'combined') { totalRevenue += (jRev + bRev); totalExpenses += (jExp + bExp); }
+          else if (selectedBranch === 'jaafara') { totalRevenue += jRev; totalExpenses += jExp; }
+          else if (selectedBranch === 'bahtim') { totalRevenue += bRev; totalExpenses += bExp; }
       };
 
-      if (selectedMonth === 'all') {
-          for (let i = 1; i <= 12; i++) processMonth(i);
-      } else {
-          processMonth(parseInt(selectedMonth));
-      }
-
-      const netProfit = totalRevenue - totalExpenses;
-      let branchName = 'إجمالي الفرعين';
-      if (selectedBranch === 'jaafara') branchName = 'الجعافرة';
-      if (selectedBranch === 'bahtim') branchName = 'بهتيم';
+      if (selectedMonth === 'all') { for (let i = 1; i <= 12; i++) processMonth(i); } else { processMonth(parseInt(selectedMonth)); }
 
       document.getElementById('fin-revenue').textContent = totalRevenue.toLocaleString('en-US') + ' ج';
       document.getElementById('fin-expenses').textContent = totalExpenses.toLocaleString('en-US') + ' ج';
-      document.getElementById('fin-profit').textContent = netProfit.toLocaleString('en-US') + ' ج';
+      document.getElementById('fin-profit').textContent = (totalRevenue - totalExpenses).toLocaleString('en-US') + ' ج';
 
-      const ctx = document.getElementById('financeChart').getContext('2d');
-      if (window.myChart) window.myChart.destroy(); 
-
-      window.myChart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-              labels: ['الإيرادات', 'المصروفات', 'صافي الربح'],
-              datasets: [{
-                  label: `${branchName} - ${selectedYear}`,
-                  data: [totalRevenue, totalExpenses, netProfit],
-                  backgroundColor: ['rgba(0, 255, 127, 0.5)', 'rgba(248, 113, 113, 0.5)', 'rgba(251, 191, 36, 0.5)'],
-                  borderColor: ['#00ff7f', '#f87171', '#fbbf24'],
-                  borderWidth: 2,
-                  borderRadius: 8
-              }]
-          },
-          options: {
-              responsive: true,
-              plugins: { legend: { display: true, labels: { color: '#fff', font: { family: 'Almarai' } } } },
-              scales: {
-                  y: { ticks: { color: '#a8b5a8' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                  x: { ticks: { color: '#a8b5a8' }, grid: { display: false } }
-              }
-          }
-      });
-    } catch (error) { console.error("خطأ في التقرير الشهري:", error); }
-  }
+      const ctx = document.getElementById('financeChart');
+      if(ctx) {
+          if (window.myChart) window.myChart.destroy(); 
+          window.myChart = new Chart(ctx.getContext('2d'), {
+              type: 'bar',
+              data: {
+                  labels: ['الإيرادات', 'المصروفات', 'صافي الربح'],
+                  datasets: [{
+                      label: `${selectedBranch} - ${selectedYear}`,
+                      data: [totalRevenue, totalExpenses, (totalRevenue - totalExpenses)],
+                      backgroundColor: ['rgba(0, 255, 127, 0.5)', 'rgba(248, 113, 113, 0.5)', 'rgba(251, 191, 36, 0.5)'],
+                      borderColor: ['#00ff7f', '#f87171', '#fbbf24'],
+                      borderWidth: 2, borderRadius: 8
+                  }]
+              },
+              options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#a8b5a8' } }, x: { ticks: { color: '#a8b5a8' } } } }
+          });
+      }
+    } catch (e) { console.error(e); }
+  };
 
   window.renderAnnualReport = function() {
     try {
-      if (!window.uploadedWorkbook) return;
-
-      const sheetName = 'المتابعة السنوية';
-      if (!window.uploadedWorkbook.Sheets[sheetName]) return;
-
-      const ws = window.uploadedWorkbook.Sheets[sheetName];
-      const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
-
-      // صفوف الإجماليات
-      const yearsData = [
-          { year: '2024', row: data[41] }, // صف 42
-          { year: '2025', row: data[58] }, // صف 59
-          { year: '2026', row: data[75] }  // صف 76
-      ];
-
-      let jaafaraHTML = '';
-      let bahtimHTML = '';
-
-      let revData = { jaafara: [], bahtim: [] };
-      let profitData = { jaafara: [], bahtim: [] };
-
+      if (!window.salesWorkbook || !window.salesWorkbook.Sheets['المتابعة السنوية']) return;
+      const data = XLSX.utils.sheet_to_json(window.salesWorkbook.Sheets['المتابعة السنوية'], { header: 1 });
+      const yearsData = [ { year: '2024', row: data[41] }, { year: '2025', row: data[58] }, { year: '2026', row: data[75] } ];
+      let jHTML = '', bHTML = '';
       yearsData.forEach(y => {
           if (!y.row) return;
-          
-          // بهتيم: الإيراد (0)، المصاريف (2)، الربح (4)
-          const bRev = Math.round(Number(y.row[0]) || 0);
-          const bExp = Math.round(Number(y.row[2]) || 0);
-          const bProfit = Math.round(Number(y.row[4]) || 0);
-
-          // الجعافرة: الإيراد (14)، المصاريف (12)، الربح (10)
-          const jRev = Math.round(Number(y.row[14]) || 0);
-          const jExp = Math.round(Number(y.row[12]) || 0);
-          const jProfit = Math.round(Number(y.row[10]) || 0);
-
-          revData.jaafara.push(jRev);
-          revData.bahtim.push(bRev);
-          profitData.jaafara.push(jProfit);
-          profitData.bahtim.push(bProfit);
-
-          jaafaraHTML += `
-            <tr>
-              <td style="font-weight:bold; color:var(--gold);">${y.year}</td>
-              <td style="color: #00ff7f;">${jRev.toLocaleString('en-US')} ج</td>
-              <td style="color: #f87171;">${jExp.toLocaleString('en-US')} ج</td>
-              <td style="color: #fbbf24; font-weight:bold;">${jProfit.toLocaleString('en-US')} ج</td>
-            </tr>`;
-
-          bahtimHTML += `
-            <tr>
-              <td style="font-weight:bold; color:var(--gold);">${y.year}</td>
-              <td style="color: #00ff7f;">${bRev.toLocaleString('en-US')} ج</td>
-              <td style="color: #f87171;">${bExp.toLocaleString('en-US')} ج</td>
-              <td style="color: #fbbf24; font-weight:bold;">${bProfit.toLocaleString('en-US')} ج</td>
-            </tr>`;
+          const bRev = Math.round(Number(y.row[0])||0), bExp = Math.round(Number(y.row[2])||0), bProfit = Math.round(Number(y.row[4])||0);
+          const jRev = Math.round(Number(y.row[14])||0), jExp = Math.round(Number(y.row[12])||0), jProfit = Math.round(Number(y.row[10])||0);
+          jHTML += `<tr><td style="color:var(--gold); font-weight:bold;">${y.year}</td><td style="color:#00ff7f;">${jRev.toLocaleString()} ج</td><td style="color:#f87171;">${jExp.toLocaleString()} ج</td><td style="color:#fbbf24; font-weight:bold;">${jProfit.toLocaleString()} ج</td></tr>`;
+          bHTML += `<tr><td style="color:var(--gold); font-weight:bold;">${y.year}</td><td style="color:#00ff7f;">${bRev.toLocaleString()} ج</td><td style="color:#f87171;">${bExp.toLocaleString()} ج</td><td style="color:#fbbf24; font-weight:bold;">${bProfit.toLocaleString()} ج</td></tr>`;
       });
+      document.getElementById('annualTableJaafara').innerHTML = jHTML;
+      document.getElementById('annualTableBahtim').innerHTML = bHTML;
+    } catch (e) { console.error(e); }
+  };
 
-      document.getElementById('annualTableJaafara').innerHTML = jaafaraHTML;
-      document.getElementById('annualTableBahtim').innerHTML = bahtimHTML;
-
-      const revCtx = document.getElementById('annualRevChart').getContext('2d');
-      if (window.revChart) window.revChart.destroy(); 
-      window.revChart = new Chart(revCtx, {
-          type: 'bar',
-          data: {
-              labels: ['2024', '2025', '2026'],
-              datasets: [
-                  { label: 'الجعافرة', data: revData.jaafara, backgroundColor: 'rgba(0, 255, 127, 0.7)', borderColor: '#00ff7f', borderWidth: 1 },
-                  { label: 'بهتيم', data: revData.bahtim, backgroundColor: 'rgba(0, 191, 255, 0.7)', borderColor: '#00bfff', borderWidth: 1 }
-              ]
-          },
-          options: { responsive: true, plugins: { legend: { labels: { color: '#fff' } } }, scales: { y: { ticks: { color: '#a8b5a8' } }, x: { ticks: { color: '#a8b5a8' } } } }
+  window.renderTopSellers = function() {
+    try {
+      if (!window.salesWorkbook) return;
+      const data = XLSX.utils.sheet_to_json(window.salesWorkbook.Sheets['المتابعة السنوية'], { header: 1 });
+      let topSellers = [];
+      for (let i = 1; i < data.length; i++) {
+          const row = data[i];
+          if (row && row[17] && typeof row[17] === 'string' && row[17].trim() !== '' && row[17] !== 'اسم التحليل') {
+              topSellers.push({ name: row[17].trim(), count: Number(row[18]) || 0, count3: Number(row[19]) || 0 });
+          }
+      }
+      topSellers.sort((a, b) => b.count - a.count);
+      let html = '';
+      topSellers.slice(0, 20).forEach((test, index) => {
+          html += `<tr><td style="font-weight:bold; color:var(--gold);">${index + 1}</td><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f; font-weight:bold;">${test.count}</td><td style="color: #00bfff;">${test.count3}</td></tr>`;
       });
+      document.getElementById('topSellersTableBody').innerHTML = html || '<tr><td colspan="4">لا توجد بيانات</td></tr>';
+    } catch (e) { console.error(e); }
+  };
 
-      const profitCtx = document.getElementById('annualProfitChart').getContext('2d');
-      if (window.profitChart) window.profitChart.destroy(); 
-      window.profitChart = new Chart(profitCtx, {
-          type: 'bar',
-          data: {
-              labels: ['2024', '2025', '2026'],
-              datasets: [
-                  { label: 'الجعافرة', data: profitData.jaafara, backgroundColor: 'rgba(251, 191, 36, 0.7)', borderColor: '#fbbf24', borderWidth: 1 },
-                  { label: 'بهتيم', data: profitData.bahtim, backgroundColor: 'rgba(248, 113, 113, 0.7)', borderColor: '#f87171', borderWidth: 1 }
-              ]
-          },
-          options: { responsive: true, plugins: { legend: { labels: { color: '#fff' } } }, scales: { y: { ticks: { color: '#a8b5a8' } }, x: { ticks: { color: '#a8b5a8' } } } }
+  window.renderMostProfitable = function() {
+    try {
+      if (!window.salesWorkbook || !window.pricesWorkbook) return;
+      const salesData = XLSX.utils.sheet_to_json(window.salesWorkbook.Sheets['المتابعة السنوية'], { header: 1 });
+      let frequencyMap = {};
+      for (let i = 1; i < salesData.length; i++) {
+          const row = salesData[i];
+          if (row && row[17] && typeof row[17] === 'string' && row[17].trim() !== '' && row[17] !== 'اسم التحليل') {
+              frequencyMap[row[17].trim()] = { count: Number(row[18]) || 0 };
+          }
+      }
+      let priceSheet = window.pricesWorkbook.Sheets[window.pricesWorkbook.SheetNames[1]] || window.pricesWorkbook.Sheets[window.pricesWorkbook.SheetNames[0]];
+      const priceData = XLSX.utils.sheet_to_json(priceSheet, { header: 1 });
+      let profitableTests = [];
+      for (let i = 1; i < priceData.length; i++) {
+          const row = priceData[i];
+          if (row && row[0]) {
+              const testName = String(row[0]).trim();
+              const cost = Number(row[1]) || 0;
+              const sellPrice = Number(row[2]) || 0;
+              if (sellPrice > 0 && cost > 0) {
+                  const profitPerTest = sellPrice - cost;
+                  const frequency = frequencyMap[testName] ? frequencyMap[testName].count : 0;
+                  const totalProfit = profitPerTest * frequency;
+                  profitableTests.push({ name: testName, sell: sellPrice, cost: cost, profitUnit: profitPerTest, frequency: frequency, totalProfit: totalProfit });
+              }
+          }
+      }
+      profitableTests.sort((a, b) => b.totalProfit - a.totalProfit);
+      let html = '';
+      profitableTests.slice(0, 20).forEach((test, index) => {
+          html += `<tr><td style="font-weight:bold; color:var(--gold);">${index + 1}</td><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f;">${test.sell} ج</td><td style="color: #f87171;">${test.cost} ج</td><td style="color: #fbbf24;">${test.profitUnit} ج</td><td style="color: #00ff7f; font-weight:bold; font-size:1.1rem;">${test.totalProfit.toLocaleString()} ج</td></tr>`;
       });
+      document.getElementById('mostProfitableTableBody').innerHTML = html || '<tr><td colspan="6">لا توجد بيانات كافية</td></tr>';
+    } catch (e) { console.error(e); }
+  };
 
-    } catch (error) { console.error("خطأ في التقرير السنوي:", error); }
-  }
+  window.renderNeedOffers = function() {
+    try {
+      if (!window.salesWorkbook || !window.pricesWorkbook) return;
+      const salesData = XLSX.utils.sheet_to_json(window.salesWorkbook.Sheets['المتابعة السنوية'], { header: 1 });
+      let frequencyMap = {};
+      for (let i = 1; i < salesData.length; i++) {
+          const row = salesData[i];
+          if (row && row[17] && typeof row[17] === 'string' && row[17].trim() !== '' && row[17] !== 'اسم التحليل') {
+              frequencyMap[row[17].trim()] = { count3: Number(row[19]) || 0 };
+          }
+      }
+      let priceSheet = window.pricesWorkbook.Sheets[window.pricesWorkbook.SheetNames[1]] || window.pricesWorkbook.Sheets[window.pricesWorkbook.SheetNames[0]];
+      const priceData = XLSX.utils.sheet_to_json(priceSheet, { header: 1 });
+      let needOffers = [];
+      for (let i = 1; i < priceData.length; i++) {
+          const row = priceData[i];
+          if (row && row[0]) {
+              const testName = String(row[0]).trim();
+              const sellPrice = Number(row[2]) || 0;
+              if (sellPrice > 0) {
+                  const freq3 = frequencyMap[testName] ? frequencyMap[testName].count3 : 0;
+                  if (freq3 < 5) { needOffers.push({ name: testName, sell: sellPrice, freq3: freq3 }); }
+              }
+          }
+      }
+      needOffers.sort((a, b) => a.freq3 - b.freq3);
+      let html = '';
+      needOffers.slice(0, 50).forEach((test) => {
+          html += `<tr><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f;">${test.sell} ج</td><td style="color: #f87171; font-weight:bold;">${test.freq3} مرات</td></tr>`;
+      });
+      document.getElementById('needOffersTableBody').innerHTML = html || '<tr><td colspan="3">كل التحاليل مبيعتها كويسة!</td></tr>';
+    } catch (e) { console.error(e); }
+  };
 
   if(sessionStorage.getItem(SESSION_KEY) === 'yes') showDashboard();
-  
   const passInput = document.getElementById('adminPassword');
   if(passInput) passInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') window.checkAdminPassword(); });
-
-  const uploadZone = document.getElementById('uploadZone');
-  if(uploadZone){
-    ['dragenter','dragover'].forEach(evt => uploadZone.addEventListener(evt, e => { e.preventDefault(); uploadZone.classList.add('dragover'); }));
-    ['dragleave','drop'].forEach(evt => uploadZone.addEventListener(evt, e => { e.preventDefault(); uploadZone.classList.remove('dragover'); }));
-    uploadZone.addEventListener('drop', e => {
-      const file = e.dataTransfer.files[0];
-      if(file) processFile(file);
-    });
-  }
 
 })();
