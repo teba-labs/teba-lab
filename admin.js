@@ -1,5 +1,5 @@
 /* =====================================================
-   TEBA LABS - Admin Logic (v19 - All 3 Reports)
+   TEBA LABS - Admin Logic (v20 - Mobile Optimized)
    ===================================================== */
 
 (function(){
@@ -7,6 +7,10 @@
 
   const ADMIN_PASSWORD = 'teba2026admin';
   const SESSION_KEY = 'teba_admin_session';
+
+  // تخزين الملفات في الذاكرة المؤقتة للمتصفح
+  let salesData = null;
+  let pricesData = null;
 
   window.showReport = function(reportName){
     document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
@@ -29,7 +33,6 @@
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('adminDashboard').style.display = 'flex';
     window.showReport('upload');
-    loadSavedData();
   }
 
   window.checkAdminPassword = function(){
@@ -48,9 +51,9 @@
   window.logoutAdmin = function(){ sessionStorage.removeItem(SESSION_KEY); location.reload(); };
 
   window.clearData = function() {
-    if(confirm('هل أنت متأكد من مسح البيانات المحفوظة؟')) {
-      localStorage.removeItem('teba_sales_data');
-      localStorage.removeItem('teba_prices_data');
+    if(confirm('هل أنت متأكد من مسح البيانات؟')) {
+      salesData = null;
+      pricesData = null;
       location.reload();
     }
   };
@@ -61,22 +64,19 @@
     
     const statusEl = document.getElementById(type === 'sales' ? 'uploadStatusSales' : 'uploadStatusPrices');
     statusEl.className = 'upload-status';
-    statusEl.textContent = '⏳ جاري القراءة...';
+    statusEl.textContent = '⏳ جاري القراءة (استنى ثواني)...';
 
     const reader = new FileReader();
     reader.onload = function(e) {
       try {
         const data = new Uint8Array(e.target.result);
-        const base64 = btoa(data.reduce((data, byte) => data + String.fromCharCode(byte), ''));
-        localStorage.setItem(type === 'sales' ? 'teba_sales_data' : 'teba_prices_data', base64);
-
         const workbook = XLSX.read(data, { type: 'array' });
         
         statusEl.className = 'upload-status success';
         statusEl.innerHTML = `✅ تم رفع الملف بنجاح!`;
         
-        if(type === 'sales') window.salesWorkbook = workbook;
-        if(type === 'prices') window.pricesWorkbook = workbook;
+        if(type === 'sales') salesData = workbook;
+        if(type === 'prices') pricesData = workbook;
         
         renderAllReports();
         
@@ -88,23 +88,6 @@
     reader.readAsArrayBuffer(file);
   };
 
-  function loadSavedData() {
-    const salesB64 = localStorage.getItem('teba_sales_data');
-    const pricesB64 = localStorage.getItem('teba_prices_data');
-    
-    if(salesB64) {
-        window.salesWorkbook = XLSX.read(salesB64, { type: 'base64' });
-        document.getElementById('uploadStatusSales').className = 'upload-status success';
-        document.getElementById('uploadStatusSales').innerHTML = '✅ ملف المبيعات محمل.';
-    }
-    if(pricesB64) {
-        window.pricesWorkbook = XLSX.read(pricesB64, { type: 'base64' });
-        document.getElementById('uploadStatusPrices').className = 'upload-status success';
-        document.getElementById('uploadStatusPrices').innerHTML = '✅ ملف الأسعار محمل.';
-    }
-    renderAllReports();
-  }
-
   function renderAllReports() {
       renderFinancialReport();
       renderAnnualReport();
@@ -115,11 +98,11 @@
 
   window.renderFinancialReport = function() {
     try {
-      if (!window.salesWorkbook || !window.salesWorkbook.Sheets['المتابعة السنوية']) return;
+      if (!salesData || !salesData.Sheets['المتابعة السنوية']) return;
       const selectedYear = document.getElementById('yearSelector').value;
       const selectedMonth = document.getElementById('monthSelector').value;
       const selectedBranch = document.getElementById('branchSelector').value;
-      const ws = window.salesWorkbook.Sheets['المتابعة السنوية'];
+      const ws = salesData.Sheets['المتابعة السنوية'];
       const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
       let startRow = selectedYear === '2024' ? 29 : selectedYear === '2025' ? 46 : 63;
@@ -164,8 +147,8 @@
 
   window.renderAnnualReport = function() {
     try {
-      if (!window.salesWorkbook || !window.salesWorkbook.Sheets['المتابعة السنوية']) return;
-      const data = XLSX.utils.sheet_to_json(window.salesWorkbook.Sheets['المتابعة السنوية'], { header: 1 });
+      if (!salesData || !salesData.Sheets['المتابعة السنوية']) return;
+      const data = XLSX.utils.sheet_to_json(salesData.Sheets['المتابعة السنوية'], { header: 1 });
       const yearsData = [ { year: '2024', row: data[41] }, { year: '2025', row: data[58] }, { year: '2026', row: data[75] } ];
       let jHTML = '', bHTML = '';
       yearsData.forEach(y => {
@@ -182,8 +165,8 @@
 
   window.renderTopSellers = function() {
     try {
-      if (!window.salesWorkbook) return;
-      const data = XLSX.utils.sheet_to_json(window.salesWorkbook.Sheets['المتابعة السنوية'], { header: 1 });
+      if (!salesData) return;
+      const data = XLSX.utils.sheet_to_json(salesData.Sheets['المتابعة السنوية'], { header: 1 });
       let topSellers = [];
       for (let i = 1; i < data.length; i++) {
           const row = data[i];
@@ -202,16 +185,16 @@
 
   window.renderMostProfitable = function() {
     try {
-      if (!window.salesWorkbook || !window.pricesWorkbook) return;
-      const salesData = XLSX.utils.sheet_to_json(window.salesWorkbook.Sheets['المتابعة السنوية'], { header: 1 });
+      if (!salesData || !pricesData) return;
+      const salesDataJson = XLSX.utils.sheet_to_json(salesData.Sheets['المتابعة السنوية'], { header: 1 });
       let frequencyMap = {};
-      for (let i = 1; i < salesData.length; i++) {
-          const row = salesData[i];
+      for (let i = 1; i < salesDataJson.length; i++) {
+          const row = salesDataJson[i];
           if (row && row[17] && typeof row[17] === 'string' && row[17].trim() !== '' && row[17] !== 'اسم التحليل') {
               frequencyMap[row[17].trim()] = { count: Number(row[18]) || 0 };
           }
       }
-      let priceSheet = window.pricesWorkbook.Sheets[window.pricesWorkbook.SheetNames[1]] || window.pricesWorkbook.Sheets[window.pricesWorkbook.SheetNames[0]];
+      let priceSheet = pricesData.Sheets[pricesData.SheetNames[1]] || pricesData.Sheets[pricesData.SheetNames[0]];
       const priceData = XLSX.utils.sheet_to_json(priceSheet, { header: 1 });
       let profitableTests = [];
       for (let i = 1; i < priceData.length; i++) {
@@ -239,16 +222,16 @@
 
   window.renderNeedOffers = function() {
     try {
-      if (!window.salesWorkbook || !window.pricesWorkbook) return;
-      const salesData = XLSX.utils.sheet_to_json(window.salesWorkbook.Sheets['المتابعة السنوية'], { header: 1 });
+      if (!salesData || !pricesData) return;
+      const salesDataJson = XLSX.utils.sheet_to_json(salesData.Sheets['المتابعة السنوية'], { header: 1 });
       let frequencyMap = {};
-      for (let i = 1; i < salesData.length; i++) {
-          const row = salesData[i];
+      for (let i = 1; i < salesDataJson.length; i++) {
+          const row = salesDataJson[i];
           if (row && row[17] && typeof row[17] === 'string' && row[17].trim() !== '' && row[17] !== 'اسم التحليل') {
               frequencyMap[row[17].trim()] = { count3: Number(row[19]) || 0 };
           }
       }
-      let priceSheet = window.pricesWorkbook.Sheets[window.pricesWorkbook.SheetNames[1]] || window.pricesWorkbook.Sheets[window.pricesWorkbook.SheetNames[0]];
+      let priceSheet = pricesData.Sheets[pricesData.SheetNames[1]] || pricesData.Sheets[pricesData.SheetNames[0]];
       const priceData = XLSX.utils.sheet_to_json(priceSheet, { header: 1 });
       let needOffers = [];
       for (let i = 1; i < priceData.length; i++) {
