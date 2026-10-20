@@ -1,5 +1,5 @@
 /* =====================================================
-   TEBA LABS - Admin Logic (v21 - Ultimate Mobile Fix)
+   TEBA LABS - Admin Logic (v22 - IndexedDB Permanent)
    ===================================================== */
 
 (function(){
@@ -8,24 +8,62 @@
   const ADMIN_PASSWORD = 'teba2026admin';
   const SESSION_KEY = 'teba_admin_session';
 
-  // تخزين الملفات في الذاكرة (مش بنحفظ في المتصفح عشان الفون ميمسحهاش)
+  // متغيرات الملفات
   let salesWorkbook = null;
   let pricesWorkbook = null;
 
-  // دالة ذكية لتوحيد النصوص العربية عشان نطابق الأسماء
+  // =====================================================
+  // إعدادات قاعدة البيانات (IndexedDB) للحفظ الدائم
+  // =====================================================
+  const DB_NAME = 'TebaAdminDB';
+  const STORE_NAME = 'files';
+  
+  function openDB() {
+      return new Promise((resolve, reject) => {
+          const request = indexedDB.open(DB_NAME, 1);
+          request.onupgradeneeded = e => e.target.result.createObjectStore(STORE_NAME);
+          request.onsuccess = e => resolve(e.target.result);
+          request.onerror = e => reject(e.target.error);
+      });
+  }
+
+  async function saveFileToDB(key, base64) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE_NAME, 'readwrite');
+          tx.objectStore(STORE_NAME).put(base64, key);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+      });
+  }
+
+  async function getFileFromDB(key) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE_NAME, 'readonly');
+          const req = tx.objectStore(STORE_NAME).get(key);
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+      });
+  }
+
+  // دالة ذكية لتوحيد النصوص العربية
   function normalizeArabic(str) {
       if (!str) return '';
       return str.toString().trim().toLowerCase()
-          .replace(/[\u064B-\u065F\u0670]/g, '') // شيل التشكيل
+          .replace(/[\u064B-\u065F\u0670]/g, '')
           .replace(/[أإآٱ]/g, 'ا')
           .replace(/ى/g, 'ي')
           .replace(/ة/g, 'ه')
           .replace(/ؤ/g, 'و')
           .replace(/ئ/g, 'ي')
-          .replace(/[^\u0600-\u06FF\w\s]/g, '') // شيل الرموز
+          .replace(/[^\u0600-\u06FF\w\s]/g, '')
           .replace(/\s+/g, ' ').trim();
   }
 
+  // =====================================================
+  // التنقل والتسجيل
+  // =====================================================
   window.showReport = function(reportName){
     document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
     const target = document.getElementById('report-' + reportName);
@@ -43,10 +81,11 @@
 
   window.toggleAdminSidebar = function(){ document.getElementById('adminSidebar').classList.toggle('open'); };
 
-  function showDashboard(){
+  async function showDashboard(){
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('adminDashboard').style.display = 'flex';
     window.showReport('upload');
+    await loadSavedDataFromDB(); // استرجاع الملفات من الذاكرة الدائمة
   }
 
   window.checkAdminPassword = function(){
@@ -64,35 +103,48 @@
 
   window.logoutAdmin = function(){ sessionStorage.removeItem(SESSION_KEY); location.reload(); };
 
-  window.clearData = function() {
-    if(confirm('هل أنت متأكد من مسح البيانات؟')) {
+  window.clearData = async function() {
+    if(confirm('هل أنت متأكد من مسح البيانات المحفوظة نهائياً؟')) {
       salesWorkbook = null;
       pricesWorkbook = null;
-      location.reload();
+      const db = await openDB();
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).clear();
+      tx.oncomplete = () => location.reload();
     }
   };
 
+  // =====================================================
+  // الرفع والحفظ الدائم
+  // =====================================================
   window.handleFileUpload = function(event, type){
     const file = event.target.files[0];
     if(!file) return;
     
     const statusEl = document.getElementById(type === 'sales' ? 'uploadStatusSales' : 'uploadStatusPrices');
     statusEl.className = 'upload-status';
-    statusEl.textContent = '⏳ جاري القراءة (استنى ثواني)...';
+    statusEl.textContent = '⏳ جاري القراءة والحفظ...';
 
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
       try {
         const data = new Uint8Array(e.target.result);
+        
+        // تحويل لـ Base64 للحفظ
+        const base64 = btoa(data.reduce((data, byte) => data + String.fromCharCode(byte), ''));
+        
+        // حفظ في الذاكرة الدائمة
+        await saveFileToDB(type === 'sales' ? 'salesData' : 'pricesData', base64);
+        
+        // قراءة الملف للعرض
         const workbook = XLSX.read(data, { type: 'array' });
         
         statusEl.className = 'upload-status success';
-        statusEl.innerHTML = `✅ تم رفع الملف بنجاح!`;
+        statusEl.innerHTML = `✅ تم رفع وحفظ الملف بنجاح!`;
         
         if(type === 'sales') salesWorkbook = workbook;
         if(type === 'prices') pricesWorkbook = workbook;
         
-        // تحديث التقارير فوراً
         renderAllReports();
         
       } catch (error) {
@@ -103,6 +155,37 @@
     reader.readAsArrayBuffer(file);
   };
 
+  async function loadSavedDataFromDB() {
+    try {
+        const salesB64 = await getFileFromDB('salesData');
+        const pricesB64 = await getFileFromDB('pricesData');
+        
+        if(salesB64) {
+            const binaryString = atob(salesB64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+            salesWorkbook = XLSX.read(bytes.buffer, { type: 'array' });
+            
+            document.getElementById('uploadStatusSales').className = 'upload-status success';
+            document.getElementById('uploadStatusSales').innerHTML = '✅ ملف المبيعات محمل من الذاكرة.';
+        }
+        
+        if(pricesB64) {
+            const binaryString = atob(pricesB64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+            pricesWorkbook = XLSX.read(bytes.buffer, { type: 'array' });
+            
+            document.getElementById('uploadStatusPrices').className = 'upload-status success';
+            document.getElementById('uploadStatusPrices').innerHTML = '✅ ملف الأسعار محمل من الذاكرة.';
+        }
+        
+        renderAllReports();
+    } catch(e) {
+        console.log("لا توجد بيانات محفوظة مسبقاً.");
+    }
+  }
+
   function renderAllReports() {
       renderFinancialReport();
       renderAnnualReport();
@@ -112,7 +195,7 @@
   }
 
   // =====================================================
-  // التقارير المالية (شغالة زي الفل)
+  // دوال التقارير (نفس الشغل اللي ظبط في v21)
   // =====================================================
   window.renderFinancialReport = function() {
     try {
@@ -186,57 +269,35 @@
     } catch (e) { console.error(e); }
   };
 
-  // =====================================================
-  // 1. الأكثر مبيعاً
-  // =====================================================
   window.renderTopSellers = function() {
     try {
       const tbody = document.getElementById('topSellersTableBody');
       if (!salesWorkbook) {
-          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#f87171; padding:20px;">⚠️ يرجى رفع ملف المبيعات أولاً من صفحة (رفع ملفات الإكسيل)</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#f87171; padding:20px;">⚠️ يرجى رفع ملف المبيعات أولاً</td></tr>';
           return;
       }
-      
       const sheetName = salesWorkbook.SheetNames.find(n => n.includes('المتابعة'));
       if (!sheetName) return;
-
       const data = XLSX.utils.sheet_to_json(salesWorkbook.Sheets[sheetName], { header: 1 });
       let topSellers = [];
       
-      // بنلف على الشيت ونمسك الأعمدة اللي فيها اسم التحليل (هنبحث عنه بالاسم مش بالرقم عشان نضمن)
-      let nameColIndex = -1, countColIndex = -1, count3ColIndex = -1;
-      
-      // البحث عن العناوين في أول 10 صفوف
+      let nameCol = 17, countCol = 18, count3Col = 19;
       for (let r = 0; r < Math.min(10, data.length); r++) {
           if (!data[r]) continue;
           for (let c = 0; c < data[r].length; c++) {
               let cellText = String(data[r][c] || '').trim();
-              if (cellText === 'اسم التحليل') nameColIndex = c;
-              if (cellText === 'عدد التكرار' && countColIndex === -1) countColIndex = c; // أول عمود
-              if (cellText === 'عدد التكرار اخر 3 شهور') count3ColIndex = c;
+              if (cellText === 'اسم التحليل') nameCol = c;
+              if (cellText === 'عدد التكرار' && countCol === 18) countCol = c;
+              if (cellText === 'عدد التكرار اخر 3 شهور') count3Col = c;
           }
-          if (nameColIndex !== -1 && countColIndex !== -1) break;
       }
-
-      // لو ملقيناش العناوين، هنستخدم الأرقام الافتراضية بتاعتنا
-      if (nameColIndex === -1) nameColIndex = 17;
-      if (countColIndex === -1) countColIndex = 18;
-      if (count3ColIndex === -1) count3ColIndex = 19;
 
       for (let i = 1; i < data.length; i++) {
           const row = data[i];
-          if (row && row[nameColIndex] && typeof row[nameColIndex] === 'string' && row[nameColIndex].trim() !== '') {
-              const testName = row[nameColIndex].trim();
-              if (testName !== 'اسم التحليل') {
-                  topSellers.push({ 
-                      name: testName, 
-                      count: Number(row[countColIndex]) || 0, 
-                      count3: Number(row[count3ColIndex]) || 0 
-                  });
-              }
+          if (row && row[nameCol] && typeof row[nameCol] === 'string' && row[nameCol].trim() !== '' && row[nameCol] !== 'اسم التحليل') {
+              topSellers.push({ name: row[nameCol].trim(), count: Number(row[countCol]) || 0, count3: Number(row[count3Col]) || 0 });
           }
       }
-      
       topSellers.sort((a, b) => b.count - a.count);
       let html = '';
       topSellers.slice(0, 20).forEach((test, index) => {
@@ -246,9 +307,6 @@
     } catch (e) { console.error(e); }
   };
 
-  // =====================================================
-  // 2. الأكثر ربحاً
-  // =====================================================
   window.renderMostProfitable = function() {
     try {
       const tbody = document.getElementById('mostProfitableTableBody');
@@ -256,79 +314,45 @@
           tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#f87171; padding:20px;">⚠️ يرجى رفع (ملف المبيعات) و (ملف الأسعار) أولاً</td></tr>';
           return;
       }
-
-      // 1. تجهيز خريطة التكرار من ملف المبيعات
       const salesSheetName = salesWorkbook.SheetNames.find(n => n.includes('المتابعة'));
       const salesData = XLSX.utils.sheet_to_json(salesWorkbook.Sheets[salesSheetName], { header: 1 });
       let frequencyMap = {};
-      
       for (let i = 1; i < salesData.length; i++) {
           const row = salesData[i];
           if (row && row[17] && typeof row[17] === 'string' && row[17].trim() !== '' && row[17] !== 'اسم التحليل') {
-              // بنحفظ الاسم بعد توحيد الحروف
               const normName = normalizeArabic(row[17]);
               frequencyMap[normName] = { count: Number(row[18]) || 0 };
           }
       }
 
-      // 2. قراءة الأسعار من ملف الأسعار
-      // بنجرب نجيب شيت "التحاليل (2)" أو أول شيت
       let priceSheetName = pricesWorkbook.SheetNames.find(n => n.includes('التحاليل')) || pricesWorkbook.SheetNames[0];
       const priceData = XLSX.utils.sheet_to_json(pricesWorkbook.Sheets[priceSheetName], { header: 1 });
       
       let profitableTests = [];
-
       for (let i = 1; i < priceData.length; i++) {
           const row = priceData[i];
           if (row && row[0]) {
               const testName = String(row[0]).trim();
               const cost = Number(row[1]) || 0;
               const sellPrice = Number(row[2]) || 0;
-              
               if (sellPrice > 0 && cost > 0) {
                   const profitPerTest = sellPrice - cost;
-                  
-                  // بنحول اسم التحليل عشان نطابقه
                   const normTestName = normalizeArabic(testName);
                   const frequency = frequencyMap[normTestName] ? frequencyMap[normTestName].count : 0;
-                  
                   const totalProfit = profitPerTest * frequency;
-
-                  profitableTests.push({
-                      name: testName,
-                      sell: sellPrice,
-                      cost: cost,
-                      profitUnit: profitPerTest,
-                      frequency: frequency,
-                      totalProfit: totalProfit
-                  });
+                  profitableTests.push({ name: testName, sell: sellPrice, cost: cost, profitUnit: profitPerTest, frequency: frequency, totalProfit: totalProfit });
               }
           }
       }
-
       profitableTests.sort((a, b) => b.totalProfit - a.totalProfit);
-
       let html = '';
       profitableTests.slice(0, 20).forEach((test, index) => {
-          html += `
-            <tr>
-              <td style="font-weight:bold; color:var(--gold);">${index + 1}</td>
-              <td style="color: var(--text); text-align:right;">${test.name}</td>
-              <td style="color: #00ff7f;">${test.sell} ج</td>
-              <td style="color: #f87171;">${test.cost} ج</td>
-              <td style="color: #fbbf24;">${test.profitUnit} ج</td>
-              <td style="color: #00ff7f; font-weight:bold; font-size:1.1rem;">${test.totalProfit.toLocaleString()} ج</td>
-            </tr>
-          `;
+          html += `<tr><td style="font-weight:bold; color:var(--gold);">${index + 1}</td><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f;">${test.sell} ج</td><td style="color: #f87171;">${test.cost} ج</td><td style="color: #fbbf24;">${test.profitUnit} ج</td><td style="color: #00ff7f; font-weight:bold; font-size:1.1rem;">${test.totalProfit.toLocaleString()} ج</td></tr>`;
       });
-      tbody.innerHTML = html || '<tr><td colspan="6" style="text-align:center;">لا توجد بيانات كافية (تأكد من وجود أسماء متطابقة بين الملفين)</td></tr>';
-
+      tbody.innerHTML = html || '<tr><td colspan="6" style="text-align:center;">لا توجد بيانات كافية</td></tr>';
     } catch (e) { console.error(e); }
   };
 
-  // =====================================================
-  // 3. محتاجة عروض
-  // =====================================================
   window.renderNeedOffers = function() {
     try {
       const tbody = document.getElementById('needOffersTableBody');
@@ -336,7 +360,6 @@
           tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#f87171; padding:20px;">⚠️ يرجى رفع (ملف المبيعات) و (ملف الأسعار) أولاً</td></tr>';
           return;
       }
-
       const salesSheetName = salesWorkbook.SheetNames.find(n => n.includes('المتابعة'));
       const salesData = XLSX.utils.sheet_to_json(salesWorkbook.Sheets[salesSheetName], { header: 1 });
       let frequencyMap = {};
@@ -347,48 +370,27 @@
               frequencyMap[normName] = { count3: Number(row[19]) || 0 };
           }
       }
-
       let priceSheetName = pricesWorkbook.SheetNames.find(n => n.includes('التحاليل')) || pricesWorkbook.SheetNames[0];
       const priceData = XLSX.utils.sheet_to_json(pricesWorkbook.Sheets[priceSheetName], { header: 1 });
-      
       let needOffers = [];
-
       for (let i = 1; i < priceData.length; i++) {
           const row = priceData[i];
           if (row && row[0]) {
               const testName = String(row[0]).trim();
               const sellPrice = Number(row[2]) || 0;
-              
               if (sellPrice > 0) {
                   const normTestName = normalizeArabic(testName);
                   const freq3 = frequencyMap[normTestName] ? frequencyMap[normTestName].count3 : 0;
-                  
-                  // لو اتعمل أقل من 5 مرات في آخر 3 شهور، يبقى محتاج عرض
-                  if (freq3 < 5) {
-                      needOffers.push({
-                          name: testName,
-                          sell: sellPrice,
-                          freq3: freq3
-                      });
-                  }
+                  if (freq3 < 5) { needOffers.push({ name: testName, sell: sellPrice, freq3: freq3 }); }
               }
           }
       }
-
       needOffers.sort((a, b) => a.freq3 - b.freq3);
-
       let html = '';
       needOffers.slice(0, 50).forEach((test) => { 
-          html += `
-            <tr>
-              <td style="color: var(--text); text-align:right;">${test.name}</td>
-              <td style="color: #00ff7f;">${test.sell} ج</td>
-              <td style="color: #f87171; font-weight:bold;">${test.freq3} مرات</td>
-            </tr>
-          `;
+          html += `<tr><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f;">${test.sell} ج</td><td style="color: #f87171; font-weight:bold;">${test.freq3} مرات</td></tr>`;
       });
       tbody.innerHTML = html || '<tr><td colspan="3" style="text-align:center;">كل التحاليل مبيعتها كويسة!</td></tr>';
-
     } catch (e) { console.error(e); }
   };
 
