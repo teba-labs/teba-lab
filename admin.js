@@ -1,5 +1,5 @@
 /* =====================================================
-   TEBA LABS - Admin Logic (v20 - Mobile Optimized)
+   TEBA LABS - Admin Logic (v21 - Ultimate Mobile Fix)
    ===================================================== */
 
 (function(){
@@ -8,9 +8,23 @@
   const ADMIN_PASSWORD = 'teba2026admin';
   const SESSION_KEY = 'teba_admin_session';
 
-  // تخزين الملفات في الذاكرة المؤقتة للمتصفح
-  let salesData = null;
-  let pricesData = null;
+  // تخزين الملفات في الذاكرة (مش بنحفظ في المتصفح عشان الفون ميمسحهاش)
+  let salesWorkbook = null;
+  let pricesWorkbook = null;
+
+  // دالة ذكية لتوحيد النصوص العربية عشان نطابق الأسماء
+  function normalizeArabic(str) {
+      if (!str) return '';
+      return str.toString().trim().toLowerCase()
+          .replace(/[\u064B-\u065F\u0670]/g, '') // شيل التشكيل
+          .replace(/[أإآٱ]/g, 'ا')
+          .replace(/ى/g, 'ي')
+          .replace(/ة/g, 'ه')
+          .replace(/ؤ/g, 'و')
+          .replace(/ئ/g, 'ي')
+          .replace(/[^\u0600-\u06FF\w\s]/g, '') // شيل الرموز
+          .replace(/\s+/g, ' ').trim();
+  }
 
   window.showReport = function(reportName){
     document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
@@ -52,8 +66,8 @@
 
   window.clearData = function() {
     if(confirm('هل أنت متأكد من مسح البيانات؟')) {
-      salesData = null;
-      pricesData = null;
+      salesWorkbook = null;
+      pricesWorkbook = null;
       location.reload();
     }
   };
@@ -75,9 +89,10 @@
         statusEl.className = 'upload-status success';
         statusEl.innerHTML = `✅ تم رفع الملف بنجاح!`;
         
-        if(type === 'sales') salesData = workbook;
-        if(type === 'prices') pricesData = workbook;
+        if(type === 'sales') salesWorkbook = workbook;
+        if(type === 'prices') pricesWorkbook = workbook;
         
+        // تحديث التقارير فوراً
         renderAllReports();
         
       } catch (error) {
@@ -96,15 +111,20 @@
       renderNeedOffers();
   }
 
+  // =====================================================
+  // التقارير المالية (شغالة زي الفل)
+  // =====================================================
   window.renderFinancialReport = function() {
     try {
-      if (!salesData || !salesData.Sheets['المتابعة السنوية']) return;
+      if (!salesWorkbook) return;
+      const sheetName = salesWorkbook.SheetNames.find(n => n.includes('المتابعة'));
+      if (!sheetName) return;
+
       const selectedYear = document.getElementById('yearSelector').value;
       const selectedMonth = document.getElementById('monthSelector').value;
       const selectedBranch = document.getElementById('branchSelector').value;
-      const ws = salesData.Sheets['المتابعة السنوية'];
-      const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
-
+      
+      const data = XLSX.utils.sheet_to_json(salesWorkbook.Sheets[sheetName], { header: 1 });
       let startRow = selectedYear === '2024' ? 29 : selectedYear === '2025' ? 46 : 63;
       let totalRevenue = 0, totalExpenses = 0;
       const getNum = (val) => Math.round(Number(val) || 0);
@@ -147,8 +167,11 @@
 
   window.renderAnnualReport = function() {
     try {
-      if (!salesData || !salesData.Sheets['المتابعة السنوية']) return;
-      const data = XLSX.utils.sheet_to_json(salesData.Sheets['المتابعة السنوية'], { header: 1 });
+      if (!salesWorkbook) return;
+      const sheetName = salesWorkbook.SheetNames.find(n => n.includes('المتابعة'));
+      if (!sheetName) return;
+
+      const data = XLSX.utils.sheet_to_json(salesWorkbook.Sheets[sheetName], { header: 1 });
       const yearsData = [ { year: '2024', row: data[41] }, { year: '2025', row: data[58] }, { year: '2026', row: data[75] } ];
       let jHTML = '', bHTML = '';
       yearsData.forEach(y => {
@@ -163,94 +186,209 @@
     } catch (e) { console.error(e); }
   };
 
+  // =====================================================
+  // 1. الأكثر مبيعاً
+  // =====================================================
   window.renderTopSellers = function() {
     try {
-      if (!salesData) return;
-      const data = XLSX.utils.sheet_to_json(salesData.Sheets['المتابعة السنوية'], { header: 1 });
+      const tbody = document.getElementById('topSellersTableBody');
+      if (!salesWorkbook) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#f87171; padding:20px;">⚠️ يرجى رفع ملف المبيعات أولاً من صفحة (رفع ملفات الإكسيل)</td></tr>';
+          return;
+      }
+      
+      const sheetName = salesWorkbook.SheetNames.find(n => n.includes('المتابعة'));
+      if (!sheetName) return;
+
+      const data = XLSX.utils.sheet_to_json(salesWorkbook.Sheets[sheetName], { header: 1 });
       let topSellers = [];
+      
+      // بنلف على الشيت ونمسك الأعمدة اللي فيها اسم التحليل (هنبحث عنه بالاسم مش بالرقم عشان نضمن)
+      let nameColIndex = -1, countColIndex = -1, count3ColIndex = -1;
+      
+      // البحث عن العناوين في أول 10 صفوف
+      for (let r = 0; r < Math.min(10, data.length); r++) {
+          if (!data[r]) continue;
+          for (let c = 0; c < data[r].length; c++) {
+              let cellText = String(data[r][c] || '').trim();
+              if (cellText === 'اسم التحليل') nameColIndex = c;
+              if (cellText === 'عدد التكرار' && countColIndex === -1) countColIndex = c; // أول عمود
+              if (cellText === 'عدد التكرار اخر 3 شهور') count3ColIndex = c;
+          }
+          if (nameColIndex !== -1 && countColIndex !== -1) break;
+      }
+
+      // لو ملقيناش العناوين، هنستخدم الأرقام الافتراضية بتاعتنا
+      if (nameColIndex === -1) nameColIndex = 17;
+      if (countColIndex === -1) countColIndex = 18;
+      if (count3ColIndex === -1) count3ColIndex = 19;
+
       for (let i = 1; i < data.length; i++) {
           const row = data[i];
-          if (row && row[17] && typeof row[17] === 'string' && row[17].trim() !== '' && row[17] !== 'اسم التحليل') {
-              topSellers.push({ name: row[17].trim(), count: Number(row[18]) || 0, count3: Number(row[19]) || 0 });
+          if (row && row[nameColIndex] && typeof row[nameColIndex] === 'string' && row[nameColIndex].trim() !== '') {
+              const testName = row[nameColIndex].trim();
+              if (testName !== 'اسم التحليل') {
+                  topSellers.push({ 
+                      name: testName, 
+                      count: Number(row[countColIndex]) || 0, 
+                      count3: Number(row[count3ColIndex]) || 0 
+                  });
+              }
           }
       }
+      
       topSellers.sort((a, b) => b.count - a.count);
       let html = '';
       topSellers.slice(0, 20).forEach((test, index) => {
           html += `<tr><td style="font-weight:bold; color:var(--gold);">${index + 1}</td><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f; font-weight:bold;">${test.count}</td><td style="color: #00bfff;">${test.count3}</td></tr>`;
       });
-      document.getElementById('topSellersTableBody').innerHTML = html || '<tr><td colspan="4">لا توجد بيانات</td></tr>';
+      tbody.innerHTML = html || '<tr><td colspan="4" style="text-align:center;">لا توجد بيانات</td></tr>';
     } catch (e) { console.error(e); }
   };
 
+  // =====================================================
+  // 2. الأكثر ربحاً
+  // =====================================================
   window.renderMostProfitable = function() {
     try {
-      if (!salesData || !pricesData) return;
-      const salesDataJson = XLSX.utils.sheet_to_json(salesData.Sheets['المتابعة السنوية'], { header: 1 });
+      const tbody = document.getElementById('mostProfitableTableBody');
+      if (!salesWorkbook || !pricesWorkbook) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#f87171; padding:20px;">⚠️ يرجى رفع (ملف المبيعات) و (ملف الأسعار) أولاً</td></tr>';
+          return;
+      }
+
+      // 1. تجهيز خريطة التكرار من ملف المبيعات
+      const salesSheetName = salesWorkbook.SheetNames.find(n => n.includes('المتابعة'));
+      const salesData = XLSX.utils.sheet_to_json(salesWorkbook.Sheets[salesSheetName], { header: 1 });
       let frequencyMap = {};
-      for (let i = 1; i < salesDataJson.length; i++) {
-          const row = salesDataJson[i];
+      
+      for (let i = 1; i < salesData.length; i++) {
+          const row = salesData[i];
           if (row && row[17] && typeof row[17] === 'string' && row[17].trim() !== '' && row[17] !== 'اسم التحليل') {
-              frequencyMap[row[17].trim()] = { count: Number(row[18]) || 0 };
+              // بنحفظ الاسم بعد توحيد الحروف
+              const normName = normalizeArabic(row[17]);
+              frequencyMap[normName] = { count: Number(row[18]) || 0 };
           }
       }
-      let priceSheet = pricesData.Sheets[pricesData.SheetNames[1]] || pricesData.Sheets[pricesData.SheetNames[0]];
-      const priceData = XLSX.utils.sheet_to_json(priceSheet, { header: 1 });
+
+      // 2. قراءة الأسعار من ملف الأسعار
+      // بنجرب نجيب شيت "التحاليل (2)" أو أول شيت
+      let priceSheetName = pricesWorkbook.SheetNames.find(n => n.includes('التحاليل')) || pricesWorkbook.SheetNames[0];
+      const priceData = XLSX.utils.sheet_to_json(pricesWorkbook.Sheets[priceSheetName], { header: 1 });
+      
       let profitableTests = [];
+
       for (let i = 1; i < priceData.length; i++) {
           const row = priceData[i];
           if (row && row[0]) {
               const testName = String(row[0]).trim();
               const cost = Number(row[1]) || 0;
               const sellPrice = Number(row[2]) || 0;
+              
               if (sellPrice > 0 && cost > 0) {
                   const profitPerTest = sellPrice - cost;
-                  const frequency = frequencyMap[testName] ? frequencyMap[testName].count : 0;
+                  
+                  // بنحول اسم التحليل عشان نطابقه
+                  const normTestName = normalizeArabic(testName);
+                  const frequency = frequencyMap[normTestName] ? frequencyMap[normTestName].count : 0;
+                  
                   const totalProfit = profitPerTest * frequency;
-                  profitableTests.push({ name: testName, sell: sellPrice, cost: cost, profitUnit: profitPerTest, frequency: frequency, totalProfit: totalProfit });
+
+                  profitableTests.push({
+                      name: testName,
+                      sell: sellPrice,
+                      cost: cost,
+                      profitUnit: profitPerTest,
+                      frequency: frequency,
+                      totalProfit: totalProfit
+                  });
               }
           }
       }
+
       profitableTests.sort((a, b) => b.totalProfit - a.totalProfit);
+
       let html = '';
       profitableTests.slice(0, 20).forEach((test, index) => {
-          html += `<tr><td style="font-weight:bold; color:var(--gold);">${index + 1}</td><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f;">${test.sell} ج</td><td style="color: #f87171;">${test.cost} ج</td><td style="color: #fbbf24;">${test.profitUnit} ج</td><td style="color: #00ff7f; font-weight:bold; font-size:1.1rem;">${test.totalProfit.toLocaleString()} ج</td></tr>`;
+          html += `
+            <tr>
+              <td style="font-weight:bold; color:var(--gold);">${index + 1}</td>
+              <td style="color: var(--text); text-align:right;">${test.name}</td>
+              <td style="color: #00ff7f;">${test.sell} ج</td>
+              <td style="color: #f87171;">${test.cost} ج</td>
+              <td style="color: #fbbf24;">${test.profitUnit} ج</td>
+              <td style="color: #00ff7f; font-weight:bold; font-size:1.1rem;">${test.totalProfit.toLocaleString()} ج</td>
+            </tr>
+          `;
       });
-      document.getElementById('mostProfitableTableBody').innerHTML = html || '<tr><td colspan="6">لا توجد بيانات كافية</td></tr>';
+      tbody.innerHTML = html || '<tr><td colspan="6" style="text-align:center;">لا توجد بيانات كافية (تأكد من وجود أسماء متطابقة بين الملفين)</td></tr>';
+
     } catch (e) { console.error(e); }
   };
 
+  // =====================================================
+  // 3. محتاجة عروض
+  // =====================================================
   window.renderNeedOffers = function() {
     try {
-      if (!salesData || !pricesData) return;
-      const salesDataJson = XLSX.utils.sheet_to_json(salesData.Sheets['المتابعة السنوية'], { header: 1 });
+      const tbody = document.getElementById('needOffersTableBody');
+      if (!salesWorkbook || !pricesWorkbook) {
+          tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#f87171; padding:20px;">⚠️ يرجى رفع (ملف المبيعات) و (ملف الأسعار) أولاً</td></tr>';
+          return;
+      }
+
+      const salesSheetName = salesWorkbook.SheetNames.find(n => n.includes('المتابعة'));
+      const salesData = XLSX.utils.sheet_to_json(salesWorkbook.Sheets[salesSheetName], { header: 1 });
       let frequencyMap = {};
-      for (let i = 1; i < salesDataJson.length; i++) {
-          const row = salesDataJson[i];
+      for (let i = 1; i < salesData.length; i++) {
+          const row = salesData[i];
           if (row && row[17] && typeof row[17] === 'string' && row[17].trim() !== '' && row[17] !== 'اسم التحليل') {
-              frequencyMap[row[17].trim()] = { count3: Number(row[19]) || 0 };
+              const normName = normalizeArabic(row[17]);
+              frequencyMap[normName] = { count3: Number(row[19]) || 0 };
           }
       }
-      let priceSheet = pricesData.Sheets[pricesData.SheetNames[1]] || pricesData.Sheets[pricesData.SheetNames[0]];
-      const priceData = XLSX.utils.sheet_to_json(priceSheet, { header: 1 });
+
+      let priceSheetName = pricesWorkbook.SheetNames.find(n => n.includes('التحاليل')) || pricesWorkbook.SheetNames[0];
+      const priceData = XLSX.utils.sheet_to_json(pricesWorkbook.Sheets[priceSheetName], { header: 1 });
+      
       let needOffers = [];
+
       for (let i = 1; i < priceData.length; i++) {
           const row = priceData[i];
           if (row && row[0]) {
               const testName = String(row[0]).trim();
               const sellPrice = Number(row[2]) || 0;
+              
               if (sellPrice > 0) {
-                  const freq3 = frequencyMap[testName] ? frequencyMap[testName].count3 : 0;
-                  if (freq3 < 5) { needOffers.push({ name: testName, sell: sellPrice, freq3: freq3 }); }
+                  const normTestName = normalizeArabic(testName);
+                  const freq3 = frequencyMap[normTestName] ? frequencyMap[normTestName].count3 : 0;
+                  
+                  // لو اتعمل أقل من 5 مرات في آخر 3 شهور، يبقى محتاج عرض
+                  if (freq3 < 5) {
+                      needOffers.push({
+                          name: testName,
+                          sell: sellPrice,
+                          freq3: freq3
+                      });
+                  }
               }
           }
       }
+
       needOffers.sort((a, b) => a.freq3 - b.freq3);
+
       let html = '';
-      needOffers.slice(0, 50).forEach((test) => {
-          html += `<tr><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f;">${test.sell} ج</td><td style="color: #f87171; font-weight:bold;">${test.freq3} مرات</td></tr>`;
+      needOffers.slice(0, 50).forEach((test) => { 
+          html += `
+            <tr>
+              <td style="color: var(--text); text-align:right;">${test.name}</td>
+              <td style="color: #00ff7f;">${test.sell} ج</td>
+              <td style="color: #f87171; font-weight:bold;">${test.freq3} مرات</td>
+            </tr>
+          `;
       });
-      document.getElementById('needOffersTableBody').innerHTML = html || '<tr><td colspan="3">كل التحاليل مبيعتها كويسة!</td></tr>';
+      tbody.innerHTML = html || '<tr><td colspan="3" style="text-align:center;">كل التحاليل مبيعتها كويسة!</td></tr>';
+
     } catch (e) { console.error(e); }
   };
 
