@@ -8,10 +8,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="admin.css">
+<style>
+  /* تثبيت طول الرسومات البيانية عشان مشاكل السكرول */
+  .chart-container {
+    position: relative;
+    height: 350px;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 768px) {
+    .chart-container { height: 300px; }
+  }
+</style>
 </head>
 <body class="admin-body">
 
-<!-- شاشة تسجيل الدخول -->
 <div id="loginScreen" class="login-screen">
   <div class="login-box">
     <div class="login-logo"><img src="logo.png" alt="معامل طيبة"></div>
@@ -23,7 +34,6 @@
   </div>
 </div>
 
-<!-- لوحة التحكم -->
 <div id="adminDashboard" class="admin-dashboard" style="display:none;">
   <header class="admin-header">
     <div class="admin-header-left">
@@ -47,6 +57,7 @@
       <ul class="admin-nav">
         <li><button data-report="financial" onclick="showReport('financial')">📅 التقرير الشهري</button></li>
         <li><button data-report="annual" onclick="showReport('annual')">📊 التقرير السنوي</button></li>
+        <li><button data-report="cases" onclick="showReport('cases')">👥 تحليل أعداد الحالات</button></li>
       </ul>
 
       <h3>📢 التسويق والدعاية</h3>
@@ -66,7 +77,6 @@
 
     <main class="admin-content">
       
-      <!-- 1. غرفة العمليات (Overview) -->
       <section class="admin-section active" id="report-overview">
         <div class="admin-section-head"><h2>📈 نظرة عامة على الأداء</h2></div>
         <div id="overviewAlert" style="background: rgba(0,255,127,0.1); border: 1px solid var(--border-glow); color: var(--primary-glow); padding: 15px; border-radius: 12px; margin-bottom: 20px; font-weight: bold; display: none;"></div>
@@ -84,16 +94,15 @@
             <div id="ov-profit" style="font-size: 1.8rem; font-weight: bold; color: #fbbf24;">0</div>
           </div>
           <div class="kpi-card" style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border); text-align: center;">
-            <h4 style="color: var(--text-muted); font-size: 0.9rem;">عدد الحالات (الكل)</h4>
+            <h4 style="color: var(--text-muted); font-size: 0.9rem;">إجمالي الحالات (الكل)</h4>
             <div id="ov-cases" style="font-size: 1.8rem; font-weight: bold; color: #00bfff;">0</div>
           </div>
         </div>
-        <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
-          <canvas id="overviewChart" height="100"></canvas>
+        <div class="chart-container">
+          <canvas id="overviewChart"></canvas>
         </div>
       </section>
 
-      <!-- 2. رفع الملفات -->
       <section class="admin-section" id="report-upload">
         <div class="admin-section-head"><h2>📤 رفع ملفات الإكسيل</h2></div>
         <div class="upload-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
@@ -119,84 +128,32 @@
         <button onclick="clearData()" style="margin-top: 10px; background: rgba(220,38,38,0.2); color: #f87171; border: 1px solid #f87171; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold;">🗑️ مسح كل البيانات المحفوظة</button>
       </section>
 
-      <!-- 3. التقرير الشهري -->
       <section class="admin-section" id="report-financial">
         <div class="admin-section-head"><h2>💰 التقرير الشهري</h2></div>
         <div class="filter-group">
-          <div>
-            <label>الفرع:</label>
-            <select id="branchSelector" onchange="renderFinancialReport()">
-              <option value="combined">🏥 إجمالي الفرعين</option>
-              <option value="jaafara">🏥 فرع الجعافرة</option>
-              <option value="bahtim">🏥 فرع بهتيم</option>
-            </select>
-          </div>
-          <div>
-            <label>السنة:</label>
-            <select id="yearSelector" onchange="renderFinancialReport()">
-              <option value="2026">2026</option>
-              <option value="2025">2025</option>
-              <option value="2024">2024</option>
-            </select>
-          </div>
-          <div>
-            <label>الشهر:</label>
-            <select id="monthSelector" onchange="renderFinancialReport()">
-              <option value="all">كل السنة (الإجمالي)</option>
-              <option value="1">يناير</option>
-              <option value="2">فبراير</option>
-              <option value="3">مارس</option>
-              <option value="4">ابريل</option>
-              <option value="5">مايو</option>
-              <option value="6">يونيو</option>
-              <option value="7">يوليو</option>
-              <option value="8">اغسطس</option>
-              <option value="9">سبتمبر</option>
-              <option value="10">اكتوبر</option>
-              <option value="11">نوفمبر</option>
-              <option value="12">ديسمبر</option>
-            </select>
-          </div>
+          <div><label>الفرع:</label><select id="branchSelector" onchange="renderFinancialReport()"><option value="combined">🏥 إجمالي الفرعين</option><option value="jaafara">🏥 فرع الجعافرة</option><option value="bahtim">🏥 فرع بهتيم</option></select></div>
+          <div><label>السنة:</label><select id="yearSelector" onchange="renderFinancialReport()"><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option></select></div>
+          <div><label>الشهر:</label><select id="monthSelector" onchange="renderFinancialReport()"><option value="all">كل السنة</option><option value="1">يناير</option><option value="2">فبراير</option><option value="3">مارس</option><option value="4">ابريل</option><option value="5">مايو</option><option value="6">يونيو</option><option value="7">يوليو</option><option value="8">اغسطس</option><option value="9">سبتمبر</option><option value="10">اكتوبر</option><option value="11">نوفمبر</option><option value="12">ديسمبر</option></select></div>
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
           <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border-glow); text-align: center;">
-            <h4 style="color: var(--text-muted); font-size: 0.9rem;">إجمالي الإيراد</h4>
-            <div id="fin-revenue" style="font-size: 2rem; font-weight: bold; color: #00ff7f;">0</div>
+            <h4 style="color: var(--text-muted); font-size: 0.9rem;">إجمالي الإيراد</h4><div id="fin-revenue" style="font-size: 2rem; font-weight: bold; color: #00ff7f;">0</div>
           </div>
           <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid #f87171; text-align: center;">
-            <h4 style="color: var(--text-muted); font-size: 0.9rem;">إجمالي المصروفات</h4>
-            <div id="fin-expenses" style="font-size: 2rem; font-weight: bold; color: #f87171;">0</div>
+            <h4 style="color: var(--text-muted); font-size: 0.9rem;">إجمالي المصروفات</h4><div id="fin-expenses" style="font-size: 2rem; font-weight: bold; color: #f87171;">0</div>
           </div>
           <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid #fbbf24; text-align: center;">
-            <h4 style="color: var(--text-muted); font-size: 0.9rem;">صافي الربح</h4>
-            <div id="fin-profit" style="font-size: 2rem; font-weight: bold; color: #fbbf24;">0</div>
+            <h4 style="color: var(--text-muted); font-size: 0.9rem;">صافي الربح</h4><div id="fin-profit" style="font-size: 2rem; font-weight: bold; color: #fbbf24;">0</div>
           </div>
         </div>
-        <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
-          <canvas id="financeChart" height="100"></canvas>
-        </div>
+        <div class="chart-container"><canvas id="financeChart"></canvas></div>
       </section>
 
-      <!-- 4. التقرير السنوي -->
       <section class="admin-section" id="report-annual">
         <div class="admin-section-head"><h2>📊 التقرير السنوي</h2></div>
         <div class="filter-group">
-          <div>
-            <label>الفرع:</label>
-            <select id="annualBranchSelector" onchange="renderAnnualReport()">
-              <option value="combined">🏥 إجمالي الفرعين</option>
-              <option value="jaafara">🏥 فرع الجعافرة</option>
-              <option value="bahtim">🏥 فرع بهتيم</option>
-            </select>
-          </div>
-          <div>
-            <label>السنة:</label>
-            <select id="annualYearSelector" onchange="renderAnnualReport()">
-              <option value="2024">2024</option>
-              <option value="2025">2025</option>
-              <option value="2026">2026</option>
-            </select>
-          </div>
+          <div><label>الفرع:</label><select id="annualBranchSelector" onchange="renderAnnualReport()"><option value="combined">🏥 إجمالي الفرعين</option><option value="jaafara">🏥 فرع الجعافرة</option><option value="bahtim">🏥 فرع بهتيم</option></select></div>
+          <div><label>السنة:</label><select id="annualYearSelector" onchange="renderAnnualReport()"><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select></div>
         </div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 20px;">
           <div class="table-responsive">
@@ -209,16 +166,29 @@
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
           <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
             <h4 style="text-align:center; color:var(--text-muted); margin-bottom:15px;">مقارنة الإيرادات والمصروفات</h4>
-            <canvas id="annualRevChart" height="200"></canvas>
+            <div class="chart-container"><canvas id="annualRevChart"></canvas></div>
           </div>
           <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
             <h4 style="text-align:center; color:var(--text-muted); margin-bottom:15px;">صافي الربح</h4>
-            <canvas id="annualProfitChart" height="200"></canvas>
+            <div class="chart-container"><canvas id="annualProfitChart"></canvas></div>
           </div>
         </div>
       </section>
 
-      <!-- 5. الأكثر مبيعاً -->
+      <section class="admin-section" id="report-cases">
+        <div class="admin-section-head"><h2>👥 تحليل أعداد الحالات الشهرية</h2></div>
+        <div class="filter-group">
+          <div><label>السنة:</label><select id="casesYearSelector" onchange="renderCaseAnalysis()"><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option></select></div>
+          <div><label>الفرع:</label><select id="casesBranchSelector" onchange="renderCaseAnalysis()"><option value="combined">🏥 إجمالي الفرعين</option><option value="jaafara">🏥 فرع الجعافرة</option><option value="bahtim">🏥 فرع بهتيم</option></select></div>
+        </div>
+        
+        <div id="casesAlert" style="background: rgba(0,191,255,0.1); border: 1px solid #00bfff; color: #00bfff; padding: 15px; border-radius: 12px; margin-bottom: 20px; font-weight: bold; display: none;"></div>
+
+        <div class="chart-container" style="height: 400px;">
+          <canvas id="casesChart"></canvas>
+        </div>
+      </section>
+
       <section class="admin-section" id="report-topSellers">
         <div class="admin-section-head"><h2>🏆 الأكثر مبيعاً</h2></div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
@@ -231,7 +201,6 @@
         </div>
       </section>
 
-      <!-- 6. الأكثر ربحاً -->
       <section class="admin-section" id="report-mostProfitable">
         <div class="admin-section-head"><h2>💎 الأكثر ربحاً</h2></div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
@@ -244,7 +213,6 @@
         </div>
       </section>
 
-      <!-- 7. الأقل ربحية -->
       <section class="admin-section" id="report-leastProfitable">
         <div class="admin-section-head"><h2>📉 الأقل ربحية</h2></div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
@@ -257,7 +225,6 @@
         </div>
       </section>
 
-      <!-- 8. محتاجة عروض -->
       <section class="admin-section" id="report-needOffers">
         <div class="admin-section-head"><h2>🎯 محتاجة عروض</h2></div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
@@ -270,7 +237,6 @@
         </div>
       </section>
 
-      <!-- 9. التحاليل الخاسرة -->
       <section class="admin-section" id="report-lossMakers">
         <div class="admin-section-head"><h2>📉 التحاليل الخاسرة</h2></div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
