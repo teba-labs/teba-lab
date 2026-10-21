@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Admin Logic (v29 - FINAL 100x REVIEWED)
+   TEBA LABS - Admin Logic (v32 - AI Fair Comparison)
    ===================================================== */
 
 (function(){
@@ -12,9 +12,9 @@
   let pricesWorkbook = null;
 
   // =====================================================
-  // قاعدة البيانات (IndexedDB) - حفظ الملفات الأصلية
+  // قاعدة البيانات (IndexedDB)
   // =====================================================
-  const DB_NAME = 'TebaAdminDB_v5'; // تم تغيير الإصدار لمسح أي داتا قديمة
+  const DB_NAME = 'TebaAdminDB_v7'; 
   const STORE_NAME = 'files';
   
   function openDB() {
@@ -73,6 +73,7 @@
     if(reportName === 'financial') renderFinancialReport();
     if(reportName === 'topSellers') renderTopSellers();
     if(reportName === 'mostProfitable') renderMostProfitable();
+    if(reportName === 'leastProfitable') renderLeastProfitable();
     if(reportName === 'needOffers') renderNeedOffers();
     if(reportName === 'lossMakers') renderLossMakers();
     
@@ -84,7 +85,6 @@
   async function showDashboard(){
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('adminDashboard').style.display = 'flex';
-    
     await loadSavedDataFromDB();
     window.showReport('overview');
   }
@@ -115,9 +115,6 @@
     }
   };
 
-  // =====================================================
-  // الرفع والحفظ
-  // =====================================================
   window.handleFileUpload = function(event, type){
     const file = event.target.files[0];
     if(!file) return;
@@ -164,9 +161,7 @@
             document.getElementById('uploadStatusPrices').innerHTML = '✅ ملف الأسعار محمل.';
         }
         renderAllReports();
-    } catch(e) { 
-        console.log("لا توجد بيانات محفوظة."); 
-    }
+    } catch(e) { console.log("لا توجد بيانات."); }
   }
 
   function renderAllReports() {
@@ -175,6 +170,7 @@
       renderAnnualReport();
       renderTopSellers();
       renderMostProfitable();
+      renderLeastProfitable();
       renderNeedOffers();
       renderLossMakers();
   }
@@ -204,10 +200,6 @@
     yearsData.forEach(y => {
         if (!y.row) return;
         
-        // أعمدة التقفيل السنوي (بناءً على ملف الإكسيل): 
-        // بهتيم: الإيراد (0=A), المصاريف (2=C)
-        // الجعافرة: الإيراد (14=O), المصاريف (12=M)
-        // الحالات (17=R)
         const bRev = Math.round(Number(y.row[0])||0), bExp = Math.round(Number(y.row[2])||0);
         const jRev = Math.round(Number(y.row[14])||0), jExp = Math.round(Number(y.row[12])||0);
         const cases = Math.round(Number(y.row[17])||0); 
@@ -259,14 +251,14 @@
                 { label: 'المصروفات', data: chartExps, backgroundColor: 'rgba(248, 113, 113, 0.7)', borderColor: '#f87171', borderWidth: 1, borderRadius: 6 }
             ]
         },
-        options: { responsive: true, plugins: { legend: { labels: { color: '#fff', font: { family: 'Almarai' } } } }, scales: { y: { ticks: { color: '#a8b5a8' } }, x: { ticks: { color: '#a8b5a8' } } } }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff', font: { family: 'Almarai' } } } }, scales: { y: { ticks: { color: '#a8b5a8' } }, x: { ticks: { color: '#a8b5a8' } } } }
     });
   }
 
   // =====================================================
   // 2. التقارير المالية (الشهري والسنوي)
   // =====================================================
-  function renderFinancialReport() {
+  window.renderFinancialReport = function() {
     if (!salesWorkbook) return;
     const sheetName = salesWorkbook.SheetNames.find(n => n.includes('المتابعة'));
     if (!sheetName) return;
@@ -282,7 +274,6 @@
 
     const processMonth = (monthIndex) => {
         const row = data[startRow + monthIndex - 1] || [];
-        // أعمدة الشهور: بهتيم (0=A, 2=C) | الجعافرة (14=O, 12=M)
         const bRev = getNum(row[0]), bExp = getNum(row[2]);
         const jRev = getNum(row[14]), jExp = getNum(row[12]);
         
@@ -305,33 +296,90 @@
             labels: ['الإيرادات', 'المصروفات', 'صافي الربح'],
             datasets: [{ label: 'بالجنيه', data: [totalRevenue, totalExpenses, (totalRevenue - totalExpenses)], backgroundColor: ['rgba(0, 255, 127, 0.5)', 'rgba(248, 113, 113, 0.5)', 'rgba(251, 191, 36, 0.5)'], borderColor: ['#00ff7f', '#f87171', '#fbbf24'], borderWidth: 2, borderRadius: 8 }]
         },
-        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#a8b5a8' } }, x: { ticks: { color: '#a8b5a8' } } } }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#a8b5a8' } }, x: { ticks: { color: '#a8b5a8' } } } }
     });
   }
 
-  function renderAnnualReport() {
+  window.renderAnnualReport = function() {
     if (!salesWorkbook) return;
     const sheetName = salesWorkbook.SheetNames.find(n => n.includes('المتابعة'));
     if (!sheetName) return;
+    
+    const selectedYear = document.getElementById('annualYearSelector').value;
+    const selectedBranch = document.getElementById('annualBranchSelector').value;
+    
     const data = XLSX.utils.sheet_to_json(salesWorkbook.Sheets[sheetName], { header: 1 });
-    const yearsData = [ { year: '2024', row: data[41] }, { year: '2025', row: data[58] }, { year: '2026', row: data[75] } ];
-    let jHTML = '', bHTML = '';
-    yearsData.forEach(y => {
-        if (!y.row) return;
-        
-        // أعمدة التقفيل: بهتيم (0=A إيراد, 2=C مصاريف, 4=E ربح) | الجعافرة (14=O إيراد, 12=M مصاريف, 10=K ربح)
-        const bRev = Math.round(Number(y.row[0])||0), bExp = Math.round(Number(y.row[2])||0), bProfit = Math.round(Number(y.row[4])||0);
-        const jRev = Math.round(Number(y.row[14])||0), jExp = Math.round(Number(y.row[12])||0), jProfit = Math.round(Number(y.row[10])||0);
-        
-        jHTML += `<tr><td style="color:var(--gold); font-weight:bold;">${y.year}</td><td style="color:#00ff7f;">${jRev.toLocaleString()} ج</td><td style="color:#f87171;">${jExp.toLocaleString()} ج</td><td style="color:#fbbf24; font-weight:bold;">${jProfit.toLocaleString()} ج</td></tr>`;
-        bHTML += `<tr><td style="color:var(--gold); font-weight:bold;">${y.year}</td><td style="color:#00ff7f;">${bRev.toLocaleString()} ج</td><td style="color:#f87171;">${bExp.toLocaleString()} ج</td><td style="color:#fbbf24; font-weight:bold;">${bProfit.toLocaleString()} ج</td></tr>`;
+    
+    let rowIdx = selectedYear === '2024' ? 41 : selectedYear === '2025' ? 58 : 75;
+    let row = data[rowIdx];
+    
+    let bRev = 0, bExp = 0, bProfit = 0;
+    let jRev = 0, jExp = 0, jProfit = 0;
+    
+    if(row) {
+        bRev = Math.round(Number(row[0])||0); bExp = Math.round(Number(row[2])||0); bProfit = Math.round(Number(row[4])||0);
+        jRev = Math.round(Number(row[14])||0); jExp = Math.round(Number(row[12])||0); jProfit = Math.round(Number(row[10])||0);
+    }
+    
+    let finalRev = 0, finalExp = 0, finalProfit = 0;
+    
+    if(selectedBranch === 'combined') {
+        finalRev = bRev + jRev; finalExp = bExp + jExp; finalProfit = bProfit + jProfit;
+    } else if (selectedBranch === 'jaafara') {
+        finalRev = jRev; finalExp = jExp; finalProfit = jProfit;
+    } else if (selectedBranch === 'bahtim') {
+        finalRev = bRev; finalExp = bExp; finalProfit = bProfit;
+    }
+
+    let html = `<tr>
+        <td style="color:var(--gold); font-weight:bold;">${selectedYear}</td>
+        <td style="color:#00ff7f;">${finalRev.toLocaleString()} ج</td>
+        <td style="color:#f87171;">${finalExp.toLocaleString()} ج</td>
+        <td style="color:#fbbf24; font-weight:bold;">${finalProfit.toLocaleString()} ج</td>
+    </tr>`;
+    
+    document.getElementById('annualTableBody').innerHTML = html;
+    
+    let labels = ['2024', '2025', '2026'];
+    let revs = [], exps = [], profits = [];
+    [41, 58, 75].forEach(idx => {
+        let r = data[idx];
+        if(!r) return;
+        let br = Number(r[0])||0, be = Number(r[2])||0, bp = Number(r[4])||0;
+        let jr = Number(r[14])||0, je = Number(r[12])||0, jp = Number(r[10])||0;
+        if(selectedBranch === 'combined') { revs.push(br+jr); exps.push(be+je); profits.push(bp+jp); }
+        else if (selectedBranch === 'jaafara') { revs.push(jr); exps.push(je); profits.push(jp); }
+        else { revs.push(br); exps.push(be); profits.push(bp); }
     });
-    document.getElementById('annualTableJaafara').innerHTML = jHTML;
-    document.getElementById('annualTableBahtim').innerHTML = bHTML;
+
+    const revCtx = document.getElementById('annualRevChart').getContext('2d');
+    if (window.anRevChart) window.anRevChart.destroy();
+    window.anRevChart = new Chart(revCtx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'الإيرادات', data: revs, backgroundColor: 'rgba(0, 255, 127, 0.7)', borderColor: '#00ff7f', borderWidth: 1 },
+                { label: 'المصروفات', data: exps, backgroundColor: 'rgba(248, 113, 113, 0.7)', borderColor: '#f87171', borderWidth: 1 }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff' } } }, scales: { y: { ticks: { color: '#a8b5a8' } }, x: { ticks: { color: '#a8b5a8' } } } }
+    });
+
+    const profCtx = document.getElementById('annualProfitChart').getContext('2d');
+    if (window.anProfChart) window.anProfChart.destroy();
+    window.anProfChart = new Chart(profCtx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{ label: 'صافي الربح', data: profits, backgroundColor: 'rgba(251, 191, 36, 0.5)', borderColor: '#fbbf24', borderWidth: 3, fill: true, tension: 0.3 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff' } } }, scales: { y: { ticks: { color: '#a8b5a8' } }, x: { ticks: { color: '#a8b5a8' } } } }
+    });
   }
 
   // =====================================================
-  // دوال مساعدة للتحاليل (أعمدة T, U, V)
+  // دوال مساعدة للتحاليل
   // =====================================================
   function getTestMovementData() {
     if (!salesWorkbook) return null;
@@ -340,16 +388,18 @@
     const data = XLSX.utils.sheet_to_json(salesWorkbook.Sheets[sheetName], { header: 1 });
     
     let testData = [];
-    let nameCol = 19, countCol = 20, count3Col = 21; 
+    let nameCol = 19, count3Col = 20;
 
     for (let i = 1; i < data.length; i++) {
         const row = data[i];
         if (row && row[nameCol] && typeof row[nameCol] === 'string' && row[nameCol].trim() !== '' && row[nameCol] !== 'اسم التحليل') {
+            let countVal = row[count3Col];
+            let count = (typeof countVal === 'number') ? countVal : 0;
+            
             testData.push({ 
                 name: row[nameCol].trim(), 
                 normName: normalizeText(row[nameCol]),
-                count: Number(row[countCol]) || 0, 
-                count3: Number(row[count3Col]) || 0 
+                count: count
             });
         }
     }
@@ -358,7 +408,7 @@
 
   function renderTopSellers() {
     const tbody = document.getElementById('topSellersTableBody');
-    if (!salesWorkbook) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#f87171;">ارفع الملفات أولاً</td></tr>'; return; }
+    if (!salesWorkbook) { tbody.innerHTML = ''; return; }
     
     let tests = getTestMovementData();
     if(!tests) return;
@@ -366,9 +416,9 @@
     tests.sort((a, b) => b.count - a.count);
     let html = '';
     tests.slice(0, 20).forEach((test, index) => {
-        html += `<tr><td style="font-weight:bold; color:var(--gold);">${index + 1}</td><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f; font-weight:bold;">${test.count}</td><td style="color: #00bfff;">${test.count3}</td></tr>`;
+        html += `<tr><td style="font-weight:bold; color:var(--gold);">${index + 1}</td><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00bfff; font-weight:bold;">${test.count}</td></tr>`;
     });
-    tbody.innerHTML = html || '<tr><td colspan="4">لا توجد بيانات</td></tr>';
+    tbody.innerHTML = html;
   }
 
   function getMergedData() {
@@ -401,7 +451,6 @@
               merged.push({
                   name: t.name,
                   count: t.count,
-                  count3: t.count3,
                   cost: cost,
                   sell: sell,
                   profitUnit: profitUnit,
@@ -414,10 +463,10 @@
 
   function renderMostProfitable() {
     const tbody = document.getElementById('mostProfitableTableBody');
-    if (!salesWorkbook || !pricesWorkbook) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#f87171;">ارفع الملفين أولاً</td></tr>'; return; }
+    if (!salesWorkbook || !pricesWorkbook) { tbody.innerHTML = ''; return; }
     
     let data = getMergedData();
-    if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="6">لا توجد تطابق بين الأسماء في الملفين</td></tr>'; return; }
+    if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="6">لا توجد تطابق</td></tr>'; return; }
 
     data.sort((a, b) => b.totalProfit - a.totalProfit);
     let html = '';
@@ -427,26 +476,43 @@
     tbody.innerHTML = html;
   }
 
+  function renderLeastProfitable() {
+    const tbody = document.getElementById('leastProfitableTableBody');
+    if (!salesWorkbook || !pricesWorkbook) { tbody.innerHTML = ''; return; }
+    
+    let data = getMergedData();
+    if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="6">لا توجد تطابق</td></tr>'; return; }
+
+    let profitableOnly = data.filter(t => t.profitUnit > 0);
+    profitableOnly.sort((a, b) => a.totalProfit - b.totalProfit);
+    
+    let html = '';
+    profitableOnly.slice(0, 20).forEach((test, index) => {
+        html += `<tr><td style="font-weight:bold; color:var(--gold);">${index + 1}</td><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f;">${test.sell} ج</td><td style="color: #f87171;">${test.cost} ج</td><td style="color: #fbbf24;">${test.profitUnit} ج</td><td style="color: #fbbf24; font-weight:bold; font-size:1.1rem;">${test.totalProfit.toLocaleString()} ج</td></tr>`;
+    });
+    tbody.innerHTML = html;
+  }
+
   function renderNeedOffers() {
     const tbody = document.getElementById('needOffersTableBody');
-    if (!salesWorkbook || !pricesWorkbook) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#f87171;">ارفع الملفين أولاً</td></tr>'; return; }
+    if (!salesWorkbook || !pricesWorkbook) { tbody.innerHTML = ''; return; }
     
     let data = getMergedData();
     if (!data) return;
 
-    let needs = data.filter(t => t.count3 < 5 && t.sell > 0);
-    needs.sort((a, b) => a.count3 - b.count3);
+    let needs = data.filter(t => t.count < 5 && t.sell > 0);
+    needs.sort((a, b) => a.count - b.count);
 
     let html = '';
     needs.slice(0, 50).forEach((test) => {
-        html += `<tr><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f;">${test.sell} ج</td><td style="color: #f87171; font-weight:bold;">${test.count3} مرات</td></tr>`;
+        html += `<tr><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f;">${test.sell} ج</td><td style="color: #f87171; font-weight:bold;">${test.count} مرات</td></tr>`;
     });
-    tbody.innerHTML = html || '<tr><td colspan="3" style="text-align:center;">لا توجد تحاليل تحتاج عروض حالياً</td></tr>';
+    tbody.innerHTML = html;
   }
 
   function renderLossMakers() {
     const tbody = document.getElementById('lossMakersTableBody');
-    if (!salesWorkbook || !pricesWorkbook) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#f87171;">ارفع الملفين أولاً</td></tr>'; return; }
+    if (!salesWorkbook || !pricesWorkbook) { tbody.innerHTML = ''; return; }
     
     let data = getMergedData();
     if (!data) return;
@@ -458,11 +524,11 @@
     losers.forEach((test) => {
         html += `<tr><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f;">${test.sell} ج</td><td style="color: #f87171;">${test.cost} ج</td><td style="color: #ef4444; font-weight:bold;">${test.profitUnit} ج</td></tr>`;
     });
-    tbody.innerHTML = html || '<tr><td colspan="4" style="text-align:center;">لا توجد تحاليل خاسرة.</td></tr>';
+    tbody.innerHTML = html;
   }
 
   // =====================================================
-  // 5. المحلل الذكي (AI Assistant)
+  // 5. المحلل الذكي (AI Assistant) - تم تصحيح المقارنة
   // =====================================================
   window.openAIAssistant = function() {
     const modal = document.getElementById('aiModal');
@@ -470,7 +536,7 @@
     modal.classList.add('show');
 
     if (!salesWorkbook) {
-        body.innerHTML = `<p style="color:#f87171; font-weight:bold;">⚠️ من فضلك ارفع ملف الإكسيل أولاً عشان أقدر أحلل البيانات.</p>`;
+        body.innerHTML = `<p style="color:#f87171; font-weight:bold;">⚠️ ارفع الملفات أولاً.</p>`;
         return;
     }
 
@@ -484,30 +550,51 @@
         { year: '2026', row: data[75] }  
     ];
 
-    let rev24=0, rev25=0, rev26=0;
+    let rev25=0, rev26=0, prof25=0, prof26=0;
     let jRev26=0, bRev26=0;
     
     yearsData.forEach(y => {
         if (!y.row) return;
         const bRev = Math.round(Number(y.row[0])||0);
+        const bProf = Math.round(Number(y.row[4])||0);
         const jRev = Math.round(Number(y.row[14])||0);
-        const total = bRev + jRev;
-        if (y.year === '2024') rev24 = total;
-        if (y.year === '2025') rev25 = total;
-        if (y.year === '2026') { rev26 = total; jRev26 = jRev; bRev26 = bRev; }
+        const jProf = Math.round(Number(y.row[10])||0);
+        
+        const totalRev = bRev + jRev;
+        const totalProf = bProf + jProf;
+        
+        if (y.year === '2025') { rev25 = totalRev; prof25 = totalProf; }
+        if (y.year === '2026') { rev26 = totalRev; prof26 = totalProf; jRev26 = jRev; bRev26 = bRev; }
     });
 
-    let insights = `<p>أهلاً يا دكتور أحمد! قمت بتحليل البيانات المتاحة، ودي أهم الملاحظات:</p><ul>`;
+    let months2026 = 0;
+    for (let i = 63; i <= 75; i++) {
+        if (data[i] && data[i][17] > 0) { months2026++; }
+    }
+
+    let insights = `<p>أهلاً يا دكتور أحمد! قمت بتحليل البيانات:</p><ul>`;
 
     if (rev25 > 0 && rev26 > 0) {
-        const growth = ((rev26 - rev25) / rev25) * 100;
-        if (growth > 0) {
-            insights += `<li><strong>الأداء المالي:</strong> إيرادات سنة 2026 أعلى من 2025 بنسبة نمو <strong>${growth.toFixed(1)}%</strong>. مؤشر ممتاز جداً!</li>`;
+        if (months2026 < 12 && months2026 > 0) {
+            const avgRev26 = rev26 / months2026;
+            const avgRev25 = rev25 / 12;
+            const avgProf26 = prof26 / months2026;
+            const avgProf25 = prof25 / 12;
+            
+            insights += `<li style="color:#fbbf24;"><strong>ملاحظة هامة:</strong> سنة 2026 مسجلة فيها <strong>${months2026} شهور</strong> فقط. المقارنة الإجمالية مع سنة كاملة (2025) غير عادلة.</li>`;
+            insights += `<li><strong>متوسط الإيراد الشهري:</strong> في 2026 هو <strong>${Math.round(avgRev26).toLocaleString()} ج</strong>، مقابل <strong>${Math.round(avgRev25).toLocaleString()} ج</strong> في 2025.</li>`;
+            insights += `<li><strong>متوسط الربح الشهري:</strong> في 2026 هو <strong>${Math.round(avgProf26).toLocaleString()} ج</strong>، مقابل <strong>${Math.round(avgProf25).toLocaleString()} ج</strong> في 2025.</li>`;
+            
+            if (avgProf26 > avgProf25) {
+                 insights += `<li><strong>الأداء المالي:</strong> بالرغم من أن 2026 لسه مكملتش، إلا إن متوسط الربح الشهري أعلى من 2025! وده مؤشر ممتاز على كفاءة المصاريف.</li>`;
+            } else {
+                 insights += `<li><strong>الأداء المالي:</strong> متوسط الربح الشهري لـ 2026 أقل من 2025. محتاجين نراجع خطة التسويق والمصاريف.</li>`;
+            }
         } else {
-            insights += `<li><strong>الأداء المالي:</strong> إيرادات 2026 أقل من 2025 بنسبة <strong>${Math.abs(growth).toFixed(1)}%</strong>. محتاجين نراجع خطة التسويق.</li>`;
+            const growthRev = ((rev26 - rev25) / rev25) * 100;
+            const growthProf = ((prof26 - prof25) / prof25) * 100;
+            insights += `<li><strong>الأداء المالي:</strong> إيرادات 2026 تغيرت بنسبة <strong>${growthRev.toFixed(1)}%</strong>، والأرباح تغيرت بنسبة <strong>${growthProf.toFixed(1)}%</strong> مقارنة بـ 2025.</li>`;
         }
-    } else {
-        insights += `<li><strong>الأداء المالي:</strong> بيانات 2026 لسه مش مكتملة، بس إجمالي 2025 كان ${rev25.toLocaleString()} ج.</li>`;
     }
 
     if (jRev26 > 0 && bRev26 > 0) {
@@ -526,13 +613,13 @@
             let losers = merged.filter(t => t.cost > t.sell);
 
             if (topProfit) {
-                insights += `<li><strong>نجم الأرباح:</strong> تحليل <strong>${topProfit.name}</strong> هو أكتر تحليل بيجيبلك ربح، دخللك حوالي <strong>${topProfit.totalProfit.toLocaleString()} ج</strong>. ركز عليه في الدعاية.</li>`;
+                insights += `<li><strong>نجم الأرباح:</strong> تحليل <strong>${topProfit.name}</strong> هو أكتر تحليل بيجيبلك ربح، دخللك حوالي <strong>${topProfit.totalProfit.toLocaleString()} ج</strong>.</li>`;
             }
             if (topSeller) {
                 insights += `<li><strong>التحليل الأكثر شعبية:</strong> تحليل <strong>${topSeller.name}</strong> هو الأكثر طلباً (${topSeller.count} مرة).</li>`;
             }
             if (losers.length > 0) {
-                insights += `<li><strong>تنبيه خسارة:</strong> في <strong>${losers.length} تحاليل</strong> سعرها أقل من تكلفتها. راجع تقرير "التحاليل الخاسرة" فوراً.</li>`;
+                insights += `<li><strong>تنبيه خسارة:</strong> في <strong>${losers.length} تحاليل</strong> سعرها أقل من تكلفتها. راجع تقرير "التحاليل الخاسرة".</li>`;
             }
         }
     } else {
@@ -540,7 +627,6 @@
     }
 
     insights += `</ul><p style="text-align:center; margin-top:20px; color:var(--text-muted); font-size:0.9rem;">معامل طيبة دايماً في تقدم! 🚀</p>`;
-    
     body.innerHTML = insights;
   };
 
