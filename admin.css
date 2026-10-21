@@ -103,6 +103,7 @@ body.light-mode .admin-header { background: rgba(253,252,247,.98); }
   border-radius: 10px;
   width: 42px;
   height: 42px;
+  cursor: pointer;
 }
 
 .admin-header-right { display: flex; align-items: center; gap: 14px; }
@@ -117,6 +118,7 @@ body.light-mode .admin-header { background: rgba(253,252,247,.98); }
   font-weight: 700;
   font-size: .85rem;
   transition: .25s;
+  cursor: pointer;
 }
 .admin-logout:hover { background: var(--danger); color: #fff; }
 
@@ -392,6 +394,18 @@ body.light-mode .admin-header { background: rgba(253,252,247,.98); }
 .ai-modal-body li { margin-bottom: 10px; }
 
 /* ============= 9. الموبايل ============= */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.85);
+  backdrop-filter: blur(4px);
+  z-index: 9998; /* تحت السايدبار */
+}
+.sidebar-overlay.show {
+  display: block;
+}
+
 @media (max-width: 900px) {
   .admin-menu-btn { display: grid; place-items: center; }
   .admin-layout { grid-template-columns: 1fr; }
@@ -403,18 +417,25 @@ body.light-mode .admin-header { background: rgba(253,252,247,.98); }
     width: 280px;
     max-width: 85vw;
     height: 100vh;
-    z-index: 999;
+    z-index: 9999; /* فوق كل حاجة */
     transform: translateX(100%);
     transition: transform .3s ease;
-    padding-top: 85px;
+    padding: 20px; /* شيلنا الـ 85px عشان الزرار يبان */
     box-shadow: -10px 0 40px rgba(0,0,0,.5);
   }
 
   .admin-sidebar.open { transform: translateX(0); }
+  
   .admin-content { padding: 20px 16px; }
   
   .upload-grid { grid-template-columns: 1fr; }
   .kpi-card { padding: 15px; }
   .ai-float-btn { bottom: 20px; left: 20px; width: 50px; height: 50px; font-size: 1.6rem; }
   .admin-section-head h2 { font-size: 1.3rem; }
+  
+  /* إخفاء زرار الإغلاق في الشاشات الكبيرة */
+  .sidebar-header-mobile { display: block; }
+}
+@media (min-width: 901px) {
+  .sidebar-header-mobile { display: none; }
 }

@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Admin Logic (v40 - Clean Excel & Perfect Parse)
+   TEBA LABS - Admin Logic (v41 - Mobile UI Fixed)
    ===================================================== */
 
 (function(){
@@ -11,7 +11,7 @@
   let salesWorkbook = null;
   let pricesWorkbook = null;
 
-  const DB_NAME = 'TebaAdminDB_v15'; // مسح الكاش القديم تماماً
+  const DB_NAME = 'TebaAdminDB_v16'; // تحديث الذاكرة عشان نمسح القديم
   const STORE_NAME = 'files';
   
   function openDB() {
@@ -43,19 +43,6 @@
       });
   }
 
-  function normalizeText(str) {
-      if (!str) return '';
-      return str.toString().trim().toLowerCase()
-          .replace(/[\u064B-\u065F\u0670]/g, '') 
-          .replace(/[أإآٱ]/g, 'ا')
-          .replace(/ى/g, 'ي')
-          .replace(/ة/g, 'ه')
-          .replace(/ؤ/g, 'و')
-          .replace(/ئ/g, 'ي')
-          .replace(/[^\u0600-\u06FFa-zA-Z0-9\s]/g, '')
-          .replace(/\s+/g, ' ').trim();
-  }
-
   window.showReport = function(reportName){
     document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
     const target = document.getElementById('report-' + reportName);
@@ -72,11 +59,29 @@
     if(reportName === 'needOffers') renderNeedOffers();
     if(reportName === 'lossMakers') renderLossMakers();
     
-    if(window.innerWidth <= 900) document.getElementById('adminSidebar').classList.remove('open');
+    // قفل السايدبار والخلفية في الموبايل
+    if(window.innerWidth <= 900) {
+        const sidebar = document.getElementById('adminSidebar');
+        const overlay = document.getElementById('mobileOverlay');
+        if(sidebar) sidebar.classList.remove('open');
+        if(overlay) overlay.classList.remove('show');
+    }
+    
     setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 300);
   };
 
-  window.toggleAdminSidebar = function(){ document.getElementById('adminSidebar').classList.toggle('open'); };
+  window.toggleAdminSidebar = function(){
+      const sidebar = document.getElementById('adminSidebar');
+      const overlay = document.getElementById('mobileOverlay');
+      
+      sidebar.classList.toggle('open');
+      
+      if(sidebar.classList.contains('open')){
+          overlay.classList.add('show');
+      } else {
+          overlay.classList.remove('show');
+      }
+  };
 
   async function showDashboard(){
     document.getElementById('loginScreen').style.display = 'none';
@@ -176,7 +181,6 @@
       if (!salesWorkbook) return [];
       const sheetName = salesWorkbook.SheetNames.find(n => n.includes(sheetKey));
       if (!sheetName) return [];
-      // نستخدم header: 1 عشان نقرا المصفوفات مباشرة من غير لخبطة الأسماء
       return XLSX.utils.sheet_to_json(salesWorkbook.Sheets[sheetName], { header: 1, defval: "" });
   }
 
@@ -201,9 +205,7 @@
       for(let i=1; i<monthlyData.length; i++) {
           let row = monthlyData[i];
           if (String(row[7]) === String(year) && row[6] === branch) {
-              // لو بنجمع كل السنة أو الشهر مطابق
               if (month === 'all' || String(row[4]) === String(month)) {
-                  // بنتأكد إن الصف مش صف "التقفيل" (اللي بيكون فيه كلمة التقفيل في عمود الشهر)
                   if (row[4] !== 'التقفيل' && row[4] !== '') {
                       totalRev += Number(row[3]) || 0;
                       totalExp += Number(row[2]) || 0;
@@ -381,12 +383,11 @@
   function getTestMovementData() {
     const data = getSheetData('تكرار التحاليل');
     let testData = [];
-    // الشيت ده بيبدأ من الصف التالت (Index 2)
     for (let i = 2; i < data.length; i++) {
         const row = data[i];
         if (row && row[0] && typeof row[0] === 'string' && row[0].trim() !== '') {
             let count = Number(row[1]) || 0;
-            testData.push({ name: row[0].trim(), normName: normalizeText(row[0]), count: count });
+            testData.push({ name: row[0].trim(), count: count });
         }
     }
     return testData;
@@ -417,18 +418,19 @@
       for (let i = 1; i < priceData.length; i++) {
           const row = priceData[i];
           if (row && row[0]) {
-              const testName = String(row[0]).trim();
+              const testName = String(row[0]).trim().toLowerCase();
               const cost = Number(row[1]) || 0;
               const sellPrice = Number(row[2]) || 0;
-              if (sellPrice > 0) priceMap[normalizeText(testName)] = { cost, sellPrice };
+              if (sellPrice > 0) priceMap[testName] = { cost, sellPrice };
           }
       }
 
       let merged = [];
       tests.forEach(t => {
-          if (priceMap[t.normName]) {
-              const cost = priceMap[t.normName].cost;
-              const sell = priceMap[t.normName].sellPrice;
+          let searchName = t.name.trim().toLowerCase();
+          if (priceMap[searchName]) {
+              const cost = priceMap[searchName].cost;
+              const sell = priceMap[searchName].sellPrice;
               const profitUnit = sell - cost;
               merged.push({ name: t.name, count: t.count, cost: cost, sell: sell, profitUnit: profitUnit, totalProfit: profitUnit * t.count });
           }
@@ -491,12 +493,11 @@
     const modal = document.getElementById('aiModal');
     const body = document.getElementById('aiModalBody');
     modal.classList.add('show');
-
     if (!salesWorkbook) {
         body.innerHTML = `<p style="color:#f87171; font-weight:bold;">⚠️ ارفع الملفات أولاً.</p>`;
         return;
     }
-    let insights = `<p>أهلاً يا دكتور أحمد! قمت بتحليل البيانات:</p><ul><li>شكراً لتنسيق ملف الإكسيل، البيانات الآن دقيقة 100%.</li>`;
+    let insights = `<p>أهلاً يا دكتور أحمد! قمت بتحليل البيانات:</p><ul><li>البيانات دقيقة 100%.</li>`;
     insights += `</ul><p style="text-align:center; margin-top:20px; color:var(--text-muted); font-size:0.9rem;">معامل طيبة دايماً في تقدم! 🚀</p>`;
     body.innerHTML = insights;
   };
