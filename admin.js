@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Admin Logic (v36 - Bulletproof Arabic Parsing)
+   TEBA LABS - Admin Logic (v40 - Clean Excel & Perfect Parse)
    ===================================================== */
 
 (function(){
@@ -11,7 +11,7 @@
   let salesWorkbook = null;
   let pricesWorkbook = null;
 
-  const DB_NAME = 'TebaAdminDB_v11'; // تغيير الإصدار لضمان مسح الكاش
+  const DB_NAME = 'TebaAdminDB_v15'; // مسح الكاش القديم تماماً
   const STORE_NAME = 'files';
   
   function openDB() {
@@ -43,17 +43,16 @@
       });
   }
 
-  // دالة التنظيف القوية جداً للنصوص العربية
-  function cleanTxt(str) {
+  function normalizeText(str) {
       if (!str) return '';
       return str.toString().trim().toLowerCase()
-          .replace(/[\u064B-\u065F\u0670]/g, '') // شيل التشكيل
-          .replace(/[أإآٱ]/g, 'ا') // توحيد الألف
+          .replace(/[\u064B-\u065F\u0670]/g, '') 
+          .replace(/[أإآٱ]/g, 'ا')
           .replace(/ى/g, 'ي')
           .replace(/ة/g, 'ه')
           .replace(/ؤ/g, 'و')
           .replace(/ئ/g, 'ي')
-          .replace(/[^\u0600-\u06FFa-zA-Z0-9\s]/g, '') // شيل الرموز
+          .replace(/[^\u0600-\u06FFa-zA-Z0-9\s]/g, '')
           .replace(/\s+/g, ' ').trim();
   }
 
@@ -74,8 +73,6 @@
     if(reportName === 'lossMakers') renderLossMakers();
     
     if(window.innerWidth <= 900) document.getElementById('adminSidebar').classList.remove('open');
-    
-    // إجبار المتصفح على إعادة رسم الرسومات (مهم جداً للموبايل)
     setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 300);
   };
 
@@ -175,70 +172,47 @@
       renderLossMakers();
   }
 
-  function getWorkbookData() {
-      if (!salesWorkbook) return null;
-      const sheetName = salesWorkbook.SheetNames.find(n => cleanTxt(n).includes('المتابعه'));
-      if (!sheetName) return null;
-      return XLSX.utils.sheet_to_json(salesWorkbook.Sheets[sheetName], { header: 1 });
+  function getSheetData(sheetKey) {
+      if (!salesWorkbook) return [];
+      const sheetName = salesWorkbook.SheetNames.find(n => n.includes(sheetKey));
+      if (!sheetName) return [];
+      // نستخدم header: 1 عشان نقرا المصفوفات مباشرة من غير لخبطة الأسماء
+      return XLSX.utils.sheet_to_json(salesWorkbook.Sheets[sheetName], { header: 1, defval: "" });
   }
 
-  // دالة شاملة لاستخراج البيانات من الشيت (بتتجاهل أي لخبطة في الترتيب)
-  function extractFinancialData(yearStr, branch) {
-      const data = getWorkbookData();
-      if (!data) return null;
-
-      let yearRow = data.findIndex(r => r && r.some(c => String(c).trim() === yearStr));
-      if (yearRow === -1) return null;
-
-      let headerRow = -1;
-      for (let i = yearRow; i < Math.min(yearRow + 10, data.length); i++) {
-          if (data[i] && data[i].some(c => cleanTxt(c).includes('اجمالي الايراد الشهري'))) {
-              headerRow = i; break;
+  function extractYearData(year, branch) {
+      const annualData = getSheetData('السنوية');
+      let totalRev = 0, totalExp = 0;
+      
+      for(let i=1; i<annualData.length; i++) {
+          let row = annualData[i];
+          if (String(row[5]) === String(year) && row[4] === branch) {
+              totalRev += Number(row[3]) || 0;
+              totalExp += Number(row[2]) || 0;
           }
       }
-      if (headerRow === -1) return null;
+      return { rev: totalRev, exp: totalExp };
+  }
 
-      let bRev = -1, bExp = -1, jRev = -1, jExp = -1, bCases = -1, jCases = -1;
-      let foundBRev = 0, foundBExp = 0, foundCases = 0;
-
-      for (let c = 0; c < data[headerRow].length; c++) {
-          let txt = cleanTxt(data[headerRow][c]);
-          if (txt.includes('اجمالي الايراد الشهري')) { if (!foundBRev) { bRev = c; foundBRev = 1; } else jRev = c; }
-          if (txt.includes('اجمالي المصاريف الشهريه')) { if (!foundBExp) { bExp = c; foundBExp = 1; } else jExp = c; }
-          if (txt === 'عدد الحالات' || txt.includes('عدد الحالات')) { if (!foundCases) { bCases = c; foundCases = 1; } else jCases = c; }
-      }
-
+  function extractMonthData(year, month, branch) {
+      const monthlyData = getSheetData('الشهرية');
       let totalRev = 0, totalExp = 0, totalCases = 0;
-      let monthlyData = [];
-      let mCount = 0;
-
-      for (let r = headerRow + 1; r < data.length && mCount < 12; r++) {
-          if (!data[r]) continue;
-          let row = data[r];
-          
-          let bR = Number(row[bRev]) || 0;
-          let bE = Number(row[bExp]) || 0;
-          let jR = Number(row[jRev]) || 0;
-          let jE = Number(row[jExp]) || 0;
-          let bC = Number(row[bCases]) || 0;
-          let jC = Number(row[jCases]) || 0;
-
-          if (bR === 0 && bE === 0 && jR === 0 && jE === 0) continue; 
-
-          mCount++;
-          let mRev = 0, mExp = 0, mCases = 0;
-
-          if (branch === 'combined') { mRev = bR + jR; mExp = bE + jE; mCases = bC + jC; }
-          else if (branch === 'jaafara') { mRev = jR; mExp = jE; mCases = jC; }
-          else if (branch === 'bahtim') { mRev = bR; mExp = bE; mCases = bC; }
-
-          totalRev += mRev;
-          totalExp += mExp;
-          totalCases += mCases;
-          monthlyData.push({ rev: mRev, exp: mExp, cases: mCases });
+      
+      for(let i=1; i<monthlyData.length; i++) {
+          let row = monthlyData[i];
+          if (String(row[7]) === String(year) && row[6] === branch) {
+              // لو بنجمع كل السنة أو الشهر مطابق
+              if (month === 'all' || String(row[4]) === String(month)) {
+                  // بنتأكد إن الصف مش صف "التقفيل" (اللي بيكون فيه كلمة التقفيل في عمود الشهر)
+                  if (row[4] !== 'التقفيل' && row[4] !== '') {
+                      totalRev += Number(row[3]) || 0;
+                      totalExp += Number(row[2]) || 0;
+                      totalCases += Number(row[5]) || 0;
+                  }
+              }
+          }
       }
-
-      return { totalRev, totalExp, totalCases, monthlyData };
+      return { rev: totalRev, exp: totalExp, cases: totalCases };
   }
 
   function renderOverview() {
@@ -247,17 +221,26 @@
     let rev2025 = 0, rev2026 = 0;
 
     ['2024', '2025', '2026'].forEach(year => {
-        let res = extractFinancialData(year, 'combined');
-        if (res) {
-            totalRevAll += res.totalRev;
-            totalExpAll += res.totalExp;
-            totalCasesAll += res.totalCases;
-            chartLabels.push(year);
-            chartRevs.push(res.totalRev);
-            chartExps.push(res.totalExp);
-            if (year === '2025') rev2025 = res.totalRev;
-            if (year === '2026') rev2026 = res.totalRev;
-        }
+        let combinedRev = 0, combinedExp = 0, combinedCases = 0;
+        ['الجعافرة', 'بهتيم'].forEach(branch => {
+            let r = extractYearData(year, branch);
+            combinedRev += r.rev;
+            combinedExp += r.exp;
+            
+            let m = extractMonthData(year, 'all', branch);
+            combinedCases += m.cases;
+        });
+
+        totalRevAll += combinedRev;
+        totalExpAll += combinedExp;
+        totalCasesAll += combinedCases;
+        
+        chartLabels.push(year);
+        chartRevs.push(combinedRev);
+        chartExps.push(combinedExp);
+        
+        if (year === '2025') rev2025 = combinedRev;
+        if (year === '2026') rev2026 = combinedRev;
     });
 
     document.getElementById('ov-revenue').textContent = totalRevAll.toLocaleString('en-US') + ' ج';
@@ -293,20 +276,14 @@
     const selectedMonth = document.getElementById('monthSelector').value;
     const selectedBranch = document.getElementById('branchSelector').value;
 
-    let res = extractFinancialData(selectedYear, selectedBranch);
-    if (!res) return;
-
     let totalRev = 0, totalExp = 0;
-    if (selectedMonth === 'all') {
-        totalRev = res.totalRev;
-        totalExp = res.totalExp;
-    } else {
-        let idx = parseInt(selectedMonth) - 1;
-        if (res.monthlyData[idx]) {
-            totalRev = res.monthlyData[idx].rev;
-            totalExp = res.monthlyData[idx].exp;
-        }
-    }
+    let branchesToProcess = selectedBranch === 'combined' ? ['الجعافرة', 'بهتيم'] : [selectedBranch === 'jaafara' ? 'الجعافرة' : 'بهتيم'];
+
+    branchesToProcess.forEach(b => {
+        let res = extractMonthData(selectedYear, selectedMonth, b);
+        totalRev += res.rev;
+        totalExp += res.exp;
+    });
 
     document.getElementById('fin-revenue').textContent = totalRev.toLocaleString('en-US') + ' ج';
     document.getElementById('fin-expenses').textContent = totalExp.toLocaleString('en-US') + ' ج';
@@ -325,16 +302,25 @@
     const selectedYear = document.getElementById('annualYearSelector').value;
     const selectedBranch = document.getElementById('annualBranchSelector').value;
 
-    let res = extractFinancialData(selectedYear, selectedBranch);
-    if (!res) return;
+    let finalRev = 0, finalExp = 0;
+    let branchesToProcess = selectedBranch === 'combined' ? ['الجعافرة', 'بهتيم'] : [selectedBranch === 'jaafara' ? 'الجعافرة' : 'بهتيم'];
+    
+    branchesToProcess.forEach(b => {
+        let res = extractYearData(selectedYear, b);
+        finalRev += res.rev;
+        finalExp += res.exp;
+    });
 
-    document.getElementById('annualTableBody').innerHTML = `<tr><td style="color:var(--gold);">${selectedYear}</td><td style="color:#00ff7f;">${res.totalRev.toLocaleString()} ج</td><td style="color:#f87171;">${res.totalExp.toLocaleString()} ج</td><td style="color:#fbbf24;">${(res.totalRev - res.totalExp).toLocaleString()} ج</td></tr>`;
+    document.getElementById('annualTableBody').innerHTML = `<tr><td style="color:var(--gold);">${selectedYear}</td><td style="color:#00ff7f;">${finalRev.toLocaleString()} ج</td><td style="color:#f87171;">${finalExp.toLocaleString()} ج</td><td style="color:#fbbf24;">${(finalRev - finalExp).toLocaleString()} ج</td></tr>`;
     
     let labels = ['2024', '2025', '2026'], revs = [], exps = [], profits = [];
     labels.forEach(yr => {
-        let r = extractFinancialData(yr, selectedBranch);
-        if(r) { revs.push(r.totalRev); exps.push(r.totalExp); profits.push(r.totalRev - r.totalExp); }
-        else { revs.push(0); exps.push(0); profits.push(0); }
+        let yRev = 0, yExp = 0;
+        branchesToProcess.forEach(b => {
+            let r = extractYearData(yr, b);
+            yRev += r.rev; yExp += r.exp;
+        });
+        revs.push(yRev); exps.push(yExp); profits.push(yRev - yExp);
     });
 
     const revCtx = document.getElementById('annualRevChart').getContext('2d');
@@ -350,12 +336,18 @@
     const selectedYear = document.getElementById('casesYearSelector').value;
     const selectedBranch = document.getElementById('casesBranchSelector').value;
 
-    let res = extractFinancialData(selectedYear, selectedBranch);
-    if (!res) return;
-
     let months = ['يناير', 'فبراير', 'مارس', 'ابريل', 'مايو', 'يونيو', 'يوليو', 'اغسطس', 'سبتمبر', 'اكتوبر', 'نوفمبر', 'ديسمبر'];
-    let casesData = res.monthlyData.map(m => m.cases);
+    let casesData = Array(12).fill(0);
     
+    let branchesToProcess = selectedBranch === 'combined' ? ['الجعافرة', 'بهتيم'] : [selectedBranch === 'jaafara' ? 'الجعافرة' : 'بهتيم'];
+    
+    branchesToProcess.forEach(b => {
+        for(let m=1; m<=12; m++) {
+            let res = extractMonthData(selectedYear, m, b);
+            casesData[m-1] += res.cases;
+        }
+    });
+
     let maxCases = -1, maxMonth = '';
     let minCases = Infinity, minMonth = '';
     
@@ -387,31 +379,14 @@
   }
 
   function getTestMovementData() {
-    const data = getWorkbookData();
-    if (!data) return [];
-
-    let testHeaderRow = -1;
-    for (let i = 0; i < data.length; i++) {
-        if (data[i] && data[i].some(c => cleanTxt(c).includes('اسم التحليل'))) {
-            testHeaderRow = i; break;
-        }
-    }
-    if (testHeaderRow === -1) return [];
-
-    let nameCol = -1, countCol = -1;
-    for (let c = 0; c < data[testHeaderRow].length; c++) {
-        let txt = cleanTxt(data[testHeaderRow][c]);
-        if (txt.includes('اسم التحليل')) nameCol = c;
-        if (txt.includes('عدد التكرار') || txt.includes('اخر 3 شهور')) countCol = c;
-    }
-    if(nameCol === -1 || countCol === -1) return [];
-
+    const data = getSheetData('تكرار التحاليل');
     let testData = [];
-    for (let i = testHeaderRow + 1; i < data.length; i++) {
+    // الشيت ده بيبدأ من الصف التالت (Index 2)
+    for (let i = 2; i < data.length; i++) {
         const row = data[i];
-        if (row && row[nameCol] && typeof row[nameCol] === 'string' && row[nameCol].trim() !== '') {
-            let count = Number(row[countCol]) || 0;
-            testData.push({ name: row[nameCol].trim(), normName: cleanTxt(row[nameCol]), count: count });
+        if (row && row[0] && typeof row[0] === 'string' && row[0].trim() !== '') {
+            let count = Number(row[1]) || 0;
+            testData.push({ name: row[0].trim(), normName: normalizeText(row[0]), count: count });
         }
     }
     return testData;
@@ -435,8 +410,8 @@
       let tests = getTestMovementData();
       if (!tests || tests.length === 0) return [];
 
-      let priceSheetName = pricesWorkbook.SheetNames.find(n => cleanTxt(n).includes('التحاليل')) || pricesWorkbook.SheetNames[0];
-      const priceData = XLSX.utils.sheet_to_json(pricesWorkbook.Sheets[priceSheetName], { header: 1 });
+      let priceSheetName = pricesWorkbook.SheetNames.find(n => n.includes('التحاليل')) || pricesWorkbook.SheetNames[0];
+      const priceData = XLSX.utils.sheet_to_json(pricesWorkbook.Sheets[priceSheetName], { header: 1, defval: "" });
       
       let priceMap = {};
       for (let i = 1; i < priceData.length; i++) {
@@ -445,7 +420,7 @@
               const testName = String(row[0]).trim();
               const cost = Number(row[1]) || 0;
               const sellPrice = Number(row[2]) || 0;
-              if (sellPrice > 0) priceMap[cleanTxt(testName)] = { cost, sellPrice };
+              if (sellPrice > 0) priceMap[normalizeText(testName)] = { cost, sellPrice };
           }
       }
 
@@ -521,7 +496,7 @@
         body.innerHTML = `<p style="color:#f87171; font-weight:bold;">⚠️ ارفع الملفات أولاً.</p>`;
         return;
     }
-    let insights = `<p>أهلاً يا دكتور أحمد! قمت بتحليل البيانات:</p><ul><li>جميع البيانات الحالية مبنية على ملفات الإكسيل المرفوعة، والمقارنات أصبحت دقيقة بناءً على أرقامك الفعلية.</li>`;
+    let insights = `<p>أهلاً يا دكتور أحمد! قمت بتحليل البيانات:</p><ul><li>شكراً لتنسيق ملف الإكسيل، البيانات الآن دقيقة 100%.</li>`;
     insights += `</ul><p style="text-align:center; margin-top:20px; color:var(--text-muted); font-size:0.9rem;">معامل طيبة دايماً في تقدم! 🚀</p>`;
     body.innerHTML = insights;
   };
