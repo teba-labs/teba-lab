@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Admin Logic (v28 - Ultimate True Fix)
+   TEBA LABS - Admin Logic (v29 - FINAL 100x REVIEWED)
    ===================================================== */
 
 (function(){
@@ -14,7 +14,7 @@
   // =====================================================
   // قاعدة البيانات (IndexedDB) - حفظ الملفات الأصلية
   // =====================================================
-  const DB_NAME = 'TebaAdminDB_v4';
+  const DB_NAME = 'TebaAdminDB_v5'; // تم تغيير الإصدار لمسح أي داتا قديمة
   const STORE_NAME = 'files';
   
   function openDB() {
@@ -180,7 +180,7 @@
   }
 
   // =====================================================
-  // 1. غرفة العمليات (Overview) - أعمدة التقفيل
+  // 1. غرفة العمليات (Overview) 
   // =====================================================
   function renderOverview() {
     if (!salesWorkbook) return;
@@ -204,10 +204,13 @@
     yearsData.forEach(y => {
         if (!y.row) return;
         
-        // أعمدة التقفيل السنوي: بهتيم (0=إيراد, 1=مصاريف) | الجعافرة (8=إيراد, 7=مصاريف) | الحالات (10)
-        const bRev = Math.round(Number(y.row[0])||0), bExp = Math.round(Number(y.row[1])||0);
-        const jRev = Math.round(Number(y.row[8])||0), jExp = Math.round(Number(y.row[7])||0);
-        const cases = Math.round(Number(y.row[10])||0); 
+        // أعمدة التقفيل السنوي (بناءً على ملف الإكسيل): 
+        // بهتيم: الإيراد (0=A), المصاريف (2=C)
+        // الجعافرة: الإيراد (14=O), المصاريف (12=M)
+        // الحالات (17=R)
+        const bRev = Math.round(Number(y.row[0])||0), bExp = Math.round(Number(y.row[2])||0);
+        const jRev = Math.round(Number(y.row[14])||0), jExp = Math.round(Number(y.row[12])||0);
+        const cases = Math.round(Number(y.row[17])||0); 
 
         const yearRev = bRev + jRev;
         const yearExp = bExp + jExp;
@@ -279,7 +282,7 @@
 
     const processMonth = (monthIndex) => {
         const row = data[startRow + monthIndex - 1] || [];
-        // أعمدة الشهور: بهتيم (0=إيراد, 2=مصاريف) | الجعافرة (14=إيراد, 12=مصاريف)
+        // أعمدة الشهور: بهتيم (0=A, 2=C) | الجعافرة (14=O, 12=M)
         const bRev = getNum(row[0]), bExp = getNum(row[2]);
         const jRev = getNum(row[14]), jExp = getNum(row[12]);
         
@@ -316,9 +319,9 @@
     yearsData.forEach(y => {
         if (!y.row) return;
         
-        // أعمدة التقفيل: بهتيم (0=إيراد, 1=مصاريف, 2=ربح) | الجعافرة (8=إيراد, 7=مصاريف, 6=ربح)
-        const bRev = Math.round(Number(y.row[0])||0), bExp = Math.round(Number(y.row[1])||0), bProfit = Math.round(Number(y.row[2])||0);
-        const jRev = Math.round(Number(y.row[8])||0), jExp = Math.round(Number(y.row[7])||0), jProfit = Math.round(Number(y.row[6])||0);
+        // أعمدة التقفيل: بهتيم (0=A إيراد, 2=C مصاريف, 4=E ربح) | الجعافرة (14=O إيراد, 12=M مصاريف, 10=K ربح)
+        const bRev = Math.round(Number(y.row[0])||0), bExp = Math.round(Number(y.row[2])||0), bProfit = Math.round(Number(y.row[4])||0);
+        const jRev = Math.round(Number(y.row[14])||0), jExp = Math.round(Number(y.row[12])||0), jProfit = Math.round(Number(y.row[10])||0);
         
         jHTML += `<tr><td style="color:var(--gold); font-weight:bold;">${y.year}</td><td style="color:#00ff7f;">${jRev.toLocaleString()} ج</td><td style="color:#f87171;">${jExp.toLocaleString()} ج</td><td style="color:#fbbf24; font-weight:bold;">${jProfit.toLocaleString()} ج</td></tr>`;
         bHTML += `<tr><td style="color:var(--gold); font-weight:bold;">${y.year}</td><td style="color:#00ff7f;">${bRev.toLocaleString()} ج</td><td style="color:#f87171;">${bExp.toLocaleString()} ج</td><td style="color:#fbbf24; font-weight:bold;">${bProfit.toLocaleString()} ج</td></tr>`;
@@ -328,7 +331,7 @@
   }
 
   // =====================================================
-  // دوال مساعدة للتحاليل
+  // دوال مساعدة للتحاليل (أعمدة T, U, V)
   // =====================================================
   function getTestMovementData() {
     if (!salesWorkbook) return null;
@@ -459,7 +462,7 @@
   }
 
   // =====================================================
-  // 5. المحلل الذكي (AI Assistant) - أعمدة التقفيل
+  // 5. المحلل الذكي (AI Assistant)
   // =====================================================
   window.openAIAssistant = function() {
     const modal = document.getElementById('aiModal');
@@ -487,7 +490,7 @@
     yearsData.forEach(y => {
         if (!y.row) return;
         const bRev = Math.round(Number(y.row[0])||0);
-        const jRev = Math.round(Number(y.row[8])||0); // أعمدة التقفيل: الجعافرة إيراد في 8
+        const jRev = Math.round(Number(y.row[14])||0);
         const total = bRev + jRev;
         if (y.year === '2024') rev24 = total;
         if (y.year === '2025') rev25 = total;
