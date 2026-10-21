@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Admin Logic (v26 - Final Fixed & Reviewed)
+   TEBA LABS - Admin Logic (v28 - Ultimate True Fix)
    ===================================================== */
 
 (function(){
@@ -14,7 +14,7 @@
   // =====================================================
   // قاعدة البيانات (IndexedDB) - حفظ الملفات الأصلية
   // =====================================================
-  const DB_NAME = 'TebaAdminDB_v2';
+  const DB_NAME = 'TebaAdminDB_v4';
   const STORE_NAME = 'files';
   
   function openDB() {
@@ -85,7 +85,6 @@
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('adminDashboard').style.display = 'flex';
     
-    // تحميل البيانات أولاً، ثم عرض الصفحة لمنع التصفير
     await loadSavedDataFromDB();
     window.showReport('overview');
   }
@@ -117,7 +116,7 @@
   };
 
   // =====================================================
-  // الرفع والحفظ (ArrayBuffer مباشر)
+  // الرفع والحفظ
   // =====================================================
   window.handleFileUpload = function(event, type){
     const file = event.target.files[0];
@@ -131,9 +130,7 @@
     reader.onload = async function(e) {
       try {
         const arrayBuffer = e.target.result;
-        
         await saveFileToDB(type === 'sales' ? 'salesData' : 'pricesData', arrayBuffer);
-        
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
         
         statusEl.className = 'upload-status success';
@@ -143,7 +140,6 @@
         if(type === 'prices') pricesWorkbook = workbook;
         
         renderAllReports();
-        
       } catch (error) {
         statusEl.className = 'upload-status error';
         statusEl.textContent = '❌ حدث خطأ: ' + error.message;
@@ -160,18 +156,16 @@
         if(salesBuffer) {
             salesWorkbook = XLSX.read(salesBuffer, { type: 'array' });
             document.getElementById('uploadStatusSales').className = 'upload-status success';
-            document.getElementById('uploadStatusSales').innerHTML = '✅ ملف المبيعات محمل من الذاكرة.';
+            document.getElementById('uploadStatusSales').innerHTML = '✅ ملف المبيعات محمل.';
         }
-        
         if(pricesBuffer) {
             pricesWorkbook = XLSX.read(pricesBuffer, { type: 'array' });
             document.getElementById('uploadStatusPrices').className = 'upload-status success';
-            document.getElementById('uploadStatusPrices').innerHTML = '✅ ملف الأسعار محمل من الذاكرة.';
+            document.getElementById('uploadStatusPrices').innerHTML = '✅ ملف الأسعار محمل.';
         }
-        
         renderAllReports();
     } catch(e) { 
-        console.log("لا توجد بيانات محفوظة مسبقاً."); 
+        console.log("لا توجد بيانات محفوظة."); 
     }
   }
 
@@ -186,7 +180,7 @@
   }
 
   // =====================================================
-  // 1. غرفة العمليات (Overview)
+  // 1. غرفة العمليات (Overview) - أعمدة التقفيل
   // =====================================================
   function renderOverview() {
     if (!salesWorkbook) return;
@@ -210,6 +204,7 @@
     yearsData.forEach(y => {
         if (!y.row) return;
         
+        // أعمدة التقفيل السنوي: بهتيم (0=إيراد, 1=مصاريف) | الجعافرة (8=إيراد, 7=مصاريف) | الحالات (10)
         const bRev = Math.round(Number(y.row[0])||0), bExp = Math.round(Number(y.row[1])||0);
         const jRev = Math.round(Number(y.row[8])||0), jExp = Math.round(Number(y.row[7])||0);
         const cases = Math.round(Number(y.row[10])||0); 
@@ -284,8 +279,9 @@
 
     const processMonth = (monthIndex) => {
         const row = data[startRow + monthIndex - 1] || [];
-        const bRev = getNum(row[0]), bExp = getNum(row[1]);
-        const jRev = getNum(row[8]), jExp = getNum(row[7]);
+        // أعمدة الشهور: بهتيم (0=إيراد, 2=مصاريف) | الجعافرة (14=إيراد, 12=مصاريف)
+        const bRev = getNum(row[0]), bExp = getNum(row[2]);
+        const jRev = getNum(row[14]), jExp = getNum(row[12]);
         
         if (selectedBranch === 'combined') { totalRevenue += (jRev + bRev); totalExpenses += (jExp + bExp); }
         else if (selectedBranch === 'jaafara') { totalRevenue += jRev; totalExpenses += jExp; }
@@ -320,6 +316,7 @@
     yearsData.forEach(y => {
         if (!y.row) return;
         
+        // أعمدة التقفيل: بهتيم (0=إيراد, 1=مصاريف, 2=ربح) | الجعافرة (8=إيراد, 7=مصاريف, 6=ربح)
         const bRev = Math.round(Number(y.row[0])||0), bExp = Math.round(Number(y.row[1])||0), bProfit = Math.round(Number(y.row[2])||0);
         const jRev = Math.round(Number(y.row[8])||0), jExp = Math.round(Number(y.row[7])||0), jProfit = Math.round(Number(y.row[6])||0);
         
@@ -331,7 +328,7 @@
   }
 
   // =====================================================
-  // دوال مساعدة للتحاليل (تم تصحيح الأعمدة 19, 20, 21)
+  // دوال مساعدة للتحاليل
   // =====================================================
   function getTestMovementData() {
     if (!salesWorkbook) return null;
@@ -340,18 +337,7 @@
     const data = XLSX.utils.sheet_to_json(salesWorkbook.Sheets[sheetName], { header: 1 });
     
     let testData = [];
-    // الأرقام الافتراضية الصحيحة حسب ملفك
     let nameCol = 19, countCol = 20, count3Col = 21; 
-
-    for (let r = 0; r < Math.min(20, data.length); r++) {
-        if (!data[r]) continue;
-        for (let c = 0; c < data[r].length; c++) {
-            let cellText = String(data[r][c] || '').trim();
-            if (cellText === 'اسم التحليل') nameCol = c;
-            if (cellText === 'عدد التكرار' && countCol === 20) countCol = c;
-            if (cellText.includes('عدد التكرار اخر 3 شهور')) count3Col = c;
-        }
-    }
 
     for (let i = 1; i < data.length; i++) {
         const row = data[i];
@@ -473,7 +459,7 @@
   }
 
   // =====================================================
-  // 5. المحلل الذكي (AI Assistant)
+  // 5. المحلل الذكي (AI Assistant) - أعمدة التقفيل
   // =====================================================
   window.openAIAssistant = function() {
     const modal = document.getElementById('aiModal');
@@ -501,7 +487,7 @@
     yearsData.forEach(y => {
         if (!y.row) return;
         const bRev = Math.round(Number(y.row[0])||0);
-        const jRev = Math.round(Number(y.row[8])||0);
+        const jRev = Math.round(Number(y.row[8])||0); // أعمدة التقفيل: الجعافرة إيراد في 8
         const total = bRev + jRev;
         if (y.year === '2024') rev24 = total;
         if (y.year === '2025') rev25 = total;
