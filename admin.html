@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -56,11 +56,20 @@
       <h1>📊 لوحة التحكم</h1>
     </div>
     <div class="admin-header-right">
+      
+      <!-- v52: تاريخ آخر تحديث -->
+      <div class="admin-last-updated" id="lastUpdatedText" title="تاريخ آخر رفع للملفات">📅 آخر تحديث: —</div>
+      
       <div class="storage-indicator" title="مساحة التخزين المستخدمة">
         <div class="storage-bar-bg"><div id="storageBar" class="storage-bar-fill"></div></div>
         <span id="storageText" class="storage-text">—</span>
       </div>
+      
       <span class="admin-user">👨‍⚕️ د/ أحمد طه</span>
+      
+      <!-- v52: زرار الوضع النهاري/الليلي -->
+      <button class="admin-theme-btn" id="adminThemeToggle" onclick="toggleAdminTheme()" title="تغيير المظهر">☀️</button>
+      
       <button class="admin-logout" onclick="logoutAdmin()">خروج</button>
     </div>
   </header>
@@ -92,7 +101,6 @@
       <h3>📋 التخطيط والتنفيذ</h3>
       <ul class="admin-nav">
         <li><button data-report="monthlyPlan" onclick="showReport('monthlyPlan')">📋 خطة الشهر</button></li>
-        <li><button data-report="consultant" onclick="showReport('consultant')">🧠 المستشار الاستراتيجي</button></li>
       </ul>
       <h3>📢 التسويق والدعاية</h3>
       <ul class="admin-nav">
@@ -387,15 +395,6 @@
           <p id="planSubtitle">جاري التحميل...</p>
         </div>
         <div id="planContent"></div>
-      </section>
-
-      <!-- قسم المستشار الاستراتيجي الجديد -->
-      <section class="admin-section" id="report-consultant">
-        <div class="admin-section-head">
-          <h2>🧠 المستشار الاستراتيجي</h2>
-          <p>تحليل شامل لأداء المعمل وتوصيات مباشرة للشهر القادم</p>
-        </div>
-        <div id="consultantReport"></div>
       </section>
 
       <section class="admin-section" id="report-topSellers">
