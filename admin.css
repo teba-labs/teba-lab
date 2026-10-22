@@ -434,6 +434,132 @@ body.light-mode .admin-header { background: rgba(253,252,247,.98); }
   display: block;
 }
 
+/* ============= 11. تحليل أعداد الحالات (المرحلة 1) ============= */
+.cases-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.cases-kpi-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 15px;
+  padding: 18px;
+  text-align: center;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.cases-kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.cases-kpi-card h5 {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.cases-kpi-value {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+  line-height: 1.2;
+}
+
+.cases-kpi-sub {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.cases-alert {
+  background: rgba(0,191,255,0.1);
+  border: 1px solid #00bfff;
+  color: #00bfff;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  line-height: 1.8;
+}
+
+.branch-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.branch-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  padding: 18px;
+  transition: transform 0.3s, border-color 0.3s;
+}
+
+.branch-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-glow);
+}
+
+.branch-card h4 {
+  color: var(--primary-glow);
+  font-size: 1.05rem;
+  margin-bottom: 12px;
+  text-align: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.branch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.branch-table td {
+  padding: 8px 5px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+
+.branch-table tr:last-child td { border-bottom: none; }
+
+.branch-table td:first-child {
+  color: var(--text-muted);
+  font-weight: bold;
+  text-align: right;
+}
+
+.cases-section-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.cases-section-card h4 {
+  color: var(--text-strong);
+  font-size: 1rem;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.forecast-card {
+  background: linear-gradient(135deg, rgba(0,255,127,0.08), rgba(0,191,255,0.08));
+  border: 2px solid var(--border-glow);
+  border-radius: 18px;
+  padding: 22px;
+  margin-bottom: 20px;
+}
+
 @media (max-width: 900px) {
   .admin-menu-btn { display: grid; place-items: center; }
   .admin-layout { grid-template-columns: 1fr; }
@@ -464,6 +590,12 @@ body.light-mode .admin-header { background: rgba(253,252,247,.98); }
   .admin-section-head h2 { font-size: 1.3rem; }
   
   .sidebar-header-mobile { display: block; }
+  
+  /* تحليل الحالات - موبايل */
+  .branch-cards-grid { grid-template-columns: 1fr; }
+  .cases-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .cases-kpi-value { font-size: 1.5rem; }
+  .forecast-card { padding: 18px; }
 }
 @media (min-width: 901px) {
   .sidebar-header-mobile { display: none; }

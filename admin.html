@@ -205,18 +205,74 @@
         </div>
       </section>
 
+      <!-- ============================================== -->
+      <!-- المرحلة الأولى: تحليل أعداد الحالات (محسّن) -->
+      <!-- ============================================== -->
       <section class="admin-section" id="report-cases">
         <div class="admin-section-head"><h2>👥 تحليل أعداد الحالات الشهرية</h2></div>
+        
         <div class="filter-group">
           <div><label>السنة:</label><select id="casesYearSelector" onchange="renderCaseAnalysis()"><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option></select></div>
           <div><label>الفرع:</label><select id="casesBranchSelector" onchange="renderCaseAnalysis()"><option value="combined">🏥 إجمالي الفرعين</option><option value="jaafara">🏥 فرع الجعافرة</option><option value="bahtim">🏥 فرع بهتيم</option></select></div>
         </div>
         
-        <div id="casesAlert" style="background: rgba(0,191,255,0.1); border: 1px solid #00bfff; color: #00bfff; padding: 15px; border-radius: 12px; margin-bottom: 20px; font-weight: bold; display: none;"></div>
-
-        <div class="chart-container">
-          <canvas id="casesChart"></canvas>
+        <!-- 1. KPI Cards (إجمالي الحالات السنوية) -->
+        <div class="cases-kpi-grid" id="casesKpiGrid"></div>
+        
+        <!-- 2. Alerts (تنبيهات ذكية) -->
+        <div id="casesAlert" class="cases-alert" style="display:none;"></div>
+        
+        <!-- 3. Branch Cards (لكل فرع لوحده) -->
+        <div class="branch-cards-grid" id="casesBranchCards"></div>
+        
+        <!-- 4. Chart (الرسم البياني مع خط المتوسط) -->
+        <div class="cases-section-card">
+          <h4>📈 الرسم البياني الشهري <span id="casesChartTitle" style="color:var(--gold);"></span></h4>
+          <div class="chart-container"><canvas id="casesChart"></canvas></div>
         </div>
+        
+        <!-- 5. Monthly Comparison Table (مقارنة 3 سنين) -->
+        <div class="cases-section-card">
+          <h4>📊 مقارنة شهرية (3 سنين)</h4>
+          <div class="table-responsive">
+            <table class="fin-table">
+              <thead>
+                <tr>
+                  <th>الشهر</th>
+                  <th>2024</th>
+                  <th>2025</th>
+                  <th>2026</th>
+                  <th>التغير (2026 vs 2025)</th>
+                </tr>
+              </thead>
+              <tbody id="casesMonthlyTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        
+        <!-- 6. Seasonality (تحليل الموسمية) -->
+        <div class="cases-section-card">
+          <h4>🌡️ تحليل الموسمية</h4>
+          <div id="seasonalityAlert" class="cases-alert" style="display:none; margin-bottom:15px;"></div>
+          <div class="table-responsive">
+            <table class="fin-table">
+              <thead>
+                <tr>
+                  <th>الشهر</th>
+                  <th>متوسط 2024+2025</th>
+                  <th id="seasonalitySelectedYearHeader">2026</th>
+                  <th>الفرق</th>
+                  <th>التصنيف</th>
+                </tr>
+              </thead>
+              <tbody id="seasonalityTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        
+        <!-- 7. Forecast (توقع الشهر القادم) -->
+        <div class="forecast-card" id="forecastCard"></div>
+        
       </section>
 
       <section class="admin-section" id="report-expenseBreakdown">
