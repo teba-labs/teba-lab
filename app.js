@@ -1,6 +1,6 @@
-/* =====================================================
-   TEBA LABS - Main Application (v3.0 Final)
-   معامل طيبة - التطبيق الرئيسي (تحديث التصميم والحركات)
+﻿/* =====================================================
+   TEBA LABS - Main Application (v51 - Performance Package)
+   معامل طيبة - التطبيق الرئيسي
    ===================================================== */
 
 (function(){
@@ -225,11 +225,16 @@
   setGreeting();
 
   /* =====================================================
-   6. BACK TO TOP
+   6. BACK TO TOP (v51: rAF-throttled)
    ===================================================== */
-  window.addEventListener('scroll', ()=>{
-    if(backTop) backTop.classList.toggle('show', window.scrollY > 400);
-  });
+  let _scrollRaf = null;
+  window.addEventListener('scroll', () => {
+    if (_scrollRaf) return;
+    _scrollRaf = requestAnimationFrame(() => {
+      if(backTop) backTop.classList.toggle('show', window.scrollY > 400);
+      _scrollRaf = null;
+    });
+  }, { passive: true });
 
   /* =====================================================
    7. RENDER PACKAGES
@@ -237,13 +242,13 @@
   function renderPackages(){
     const grid = document.getElementById('packagesGrid');
     if(!grid) return;
-    
+
     grid.innerHTML = PACKAGES.map(pkg => {
       const price = getPackagePrice(pkg);
       const featuredClass = pkg.featured ? ' featured' : '';
       const displayCount = pkg.count || price.available;
       const imgFallback = `this.onerror=null;this.style.display='none';this.parentElement.querySelector('.fallback-icon').style.display='block';`;
-      
+
       let saveText = '';
       if (price.hasInquiry) {
         saveText = `<span class="package-save" style="background:linear-gradient(135deg,#d4a843,#b8902e)">سعر خاص — استفسر</span>`;
@@ -400,12 +405,12 @@
   function renderTests(){
     if(!grid) return;
     const searchNorm = normalizeArabic(currentSearch);
-    
+
     const filtered = TESTS.filter(t=>{
       if(currentView === 'featured' && !FEATURED_NAMES.includes(t.ar)) return false;
       if(currentView === 'core' && !t.core) return false;
       if(currentCat !== 'الكل' && t.cat !== currentCat) return false;
-      
+
       if(searchNorm){
         const testAr = normalizeArabic(t.ar);
         const testCat = normalizeArabic(t.cat);
@@ -690,11 +695,11 @@
       const branchKey = el.dataset.branch;
       const hours = D.WORKING_HOURS[branchKey];
       if(!hours) return;
-      
+
       const now = new Date();
       const day = now.getDay();
       const hour = now.getHours() + now.getMinutes()/60;
-      
+
       if(hours.closedDay !== null && day === hours.closedDay) {
         el.textContent = '🔴 إجازة أسبوعية';
         el.className = 'branch-status holiday';
@@ -702,14 +707,14 @@
       }
 
       let status = 'closed';
-      
+
       if(day === 5) {
         if(hours.friday && hour >= hours.friday.open && hour < hours.friday.close) status = 'open';
       } else {
         const end = hours.satToThu.close === 24 ? 24 : hours.satToThu.close;
         if(hour >= hours.satToThu.open && hour < end) status = 'open';
       }
-      
+
       el.textContent = status === 'open' ? '🟢 مفتوح الآن' : '🔴 مغلق';
       el.className = 'branch-status ' + status;
     });
@@ -718,11 +723,11 @@
   setInterval(updateBranchStatus, 5 * 60 * 1000);
 
   /* =====================================================
-   17. NEW FEATURES (Counters, Scroll Reveal, Popup)
+   17. NEW FEATURES (Counters, Scroll Reveal, Popup) — v51 optimized
    ===================================================== */
   function initCounters() {
     const counters = document.querySelectorAll('.counter');
-    const speed = 200; 
+    const speed = 200;
     const observer = new IntersectionObserver((entries, obs) => {
       entries.forEach(entry => {
         if(entry.isIntersecting) {
@@ -761,13 +766,18 @@
 
   function initPopupOffer() {
     if(localStorage.getItem('teba_popup_shown') === 'yes') return;
-    setTimeout(() => {
+    const showPopup = () => {
       const popup = document.getElementById('offerPopup');
-      if(popup) {
+      if (popup) {
         popup.classList.add('show');
         localStorage.setItem('teba_popup_shown', 'yes');
       }
-    }, 3000);
+    };
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(showPopup, { timeout: 5000 });
+    } else {
+      setTimeout(showPopup, 3000);
+    }
   }
 
   window.closePopupOffer = function() {
@@ -787,7 +797,7 @@
   renderMedicalArticles();
   renderTrustStrip();
   renderTestimonials();
-  
+
   // تشغيل الميزات الجديدة
   initCounters();
   initScrollReveal();
@@ -802,7 +812,7 @@
   }
 
   if(location.hostname === 'localhost' || location.hostname === '127.0.0.1'){
-    console.log('%c✅ معامل طيبة - app.js loaded', 'color:#00ff7f;font-weight:bold');
+    console.log('%c✅ معامل طيبة - app.js v51 loaded', 'color:#00ff7f;font-weight:bold');
   }
 
 })();

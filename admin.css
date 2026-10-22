@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Admin Styles (v50 - Security Package)
+   TEBA LABS - Admin Styles (v51 - Performance Package)
    ===================================================== */
 
 .admin-body { background-color: var(--bg); background-image: var(--bg-body-image); background-attachment: fixed; color: var(--text); font-family: var(--font); min-height: 100vh; }
@@ -303,4 +303,45 @@ body.light-mode .admin-header { background: rgba(253,252,247,.98); }
 }
 @media (min-width: 901px) {
   .sidebar-header-mobile { display: none; }
+}
+
+/* =====================================================
+   v51 - Performance: content-visibility for off-screen sections
+   ===================================================== */
+.admin-section:not(.active) {
+  content-visibility: hidden;
+  contain-intrinsic-size: 0 500px;
+}
+
+.admin-section.active {
+  content-visibility: visible;
+}
+
+/* Contain for isolated cards to reduce layout cost */
+.kpi-card,
+.cases-kpi-card,
+.plan-kpi-card,
+.bcg-summary-card,
+.advisor-section,
+.plan-week-card {
+  contain: layout style;
+}
+
+/* Reduce paint for tall tables — skip off-screen rows */
+.fin-table tbody tr {
+  contain: layout style;
+}
+
+/* =====================================================
+   v51 - Reduced motion support
+   ===================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

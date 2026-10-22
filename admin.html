@@ -5,9 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>لوحة التحكم | معامل طيبة - TEBA LABS</title>
 <meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0a0e0a">
+
+<!-- Preconnect: open TCP+TLS early -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://cdn.sheetjs.com" crossorigin>
+
+<!-- DNS prefetch for images -->
+<link rel="dns-prefetch" href="https://images.unsplash.com">
+
+<!-- Fonts (display=swap to avoid FOIT) -->
 <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+
+<!-- Preload critical CSS, then apply -->
+<link rel="preload" href="styles.css" as="style">
+<link rel="preload" href="admin.css" as="style">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="admin.css">
+
+<!-- Preload logo (above fold) -->
+<link rel="preload" href="logo.png" as="image">
+
+<!-- PWA manifest -->
+<link rel="manifest" href="manifest.json">
+
 <style>
   .chart-container { position: relative; height: 350px; width: 100%; margin-bottom: 20px; }
   @media (max-width: 768px) { .chart-container { height: 300px; } }
@@ -17,10 +40,10 @@
 
 <div id="loginScreen" class="login-screen">
   <div class="login-box">
-    <div class="login-logo"><img src="logo.png" alt="معامل طيبة"></div>
+    <div class="login-logo"><img src="logo.png" alt="معامل طيبة" width="200" height="80" fetchpriority="high"></div>
     <h2>لوحة التحكم</h2>
     <p>معامل طيبة - TEBA LABS</p>
-    <input type="password" id="adminPassword" placeholder="أدخل كلمة المرور">
+    <input type="password" id="adminPassword" placeholder="أدخل كلمة المرور" autocomplete="current-password">
     <button onclick="checkAdminPassword()">دخول</button>
     <div id="loginError" class="login-error"></div>
   </div>
@@ -52,29 +75,24 @@
           <button onclick="toggleAdminSidebar()" style="background:rgba(220,38,38,0.2); color:#f87171; border:none; width:32px; height:32px; border-radius:50%; font-size:1.2rem; cursor:pointer;">✕</button>
         </h3>
       </div>
-
       <ul class="admin-nav">
         <li><button class="active" data-report="overview" onclick="showReport('overview')">📈 نظرة عامة</button></li>
       </ul>
-
       <h3>💰 التحليل المالي</h3>
       <ul class="admin-nav">
         <li><button data-report="financial" onclick="showReport('financial')">📅 التقرير الشهري</button></li>
         <li><button data-report="annual" onclick="showReport('annual')">📊 التقرير السنوي</button></li>
         <li><button data-report="cases" onclick="showReport('cases')">👥 تحليل أعداد الحالات</button></li>
       </ul>
-
       <h3>📊 التحليلات المتقدمة</h3>
       <ul class="admin-nav">
         <li><button data-report="expenseBreakdown" onclick="showReport('expenseBreakdown')">🥧 تفصيل المصاريف</button></li>
         <li><button data-report="bcg" onclick="showReport('bcg')">💎 تصنيف التحاليل (BCG)</button></li>
       </ul>
-
       <h3>📋 التخطيط والتنفيذ</h3>
       <ul class="admin-nav">
         <li><button data-report="monthlyPlan" onclick="showReport('monthlyPlan')">📋 خطة الشهر</button></li>
       </ul>
-
       <h3>📢 التسويق والدعاية</h3>
       <ul class="admin-nav">
         <li><button data-report="topSellers" onclick="showReport('topSellers')">🏆 الأكثر مبيعاً</button></li>
@@ -83,12 +101,10 @@
         <li><button data-report="needOffers" onclick="showReport('needOffers')">🎯 محتاجة عروض</button></li>
         <li><button data-report="lossMakers" onclick="showReport('lossMakers')">📉 التحاليل الخاسرة</button></li>
       </ul>
-
       <h3>⚙️ إدارة الملفات</h3>
       <ul class="admin-nav">
         <li><button data-report="upload" onclick="showReport('upload')">📤 رفع ملفات الإكسيل</button></li>
       </ul>
-
       <h3>🔒 الأمان</h3>
       <ul class="admin-nav">
         <li><button data-report="security" onclick="showReport('security')">🛡️ النسخ الاحتياطي والأمان</button></li>
@@ -96,7 +112,6 @@
     </aside>
 
     <main class="admin-content">
-
       <section class="admin-section active" id="report-overview">
         <div class="admin-section-head"><h2>📈 نظرة عامة على الأداء</h2></div>
         <div id="advisorReport"></div>
@@ -173,7 +188,6 @@
           <h2>🛡️ الأمان والنسخ الاحتياطي</h2>
           <p>إدارة كلمة المرور، النسخ الاحتياطي، ومساحة التخزين</p>
         </div>
-
         <div class="security-grid">
           <div class="security-card">
             <div class="security-icon">💾</div>
@@ -181,21 +195,18 @@
             <p>صدّر كل ملفاتك وبياناتك كملف JSON واحد واحتفظ بيه في مكان آمن.</p>
             <button class="security-btn primary" onclick="exportBackup()">📥 تصدير نسخة احتياطية</button>
           </div>
-
           <div class="security-card">
             <div class="security-icon">📂</div>
             <h3>استعادة نسخة</h3>
             <p>استورد ملف نسخة احتياطية سابقة (هيستبدل كل البيانات الحالية).</p>
             <button class="security-btn warning" onclick="importBackup()">📤 استيراد نسخة</button>
           </div>
-
           <div class="security-card">
             <div class="security-icon">🔑</div>
             <h3>تغيير كلمة المرور</h3>
             <p>غيّر باسورد لوحة التحكم (8+ أحرف، حروف وأرقام).</p>
             <button class="security-btn primary" onclick="changeAdminPassword()">🔐 تغيير كلمة المرور</button>
           </div>
-
           <div class="security-card">
             <div class="security-icon">📊</div>
             <h3>مساحة التخزين</h3>
@@ -204,7 +215,6 @@
             <div id="storageTextSec" class="storage-text-large">جاري الحساب...</div>
           </div>
         </div>
-
         <div class="security-info">
           <h4>ℹ️ معلومات الأمان</h4>
           <ul>
@@ -302,34 +312,16 @@
         <div class="admin-section-head"><h2>🥧 تفصيل المصاريف</h2></div>
         <div class="filter-group">
           <div><label>السنة:</label><select id="expenseYearSelector" onchange="renderExpenseBreakdown()">
-            <option value="2025">2025</option>
-            <option value="2026" selected>2026</option>
+            <option value="2025">2025</option><option value="2026" selected>2026</option>
           </select></div>
           <div><label>الشهر:</label><select id="expenseMonthSelector" onchange="renderExpenseBreakdown()">
-            <option value="1">يناير</option>
-            <option value="2">فبراير</option>
-            <option value="3">مارس</option>
-            <option value="4">ابريل</option>
-            <option value="5">مايو</option>
-            <option value="6">يونيو</option>
-            <option value="7">يوليو</option>
-            <option value="8">اغسطس</option>
-            <option value="9" selected>سبتمبر</option>
-            <option value="10">اكتوبر</option>
-            <option value="11">نوفمبر</option>
-            <option value="12">ديسمبر</option>
+            <option value="1">يناير</option><option value="2">فبراير</option><option value="3">مارس</option><option value="4">ابريل</option><option value="5">مايو</option><option value="6">يونيو</option><option value="7">يوليو</option><option value="8">اغسطس</option><option value="9" selected>سبتمبر</option><option value="10">اكتوبر</option><option value="11">نوفمبر</option><option value="12">ديسمبر</option>
           </select></div>
         </div>
         <div id="expenseAlert" style="background: rgba(251,191,36,0.1); border: 1px solid #fbbf24; color: #fbbf24; padding: 15px; border-radius: 12px; margin-bottom: 20px; font-weight: bold; display: none;"></div>
         <div class="expense-pie-grid">
-          <div class="expense-pie-card">
-            <h4>🏥 فرع الجعافرة</h4>
-            <div class="pie-chart-container"><canvas id="expensePieJaafara"></canvas></div>
-          </div>
-          <div class="expense-pie-card">
-            <h4>🏥 فرع بهتيم</h4>
-            <div class="pie-chart-container"><canvas id="expensePieBahtim"></canvas></div>
-          </div>
+          <div class="expense-pie-card"><h4>🏥 فرع الجعافرة</h4><div class="pie-chart-container"><canvas id="expensePieJaafara"></canvas></div></div>
+          <div class="expense-pie-card"><h4>🏥 فرع بهتيم</h4><div class="pie-chart-container"><canvas id="expensePieBahtim"></canvas></div></div>
         </div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
           <h4 style="color:var(--text-muted); margin-bottom:15px; text-align:right;">📋 التفاصيل:</h4>
@@ -455,7 +447,6 @@
           </div>
         </div>
       </section>
-
     </main>
   </div>
 </div>
@@ -474,8 +465,9 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-<script src="admin.js"></script>
+<!-- CDN scripts with defer so they don't block first paint -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js" defer></script>
+<script src="admin.js" defer></script>
 </body>
 </html>

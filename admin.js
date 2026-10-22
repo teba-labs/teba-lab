@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Admin Logic (v50 - Security Package)
+   TEBA LABS - Admin Logic (v51 - Performance Package)
    ===================================================== */
 
 (function(){
@@ -17,12 +17,38 @@
   const LOCK_DURATION = 15 * 60 * 1000;
   const DEFAULT_PASSWORD = 'teba2026admin';
   const MAX_FILE_SIZE = 20 * 1024 * 1024;
-  const BACKUP_VERSION = 'v50';
+  const BACKUP_VERSION = 'v51';
 
   let salesWorkbook = null;
   let pricesWorkbook = null;
   let detailedWorkbook2025 = null;
   let detailedWorkbook2026 = null;
+
+  /* ============= PERFORMANCE: CACHE LAYER (v51) ============= */
+  const _monthCache = new Map();
+  const _yearCache = new Map();
+  const _expenseBreakdownCache = new Map();
+  let _mergedCache = null;
+  let _testMovementCache = null;
+  let _chartResizeTimer = null;
+
+  function invalidateDataCache() {
+    _monthCache.clear();
+    _yearCache.clear();
+    _expenseBreakdownCache.clear();
+    _mergedCache = null;
+    _testMovementCache = null;
+  }
+
+  function memoizeMap(cache, fn) {
+    return function(...args) {
+      const key = args.join('|');
+      if (cache.has(key)) return cache.get(key);
+      const result = fn.apply(this, args);
+      cache.set(key, result);
+      return result;
+    };
+  }
 
   const DB_NAME = 'TebaAdminDB_v16';
   const STORE_NAME = 'files';
@@ -117,7 +143,7 @@
   }
   function hideLoading() { const el = document.getElementById('globalLoading'); if (el) el.classList.remove('show'); }
 
-  /* ============= STORAGE INDICATOR (v50 fix) ============= */
+  /* ============= STORAGE INDICATOR ============= */
   async function updateStorageIndicator() {
     try {
       if (!navigator.storage || !navigator.storage.estimate) return;
@@ -223,7 +249,7 @@
     setTimeout(() => location.reload(), 800);
   };
 
-  /* ============= REPORT NAVIGATION (v50 fix) ============= */
+  /* ============= REPORT NAVIGATION ============= */
   window.showReport = function(reportName){
     document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
     const target = document.getElementById('report-' + reportName);
@@ -243,7 +269,8 @@
     if(reportName === 'lossMakers') renderLossMakers();
     if(reportName === 'security') updateStorageIndicator();
     if(window.innerWidth <= 900) { const sidebar = document.getElementById('adminSidebar'); const overlay = document.getElementById('mobileOverlay'); if(sidebar) sidebar.classList.remove('open'); if(overlay) overlay.classList.remove('show'); }
-    setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 300);
+    if (_chartResizeTimer) clearTimeout(_chartResizeTimer);
+    _chartResizeTimer = setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 200);
   };
 
   window.toggleAdminSidebar = function(){ const sidebar = document.getElementById('adminSidebar'); const overlay = document.getElementById('mobileOverlay'); sidebar.classList.toggle('open'); if(sidebar.classList.contains('open')){ overlay.classList.add('show'); } else { overlay.classList.remove('show'); } };
@@ -254,7 +281,11 @@
     document.getElementById('adminDashboard').style.display = 'flex';
     await loadSavedDataFromDB();
     window.showReport('overview');
-    updateStorageIndicator();
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => updateStorageIndicator(), { timeout: 2000 });
+    } else {
+      setTimeout(updateStorageIndicator, 1500);
+    }
   }
 
   /* ============= LOGIN ============= */
@@ -287,6 +318,7 @@
     showLoading('جاري مسح البيانات...');
     try {
       salesWorkbook = null; pricesWorkbook = null; detailedWorkbook2025 = null; detailedWorkbook2026 = null;
+      invalidateDataCache();
       const db = await openDB();
       const tx = db.transaction(STORE_NAME, 'readwrite');
       tx.objectStore(STORE_NAME).clear();
@@ -322,7 +354,7 @@
         if(type === 'prices') pricesWorkbook = workbook;
         if(type === 'detail2025') detailedWorkbook2025 = workbook;
         if(type === 'detail2026') detailedWorkbook2026 = workbook;
-        renderAllReports();
+        invalidateDataCache();
         updateStorageIndicator();
         hideLoading();
       } catch (err) {
@@ -335,28 +367,75 @@
     reader.readAsArrayBuffer(file);
   };
 
-  /* ============= LOAD SAVED DATA ============= */
+  /* ============= LOAD SAVED DATA (parallel) ============= */
   async function loadSavedDataFromDB() {
     showLoading('جاري تحميل البيانات المحفوظة...');
     try {
-      const salesBuffer = await getFileFromDB('salesData');
-      const pricesBuffer = await getFileFromDB('pricesData');
-      const detail2025Buffer = await getFileFromDB('detail2025Data');
-      const detail2026Buffer = await getFileFromDB('detail2026Data');
+      invalidateDataCache();
+      const [salesBuffer, pricesBuffer, detail2025Buffer, detail2026Buffer] = await Promise.all([
+        getFileFromDB('salesData'),
+        getFileFromDB('pricesData'),
+        getFileFromDB('detail2025Data'),
+        getFileFromDB('detail2026Data')
+      ]);
       if(salesBuffer) { salesWorkbook = XLSX.read(salesBuffer, { type: 'array' }); const el = document.getElementById('uploadStatusSales'); if (el) { el.className = 'upload-status success'; el.innerHTML = '✅ ملف المبيعات محمل.'; } }
       if(pricesBuffer) { pricesWorkbook = XLSX.read(pricesBuffer, { type: 'array' }); const el = document.getElementById('uploadStatusPrices'); if (el) { el.className = 'upload-status success'; el.innerHTML = '✅ ملف الأسعار محمل.'; } }
       if(detail2025Buffer) { detailedWorkbook2025 = XLSX.read(detail2025Buffer, { type: 'array' }); const el = document.getElementById('uploadStatusDetail2025'); if (el) { el.className = 'upload-status success'; el.innerHTML = '✅ تفصيل 2025 محمل.'; } }
       if(detail2026Buffer) { detailedWorkbook2026 = XLSX.read(detail2026Buffer, { type: 'array' }); const el = document.getElementById('uploadStatusDetail2026'); if (el) { el.className = 'upload-status success'; el.innerHTML = '✅ تفصيل 2026 محمل.'; } }
-      renderAllReports();
       hideLoading();
-    } catch(e) { hideLoading(); console.log("لا توجد بيانات محفوظة."); }
+    } catch(e) { hideLoading(); console.log("لا توجد بيانات محفوظة.", e); }
   }
 
-  function renderAllReports() { renderOverview(); renderFinancialReport(); renderAnnualReport(); renderCaseAnalysis(); renderTopSellers(); renderMostProfitable(); renderLeastProfitable(); renderNeedOffers(); renderLossMakers(); renderExpenseBreakdown(); renderBCGMatrix(); renderMonthlyPlan(); }
+  function renderAllReports() {
+    renderOverview();
+    renderFinancialReport();
+    renderAnnualReport();
+    renderCaseAnalysis();
+    renderTopSellers();
+    renderMostProfitable();
+    renderLeastProfitable();
+    renderNeedOffers();
+    renderLossMakers();
+    renderExpenseBreakdown();
+    renderBCGMatrix();
+    renderMonthlyPlan();
+  }
+
   function getSheetData(sheetKey) { if (!salesWorkbook) return []; const sheetName = salesWorkbook.SheetNames.find(n => n.includes(sheetKey)); if (!sheetName) return []; return XLSX.utils.sheet_to_json(salesWorkbook.Sheets[sheetName], { header: 1, defval: "" }); }
 
-  function extractYearData(year, branch) { const annualData = getSheetData('السنوية'); let totalRev = 0, totalExp = 0; for(let i=1; i<annualData.length; i++) { let row = annualData[i]; if (!row) continue; if (String(row[5]) === String(year) && row[4] === branch) { totalRev += Number(row[3]) || 0; totalExp += Number(row[2]) || 0; } } return { rev: totalRev, exp: totalExp }; }
-  function extractMonthData(year, month, branch) { const monthlyData = getSheetData('الشهرية'); let totalRev = 0, totalExp = 0, totalCases = 0; for(let i=1; i<monthlyData.length; i++) { let row = monthlyData[i]; if (!row) continue; if (String(row[7]) === String(year) && row[6] === branch) { if (month === 'all' || String(row[4]) === String(month)) { if (row[4] !== 'التقفيل' && row[4] !== '') { totalRev += Number(row[3]) || 0; totalExp += Number(row[2]) || 0; totalCases += Number(row[5]) || 0; } } } } return { rev: totalRev, exp: totalExp, cases: totalCases }; }
+  /* ============= MEMOIZED DATA EXTRACTORS (v51) ============= */
+  const extractYearData = memoizeMap(_yearCache, function(year, branch) {
+    const annualData = getSheetData('السنوية');
+    let totalRev = 0, totalExp = 0;
+    for (let i = 1; i < annualData.length; i++) {
+      let row = annualData[i];
+      if (!row) continue;
+      if (String(row[5]) === String(year) && row[4] === branch) {
+        totalRev += Number(row[3]) || 0;
+        totalExp += Number(row[2]) || 0;
+      }
+    }
+    return { rev: totalRev, exp: totalExp };
+  });
+
+  const extractMonthData = memoizeMap(_monthCache, function(year, month, branch) {
+    const monthlyData = getSheetData('الشهرية');
+    let totalRev = 0, totalExp = 0, totalCases = 0;
+    for (let i = 1; i < monthlyData.length; i++) {
+      let row = monthlyData[i];
+      if (!row) continue;
+      if (String(row[7]) === String(year) && row[6] === branch) {
+        if (month === 'all' || String(row[4]) === String(month)) {
+          if (row[4] !== 'التقفيل' && row[4] !== '') {
+            totalRev += Number(row[3]) || 0;
+            totalExp += Number(row[2]) || 0;
+            totalCases += Number(row[5]) || 0;
+          }
+        }
+      }
+    }
+    return { rev: totalRev, exp: totalExp, cases: totalCases };
+  });
 
   function findLatestReportMonth() {
     const now = new Date();
@@ -372,21 +451,49 @@
     return null;
   }
 
+  /* ============= CACHED TEST MOVEMENT + MERGED (v51) ============= */
   function getTestMovementData() {
-    const data = getSheetData('تكرار التحاليل'); let testData = [];
-    for (let i = 2; i < data.length; i++) { const row = data[i]; if (row && row[0] && typeof row[0] === 'string' && row[0].trim() !== '') { let count = Number(row[2]) || Number(row[1]) || 0; testData.push({ name: row[0].trim(), count: count }); } }
+    if (_testMovementCache) return _testMovementCache;
+    const data = getSheetData('تكرار التحاليل');
+    const testData = [];
+    for (let i = 2; i < data.length; i++) {
+      const row = data[i];
+      if (row && row[0] && typeof row[0] === 'string' && row[0].trim() !== '') {
+        const count = Number(row[2]) || Number(row[1]) || 0;
+        testData.push({ name: row[0].trim(), count });
+      }
+    }
+    _testMovementCache = testData;
     return testData;
   }
 
   function getMergedData() {
+    if (_mergedCache) return _mergedCache;
     if (!pricesWorkbook) return [];
-    let tests = getTestMovementData(); if (!tests || tests.length === 0) return [];
-    let priceSheetName = pricesWorkbook.SheetNames.find(n => n.includes('التحاليل')) || pricesWorkbook.SheetNames[0];
+    const tests = getTestMovementData();
+    if (!tests || tests.length === 0) return [];
+    const priceSheetName = pricesWorkbook.SheetNames.find(n => n.includes('التحاليل')) || pricesWorkbook.SheetNames[0];
     const priceData = XLSX.utils.sheet_to_json(pricesWorkbook.Sheets[priceSheetName], { header: 1, defval: "" });
-    let priceMap = {};
-    for (let i = 1; i < priceData.length; i++) { const row = priceData[i]; if (row && row[0]) { const testName = String(row[0]).trim().toLowerCase(); const cost = Number(row[1]) || 0; const sellPrice = Number(row[2]) || 0; if (sellPrice > 0) priceMap[testName] = { cost, sellPrice }; } }
-    let merged = [];
-    tests.forEach(t => { let searchName = t.name.trim().toLowerCase(); if (priceMap[searchName]) { const cost = priceMap[searchName].cost; const sell = priceMap[searchName].sellPrice; const profitUnit = sell - cost; merged.push({ name: t.name, count: t.count, cost: cost, sell: sell, profitUnit: profitUnit, totalProfit: profitUnit * t.count }); } });
+    const priceMap = {};
+    for (let i = 1; i < priceData.length; i++) {
+      const row = priceData[i];
+      if (row && row[0]) {
+        const testName = String(row[0]).trim().toLowerCase();
+        const cost = Number(row[1]) || 0;
+        const sellPrice = Number(row[2]) || 0;
+        if (sellPrice > 0) priceMap[testName] = { cost, sellPrice };
+      }
+    }
+    const merged = [];
+    tests.forEach(t => {
+      const searchName = t.name.trim().toLowerCase();
+      if (priceMap[searchName]) {
+        const { cost, sellPrice } = priceMap[searchName];
+        const profitUnit = sellPrice - cost;
+        merged.push({ name: t.name, count: t.count, cost, sell: sellPrice, profitUnit, totalProfit: profitUnit * t.count });
+      }
+    });
+    _mergedCache = merged;
     return merged;
   }
 
@@ -675,7 +782,9 @@
     const profCtx = profCanvas.getContext('2d');
     if (window.anProfChart) window.anProfChart.destroy();
     window.anProfChart = new Chart(profCtx, { type: 'line', data: { labels: labels, datasets: [{ label: 'صافي الربح', data: profits, backgroundColor: 'rgba(251, 191, 36, 0.5)', borderColor: '#fbbf24', borderWidth: 3, fill: true, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff' } } }, scales: { y: { ticks: { color: '#a8b5a8' } }, x: { ticks: { color: '#a8b5a8' } } } } });
-  };  window.renderCaseAnalysis = function() {
+  };
+
+  window.renderCaseAnalysis = function() {
     const selectedYear = document.getElementById('casesYearSelector').value;
     const selectedBranch = document.getElementById('casesBranchSelector').value;
     const months = ['يناير', 'فبراير', 'مارس', 'ابريل', 'مايو', 'يونيو', 'يوليو', 'اغسطس', 'سبتمبر', 'اكتوبر', 'نوفمبر', 'ديسمبر'];
@@ -868,18 +977,20 @@
   };
 
   function extractExpenseBreakdown(year, month, branch) {
+    const cacheKey = `${year}|${month}|${branch}`;
+    if (_expenseBreakdownCache.has(cacheKey)) return _expenseBreakdownCache.get(cacheKey);
     const wb = year === '2025' ? detailedWorkbook2025 : year === '2026' ? detailedWorkbook2026 : null;
-    if (!wb) return null;
+    if (!wb) { _expenseBreakdownCache.set(cacheKey, null); return null; }
     const monthsAr = ['يناير', 'فبراير', 'مارس', 'ابريل', 'مايو', 'يونيو', 'يوليو', 'اغسطس', 'سبتمبر', 'اكتوبر', 'نوفمبر', 'ديسمبر'];
     const monthName = monthsAr[parseInt(month) - 1];
     let sheetName = null;
     for (const name of wb.SheetNames) { const trimmed = name.trim(); if (trimmed.includes(monthName) && trimmed.includes(String(year))) { sheetName = name; break; } if (year === '2025' && month === '10' && trimmed.includes('اكتوبر') && trimmed.includes('205')) { sheetName = name; break; } }
-    if (!sheetName) return null;
+    if (!sheetName) { _expenseBreakdownCache.set(cacheKey, null); return null; }
     const data = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: "" });
     const branchKey = branch === 'الجعافرة' ? 'الجعافرة' : 'بهتيم';
     let branchStart = -1;
     for (let i = 0; i < data.length; i++) { if (data[i] && data[i][0] && String(data[i][0]).includes('معامل طيبة') && String(data[i][0]).includes(branchKey)) { branchStart = i; break; } }
-    if (branchStart === -1) return null;
+    if (branchStart === -1) { _expenseBreakdownCache.set(cacheKey, null); return null; }
     let branchEnd = data.length;
     if (branch === 'الجعافرة') { for (let i = branchStart + 1; i < data.length; i++) { if (data[i] && data[i][0] && String(data[i][0]).includes('معامل طيبة') && String(data[i][0]).includes('بهتيم')) { branchEnd = i; break; } } }
     let fixedStart = -1;
@@ -897,7 +1008,7 @@
     } else {
       let specialStart = -1;
       for (let i = branchStart; i < branchEnd; i++) { if (data[i] && data[i][0] && String(data[i][0]).includes('المرتبات+الايجار')) { specialStart = i; break; } }
-      if (specialStart === -1) return null;
+      if (specialStart === -1) { _expenseBreakdownCache.set(cacheKey, null); return null; }
       for (let i = specialStart + 1; i < Math.min(specialStart + 12, branchEnd); i++) {
         const row = data[i]; if (!row) break;
         const aLabel = row[0] ? String(row[0]).trim() : ''; const bVal = num(row[1]); const cVal = num(row[2]);
@@ -906,7 +1017,9 @@
         if (bVal > 0 && aLabel) { if (aLabel.includes('ايجار') || aLabel.includes('إيجار')) misc['ايجار'] = (misc['ايجار'] || 0) + bVal; else if (aLabel.includes('كهربا')) misc['كهربا'] = (misc['كهربا'] || 0) + bVal; else if (aLabel.includes('مياة') || aLabel.includes('مياه')) misc['مياة'] = (misc['مياة'] || 0) + bVal; else if (aLabel.includes('د/') || aLabel.includes('ا/')) salaries += bVal; else misc[aLabel] = (misc[aLabel] || 0) + bVal; }
       }
     }
-    return { chemicals, salaries, misc };
+    const result = { chemicals, salaries, misc };
+    _expenseBreakdownCache.set(cacheKey, result);
+    return result;
   }
 
   window.renderExpenseBreakdown = function() {
@@ -1032,7 +1145,7 @@
 
   window.closeAIAssistant = function() { const modal = document.getElementById('aiModal'); if (modal) modal.classList.remove('show'); };
 
-  /* ============= INIT (v50) ============= */
+  /* ============= INIT (v51) ============= */
   if(isSessionValid()) showDashboard();
   const passInput = document.getElementById('adminPassword');
   if(passInput) passInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') window.checkAdminPassword(); });
