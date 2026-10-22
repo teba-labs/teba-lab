@@ -33,6 +33,10 @@
       <h1>📊 لوحة التحكم</h1>
     </div>
     <div class="admin-header-right">
+      <div class="storage-indicator" title="مساحة التخزين المستخدمة">
+        <div class="storage-bar-bg"><div id="storageBar" class="storage-bar-fill"></div></div>
+        <span id="storageText" class="storage-text">—</span>
+      </div>
       <span class="admin-user">👨‍⚕️ د/ أحمد طه</span>
       <button class="admin-logout" onclick="logoutAdmin()">خروج</button>
     </div>
@@ -83,6 +87,11 @@
       <h3>⚙️ إدارة الملفات</h3>
       <ul class="admin-nav">
         <li><button data-report="upload" onclick="showReport('upload')">📤 رفع ملفات الإكسيل</button></li>
+      </ul>
+
+      <h3>🔒 الأمان</h3>
+      <ul class="admin-nav">
+        <li><button data-report="security" onclick="showReport('security')">🛡️ النسخ الاحتياطي والأمان</button></li>
       </ul>
     </aside>
 
@@ -157,6 +166,54 @@
           </div>
         </div>
         <button onclick="clearData()" style="margin-top: 10px; background: rgba(220,38,38,0.2); color: #f87171; border: 1px solid #f87171; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold;">🗑️ مسح كل البيانات المحفوظة</button>
+      </section>
+
+      <section class="admin-section" id="report-security">
+        <div class="admin-section-head">
+          <h2>🛡️ الأمان والنسخ الاحتياطي</h2>
+          <p>إدارة كلمة المرور، النسخ الاحتياطي، ومساحة التخزين</p>
+        </div>
+
+        <div class="security-grid">
+          <div class="security-card">
+            <div class="security-icon">💾</div>
+            <h3>نسخة احتياطية</h3>
+            <p>صدّر كل ملفاتك وبياناتك كملف JSON واحد واحتفظ بيه في مكان آمن.</p>
+            <button class="security-btn primary" onclick="exportBackup()">📥 تصدير نسخة احتياطية</button>
+          </div>
+
+          <div class="security-card">
+            <div class="security-icon">📂</div>
+            <h3>استعادة نسخة</h3>
+            <p>استورد ملف نسخة احتياطية سابقة (هيستبدل كل البيانات الحالية).</p>
+            <button class="security-btn warning" onclick="importBackup()">📤 استيراد نسخة</button>
+          </div>
+
+          <div class="security-card">
+            <div class="security-icon">🔑</div>
+            <h3>تغيير كلمة المرور</h3>
+            <p>غيّر باسورد لوحة التحكم (8+ أحرف، حروف وأرقام).</p>
+            <button class="security-btn primary" onclick="changeAdminPassword()">🔐 تغيير كلمة المرور</button>
+          </div>
+
+          <div class="security-card">
+            <div class="security-icon">📊</div>
+            <h3>مساحة التخزين</h3>
+            <p>متابعة استخدام مساحة IndexedDB في المتصفح.</p>
+            <div class="storage-bar-bg large"><div id="storageBarSec" class="storage-bar-fill"></div></div>
+            <div id="storageTextSec" class="storage-text-large">جاري الحساب...</div>
+          </div>
+        </div>
+
+        <div class="security-info">
+          <h4>ℹ️ معلومات الأمان</h4>
+          <ul>
+            <li>✅ كلمة المرور مشفّرة بـ PBKDF2 (100,000 دورة + SHA-256)</li>
+            <li>✅ قفل تلقائي بعد 5 محاولات فاشلة لمدة 15 دقيقة</li>
+            <li>✅ انتهاء الجلسة تلقائياً بعد ساعتين من عدم النشاط</li>
+            <li>✅ التحقق من صحة نوع وحجم الملفات قبل الرفع</li>
+          </ul>
+        </div>
       </section>
 
       <section class="admin-section" id="report-financial">

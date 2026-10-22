@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Admin Styles (v49 - Complete)
+   TEBA LABS - Admin Styles (v50 - Security Package)
    ===================================================== */
 
 .admin-body { background-color: var(--bg); background-image: var(--bg-body-image); background-attachment: fixed; color: var(--text); font-family: var(--font); min-height: 100vh; }
@@ -14,6 +14,7 @@
 .login-box input:focus { border-color: var(--primary-glow); box-shadow: 0 0 0 4px rgba(0,255,127,.15); }
 .login-box button { width: 100%; padding: 14px; border-radius: 14px; background: var(--btn-primary-bg); color: #fff; font-weight: 800; font-size: 1rem; transition: .25s; cursor: pointer; border: none; }
 .login-box button:hover { box-shadow: var(--btn-primary-shadow-hover); transform: translateY(-2px); }
+.login-box button:disabled { opacity: .6; cursor: not-allowed; transform: none; }
 .login-error { color: #f87171; font-size: .85rem; margin-top: 10px; min-height: 1.2em; }
 
 /* ============= 2. الهيكل ============= */
@@ -168,7 +169,7 @@ body.light-mode .admin-header { background: rgba(253,252,247,.98); }
 .advisor-alert-item { background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 8px; margin-bottom: 8px; font-size: 0.88rem; line-height: 1.7; }
 .advisor-alert-item:last-child { margin-bottom: 0; }
 
-/* ============= 14. خطة الشهر (المرحلة 4) ============= */
+/* ============= 14. خطة الشهر ============= */
 .plan-summary-banner { background: linear-gradient(135deg, rgba(0,255,127,0.08), rgba(0,191,255,0.08)); border: 2px solid var(--border-glow); border-radius: 20px; padding: 25px; margin-bottom: 25px; position: relative; overflow: hidden; }
 .plan-summary-banner::before { content: '📅'; position: absolute; top: -20px; left: 20px; font-size: 6rem; opacity: 0.05; pointer-events: none; }
 .plan-summary-title { color: var(--primary-glow); font-size: 1.3rem; font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -223,7 +224,43 @@ body.light-mode .admin-header { background: rgba(253,252,247,.98); }
 .plan-strategy-points li { padding: 8px 0; font-size: 0.88rem; line-height: 1.7; border-bottom: 1px dashed var(--border); }
 .plan-strategy-points li:last-child { border-bottom: none; }
 
-/* ============= 15. الموبايل ============= */
+/* ============= 15. مؤشر مساحة التخزين ============= */
+.storage-indicator { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: rgba(0,255,127,.05); border: 1px solid var(--border); border-radius: 10px; }
+.storage-bar-bg { width: 80px; height: 8px; background: rgba(255,255,255,.1); border-radius: 10px; overflow: hidden; }
+.storage-bar-bg.large { width: 100%; height: 12px; margin-bottom: 8px; }
+.storage-bar-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #4ade80); border-radius: 10px; transition: width .4s, background .4s; width: 0%; }
+.storage-bar-fill.warning { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+.storage-bar-fill.danger { background: linear-gradient(90deg, #f87171, #dc2626); }
+.storage-text { font-size: .75rem; color: var(--text-muted); font-weight: 700; white-space: nowrap; }
+.storage-text-large { font-size: .9rem; color: var(--text-muted); font-weight: 700; text-align: center; }
+
+/* ============= 16. صفحة الأمان ============= */
+.security-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; margin-bottom: 25px; }
+.security-card { background: var(--bg-card-gradient); border: 1px solid var(--border); border-radius: 16px; padding: 22px; text-align: center; transition: transform .3s, border-color .3s; }
+.security-card:hover { transform: translateY(-3px); border-color: var(--border-glow); }
+.security-icon { font-size: 2.8rem; margin-bottom: 12px; }
+.security-card h3 { color: var(--primary-glow); font-size: 1.05rem; margin-bottom: 8px; }
+.security-card p { color: var(--text-muted); font-size: .85rem; line-height: 1.7; margin-bottom: 15px; min-height: 2.8em; }
+.security-btn { width: 100%; padding: 12px 18px; border-radius: 12px; font-weight: 800; font-size: .9rem; cursor: pointer; border: none; transition: .25s; }
+.security-btn.primary { background: var(--btn-primary-bg); color: #fff; }
+.security-btn.primary:hover { box-shadow: var(--btn-primary-shadow-hover); transform: translateY(-2px); }
+.security-btn.warning { background: linear-gradient(135deg, #d97706, #f59e0b); color: #fff; }
+.security-btn.warning:hover { box-shadow: 0 6px 20px rgba(245,158,11,.4); transform: translateY(-2px); }
+.security-info { background: rgba(0,191,255,.05); border: 1px solid rgba(0,191,255,.3); border-radius: 14px; padding: 18px 22px; }
+.security-info h4 { color: #00bfff; font-size: 1rem; margin-bottom: 12px; }
+.security-info ul { list-style: none; padding: 0; margin: 0; }
+.security-info li { padding: 8px 0; font-size: .88rem; color: var(--text); border-bottom: 1px dashed var(--border); line-height: 1.7; }
+.security-info li:last-child { border-bottom: none; }
+
+/* ============= 17. Loading Overlay ============= */
+.loading-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.75); backdrop-filter: blur(6px); z-index: 99999; align-items: center; justify-content: center; }
+.loading-overlay.show { display: flex; }
+.loading-box { background: var(--bg-card-gradient); border: 2px solid var(--border-glow); border-radius: 20px; padding: 35px 40px; text-align: center; box-shadow: 0 0 50px rgba(0,255,127,.3); min-width: 260px; }
+.loading-spinner { width: 55px; height: 55px; margin: 0 auto 18px; border: 4px solid rgba(0,255,127,.2); border-top-color: var(--primary-glow); border-radius: 50%; animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { color: var(--text); font-size: .95rem; font-weight: 700; line-height: 1.6; }
+
+/* ============= 18. الموبايل ============= */
 @media (max-width: 900px) {
   .admin-menu-btn { display: grid; place-items: center; }
   .admin-layout { grid-template-columns: 1fr; }
@@ -257,6 +294,12 @@ body.light-mode .admin-header { background: rgba(253,252,247,.98); }
   .plan-strategy-grid { grid-template-columns: 1fr; }
   .plan-task-item { flex-direction: column; }
   .plan-task-priority { width: 36px; height: 36px; font-size: 0.7rem; }
+  .storage-indicator { padding: 4px 8px; }
+  .storage-bar-bg { width: 50px; }
+  .storage-text { font-size: .65rem; }
+  .admin-user { display: none; }
+  .security-grid { grid-template-columns: 1fr; }
+  .security-card p { min-height: auto; }
 }
 @media (min-width: 901px) {
   .sidebar-header-mobile { display: none; }
