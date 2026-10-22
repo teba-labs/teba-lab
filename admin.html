@@ -9,15 +9,8 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="admin.css">
 <style>
-  .chart-container {
-    position: relative;
-    height: 350px;
-    width: 100%;
-    margin-bottom: 20px;
-  }
-  @media (max-width: 768px) {
-    .chart-container { height: 300px; }
-  }
+  .chart-container { position: relative; height: 350px; width: 100%; margin-bottom: 20px; }
+  @media (max-width: 768px) { .chart-container { height: 300px; } }
 </style>
 </head>
 <body class="admin-body">
@@ -70,6 +63,7 @@
       <h3>📊 التحليلات المتقدمة</h3>
       <ul class="admin-nav">
         <li><button data-report="expenseBreakdown" onclick="showReport('expenseBreakdown')">🥧 تفصيل المصاريف</button></li>
+        <li><button data-report="bcg" onclick="showReport('bcg')">💎 تصنيف التحاليل (BCG)</button></li>
       </ul>
 
       <h3>📢 التسويق والدعاية</h3>
@@ -110,9 +104,7 @@
             <div id="ov-cases" style="font-size: 1.8rem; font-weight: bold; color: #00bfff;">0</div>
           </div>
         </div>
-        <div class="chart-container">
-          <canvas id="overviewChart"></canvas>
-        </div>
+        <div class="chart-container"><canvas id="overviewChart"></canvas></div>
       </section>
 
       <section class="admin-section" id="report-upload">
@@ -205,74 +197,43 @@
         </div>
       </section>
 
-      <!-- ============================================== -->
-      <!-- المرحلة الأولى: تحليل أعداد الحالات (محسّن) -->
-      <!-- ============================================== -->
       <section class="admin-section" id="report-cases">
         <div class="admin-section-head"><h2>👥 تحليل أعداد الحالات الشهرية</h2></div>
-        
         <div class="filter-group">
           <div><label>السنة:</label><select id="casesYearSelector" onchange="renderCaseAnalysis()"><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option></select></div>
           <div><label>الفرع:</label><select id="casesBranchSelector" onchange="renderCaseAnalysis()"><option value="combined">🏥 إجمالي الفرعين</option><option value="jaafara">🏥 فرع الجعافرة</option><option value="bahtim">🏥 فرع بهتيم</option></select></div>
         </div>
-        
-        <!-- 1. KPI Cards (إجمالي الحالات السنوية) -->
         <div class="cases-kpi-grid" id="casesKpiGrid"></div>
-        
-        <!-- 2. Alerts (تنبيهات ذكية) -->
         <div id="casesAlert" class="cases-alert" style="display:none;"></div>
-        
-        <!-- 3. Branch Cards (لكل فرع لوحده) -->
         <div class="branch-cards-grid" id="casesBranchCards"></div>
-        
-        <!-- 4. Chart (الرسم البياني مع خط المتوسط) -->
         <div class="cases-section-card">
           <h4>📈 الرسم البياني الشهري <span id="casesChartTitle" style="color:var(--gold);"></span></h4>
           <div class="chart-container"><canvas id="casesChart"></canvas></div>
         </div>
-        
-        <!-- 5. Monthly Comparison Table (مقارنة 3 سنين) -->
         <div class="cases-section-card">
           <h4>📊 مقارنة شهرية (3 سنين)</h4>
           <div class="table-responsive">
             <table class="fin-table">
               <thead>
-                <tr>
-                  <th>الشهر</th>
-                  <th>2024</th>
-                  <th>2025</th>
-                  <th>2026</th>
-                  <th>التغير (2026 vs 2025)</th>
-                </tr>
+                <tr><th>الشهر</th><th>2024</th><th>2025</th><th>2026</th><th>التغير (2026 vs 2025)</th></tr>
               </thead>
               <tbody id="casesMonthlyTableBody"></tbody>
             </table>
           </div>
         </div>
-        
-        <!-- 6. Seasonality (تحليل الموسمية) -->
         <div class="cases-section-card">
           <h4>🌡️ تحليل الموسمية</h4>
           <div id="seasonalityAlert" class="cases-alert" style="display:none; margin-bottom:15px;"></div>
           <div class="table-responsive">
             <table class="fin-table">
               <thead>
-                <tr>
-                  <th>الشهر</th>
-                  <th>متوسط 2024+2025</th>
-                  <th id="seasonalitySelectedYearHeader">2026</th>
-                  <th>الفرق</th>
-                  <th>التصنيف</th>
-                </tr>
+                <tr><th>الشهر</th><th>متوسط 2024+2025</th><th id="seasonalitySelectedYearHeader">2026</th><th>الفرق</th><th>التصنيف</th></tr>
               </thead>
               <tbody id="seasonalityTableBody"></tbody>
             </table>
           </div>
         </div>
-        
-        <!-- 7. Forecast (توقع الشهر القادم) -->
         <div class="forecast-card" id="forecastCard"></div>
-        
       </section>
 
       <section class="admin-section" id="report-expenseBreakdown">
@@ -297,9 +258,7 @@
             <option value="12">ديسمبر</option>
           </select></div>
         </div>
-        
         <div id="expenseAlert" style="background: rgba(251,191,36,0.1); border: 1px solid #fbbf24; color: #fbbf24; padding: 15px; border-radius: 12px; margin-bottom: 20px; font-weight: bold; display: none;"></div>
-
         <div class="expense-pie-grid">
           <div class="expense-pie-card">
             <h4>🏥 فرع الجعافرة</h4>
@@ -310,13 +269,68 @@
             <div class="pie-chart-container"><canvas id="expensePieBahtim"></canvas></div>
           </div>
         </div>
-
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
           <h4 style="color:var(--text-muted); margin-bottom:15px; text-align:right;">📋 التفاصيل:</h4>
           <div class="table-responsive">
             <table class="fin-table">
               <thead><tr><th>البند</th><th>الجعافرة</th><th>بهتيم</th><th>الإجمالي</th></tr></thead>
               <tbody id="expenseBreakdownTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================ -->
+      <!-- المرحلة 2: تصنيف التحاليل BCG -->
+      <!-- ================================================ -->
+      <section class="admin-section" id="report-bcg">
+        <div class="admin-section-head">
+          <h2>💎 تصنيف التحاليل (BCG Matrix)</h2>
+          <p>تقسيم التحاليل لـ 4 فئات على حسب المبيعات والربح — عشان تعرف كل تحليل تستخدمه إزاي</p>
+        </div>
+        
+        <div id="bcgAlert" class="cases-alert" style="display:none;"></div>
+        
+        <div class="bcg-summary-grid" id="bcgSummaryGrid"></div>
+        
+        <div class="bcg-urgent-card" id="bcgUrgentCard"></div>
+        
+        <div class="cases-section-card">
+          <h4 style="color:#4ade80;">⭐ النجوم (Stars) — مبيعات عالية + ربح عالي</h4>
+          <div class="table-responsive">
+            <table class="fin-table">
+              <thead><tr><th>#</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة</th><th>ربح/تحليل</th><th>إجمالي الربح</th></tr></thead>
+              <tbody id="bcgStarsTable"></tbody>
+            </table>
+          </div>
+        </div>
+        
+        <div class="cases-section-card">
+          <h4 style="color:#00bfff;">🐄 الأحصنة (Cash Cows) — مبيعات عالية + ربح قليل</h4>
+          <div class="table-responsive">
+            <table class="fin-table">
+              <thead><tr><th>#</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة</th><th>ربح/تحليل</th><th>إجمالي الربح</th></tr></thead>
+              <tbody id="bcgCashCowsTable"></tbody>
+            </table>
+          </div>
+        </div>
+        
+        <div class="cases-section-card">
+          <h4 style="color:#fbbf24;">❓ علامات استفهام (Question Marks) — مبيعات قليلة + ربح عالي</h4>
+          <div class="table-responsive">
+            <table class="fin-table">
+              <thead><tr><th>#</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة</th><th>ربح/تحليل</th><th>إجمالي الربح</th></tr></thead>
+              <tbody id="bcgQuestionsTable"></tbody>
+            </table>
+          </div>
+        </div>
+        
+        <div class="cases-section-card">
+          <h4 style="color:#f87171;">🐕 الكلاب (Dogs) — مبيعات قليلة + ربح قليل</h4>
+          <div class="table-responsive">
+            <table class="fin-table">
+              <thead><tr><th>#</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة</th><th>ربح/تحليل</th><th>إجمالي الربح</th></tr></thead>
+              <tbody id="bcgDogsTable"></tbody>
             </table>
           </div>
         </div>
