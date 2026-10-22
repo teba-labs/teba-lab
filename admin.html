@@ -66,6 +66,11 @@
         <li><button data-report="bcg" onclick="showReport('bcg')">💎 تصنيف التحاليل (BCG)</button></li>
       </ul>
 
+      <h3>📋 التخطيط والتنفيذ</h3>
+      <ul class="admin-nav">
+        <li><button data-report="monthlyPlan" onclick="showReport('monthlyPlan')">📋 خطة الشهر</button></li>
+      </ul>
+
       <h3>📢 التسويق والدعاية</h3>
       <ul class="admin-nav">
         <li><button data-report="topSellers" onclick="showReport('topSellers')">🏆 الأكثر مبيعاً</button></li>
@@ -82,17 +87,13 @@
     </aside>
 
     <main class="admin-content">
-      
+
       <section class="admin-section active" id="report-overview">
         <div class="admin-section-head"><h2>📈 نظرة عامة على الأداء</h2></div>
-        
-        <!-- المرحلة 3: تقرير المستشار الشهري -->
         <div id="advisorReport"></div>
-        
         <div class="admin-section-head" style="margin-top:40px; padding-top:20px; border-top:2px dashed var(--border);">
           <h3 style="color:var(--text-muted); font-size:1.1rem; margin:0;">📊 الأرقام الإجمالية (مرجع)</h3>
         </div>
-        
         <div id="overviewAlert" style="background: rgba(0,255,127,0.1); border: 1px solid var(--border-glow); color: var(--primary-glow); padding: 15px; border-radius: 12px; margin-bottom: 20px; font-weight: bold; display: none;"></div>
         <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
           <div class="kpi-card" style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border-glow); text-align: center;">
@@ -120,7 +121,7 @@
         <div class="upload-grid">
           <div>
             <h3 style="color:var(--primary-glow); margin-bottom:10px; font-size:1rem;">1. الملف المجمّع (المتابعة السنوية)</h3>
-            <div class="upload-zone" id="uploadSalesZone" onclick="document.getElementById('fileInputSales').click()">
+            <div class="upload-zone" onclick="document.getElementById('fileInputSales').click()">
               <div class="upload-icon">📁</div>
               <h3>ارفع ملف المبيعات</h3>
               <input type="file" id="fileInputSales" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFileUpload(event, 'sales')">
@@ -129,7 +130,7 @@
           </div>
           <div>
             <h3 style="color:var(--gold); margin-bottom:10px; font-size:1rem;">2. ملف أسعار التحاليل</h3>
-            <div class="upload-zone" id="uploadPricesZone" onclick="document.getElementById('fileInputPrices').click()">
+            <div class="upload-zone" onclick="document.getElementById('fileInputPrices').click()">
               <div class="upload-icon">🏷️</div>
               <h3>ارفع ملف الأسعار</h3>
               <input type="file" id="fileInputPrices" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFileUpload(event, 'prices')">
@@ -138,7 +139,7 @@
           </div>
           <div>
             <h3 style="color:#00bfff; margin-bottom:10px; font-size:1rem;">3. تفصيل مصاريف 2025</h3>
-            <div class="upload-zone" id="uploadDetail2025Zone" onclick="document.getElementById('fileInputDetail2025').click()">
+            <div class="upload-zone" onclick="document.getElementById('fileInputDetail2025').click()">
               <div class="upload-icon">📊</div>
               <h3>ارفع ملف تفصيل 2025</h3>
               <input type="file" id="fileInputDetail2025" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFileUpload(event, 'detail2025')">
@@ -147,7 +148,7 @@
           </div>
           <div>
             <h3 style="color:#fbbf24; margin-bottom:10px; font-size:1rem;">4. تفصيل مصاريف 2026</h3>
-            <div class="upload-zone" id="uploadDetail2026Zone" onclick="document.getElementById('fileInputDetail2026').click()">
+            <div class="upload-zone" onclick="document.getElementById('fileInputDetail2026').click()">
               <div class="upload-icon">📊</div>
               <h3>ارفع ملف تفصيل 2026</h3>
               <input type="file" id="fileInputDetail2026" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFileUpload(event, 'detail2026')">
@@ -222,9 +223,7 @@
           <h4>📊 مقارنة شهرية (3 سنين)</h4>
           <div class="table-responsive">
             <table class="fin-table">
-              <thead>
-                <tr><th>الشهر</th><th>2024</th><th>2025</th><th>2026</th><th>التغير (2026 vs 2025)</th></tr>
-              </thead>
+              <thead><tr><th>الشهر</th><th>2024</th><th>2025</th><th>2026</th><th>التغير (2026 vs 2025)</th></tr></thead>
               <tbody id="casesMonthlyTableBody"></tbody>
             </table>
           </div>
@@ -234,9 +233,7 @@
           <div id="seasonalityAlert" class="cases-alert" style="display:none; margin-bottom:15px;"></div>
           <div class="table-responsive">
             <table class="fin-table">
-              <thead>
-                <tr><th>الشهر</th><th>متوسط 2024+2025</th><th id="seasonalitySelectedYearHeader">2026</th><th>الفرق</th><th>التصنيف</th></tr>
-              </thead>
+              <thead><tr><th>الشهر</th><th>متوسط 2024+2025</th><th id="seasonalitySelectedYearHeader">2026</th><th>الفرق</th><th>التصنيف</th></tr></thead>
               <tbody id="seasonalityTableBody"></tbody>
             </table>
           </div>
@@ -291,15 +288,11 @@
       <section class="admin-section" id="report-bcg">
         <div class="admin-section-head">
           <h2>💎 تصنيف التحاليل (BCG Matrix)</h2>
-          <p>تقسيم التحاليل لـ 4 فئات على حسب المبيعات والربح — عشان تعرف كل تحليل تستخدمه إزاي</p>
+          <p>تقسيم التحاليل لـ 4 فئات على حسب المبيعات والربح</p>
         </div>
-        
         <div id="bcgAlert" class="cases-alert" style="display:none;"></div>
-        
         <div class="bcg-summary-grid" id="bcgSummaryGrid"></div>
-        
         <div class="bcg-urgent-card" id="bcgUrgentCard"></div>
-        
         <div class="cases-section-card">
           <h4 style="color:#4ade80;">⭐ النجوم (Stars) — مبيعات عالية + ربح عالي</h4>
           <div class="table-responsive">
@@ -309,7 +302,6 @@
             </table>
           </div>
         </div>
-        
         <div class="cases-section-card">
           <h4 style="color:#00bfff;">🐄 الأحصنة (Cash Cows) — مبيعات عالية + ربح قليل</h4>
           <div class="table-responsive">
@@ -319,7 +311,6 @@
             </table>
           </div>
         </div>
-        
         <div class="cases-section-card">
           <h4 style="color:#fbbf24;">❓ علامات استفهام (Question Marks) — مبيعات قليلة + ربح عالي</h4>
           <div class="table-responsive">
@@ -329,7 +320,6 @@
             </table>
           </div>
         </div>
-        
         <div class="cases-section-card">
           <h4 style="color:#f87171;">🐕 الكلاب (Dogs) — مبيعات قليلة + ربح قليل</h4>
           <div class="table-responsive">
@@ -339,6 +329,14 @@
             </table>
           </div>
         </div>
+      </section>
+
+      <section class="admin-section" id="report-monthlyPlan">
+        <div class="admin-section-head">
+          <h2>📋 خطة الشهر — استراتيجية 3 شهور</h2>
+          <p id="planSubtitle">جاري التحميل...</p>
+        </div>
+        <div id="planContent"></div>
       </section>
 
       <section class="admin-section" id="report-topSellers">

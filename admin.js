@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Admin Logic (v47 - Complete: Phase 1 + 2 + 3)
+   TEBA LABS - Admin Logic (v49 - Complete: Phase 1+2+3+4)
    ===================================================== */
 
 (function(){
@@ -15,36 +15,33 @@
 
   const DB_NAME = 'TebaAdminDB_v16';
   const STORE_NAME = 'files';
-  
+
   function openDB() { return new Promise((resolve, reject) => { const request = indexedDB.open(DB_NAME, 1); request.onupgradeneeded = e => e.target.result.createObjectStore(STORE_NAME); request.onsuccess = e => resolve(e.target.result); request.onerror = e => reject(e.target.error); }); }
   async function saveFileToDB(key, arrayBuffer) { const db = await openDB(); return new Promise((resolve, reject) => { const tx = db.transaction(STORE_NAME, 'readwrite'); tx.objectStore(STORE_NAME).put(arrayBuffer, key); tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); }); }
   async function getFileFromDB(key) { const db = await openDB(); return new Promise((resolve, reject) => { const tx = db.transaction(STORE_NAME, 'readonly'); const req = tx.objectStore(STORE_NAME).get(key); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); }
   function num(v) { if (typeof v === 'number') return v; if (typeof v === 'string') { const n = parseFloat(v); return isNaN(n) ? 0 : n; } return 0; }
+  function addMonths(year, month, delta) { let total = year * 12 + (month - 1) + delta; return { year: Math.floor(total / 12), month: (total % 12) + 1 }; }
+  function calcMedian(arr) { if (!arr || arr.length === 0) return 0; const s = [...arr].sort((a,b) => a-b); const mid = Math.floor(s.length / 2); return s.length % 2 ? s[mid] : (s[mid-1] + s[mid]) / 2; }
+  function growthInfo(current, previous) { if (previous <= 0 || current <= 0) return { pct: 0, label: '—', color: '#94a3b8', icon: '' }; const pct = ((current - previous) / previous) * 100; return { pct, label: `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`, color: pct >= 0 ? '#4ade80' : '#f87171', icon: pct >= 0 ? '↑' : '↓' }; }
 
   window.showReport = function(reportName){
     document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
     const target = document.getElementById('report-' + reportName);
     if(target) target.classList.add('active');
     document.querySelectorAll('.admin-nav button').forEach(b => b.classList.toggle('active', b.dataset.report === reportName));
-    
     if(reportName === 'overview') renderOverview();
     if(reportName === 'annual') renderAnnualReport();
     if(reportName === 'financial') renderFinancialReport();
     if(reportName === 'cases') renderCaseAnalysis();
     if(reportName === 'expenseBreakdown') renderExpenseBreakdown();
     if(reportName === 'bcg') renderBCGMatrix();
+    if(reportName === 'monthlyPlan') renderMonthlyPlan();
     if(reportName === 'topSellers') renderTopSellers();
     if(reportName === 'mostProfitable') renderMostProfitable();
     if(reportName === 'leastProfitable') renderLeastProfitable();
     if(reportName === 'needOffers') renderNeedOffers();
     if(reportName === 'lossMakers') renderLossMakers();
-    
-    if(window.innerWidth <= 900) {
-        const sidebar = document.getElementById('adminSidebar');
-        const overlay = document.getElementById('mobileOverlay');
-        if(sidebar) sidebar.classList.remove('open');
-        if(overlay) overlay.classList.remove('show');
-    }
+    if(window.innerWidth <= 900) { const sidebar = document.getElementById('adminSidebar'); const overlay = document.getElementById('mobileOverlay'); if(sidebar) sidebar.classList.remove('open'); if(overlay) overlay.classList.remove('show'); }
     setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 300);
   };
 
@@ -68,7 +65,7 @@
         await saveFileToDB(dbKeyMap[type], arrayBuffer);
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
         statusEl.className = 'upload-status success';
-        statusEl.innerHTML = `✅ تم رفع وحفظ الملف بنجاح!`;
+        statusEl.innerHTML = '✅ تم رفع وحفظ الملف بنجاح!';
         if(type === 'sales') salesWorkbook = workbook;
         if(type === 'prices') pricesWorkbook = workbook;
         if(type === 'detail2025') detailedWorkbook2025 = workbook;
@@ -81,31 +78,23 @@
 
   async function loadSavedDataFromDB() {
     try {
-        const salesBuffer = await getFileFromDB('salesData');
-        const pricesBuffer = await getFileFromDB('pricesData');
-        const detail2025Buffer = await getFileFromDB('detail2025Data');
-        const detail2026Buffer = await getFileFromDB('detail2026Data');
-        if(salesBuffer) { salesWorkbook = XLSX.read(salesBuffer, { type: 'array' }); const el = document.getElementById('uploadStatusSales'); if (el) { el.className = 'upload-status success'; el.innerHTML = '✅ ملف المبيعات محمل.'; } }
-        if(pricesBuffer) { pricesWorkbook = XLSX.read(pricesBuffer, { type: 'array' }); const el = document.getElementById('uploadStatusPrices'); if (el) { el.className = 'upload-status success'; el.innerHTML = '✅ ملف الأسعار محمل.'; } }
-        if(detail2025Buffer) { detailedWorkbook2025 = XLSX.read(detail2025Buffer, { type: 'array' }); const el = document.getElementById('uploadStatusDetail2025'); if (el) { el.className = 'upload-status success'; el.innerHTML = '✅ تفصيل 2025 محمل.'; } }
-        if(detail2026Buffer) { detailedWorkbook2026 = XLSX.read(detail2026Buffer, { type: 'array' }); const el = document.getElementById('uploadStatusDetail2026'); if (el) { el.className = 'upload-status success'; el.innerHTML = '✅ تفصيل 2026 محمل.'; } }
-        renderAllReports();
+      const salesBuffer = await getFileFromDB('salesData');
+      const pricesBuffer = await getFileFromDB('pricesData');
+      const detail2025Buffer = await getFileFromDB('detail2025Data');
+      const detail2026Buffer = await getFileFromDB('detail2026Data');
+      if(salesBuffer) { salesWorkbook = XLSX.read(salesBuffer, { type: 'array' }); const el = document.getElementById('uploadStatusSales'); if (el) { el.className = 'upload-status success'; el.innerHTML = '✅ ملف المبيعات محمل.'; } }
+      if(pricesBuffer) { pricesWorkbook = XLSX.read(pricesBuffer, { type: 'array' }); const el = document.getElementById('uploadStatusPrices'); if (el) { el.className = 'upload-status success'; el.innerHTML = '✅ ملف الأسعار محمل.'; } }
+      if(detail2025Buffer) { detailedWorkbook2025 = XLSX.read(detail2025Buffer, { type: 'array' }); const el = document.getElementById('uploadStatusDetail2025'); if (el) { el.className = 'upload-status success'; el.innerHTML = '✅ تفصيل 2025 محمل.'; } }
+      if(detail2026Buffer) { detailedWorkbook2026 = XLSX.read(detail2026Buffer, { type: 'array' }); const el = document.getElementById('uploadStatusDetail2026'); if (el) { el.className = 'upload-status success'; el.innerHTML = '✅ تفصيل 2026 محمل.'; } }
+      renderAllReports();
     } catch(e) { console.log("لا توجد بيانات محفوظة."); }
   }
 
-  function renderAllReports() { renderOverview(); renderFinancialReport(); renderAnnualReport(); renderCaseAnalysis(); renderTopSellers(); renderMostProfitable(); renderLeastProfitable(); renderNeedOffers(); renderLossMakers(); renderExpenseBreakdown(); renderBCGMatrix(); }
+  function renderAllReports() { renderOverview(); renderFinancialReport(); renderAnnualReport(); renderCaseAnalysis(); renderTopSellers(); renderMostProfitable(); renderLeastProfitable(); renderNeedOffers(); renderLossMakers(); renderExpenseBreakdown(); renderBCGMatrix(); renderMonthlyPlan(); }
   function getSheetData(sheetKey) { if (!salesWorkbook) return []; const sheetName = salesWorkbook.SheetNames.find(n => n.includes(sheetKey)); if (!sheetName) return []; return XLSX.utils.sheet_to_json(salesWorkbook.Sheets[sheetName], { header: 1, defval: "" }); }
 
   function extractYearData(year, branch) { const annualData = getSheetData('السنوية'); let totalRev = 0, totalExp = 0; for(let i=1; i<annualData.length; i++) { let row = annualData[i]; if (!row) continue; if (String(row[5]) === String(year) && row[4] === branch) { totalRev += Number(row[3]) || 0; totalExp += Number(row[2]) || 0; } } return { rev: totalRev, exp: totalExp }; }
   function extractMonthData(year, month, branch) { const monthlyData = getSheetData('الشهرية'); let totalRev = 0, totalExp = 0, totalCases = 0; for(let i=1; i<monthlyData.length; i++) { let row = monthlyData[i]; if (!row) continue; if (String(row[7]) === String(year) && row[6] === branch) { if (month === 'all' || String(row[4]) === String(month)) { if (row[4] !== 'التقفيل' && row[4] !== '') { totalRev += Number(row[3]) || 0; totalExp += Number(row[2]) || 0; totalCases += Number(row[5]) || 0; } } } } return { rev: totalRev, exp: totalExp, cases: totalCases }; }
-
-  // ========== Helpers للمرحلة 3 ==========
-
-  function growthInfo(current, previous) {
-    if (previous <= 0 || current <= 0) return { pct: 0, label: '—', color: '#94a3b8', icon: '' };
-    const pct = ((current - previous) / previous) * 100;
-    return { pct, label: `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`, color: pct >= 0 ? '#4ade80' : '#f87171', icon: pct >= 0 ? '↑' : '↓' };
-  }
 
   function findLatestReportMonth() {
     const now = new Date();
@@ -121,191 +110,415 @@
     return null;
   }
 
+  function getTestMovementData() {
+    const data = getSheetData('تكرار التحاليل'); let testData = [];
+    for (let i = 2; i < data.length; i++) { const row = data[i]; if (row && row[0] && typeof row[0] === 'string' && row[0].trim() !== '') { let count = Number(row[2]) || Number(row[1]) || 0; testData.push({ name: row[0].trim(), count: count }); } }
+    return testData;
+  }
+
+  function getMergedData() {
+    if (!pricesWorkbook) return [];
+    let tests = getTestMovementData(); if (!tests || tests.length === 0) return [];
+    let priceSheetName = pricesWorkbook.SheetNames.find(n => n.includes('التحاليل')) || pricesWorkbook.SheetNames[0];
+    const priceData = XLSX.utils.sheet_to_json(pricesWorkbook.Sheets[priceSheetName], { header: 1, defval: "" });
+    let priceMap = {};
+    for (let i = 1; i < priceData.length; i++) { const row = priceData[i]; if (row && row[0]) { const testName = String(row[0]).trim().toLowerCase(); const cost = Number(row[1]) || 0; const sellPrice = Number(row[2]) || 0; if (sellPrice > 0) priceMap[testName] = { cost, sellPrice }; } }
+    let merged = [];
+    tests.forEach(t => { let searchName = t.name.trim().toLowerCase(); if (priceMap[searchName]) { const cost = priceMap[searchName].cost; const sell = priceMap[searchName].sellPrice; const profitUnit = sell - cost; merged.push({ name: t.name, count: t.count, cost: cost, sell: sell, profitUnit: profitUnit, totalProfit: profitUnit * t.count }); } });
+    return merged;
+  }
+
+  /* ========== المرحلة 3: تقرير المستشار الشهري ========== */
   window.renderMonthlyAdvisor = function() {
     const container = document.getElementById('advisorReport');
     if (!container) return;
-    
-    if (!salesWorkbook) {
-      container.innerHTML = `<div class="advisor-card"><div class="advisor-card-title">👨‍⚕️ رسالة المستشار</div><div class="advisor-card-body">⚠️ ارفع ملف المتابعة السنوية أولاً عشان يظهر التقرير الشهري.</div></div>`;
-      return;
-    }
-    
+    if (!salesWorkbook) { container.innerHTML = '<div class="advisor-card"><div class="advisor-card-title">👨‍⚕️ رسالة المستشار</div><div class="advisor-card-body">⚠️ ارفع ملف المتابعة السنوية أولاً عشان يظهر التقرير الشهري.</div></div>'; return; }
     const period = findLatestReportMonth();
-    if (!period) {
-      container.innerHTML = `<div class="advisor-card"><div class="advisor-card-title">👨‍⚕️ رسالة المستشار</div><div class="advisor-card-body">ℹ️ مفيش بيانات شهرية كافية لعرض التقرير.</div></div>`;
-      return;
-    }
-    
+    if (!period) { container.innerHTML = '<div class="advisor-card"><div class="advisor-card-title">👨‍⚕️ رسالة المستشار</div><div class="advisor-card-body">ℹ️ مفيش بيانات شهرية كافية لعرض التقرير.</div></div>'; return; }
     const monthsAr = ['يناير','فبراير','مارس','ابريل','مايو','يونيو','يوليو','اغسطس','سبتمبر','اكتوبر','نوفمبر','ديسمبر'];
     const monthName = monthsAr[period.month - 1];
-    
     const currJ = extractMonthData(period.year, period.month, 'الجعافرة');
     const currB = extractMonthData(period.year, period.month, 'بهتيم');
     const currRev = currJ.rev + currB.rev;
     const currExp = currJ.exp + currB.exp;
     const currCases = currJ.cases + currB.cases;
     const currProfit = currRev - currExp;
-    
     let prevMonth = period.month - 1, prevYear = period.year;
     if (prevMonth < 1) { prevMonth = 12; prevYear--; }
     const prevJ = extractMonthData(prevYear, prevMonth, 'الجعافرة');
     const prevB = extractMonthData(prevYear, prevMonth, 'بهتيم');
     const prevRev = prevJ.rev + prevB.rev;
     const prevProfit = (prevJ.rev + prevB.rev) - (prevJ.exp + prevB.exp);
-    
     const lastYrJ = extractMonthData(period.year - 1, period.month, 'الجعافرة');
     const lastYrB = extractMonthData(period.year - 1, period.month, 'بهتيم');
     const lastYrRev = lastYrJ.rev + lastYrB.rev;
     const lastYrProfit = (lastYrJ.rev + lastYrB.rev) - (lastYrJ.exp + lastYrB.exp);
-    
     const revGrowth = growthInfo(currRev, prevRev);
     const yoyRevGrowth = growthInfo(currRev, lastYrRev);
-    
     const now = new Date();
     const isCurrentMonth = (period.year === now.getFullYear() && period.month === (now.getMonth() + 1));
     const periodNote = isCurrentMonth ? '' : `<div class="advisor-period-note">ℹ️ الشهر الحالي لسه مكتملش في البيانات، فالتقرير بيعرض <strong>آخر شهر مكتمل (${monthName} ${period.year})</strong>.</div>`;
-    
     const recs = [];
     if (prevRev > 0) {
       if (revGrowth.pct > 10) recs.push(`📈 <strong>إيراد الشهر نما ${revGrowth.pct.toFixed(1)}%</strong> عن الشهر اللي فات — استمر على نفس الوتيرة.`);
       else if (revGrowth.pct < -10) recs.push(`⚠️ <strong>إيراد الشهر نزل ${Math.abs(revGrowth.pct).toFixed(1)}%</strong> عن الشهر اللي فات — راجع الأسعار والعروض.`);
       else recs.push(`📊 <strong>إيراد الشهر شبه مستقر</strong> (${revGrowth.label}) عن الشهر اللي فات.`);
-    } else {
-      recs.push(`📊 <strong>إيراد الشهر ${currRev.toLocaleString()} ج</strong> — مفيش مقارنة كافية مع الشهر اللي فات.`);
-    }
-    
+    } else { recs.push(`📊 <strong>إيراد الشهر ${currRev.toLocaleString()} ج</strong> — مفيش مقارنة كافية مع الشهر اللي فات.`); }
     const margin = currRev > 0 ? (currProfit / currRev) * 100 : 0;
-    if (margin < 30) recs.push(`💸 <strong>هامش الربح ${margin.toFixed(1)}%</strong> — منخفض جداً، راجع المصاريف (خصوصاً الكيماويات والمرتبات).`);
-    else if (margin > 55) recs.push(`✅ <strong>هامش الربح ${margin.toFixed(1)}%</strong> — ممتاز! حافظ على التكاليف الحالية.`);
-    else recs.push(`💰 <strong>هامش الربح ${margin.toFixed(1)}%</strong> — كويس، لكن ممكن يتحسن لو قللنا المصاريف.`);
-    
+    if (margin < 30) recs.push(`💸 <strong>هامش الربح ${margin.toFixed(1)}%</strong> — منخفض جداً، راجع المصاريف.`);
+    else if (margin > 55) recs.push(`✅ <strong>هامش الربح ${margin.toFixed(1)}%</strong> — ممتاز! حافظ على التكاليف.`);
+    else recs.push(`💰 <strong>هامش الربح ${margin.toFixed(1)}%</strong> — كويس، ممكن يتحسن.`);
     const merged = getMergedData();
-    if (merged.length > 0) {
-      const topProfitable = [...merged].sort((a, b) => b.totalProfit - a.totalProfit)[0];
-      if (topProfitable) recs.push(`💎 <strong>ركز على "${topProfitable.name}"</strong> — أكتر تحليل بيربح (${topProfitable.totalProfit.toLocaleString()} ج). اعمله حملة تسويقية.`);
-    } else {
-      recs.push(`📁 ارفع ملف الأسعار عشان أقدر أرشحلك التحاليل الأكثر ربحاً.`);
-    }
-    
-    const messageHtml = `
-      <div class="advisor-card">
-        <div class="advisor-card-title">👨‍⚕️ رسالة المستشار <span class="advisor-period-badge">${monthName} ${period.year}</span></div>
-        ${periodNote}
-        <div class="advisor-card-body">
-          أهلاً يا دكتور أحمد،<br>
-          تقرير <strong>${monthName} ${period.year}</strong> جاهز. الشهر ده حقق:
-          <strong>${currRev.toLocaleString()} ج</strong> إيراد،
-          <strong>${currProfit.toLocaleString()} ج</strong> ربح صافي،
-          و<strong>${currCases.toLocaleString()} حالة</strong>.
-          <ul class="advisor-rec-list">
-            ${recs.map(r => `<li class="advisor-rec-item">${r}</li>`).join('')}
-          </ul>
-        </div>
-      </div>`;
-    
-    const finCompareHtml = `
-      <div class="advisor-section">
-        <h4>💰 مقارنة مالية</h4>
-        <div class="advisor-compare-grid">
-          <div class="advisor-compare-card">
-            <div class="advisor-compare-label">الشهر الحالي (${monthName} ${period.year})</div>
-            <div class="advisor-compare-value" style="color:#00ff7f;">${currRev.toLocaleString()} ج</div>
-            <div class="advisor-compare-growth" style="color:#94a3b8;">إيراد</div>
-            <div class="advisor-compare-profit">ربح ${currProfit.toLocaleString()} ج</div>
-          </div>
-          <div class="advisor-compare-card">
-            <div class="advisor-compare-label">الشهر اللي فات (${monthsAr[prevMonth-1]} ${prevYear})</div>
-            <div class="advisor-compare-value" style="color:#00bfff;">${prevRev.toLocaleString()} ج</div>
-            <div class="advisor-compare-growth" style="color:${revGrowth.color};">${revGrowth.icon} ${revGrowth.label}</div>
-            <div class="advisor-compare-profit">ربح ${prevProfit.toLocaleString()} ج</div>
-          </div>
-          <div class="advisor-compare-card">
-            <div class="advisor-compare-label">نفس الشهر السنة اللي فاتت (${monthName} ${period.year-1})</div>
-            <div class="advisor-compare-value" style="color:#a78bfa;">${lastYrRev.toLocaleString()} ج</div>
-            <div class="advisor-compare-growth" style="color:${yoyRevGrowth.color};">${yoyRevGrowth.icon} ${yoyRevGrowth.label} YoY</div>
-            <div class="advisor-compare-profit">ربح ${lastYrProfit.toLocaleString()} ج</div>
-          </div>
-        </div>
-      </div>`;
-    
-    const branchCompareHtml = `
-      <div class="advisor-section">
-        <h4>🏥 مقارنة الفروع</h4>
-        <div class="advisor-branch-grid">
-          ${['الجعافرة', 'بهتيم'].map(branch => {
-            const d = branch === 'الجعافرة' ? currJ : currB;
-            const prevD = branch === 'الجعافرة' ? prevJ : prevB;
-            const g = growthInfo(d.rev, prevD.rev);
-            const bMargin = d.rev > 0 ? ((d.rev - d.exp) / d.rev * 100) : 0;
-            const status = bMargin >= 50 ? '✅ ممتاز' : bMargin >= 35 ? '👍 كويس' : '⚠️ محتاج مراجعة';
-            const statusColor = bMargin >= 50 ? '#4ade80' : bMargin >= 35 ? '#fbbf24' : '#f87171';
-            return `
-              <div class="advisor-branch-card">
-                <h5>🏥 ${branch} <span style="color:${statusColor}; font-size:0.8rem;">${status}</span></h5>
-                <div class="advisor-branch-row"><span>الإيراد</span><strong style="color:#00ff7f;">${d.rev.toLocaleString()} ج</strong></div>
-                <div class="advisor-branch-row"><span>المصروفات</span><strong style="color:#f87171;">${d.exp.toLocaleString()} ج</strong></div>
-                <div class="advisor-branch-row"><span>الربح</span><strong style="color:#fbbf24;">${(d.rev - d.exp).toLocaleString()} ج</strong></div>
-                <div class="advisor-branch-row"><span>الحالات</span><strong style="color:#00bfff;">${d.cases.toLocaleString()}</strong></div>
-                <div class="advisor-branch-row"><span>التغير عن الشهر اللي فات</span><strong style="color:${g.color};">${g.icon} ${g.label}</strong></div>
-              </div>`;
-          }).join('')}
-        </div>
-      </div>`;
-    
+    if (merged.length > 0) { const topProfitable = [...merged].sort((a, b) => b.totalProfit - a.totalProfit)[0]; if (topProfitable) recs.push(`💎 <strong>ركز على "${topProfitable.name}"</strong> — أكتر تحليل بيربح (${topProfitable.totalProfit.toLocaleString()} ج).`); }
+    else { recs.push(`📁 ارفع ملف الأسعار عشان أقدر أرشحلك التحاليل الأكثر ربحاً.`); }
+    const messageHtml = `<div class="advisor-card"><div class="advisor-card-title">👨‍⚕️ رسالة المستشار <span class="advisor-period-badge">${monthName} ${period.year}</span></div>${periodNote}<div class="advisor-card-body">أهلاً يا دكتور أحمد،<br>تقرير <strong>${monthName} ${period.year}</strong> جاهز. الشهر ده حقق: <strong>${currRev.toLocaleString()} ج</strong> إيراد، <strong>${currProfit.toLocaleString()} ج</strong> ربح، و<strong>${currCases.toLocaleString()} حالة</strong>.<ul class="advisor-rec-list">${recs.map(r => `<li class="advisor-rec-item">${r}</li>`).join('')}</ul></div></div>`;
+    const finCompareHtml = `<div class="advisor-section"><h4>💰 مقارنة مالية</h4><div class="advisor-compare-grid"><div class="advisor-compare-card"><div class="advisor-compare-label">الشهر الحالي (${monthName} ${period.year})</div><div class="advisor-compare-value" style="color:#00ff7f;">${currRev.toLocaleString()} ج</div><div class="advisor-compare-growth" style="color:#94a3b8;">إيراد</div><div class="advisor-compare-profit">ربح ${currProfit.toLocaleString()} ج</div></div><div class="advisor-compare-card"><div class="advisor-compare-label">الشهر اللي فات (${monthsAr[prevMonth-1]} ${prevYear})</div><div class="advisor-compare-value" style="color:#00bfff;">${prevRev.toLocaleString()} ج</div><div class="advisor-compare-growth" style="color:${revGrowth.color};">${revGrowth.icon} ${revGrowth.label}</div><div class="advisor-compare-profit">ربح ${prevProfit.toLocaleString()} ج</div></div><div class="advisor-compare-card"><div class="advisor-compare-label">نفس الشهر السنة اللي فاتت</div><div class="advisor-compare-value" style="color:#a78bfa;">${lastYrRev.toLocaleString()} ج</div><div class="advisor-compare-growth" style="color:${yoyRevGrowth.color};">${yoyRevGrowth.icon} ${yoyRevGrowth.label} YoY</div><div class="advisor-compare-profit">ربح ${lastYrProfit.toLocaleString()} ج</div></div></div></div>`;
+    const branchCompareHtml = `<div class="advisor-section"><h4>🏥 مقارنة الفروع</h4><div class="advisor-branch-grid">${['الجعافرة', 'بهتيم'].map(branch => { const d = branch === 'الجعافرة' ? currJ : currB; const prevD = branch === 'الجعافرة' ? prevJ : prevB; const g = growthInfo(d.rev, prevD.rev); const bMargin = d.rev > 0 ? ((d.rev - d.exp) / d.rev * 100) : 0; const status = bMargin >= 50 ? '✅ ممتاز' : bMargin >= 35 ? '👍 كويس' : '⚠️ محتاج مراجعة'; const statusColor = bMargin >= 50 ? '#4ade80' : bMargin >= 35 ? '#fbbf24' : '#f87171'; return `<div class="advisor-branch-card"><h5>🏥 ${branch} <span style="color:${statusColor}; font-size:0.8rem;">${status}</span></h5><div class="advisor-branch-row"><span>الإيراد</span><strong style="color:#00ff7f;">${d.rev.toLocaleString()} ج</strong></div><div class="advisor-branch-row"><span>المصروفات</span><strong style="color:#f87171;">${d.exp.toLocaleString()} ج</strong></div><div class="advisor-branch-row"><span>الربح</span><strong style="color:#fbbf24;">${(d.rev - d.exp).toLocaleString()} ج</strong></div><div class="advisor-branch-row"><span>الحالات</span><strong style="color:#00bfff;">${d.cases.toLocaleString()}</strong></div><div class="advisor-branch-row"><span>التغير</span><strong style="color:${g.color};">${g.icon} ${g.label}</strong></div></div>`; }).join('')}</div></div>`;
     let testsHtml = '';
     if (merged.length > 0) {
       const topSellers = [...merged].sort((a, b) => b.count - a.count).slice(0, 3);
       const topProfitable = [...merged].sort((a, b) => b.totalProfit - a.totalProfit).slice(0, 3);
       const topLosing = [...merged].filter(t => t.profitUnit < 0).sort((a, b) => a.profitUnit - b.profitUnit).slice(0, 3);
-      testsHtml = `
-        <div class="advisor-section">
-          <h4>🔬 أهم التحاليل</h4>
-          <div class="advisor-tests-grid">
-            <div class="advisor-test-card">
-              <h5 style="color:#00bfff;">🏆 الأكثر مبيعاً</h5>
-              ${topSellers.length > 0 ? topSellers.map(t => `<div class="advisor-test-item"><span class="advisor-test-name">${t.name}</span><span class="advisor-test-value" style="color:#00bfff;">${t.count}×</span></div>`).join('') : '<p style="color:var(--text-muted); font-size:0.85rem; text-align:center;">لا توجد بيانات</p>'}
-            </div>
-            <div class="advisor-test-card">
-              <h5 style="color:#4ade80;">💎 الأكثر ربحاً</h5>
-              ${topProfitable.length > 0 ? topProfitable.map(t => `<div class="advisor-test-item"><span class="advisor-test-name">${t.name}</span><span class="advisor-test-value" style="color:#4ade80;">${t.totalProfit.toLocaleString()} ج</span></div>`).join('') : '<p style="color:var(--text-muted); font-size:0.85rem; text-align:center;">لا توجد بيانات</p>'}
-            </div>
-            <div class="advisor-test-card">
-              <h5 style="color:#f87171;">📉 الأكثر خسارة</h5>
-              ${topLosing.length > 0 ? topLosing.map(t => `<div class="advisor-test-item"><span class="advisor-test-name">${t.name}</span><span class="advisor-test-value" style="color:#f87171;">${t.profitUnit} ج</span></div>`).join('') : '<p style="color:var(--text-muted); font-size:0.85rem; text-align:center;">مفيش تحاليل خاسرة ✅</p>'}
-            </div>
-          </div>
-        </div>`;
-    } else {
-      testsHtml = `<div class="advisor-section"><h4>🔬 أهم التحاليل</h4><p style="color:var(--text-muted); text-align:center; padding:15px;">ارفع ملف الأسعار عشان تقدر تشوف أهم التحاليل (الأكثر ربحاً وخسارة).</p></div>`;
-    }
-    
+      testsHtml = `<div class="advisor-section"><h4>🔬 أهم التحاليل</h4><div class="advisor-tests-grid"><div class="advisor-test-card"><h5 style="color:#00bfff;">🏆 الأكثر مبيعاً</h5>${topSellers.length > 0 ? topSellers.map(t => `<div class="advisor-test-item"><span class="advisor-test-name">${t.name}</span><span class="advisor-test-value" style="color:#00bfff;">${t.count}×</span></div>`).join('') : '<p style="color:var(--text-muted); font-size:0.85rem; text-align:center;">لا توجد بيانات</p>'}</div><div class="advisor-test-card"><h5 style="color:#4ade80;">💎 الأكثر ربحاً</h5>${topProfitable.length > 0 ? topProfitable.map(t => `<div class="advisor-test-item"><span class="advisor-test-name">${t.name}</span><span class="advisor-test-value" style="color:#4ade80;">${t.totalProfit.toLocaleString()} ج</span></div>`).join('') : '<p style="color:var(--text-muted); font-size:0.85rem; text-align:center;">لا توجد بيانات</p>'}</div><div class="advisor-test-card"><h5 style="color:#f87171;">📉 الأكثر خسارة</h5>${topLosing.length > 0 ? topLosing.map(t => `<div class="advisor-test-item"><span class="advisor-test-name">${t.name}</span><span class="advisor-test-value" style="color:#f87171;">${t.profitUnit} ج</span></div>`).join('') : '<p style="color:var(--text-muted); font-size:0.85rem; text-align:center;">مفيش تحاليل خاسرة ✅</p>'}</div></div></div>`;
+    } else { testsHtml = `<div class="advisor-section"><h4>🔬 أهم التحاليل</h4><p style="color:var(--text-muted); text-align:center; padding:15px;">ارفع ملف الأسعار عشان تشوف أهم التحاليل.</p></div>`; }
     const alerts = [];
     if (margin < 30) alerts.push(`💸 هامش الربح ${margin.toFixed(1)}% — تحت الحد الآمن (30%).`);
     if (revGrowth.pct < -15) alerts.push(`📉 الإيراد نزل ${Math.abs(revGrowth.pct).toFixed(1)}% عن الشهر اللي فات.`);
     if (currJ.rev > 0 && (currJ.rev - currJ.exp) < 0) alerts.push(`⚠️ فرع الجعافرة خاسر الشهر ده!`);
     if (currB.rev > 0 && (currB.rev - currB.exp) < 0) alerts.push(`⚠️ فرع بهتيم خاسر الشهر ده!`);
-    if (merged.length > 0) {
-      const losingCount = merged.filter(t => t.profitUnit < 0).length;
-      if (losingCount >= 5) alerts.push(`📉 عندك ${losingCount} تحليل خاسر — راجع صفحة "التحاليل الخاسرة".`);
-    }
+    if (merged.length > 0) { const losingCount = merged.filter(t => t.profitUnit < 0).length; if (losingCount >= 5) alerts.push(`📉 عندك ${losingCount} تحليل خاسر.`); }
     const alertsHtml = alerts.length > 0 ? `<div class="advisor-alert-critical"><h4>🚨 تنبيهات حرجة</h4>${alerts.map(a => `<div class="advisor-alert-item">${a}</div>`).join('')}</div>` : '';
-    
     container.innerHTML = messageHtml + finCompareHtml + branchCompareHtml + testsHtml + alertsHtml;
   };
 
+  /* ========== المرحلة 4: خطة الشهر ========== */
+  function buildWeeklyPlan(ctx) {
+    const weeks = [];
+    const { refMonthName, refMargin, refExp, losingTests, sleepingTests, topSellers, topProfitable, refRev, refExpRatio, avgInvoice, jRevGrowth, bRevGrowth, refJMargin, refBMargin } = ctx;
+    const weakerBranch = refJMargin < refBMargin ? 'الجعافرة' : 'بهتيم';
+    const weakerGrowth = refJMargin < refBMargin ? jRevGrowth : bRevGrowth;
+    const targetAvg = Math.round(avgInvoice * 1.08);
+
+    // Week 1
+    const w1 = { icon: '⚡', title: 'إصلاحات عاجلة', badge: 'إصلاح', goal: '', actions: [], success: '' };
+    if (refMargin < 30) {
+      w1.goal = `رفع الهامش من ${refMargin.toFixed(1)}% لـ 30%+`;
+      w1.actions.push(`🚨 راجع أعلى 3 بنود مصاريف في ${refMonthName} (إجمالي ${refExp.toLocaleString()} ج) وقللهم 10% = توفير ${(refExp * 0.10).toLocaleString()} ج`);
+      if (losingTests.length > 0) w1.actions.push(`💸 ارفع سعر أو أوقف "${losingTests[0].name}" (خسارة ${Math.abs(losingTests[0].profitUnit)} ج/تحليل)`);
+      w1.success = `الهامش ≥ 28%`;
+    } else if (refMargin < 40) {
+      w1.goal = `تحسين الهامش من ${refMargin.toFixed(1)}% لـ 40%+`;
+      w1.actions.push(`📊 حلل بنود المصاريف وحدد بند لتخفيضه 10-15%`);
+      w1.actions.push(`💡 راجع التحاليل الأقل ربحاً وارفع أسعارها 5-10%`);
+      w1.success = `الهامش ≥ ${(refMargin + 3).toFixed(0)}%`;
+    } else {
+      w1.goal = `الحفاظ على الهامش الممتاز ${refMargin.toFixed(1)}%`;
+      w1.actions.push(`✅ راجع تكاليف الشهر الجديد (مرتبات، كيماويات، إيجار)`);
+      w1.actions.push(`💎 اختر 2-3 تحاليل من الفرص النايمة واعملهم عروض`);
+      w1.success = `الهامش ≥ ${(refMargin - 2).toFixed(0)}%`;
+    }
+    weeks.push(w1);
+
+    // Week 2
+    const w2 = { icon: '🚀', title: 'دفع النمو', badge: 'نمو', goal: '', actions: [], success: '' };
+    if (weakerGrowth < -5) {
+      w2.goal = `تعويض الانخفاض وزيادة الإيراد الأسبوعي 8%`;
+      w2.actions.push(`🏥 حملة على فرع ${weakerBranch} (نمو ${weakerGrowth.toFixed(1)}% — الأضعف)`);
+      if (topSellers.length >= 2) w2.actions.push(`🏆 باقة "${topSellers[0].name}" + "${topSellers[1].name}" بسعر محفّز`);
+      w2.success = `نمو إيراد الأسبوع ≥ 5%`;
+    } else {
+      w2.goal = `استغلال الزخم — نمو إيراد 10%`;
+      if (topSellers.length >= 3) w2.actions.push(`📣 حملة على: ${topSellers.slice(0,3).map(t => t.name).join(' • ')}`);
+      if (sleepingTests.length > 0) w2.actions.push(`💎 فعّل "${sleepingTests[0].name}" (ربح ${sleepingTests[0].profitUnit} ج، لكن اتباع ${sleepingTests[0].count} مرة)`);
+      w2.success = `إيراد الأسبوع ≥ ${(refRev * 1.10).toLocaleString()} ج`;
+    }
+    weeks.push(w2);
+
+    // Week 3
+    const w3 = { icon: '⚙️', title: 'كفاءة وتوفير', badge: 'كفاءة', goal: '', actions: [], success: '' };
+    if (refExpRatio > 60) {
+      w3.goal = `خفض نسبة المصاريف من ${refExpRatio.toFixed(1)}% لـ 55%`;
+      w3.actions.push(`💰 راجع فاتورة الكيماويات — إجمالي المصاريف ${refExp.toLocaleString()} ج`);
+      w3.actions.push(`🏥 قارن مصاريف المعمل الخارجي بين الفرعين`);
+      w3.actions.push(`✂️ أوقف شراء أي بند غير ضروري`);
+      w3.success = `نسبة المصاريف ≤ 58%`;
+    } else {
+      w3.goal = `رفع متوسط الفاتورة من ${Math.round(avgInvoice)} ج لـ ${targetAvg} ج`;
+      w3.actions.push(`💼 اعمل 2-3 باقات تحاليل بسعر مجمّع أقل 10%`);
+      w3.actions.push(`💡 درّب الاستقبال على اقتراح تحليل إضافي لكل حالة`);
+      w3.success = `متوسط الفاتورة ≥ ${targetAvg} ج`;
+    }
+    weeks.push(w3);
+
+    // Week 4
+    const w4 = { icon: '📊', title: 'مراجعة وتحضير', badge: 'مراجعة', goal: 'تقييم الشهر وتجهيز خطة الشهر الجاي', actions: [
+      `📊 قارن نتائج الشهر بالخطة`,
+      `🏥 راجع أداء كل فرع + قرارات التحاليل`,
+      `🎯 حدد 3 أهداف رئيسية للشهر الجاي`,
+      `💰 راجع ميزانية الشهر الجاي قبل بدايته`
+    ], success: `تقرير مراجعة + 3 أهداف محددة` };
+    weeks.push(w4);
+
+    return weeks;
+  }
+
+  function buildTaskList(ctx) {
+    const tasks = [];
+    const { refMargin, refExp, refExpRatio, refProfit, refMonthName, losingTests, sleepingTests, topSellers, topProfitable, jRevGrowth, bRevGrowth, avgInvoice } = ctx;
+
+    if (refMargin < 30) tasks.push({ priority: 'high', priorityAr: 'عالية', tag: 'financial', tagAr: 'مالي', title: `ارفع هامش الربح فوق 30%`, reason: `الهامش الحالي ${refMargin.toFixed(1)}% — أقل من الحد الآمن. راجع أعلى 3 بنود مصاريف (${refExp.toLocaleString()} ج).` });
+    else if (refMargin < 40) tasks.push({ priority: 'medium', priorityAr: 'متوسطة', tag: 'financial', tagAr: 'مالي', title: `حسّن الهامش لـ 40%`, reason: `الهامش ${refMargin.toFixed(1)}% — كويس لكن ممكن يتحسن.` });
+
+    if (refExpRatio > 60) tasks.push({ priority: 'high', priorityAr: 'عالية', tag: 'financial', tagAr: 'مالي', title: `قلل نسبة المصاريف/الإيراد`, reason: `النسبة ${refExpRatio.toFixed(1)}% — الهدف 55% أو أقل. خفض 5% = توفير ${(refExp * 0.05).toLocaleString()} ج.` });
+
+    if (jRevGrowth < -10) tasks.push({ priority: 'high', priorityAr: 'عالية', tag: 'branch', tagAr: 'فرع', title: `أنعش فرع الجعافرة`, reason: `إيراد الجعافرة نزل ${Math.abs(jRevGrowth).toFixed(1)}% عن الشهر السابق.` });
+    if (bRevGrowth < -10) tasks.push({ priority: 'high', priorityAr: 'عالية', tag: 'branch', tagAr: 'فرع', title: `أنعش فرع بهتيم`, reason: `إيراد بهتيم نزل ${Math.abs(bRevGrowth).toFixed(1)}% عن الشهر السابق.` });
+
+    losingTests.slice(0, 3).forEach(t => {
+      tasks.push({ priority: 'high', priorityAr: 'عالية', tag: 'tests', tagAr: 'تحاليل', title: `ارفع سعر "${t.name}" أو أوقفه`, reason: `خسارة ${Math.abs(t.profitUnit)} ج/تحليل (سعر ${t.sell} ج، تكلفة ${t.cost} ج). اتباع ${t.count} مرة — إجمالي خسارة ${Math.abs(t.totalProfit).toLocaleString()} ج.` });
+    });
+
+    if (topSellers.length >= 2) tasks.push({ priority: 'medium', priorityAr: 'متوسطة', tag: 'operational', tagAr: 'تشغيلي', title: `باقة "${topSellers[0].name}" + "${topSellers[1].name}"`, reason: `الأكثر مبيعاً: ${topSellers[0].count}× و${topSellers[1].count}×. الباقة تزود متوسط الفاتورة 15-20%.` });
+
+    if (sleepingTests.length > 0) tasks.push({ priority: 'medium', priorityAr: 'متوسطة', tag: 'tests', tagAr: 'تحاليل', title: `فعّل "${sleepingTests[0].name}"`, reason: `ربح ${sleepingTests[0].profitUnit} ج/تحليل لكن اتباع ${sleepingTests[0].count} مرة بس.` });
+
+    if (avgInvoice < 250) tasks.push({ priority: 'medium', priorityAr: 'متوسطة', tag: 'operational', tagAr: 'تشغيلي', title: `ارفع متوسط الفاتورة`, reason: `متوسط الفاتورة ${Math.round(avgInvoice)} ج — أقل من المثالي (250-300 ج).` });
+
+    if (refProfit > 0) tasks.push({ priority: 'medium', priorityAr: 'متوسطة', tag: 'financial', tagAr: 'مالي', title: `راجع عقود الموردين`, reason: `خفض 5% من المصاريف = توفير ${(refExp * 0.05).toLocaleString()} ج — يزود صافي الربح ${((refExp * 0.05) / refProfit * 100).toFixed(1)}%.` });
+
+    if (topProfitable.length > 0) { const t = topProfitable[0]; tasks.push({ priority: 'low', priorityAr: 'منخفضة', tag: 'tests', tagAr: 'تحاليل', title: `ركّز تسويق على "${t.name}"`, reason: `أعلى ربح إجمالي (${t.totalProfit.toLocaleString()} ج). كل 10 حالات زيادة = ${(t.profitUnit * 10).toLocaleString()} ج إضافي.` }); }
+
+    return tasks.slice(0, 10);
+  }
+
+  function buildStrategy(ctx, monthName) {
+    const { refMargin, refJMargin, refBMargin, topSellers, losingTests, sleepingTests, refRev } = ctx;
+    const points = [];
+    if (refMargin >= 50) points.push(`✅ حافظ على الهامش الممتاز (${refMargin.toFixed(0)}%+) — ركّز على النمو مش التوفير.`);
+    else if (refMargin >= 35) points.push(`📊 هدفك: رفع الهامش لـ ${(refMargin + 5).toFixed(0)}% — راجع المصاريف الثابتة.`);
+    else points.push(`🚨 الهامش ${refMargin.toFixed(1)}% — خطة إصلاح عاجلة.`);
+
+    const weaker = refJMargin < refBMargin ? 'الجعافرة' : 'بهتيم';
+    const stronger = refJMargin > refBMargin ? 'الجعافرة' : 'بهتيم';
+    points.push(`🏥 ركّز على ${weaker} (الأضعف) + استغل قوة ${stronger} بباقات جديدة.`);
+
+    if (topSellers.length >= 3) { const top3Sum = topSellers.slice(0,3).reduce((a, t) => a + t.count, 0); points.push(`🔬 وسّع باقات ${topSellers.slice(0,3).map(t => t.name).join(' + ')} — مجموع تكرارهم ${top3Sum}×.`); }
+    if (losingTests.length > 0) points.push(`💸 هدف: صفر تحاليل خاسرة — عندك ${losingTests.length} تحليل محتاج إصلاح.`);
+    if (sleepingTests.length > 0) points.push(`💎 نشّط ${sleepingTests.length} تحليل "نايم" بربح عالي — فرصة نمو 15-20%.`);
+
+    const targetRev = Math.round(refRev * 1.12);
+    points.push(`📈 مستهدف ${monthName}: نمو إيراد 10-15% (${targetRev.toLocaleString()} ج).`);
+    return points;
+  }
+
+  window.renderMonthlyPlan = function() {
+    const container = document.getElementById('planContent');
+    const subtitle = document.getElementById('planSubtitle');
+    if (!container) return;
+
+    if (!salesWorkbook) {
+      container.innerHTML = `<div class="advisor-card"><div class="advisor-card-body">⚠️ ارفع ملف المتابعة السنوية أولاً عشان الخطة تظهر.</div></div>`;
+      if (subtitle) subtitle.textContent = '⚠️ في انتظار رفع البيانات';
+      return;
+    }
+    const ref = findLatestReportMonth();
+    if (!ref) {
+      container.innerHTML = `<div class="advisor-card"><div class="advisor-card-body">ℹ️ مفيش بيانات شهرية كافية لعرض الخطة.</div></div>`;
+      if (subtitle) subtitle.textContent = '⚠️ لا توجد بيانات كافية';
+      return;
+    }
+
+    const monthsAr = ['يناير','فبراير','مارس','ابريل','مايو','يونيو','يوليو','اغسطس','سبتمبر','اكتوبر','نوفمبر','ديسمبر'];
+    const now = new Date();
+    const plan1 = addMonths(now.getFullYear(), now.getMonth() + 1, 1);
+    const plan2 = addMonths(now.getFullYear(), now.getMonth() + 1, 2);
+    const plan3 = addMonths(now.getFullYear(), now.getMonth() + 1, 3);
+
+    // Reference data
+    const refJ = extractMonthData(ref.year, ref.month, 'الجعافرة');
+    const refB = extractMonthData(ref.year, ref.month, 'بهتيم');
+    const refRev = refJ.rev + refB.rev;
+    const refExp = refJ.exp + refB.exp;
+    const refProfit = refRev - refExp;
+    const refCases = refJ.cases + refB.cases;
+    const refMargin = refRev > 0 ? (refProfit / refRev * 100) : 0;
+    const refExpRatio = refRev > 0 ? (refExp / refRev * 100) : 0;
+    const avgInvoice = refCases > 0 ? (refRev / refCases) : 0;
+
+    let prevM = ref.month - 1, prevY = ref.year;
+    if (prevM < 1) { prevM = 12; prevY--; }
+    const pJ = extractMonthData(prevY, prevM, 'الجعافرة');
+    const pB = extractMonthData(prevY, prevM, 'بهتيم');
+    const prevRev = pJ.rev + pB.rev;
+    const prevExp = pJ.exp + pB.exp;
+    const prevProfit = prevRev - prevExp;
+    const prevCases = pJ.cases + pB.cases;
+
+    const lastYrJ = extractMonthData(ref.year - 1, ref.month, 'الجعافرة');
+    const lastYrB = extractMonthData(ref.year - 1, ref.month, 'بهتيم');
+    const lastYrRev = lastYrJ.rev + lastYrB.rev;
+    const lastYrExp = lastYrJ.exp + lastYrB.exp;
+    const lastYrProfit = lastYrRev - lastYrExp;
+    const lastYrCases = lastYrJ.cases + lastYrB.cases;
+
+    const revMoM = growthInfo(refRev, prevRev);
+    const revYoY = growthInfo(refRev, lastYrRev);
+    const expMoM = growthInfo(refExp, prevExp);
+    const expYoY = growthInfo(refExp, lastYrExp);
+    const profitMoM = growthInfo(refProfit, prevProfit);
+    const profitYoY = growthInfo(refProfit, lastYrProfit);
+    const casesMoM = growthInfo(refCases, prevCases);
+    const casesYoY = growthInfo(refCases, lastYrCases);
+
+    const refJMargin = refJ.rev > 0 ? ((refJ.rev - refJ.exp) / refJ.rev * 100) : 0;
+    const refBMargin = refB.rev > 0 ? ((refB.rev - refB.exp) / refB.rev * 100) : 0;
+    const jRevGrowth = pJ.rev > 0 ? ((refJ.rev - pJ.rev) / pJ.rev * 100) : 0;
+    const bRevGrowth = pB.rev > 0 ? ((refB.rev - pB.rev) / pB.rev * 100) : 0;
+
+    const merged = getMergedData();
+    const topSellers = [...merged].sort((a,b) => b.count - a.count).slice(0, 5);
+    const topProfitable = [...merged].sort((a,b) => b.totalProfit - a.totalProfit).slice(0, 5);
+    const losingTests = merged.filter(t => t.cost > t.sell && t.count > 0).sort((a,b) => (a.sell-a.cost) - (b.sell-b.cost));
+    const medProfit = calcMedian(merged.map(t => t.profitUnit));
+    const sleepingTests = merged.filter(t => t.count <= 2 && t.profitUnit > medProfit && t.sell > 0).sort((a,b) => b.profitUnit - a.profitUnit);
+
+    const ctx = { refMonthName: monthsAr[ref.month - 1], refRev, refExp, refProfit, refCases, refMargin, refExpRatio, avgInvoice, refJ, refB, refJMargin, refBMargin, jRevGrowth, bRevGrowth, topSellers, topProfitable, losingTests, sleepingTests, merged };
+
+    if (subtitle) subtitle.textContent = `مبنية على بيانات ${monthsAr[ref.month - 1]} ${ref.year} (آخر شهر مكتمل) — الخطة لـ ${monthsAr[plan1.month - 1]} ${plan1.year}، ${monthsAr[plan2.month - 1]} ${plan2.year}، ${monthsAr[plan3.month - 1]} ${plan3.year}`;
+
+    // Summary banner
+    const summaryHtml = `
+      <div class="plan-summary-banner">
+        <div class="plan-summary-title">📅 خطة العمل <span class="plan-period-badge">${monthsAr[plan1.month - 1]} ${plan1.year}</span></div>
+        <div class="plan-summary-subtitle">
+          تفصيل شهري بالأسابيع لـ <strong>${monthsAr[plan1.month - 1]} ${plan1.year}</strong>، واستراتيجية مختصرة لـ <strong>${monthsAr[plan2.month - 1]} ${plan2.year}</strong> و<strong>${monthsAr[plan3.month - 1]} ${plan3.year}</strong>.
+          <br><span style="color:var(--text-muted); font-size:0.82rem;">ℹ️ المرجع: ${monthsAr[ref.month - 1]} ${ref.year} (آخر شهر مكتمل) — الشهر الحالي مستبعد لأنه لسه مفتوح</span>
+        </div>
+      </div>`;
+
+    // KPI Grid
+    const kpiHtml = `
+      <div class="plan-kpi-grid">
+        <div class="plan-kpi-card" style="border-color:#00ff7f;">
+          <div class="plan-kpi-label">💰 الإيراد</div>
+          <div class="plan-kpi-value" style="color:#00ff7f;">${refRev.toLocaleString()} ج</div>
+          <div class="plan-kpi-growth">
+            <span style="color:${revMoM.color};">${revMoM.icon} ${revMoM.label} عن الشهر السابق</span>
+            <span style="color:${revYoY.color};">${revYoY.icon} ${revYoY.label} YoY</span>
+          </div>
+        </div>
+        <div class="plan-kpi-card" style="border-color:#f87171;">
+          <div class="plan-kpi-label">💸 المصاريف</div>
+          <div class="plan-kpi-value" style="color:#f87171;">${refExp.toLocaleString()} ج</div>
+          <div class="plan-kpi-growth">
+            <span style="color:${expMoM.pct <= 0 ? '#4ade80' : '#f87171'};">${expMoM.icon} ${expMoM.label} عن الشهر السابق</span>
+            <span style="color:${expYoY.pct <= 0 ? '#4ade80' : '#f87171'};">${expYoY.icon} ${expYoY.label} YoY</span>
+          </div>
+        </div>
+        <div class="plan-kpi-card" style="border-color:#fbbf24;">
+          <div class="plan-kpi-label">📊 صافي الربح</div>
+          <div class="plan-kpi-value" style="color:#fbbf24;">${refProfit.toLocaleString()} ج</div>
+          <div class="plan-kpi-growth">
+            <span style="color:${profitMoM.color};">${profitMoM.icon} ${profitMoM.label} عن الشهر السابق</span>
+            <span style="color:${profitYoY.color};">${profitYoY.icon} ${profitYoY.label} YoY</span>
+          </div>
+        </div>
+        <div class="plan-kpi-card" style="border-color:#00bfff;">
+          <div class="plan-kpi-label">👥 الحالات</div>
+          <div class="plan-kpi-value" style="color:#00bfff;">${refCases.toLocaleString()}</div>
+          <div class="plan-kpi-growth">
+            <span style="color:${casesMoM.color};">${casesMoM.icon} ${casesMoM.label} عن الشهر السابق</span>
+            <span style="color:${casesYoY.color};">${casesYoY.icon} ${casesYoY.label} YoY</span>
+          </div>
+        </div>
+      </div>`;
+
+    // Indicators dashboard
+    const indicatorsHtml = `
+      <div class="cases-section-card">
+        <h4>📊 لوحة المؤشرات الشاملة — ${monthsAr[ref.month - 1]} ${ref.year}</h4>
+        <div class="plan-indicator-grid">
+          <div class="plan-indicator-card"><div class="plan-indicator-label">هامش الربح</div><div class="plan-indicator-value" style="color:${refMargin >= 50 ? '#4ade80' : refMargin >= 35 ? '#fbbf24' : '#f87171'};">${refMargin.toFixed(1)}%</div><div class="plan-indicator-note">${refMargin >= 50 ? '✅ ممتاز' : refMargin >= 35 ? '👍 كويس' : '⚠️ محتاج مراجعة'}</div></div>
+          <div class="plan-indicator-card"><div class="plan-indicator-label">مصاريف/إيراد</div><div class="plan-indicator-value" style="color:${refExpRatio < 50 ? '#4ade80' : refExpRatio < 65 ? '#fbbf24' : '#f87171'};">${refExpRatio.toFixed(1)}%</div><div class="plan-indicator-note">${refExpRatio < 50 ? '✅ تحت السيطرة' : refExpRatio < 65 ? '👍 متوسط' : '⚠️ مرتفعة'}</div></div>
+          <div class="plan-indicator-card"><div class="plan-indicator-label">متوسط الفاتورة</div><div class="plan-indicator-value" style="color:#a78bfa;">${Math.round(avgInvoice)} ج</div><div class="plan-indicator-note">إيراد ÷ حالات</div></div>
+          <div class="plan-indicator-card"><div class="plan-indicator-label">تحاليل مربحة</div><div class="plan-indicator-value" style="color:#4ade80;">${merged.filter(t => t.profitUnit > 0).length}</div><div class="plan-indicator-note">من ${merged.length} تحليل</div></div>
+          <div class="plan-indicator-card"><div class="plan-indicator-label">تحاليل خاسرة</div><div class="plan-indicator-value" style="color:${losingTests.length > 0 ? '#f87171' : '#4ade80'};">${losingTests.length}</div><div class="plan-indicator-note">${losingTests.length > 0 ? '⚠️ محتاجة إصلاح' : '✅ مفيش خسائر'}</div></div>
+          <div class="plan-indicator-card"><div class="plan-indicator-label">الفرع الأقوى</div><div class="plan-indicator-value" style="color:#00ff7f;">${refJMargin > refBMargin ? 'الجعافرة' : 'بهتيم'}</div><div class="plan-indicator-note">هامش ${Math.max(refJMargin, refBMargin).toFixed(1)}%</div></div>
+        </div>
+        <div class="advisor-branch-grid" style="margin-top:20px;">
+          <div class="advisor-branch-card"><h5>🏥 الجعافرة</h5><div class="advisor-branch-row"><span>الإيراد</span><strong style="color:#00ff7f;">${refJ.rev.toLocaleString()} ج</strong></div><div class="advisor-branch-row"><span>المصاريف</span><strong style="color:#f87171;">${refJ.exp.toLocaleString()} ج</strong></div><div class="advisor-branch-row"><span>الربح</span><strong style="color:#fbbf24;">${(refJ.rev - refJ.exp).toLocaleString()} ج</strong></div><div class="advisor-branch-row"><span>الهامش</span><strong style="color:${refJMargin >= 50 ? '#4ade80' : refJMargin >= 35 ? '#fbbf24' : '#f87171'};">${refJMargin.toFixed(1)}%</strong></div><div class="advisor-branch-row"><span>الحالات</span><strong style="color:#00bfff;">${refJ.cases.toLocaleString()}</strong></div><div class="advisor-branch-row"><span>النمو</span><strong style="color:${jRevGrowth >= 0 ? '#4ade80' : '#f87171'};">${jRevGrowth >= 0 ? '↑' : '↓'} ${Math.abs(jRevGrowth).toFixed(1)}%</strong></div></div>
+          <div class="advisor-branch-card"><h5>🏥 بهتيم</h5><div class="advisor-branch-row"><span>الإيراد</span><strong style="color:#00ff7f;">${refB.rev.toLocaleString()} ج</strong></div><div class="advisor-branch-row"><span>المصاريف</span><strong style="color:#f87171;">${refB.exp.toLocaleString()} ج</strong></div><div class="advisor-branch-row"><span>الربح</span><strong style="color:#fbbf24;">${(refB.rev - refB.exp).toLocaleString()} ج</strong></div><div class="advisor-branch-row"><span>الهامش</span><strong style="color:${refBMargin >= 50 ? '#4ade80' : refBMargin >= 35 ? '#fbbf24' : '#f87171'};">${refBMargin.toFixed(1)}%</strong></div><div class="advisor-branch-row"><span>الحالات</span><strong style="color:#00bfff;">${refB.cases.toLocaleString()}</strong></div><div class="advisor-branch-row"><span>النمو</span><strong style="color:${bRevGrowth >= 0 ? '#4ade80' : '#f87171'};">${bRevGrowth >= 0 ? '↑' : '↓'} ${Math.abs(bRevGrowth).toFixed(1)}%</strong></div></div>
+        </div>
+      </div>`;
+
+    // Weekly plan for plan1
+    const weeks = buildWeeklyPlan(ctx);
+    const weeklyHtml = `
+      <div class="cases-section-card">
+        <h4>📅 خطة ${monthsAr[plan1.month - 1]} ${plan1.year} — 4 أسابيع تفصيلية</h4>
+        <div class="plan-weeks-grid">
+          ${weeks.map((w, i) => `
+            <div class="plan-week-card">
+              <div class="plan-week-header">
+                <span class="plan-week-title">${w.icon} الأسبوع ${i+1}: ${w.title}</span>
+                <span class="plan-week-goal-badge">${w.badge}</span>
+              </div>
+              <div class="plan-week-goal"><strong>🎯 الهدف:</strong> ${w.goal}</div>
+              <div class="plan-week-actions-title">📋 الإجراءات:</div>
+              <ul class="plan-week-actions">${w.actions.map(a => `<li>${a}</li>`).join('')}</ul>
+              <div class="plan-week-metric"><strong>📈 مؤشر النجاح:</strong> ${w.success}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+
+    // Tasks list
+    const tasks = buildTaskList(ctx);
+    const tasksHtml = `
+      <div class="cases-section-card">
+        <h4>✅ قائمة المهام التنفيذية (${tasks.length} مهمة)</h4>
+        ${tasks.length === 0 ? '<p style="color:var(--text-muted); text-align:center; padding:20px;">✅ مفيش مشاكل عاجلة.</p>' : `
+          <ul class="plan-tasks-list">
+            ${tasks.map(t => `
+              <li class="plan-task-item">
+                <div class="plan-task-priority ${t.priority}">${t.priorityAr}</div>
+                <div class="plan-task-body">
+                  <div class="plan-task-title">${t.title}<span class="plan-task-tag ${t.tag}">${t.tagAr}</span></div>
+                  <div class="plan-task-reason">💡 ${t.reason}</div>
+                </div>
+              </li>
+            `).join('')}
+          </ul>`}
+      </div>`;
+
+    // Strategy for plan2 & plan3
+    const strategy2 = buildStrategy(ctx, monthsAr[plan2.month - 1]);
+    const strategy3 = buildStrategy(ctx, monthsAr[plan3.month - 1]);
+    const strategyHtml = `
+      <div class="plan-strategy-grid">
+        <div class="plan-strategy-card">
+          <div class="plan-strategy-title">🎯 استراتيجية ${monthsAr[plan2.month - 1]} ${plan2.year}</div>
+          <ul class="plan-strategy-points">${strategy2.map(s => `<li>${s}</li>`).join('')}</ul>
+        </div>
+        <div class="plan-strategy-card">
+          <div class="plan-strategy-title">🎯 استراتيجية ${monthsAr[plan3.month - 1]} ${plan3.year}</div>
+          <ul class="plan-strategy-points">${strategy3.map(s => `<li>${s}</li>`).join('')}</ul>
+        </div>
+      </div>`;
+
+    container.innerHTML = summaryHtml + kpiHtml + indicatorsHtml + weeklyHtml + tasksHtml + strategyHtml;
+  };
+
+  /* ========== المرحلة 1: نظرة عامة ========== */
   function renderOverview() {
     renderMonthlyAdvisor();
-    
     let totalRevAll = 0, totalExpAll = 0, totalCasesAll = 0; let chartLabels = [], chartRevs = [], chartExps = []; let rev2025 = 0, rev2026 = 0;
     ['2024', '2025', '2026'].forEach(year => {
-        let combinedRev = 0, combinedExp = 0, combinedCases = 0;
-        ['الجعافرة', 'بهتيم'].forEach(branch => {
-            let r = extractYearData(year, branch); combinedRev += r.rev; combinedExp += r.exp;
-            let m = extractMonthData(year, 'all', branch); combinedCases += m.cases;
-        });
-        totalRevAll += combinedRev; totalExpAll += combinedExp; totalCasesAll += combinedCases;
-        chartLabels.push(year); chartRevs.push(combinedRev); chartExps.push(combinedExp);
-        if (year === '2025') rev2025 = combinedRev; if (year === '2026') rev2026 = combinedRev;
+      let combinedRev = 0, combinedExp = 0, combinedCases = 0;
+      ['الجعافرة', 'بهتيم'].forEach(branch => { let r = extractYearData(year, branch); combinedRev += r.rev; combinedExp += r.exp; let m = extractMonthData(year, 'all', branch); combinedCases += m.cases; });
+      totalRevAll += combinedRev; totalExpAll += combinedExp; totalCasesAll += combinedCases;
+      chartLabels.push(year); chartRevs.push(combinedRev); chartExps.push(combinedExp);
+      if (year === '2025') rev2025 = combinedRev; if (year === '2026') rev2026 = combinedRev;
     });
     const ovRev = document.getElementById('ov-revenue'); const ovExp = document.getElementById('ov-expenses'); const ovProf = document.getElementById('ov-profit'); const ovCases = document.getElementById('ov-cases');
     if (ovRev) ovRev.textContent = totalRevAll.toLocaleString('en-US') + ' ج';
@@ -314,13 +527,15 @@
     if (ovCases) ovCases.textContent = totalCasesAll.toLocaleString('en-US');
     const alertBox = document.getElementById('overviewAlert');
     if (alertBox) {
-        let alertMsg = '';
-        if (rev2026 > 0 && rev2025 > 0) { const growth = ((rev2026 - rev2025) / rev2025) * 100; if (growth > 0) alertMsg = `📈 ممتاز! إيرادات 2026 أعلى من 2025 بنسبة نمو ${growth.toFixed(1)}%.`; else alertMsg = `⚠️ تنبيه: إيرادات 2026 أقل من 2025 بنسبة انكماش ${Math.abs(growth).toFixed(1)}%.`; }
-        else if (rev2026 > 0) { alertMsg = `📊 إجمالي إيراد 2026 حتى الآن: ${rev2026.toLocaleString()} ج.`; }
-        else { alertMsg = `ℹ️ يرجى رفع ملفات إكسيل تحتوي على بيانات لسنوات متعددة.`; }
-        alertBox.textContent = alertMsg; alertBox.style.display = 'block';
+      let alertMsg = '';
+      if (rev2026 > 0 && rev2025 > 0) { const growth = ((rev2026 - rev2025) / rev2025) * 100; if (growth > 0) alertMsg = `📈 ممتاز! إيرادات 2026 أعلى من 2025 بنسبة نمو ${growth.toFixed(1)}%.`; else alertMsg = `⚠️ تنبيه: إيرادات 2026 أقل من 2025 بنسبة انكماش ${Math.abs(growth).toFixed(1)}%.`; }
+      else if (rev2026 > 0) alertMsg = `📊 إجمالي إيراد 2026 حتى الآن: ${rev2026.toLocaleString()} ج.`;
+      else alertMsg = `ℹ️ يرجى رفع ملفات إكسيل تحتوي على بيانات لسنوات متعددة.`;
+      alertBox.textContent = alertMsg; alertBox.style.display = 'block';
     }
-    const ctx = document.getElementById('overviewChart').getContext('2d');
+    const canvas = document.getElementById('overviewChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     if (window.ovChart) window.ovChart.destroy();
     window.ovChart = new Chart(ctx, { type: 'bar', data: { labels: chartLabels, datasets: [ { label: 'الإيرادات', data: chartRevs, backgroundColor: 'rgba(0, 255, 127, 0.7)' }, { label: 'المصروفات', data: chartExps, backgroundColor: 'rgba(248, 113, 113, 0.7)' } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff' } } }, scales: { y: { ticks: { color: '#a8b5a8' } }, x: { ticks: { color: '#a8b5a8' } } } } });
   }
@@ -333,8 +548,10 @@
     document.getElementById('fin-revenue').textContent = totalRev.toLocaleString('en-US') + ' ج';
     document.getElementById('fin-expenses').textContent = totalExp.toLocaleString('en-US') + ' ج';
     document.getElementById('fin-profit').textContent = (totalRev - totalExp).toLocaleString('en-US') + ' ج';
-    const ctx = document.getElementById('financeChart').getContext('2d');
-    if (window.finChart) window.finChart.destroy(); 
+    const canvas = document.getElementById('financeChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (window.finChart) window.finChart.destroy();
     window.finChart = new Chart(ctx, { type: 'bar', data: { labels: ['الإيرادات', 'المصروفات', 'صافي الربح'], datasets: [{ data: [totalRev, totalExp, (totalRev - totalExp)], backgroundColor: ['rgba(0, 255, 127, 0.5)', 'rgba(248, 113, 113, 0.5)', 'rgba(251, 191, 36, 0.5)'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#a8b5a8' } }, x: { ticks: { color: '#a8b5a8' } } } } });
   }
 
@@ -346,10 +563,12 @@
     document.getElementById('annualTableBody').innerHTML = `<tr><td style="color:var(--gold);">${selectedYear}</td><td style="color:#00ff7f;">${finalRev.toLocaleString()} ج</td><td style="color:#f87171;">${finalExp.toLocaleString()} ج</td><td style="color:#fbbf24;">${(finalRev - finalExp).toLocaleString()} ج</td></tr>`;
     let labels = ['2024', '2025', '2026'], revs = [], exps = [], profits = [];
     labels.forEach(yr => { let yRev = 0, yExp = 0; branchesToProcess.forEach(b => { let r = extractYearData(yr, b); yRev += r.rev; yExp += r.exp; }); revs.push(yRev); exps.push(yExp); profits.push(yRev - yExp); });
-    const revCtx = document.getElementById('annualRevChart').getContext('2d');
+    const revCanvas = document.getElementById('annualRevChart'); if (!revCanvas) return;
+    const revCtx = revCanvas.getContext('2d');
     if (window.anRevChart) window.anRevChart.destroy();
     window.anRevChart = new Chart(revCtx, { type: 'bar', data: { labels: labels, datasets: [ { label: 'الإيرادات', data: revs, backgroundColor: 'rgba(0, 255, 127, 0.7)' }, { label: 'المصروفات', data: exps, backgroundColor: 'rgba(248, 113, 113, 0.7)' } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff' } } }, scales: { y: { ticks: { color: '#a8b5a8' } }, x: { ticks: { color: '#a8b5a8' } } } } });
-    const profCtx = document.getElementById('annualProfitChart').getContext('2d');
+    const profCanvas = document.getElementById('annualProfitChart'); if (!profCanvas) return;
+    const profCtx = profCanvas.getContext('2d');
     if (window.anProfChart) window.anProfChart.destroy();
     window.anProfChart = new Chart(profCtx, { type: 'line', data: { labels: labels, datasets: [{ label: 'صافي الربح', data: profits, backgroundColor: 'rgba(251, 191, 36, 0.5)', borderColor: '#fbbf24', borderWidth: 3, fill: true, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff' } } }, scales: { y: { ticks: { color: '#a8b5a8' } }, x: { ticks: { color: '#a8b5a8' } } } } });
   }
@@ -360,13 +579,11 @@
     const months = ['يناير', 'فبراير', 'مارس', 'ابريل', 'مايو', 'يونيو', 'يوليو', 'اغسطس', 'سبتمبر', 'اكتوبر', 'نوفمبر', 'ديسمبر'];
     const branchesToProcess = selectedBranch === 'combined' ? ['الجعافرة', 'بهتيم'] : [selectedBranch === 'jaafara' ? 'الجعافرة' : 'بهتيم'];
     const branchLabel = selectedBranch === 'combined' ? 'إجمالي الفرعين' : (selectedBranch === 'jaafara' ? 'الجعافرة' : 'بهتيم');
-    
     const monthlyByYear = {};
     [2024, 2025, 2026].forEach(year => { monthlyByYear[year] = []; for (let m = 1; m <= 12; m++) { let total = 0; branchesToProcess.forEach(b => { total += extractMonthData(year, m, b).cases; }); monthlyByYear[year].push(total); } });
     const yearlyTotals = {}; [2024, 2025, 2026].forEach(year => { yearlyTotals[year] = monthlyByYear[year].reduce((a, b) => a + b, 0); });
     const avg2024_2025 = months.map((_, i) => { const a = monthlyByYear[2024][i]; const b = monthlyByYear[2025][i]; const count = [a, b].filter(x => x > 0).length; return count > 0 ? (a + b) / count : 0; });
     const sortedByAvg = avg2024_2025.map((v, i) => ({ month: months[i], avg: v })).filter(x => x.avg > 0).sort((a, b) => b.avg - a.avg);
-    
     const kpiGrid = document.getElementById('casesKpiGrid');
     if (kpiGrid) {
       const yoy2025 = yearlyTotals[2024] > 0 ? ((yearlyTotals[2025] - yearlyTotals[2024]) / yearlyTotals[2024] * 100) : 0;
@@ -380,7 +597,6 @@
         <div class="cases-kpi-card" style="border-color:#a78bfa;"><h5>متوسط شهري (2026)</h5><div class="cases-kpi-value" style="color:#a78bfa;">${avgMonthly2026.toLocaleString()}</div><div class="cases-kpi-sub">حالة/شهر (خلال ${activeMonths2026} شهر)</div></div>
       `;
     }
-    
     const branchCards = document.getElementById('casesBranchCards');
     if (branchCards) {
       let branchHtml = '';
@@ -393,34 +609,34 @@
       });
       branchCards.innerHTML = branchHtml;
     }
-    
     const alertBox = document.getElementById('casesAlert');
     if (alertBox) {
       const alerts = [];
       if (sortedByAvg.length > 0) {
         const top3 = sortedByAvg.slice(0, 3); const bottom3 = sortedByAvg.slice(-3).reverse();
-        alerts.push(`📈 <strong>أكثر 3 شهور زحمة (تاريخياً):</strong> ${top3.map(t => `${t.month} (${Math.round(t.avg)} حالة)`).join(' • ')}`);
+        alerts.push(`📈 <strong>أكثر 3 شهور زحمة:</strong> ${top3.map(t => `${t.month} (${Math.round(t.avg)} حالة)`).join(' • ')}`);
         alerts.push(`📉 <strong>أكثر 3 شهور هدوء:</strong> ${bottom3.map(t => `${t.month} (${Math.round(t.avg)} حالة)`).join(' • ')}`);
         const maxAvg = top3[0].avg; const minAvg = bottom3[bottom3.length - 1].avg;
         const variation = maxAvg > 0 ? ((maxAvg - minAvg) / maxAvg * 100) : 0;
-        if (variation > 40) alerts.push(`✅ <strong>الموسمية شغالة:</strong> الفرق بين أعلى وأقل شهر ${variation.toFixed(0)}% — شهور محددة زحمة جداً، فجهّز لها.`);
-        else if (variation > 20) alerts.push(`🌤️ <strong>الموسمية متوسطة:</strong> الفرق بين أعلى وأقل شهر ${variation.toFixed(0)}% — في اختلاف بس مش حاد.`);
-        else alerts.push(`⚠️ <strong>الموسمية ضعيفة:</strong> الفرق بين أعلى وأقل شهر ${variation.toFixed(0)}% — الأعداد ثابتة نسبياً.`);
+        if (variation > 40) alerts.push(`✅ <strong>الموسمية شغالة:</strong> الفرق ${variation.toFixed(0)}% — شهور محددة زحمة.`);
+        else if (variation > 20) alerts.push(`🌤️ <strong>الموسمية متوسطة:</strong> الفرق ${variation.toFixed(0)}%.`);
+        else alerts.push(`⚠️ <strong>الموسمية ضعيفة:</strong> الفرق ${variation.toFixed(0)}%.`);
       }
       alertBox.innerHTML = alerts.map(a => `<div style="margin-bottom:10px;">${a}</div>`).join('');
       alertBox.style.display = 'block';
     }
-    
     const chartTitle = document.getElementById('casesChartTitle');
     if (chartTitle) chartTitle.textContent = `(${selectedYear} - ${branchLabel})`;
-    const ctx = document.getElementById('casesChart').getContext('2d');
-    if (window.casesChartInst) window.casesChartInst.destroy();
-    window.casesChartInst = new Chart(ctx, {
-      type: 'bar',
-      data: { labels: months, datasets: [ { label: `بيانات ${selectedYear}`, data: monthlyByYear[parseInt(selectedYear)], backgroundColor: 'rgba(0, 191, 255, 0.7)', borderColor: '#00bfff', borderWidth: 2, borderRadius: 8, order: 2 }, { label: 'متوسط 2024+2025', data: avg2024_2025, type: 'line', borderColor: '#fbbf24', backgroundColor: 'transparent', borderWidth: 2, borderDash: [6, 4], pointBackgroundColor: '#fbbf24', pointRadius: 4, fill: false, order: 1 } ] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff' } } }, scales: { y: { ticks: { color: '#a8b5a8' } }, x: { ticks: { color: '#a8b5a8' } } } }
-    });
-    
+    const casesCanvas = document.getElementById('casesChart');
+    if (casesCanvas) {
+      const ctx = casesCanvas.getContext('2d');
+      if (window.casesChartInst) window.casesChartInst.destroy();
+      window.casesChartInst = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: months, datasets: [ { label: `بيانات ${selectedYear}`, data: monthlyByYear[parseInt(selectedYear)], backgroundColor: 'rgba(0, 191, 255, 0.7)', borderColor: '#00bfff', borderWidth: 2, borderRadius: 8, order: 2 }, { label: 'متوسط 2024+2025', data: avg2024_2025, type: 'line', borderColor: '#fbbf24', backgroundColor: 'transparent', borderWidth: 2, borderDash: [6, 4], pointBackgroundColor: '#fbbf24', pointRadius: 4, fill: false, order: 1 } ] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff' } } }, scales: { y: { ticks: { color: '#a8b5a8' } }, x: { ticks: { color: '#a8b5a8' } } } }
+      });
+    }
     const tbody = document.getElementById('casesMonthlyTableBody');
     if (tbody) {
       let html = '';
@@ -433,7 +649,6 @@
       html += `<tr style="background:rgba(0,255,127,0.1); font-weight:bold;"><td style="color:var(--primary-glow);">الإجمالي</td><td style="color:#94a3b8;">${yearlyTotals[2024].toLocaleString()}</td><td style="color:#00bfff;">${yearlyTotals[2025].toLocaleString()}</td><td style="color:#fbbf24;">${yearlyTotals[2026].toLocaleString()}</td><td style="color:var(--primary-glow);">—</td></tr>`;
       tbody.innerHTML = html;
     }
-    
     const seasonTbody = document.getElementById('seasonalityTableBody');
     const seasonAlert = document.getElementById('seasonalityAlert');
     const seasonHeader = document.getElementById('seasonalitySelectedYearHeader');
@@ -453,11 +668,10 @@
       });
       seasonTbody.innerHTML = html;
       if (seasonAlert && sortedByAvg.length > 0) {
-        seasonAlert.innerHTML = `📊 <strong>الخلاصة:</strong> أعلى الشهور زحمة عندك هي (${sortedByAvg.slice(0, 3).map(t => t.month).join('، ')}) — جهّز الفريق والكواشف قبلهم. أقل الشهور هي (${sortedByAvg.slice(-3).reverse().map(t => t.month).join('، ')}) — اعمل عروض فيهم عشان تحرك السوق.`;
+        seasonAlert.innerHTML = `📊 <strong>الخلاصة:</strong> أعلى الشهور زحمة: (${sortedByAvg.slice(0, 3).map(t => t.month).join('، ')}) — جهّز الفريق. أقل الشهور: (${sortedByAvg.slice(-3).reverse().map(t => t.month).join('، ')}) — اعمل عروض.`;
         seasonAlert.style.display = 'block';
       }
     }
-    
     const forecastCard = document.getElementById('forecastCard');
     if (forecastCard) {
       let latestMonthWithData = 0;
@@ -467,15 +681,14 @@
         const historicalAvg = avg2024_2025[nextMonthIndex];
         const overallAvg = avg2024_2025.reduce((a, b) => a + b, 0) / avg2024_2025.filter(x => x > 0).length;
         if (historicalAvg > 0) {
-          forecastCard.innerHTML = `<h4 style="color:var(--primary-glow); margin-bottom:12px;">🔮 توقع ${nextMonthName} 2026</h4><p style="font-size:0.95rem; line-height:1.8; margin-bottom:12px;">بناءً على بيانات ${nextMonthName} في 2024 (<strong>${monthlyByYear[2024][nextMonthIndex]}</strong> حالة) و 2025 (<strong>${monthlyByYear[2025][nextMonthIndex]}</strong> حالة):</p><div style="background:rgba(0,255,127,0.1); padding:15px; border-radius:10px; margin:15px 0; text-align:center;"><div style="font-size:0.9rem; color:var(--text-muted); margin-bottom:5px;">متوسط ${nextMonthName} تاريخياً</div><div style="font-size:2rem; font-weight:bold; color:#fbbf24;">${Math.round(historicalAvg)} حالة</div></div><p style="font-size:0.9rem; color:var(--text-muted); line-height:1.8;"><strong style="color:var(--gold);">التوصية:</strong> جهّز الفريق والكواشف لاستقبال حوالي <strong style="color:#00ff7f;">${Math.round(historicalAvg)} حالة</strong> في ${nextMonthName} 2026. ${historicalAvg > overallAvg ? '⚠️ الشهر ده عادةً بيبقى زحمة — خد احتياطك وزوّد الفريق.' : '💡 الشهر ده عادةً بيبقى هادي — ركّز على العروض.'}</p>`;
+          forecastCard.innerHTML = `<h4 style="color:var(--primary-glow); margin-bottom:12px;">🔮 توقع ${nextMonthName} 2026</h4><p style="font-size:0.95rem; line-height:1.8; margin-bottom:12px;">بناءً على بيانات ${nextMonthName} في 2024 (<strong>${monthlyByYear[2024][nextMonthIndex]}</strong>) و 2025 (<strong>${monthlyByYear[2025][nextMonthIndex]}</strong>):</p><div style="background:rgba(0,255,127,0.1); padding:15px; border-radius:10px; margin:15px 0; text-align:center;"><div style="font-size:0.9rem; color:var(--text-muted); margin-bottom:5px;">متوسط ${nextMonthName} تاريخياً</div><div style="font-size:2rem; font-weight:bold; color:#fbbf24;">${Math.round(historicalAvg)} حالة</div></div><p style="font-size:0.9rem; color:var(--text-muted); line-height:1.8;"><strong style="color:var(--gold);">التوصية:</strong> جهّز الفريق لاستقبال حوالي <strong style="color:#00ff7f;">${Math.round(historicalAvg)} حالة</strong> في ${nextMonthName} 2026. ${historicalAvg > overallAvg ? '⚠️ الشهر ده زحمة — زوّد الفريق.' : '💡 الشهر ده هادي — ركّز على العروض.'}</p>`;
         } else { forecastCard.innerHTML = `<p style="color:var(--text-muted);">ℹ️ مفيش بيانات تاريخية كافية لتوقع ${nextMonthName}.</p>`; }
       } else if (latestMonthWithData === 12) { forecastCard.innerHTML = `<p style="color:var(--text-muted);">ℹ️ السنة كاملة مسجلة.</p>`; }
       else { forecastCard.innerHTML = `<p style="color:var(--text-muted);">ℹ️ مفيش بيانات 2026 لتوقع الشهر القادم.</p>`; }
     }
   };
 
-  function calcMedian(arr) { if (!arr || arr.length === 0) return 0; const s = [...arr].sort((a,b) => a-b); const mid = Math.floor(s.length / 2); return s.length % 2 ? s[mid] : (s[mid-1] + s[mid]) / 2; }
-
+  /* ========== المرحلة 2: BCG Matrix ========== */
   function segmentTestsBCG(data) {
     if (!data || data.length === 0) return { stars: [], cashCows: [], questions: [], dogs: [], medCount: 0, medProfit: 0 };
     const medCount = calcMedian(data.map(t => t.count));
@@ -508,16 +721,16 @@
     const opportunities = merged.filter(t => t.count <= 1 && t.profitUnit > medProfit && t.sell > 0).sort((a,b) => b.profitUnit - a.profitUnit);
     let html = `<h4>🚨 قرارات عاجلة</h4>`;
     if (losers.length > 0) {
-      html += `<div style="margin-bottom:15px;"><p style="color:#f87171; font-weight:bold; margin-bottom:8px;">💸 تحاليل خاسرة (${losers.length}) — ارفع سعرها أو وقفها:</p><ul style="padding-right:20px; font-size:0.88rem; line-height:1.8;">`;
+      html += `<div style="margin-bottom:15px;"><p style="color:#f87171; font-weight:bold; margin-bottom:8px;">💸 تحاليل خاسرة (${losers.length}):</p><ul style="padding-right:20px; font-size:0.88rem; line-height:1.8;">`;
       losers.slice(0, 5).forEach(t => { html += `<li><strong>${t.name}</strong> — سعرها ${t.sell}ج، تكلفتها ${t.cost}ج (خسارة ${Math.abs(t.profitUnit)}ج/تحليل)</li>`; });
       html += `</ul></div>`;
     }
     if (opportunities.length > 0) {
-      html += `<div style="margin-bottom:15px;"><p style="color:#fbbf24; font-weight:bold; margin-bottom:8px;">🎯 تحاليل نايمة (${opportunities.length}) — ربحها عالي بس مبيعتها شبه معدومة:</p><ul style="padding-right:20px; font-size:0.88rem; line-height:1.8;">`;
+      html += `<div style="margin-bottom:15px;"><p style="color:#fbbf24; font-weight:bold; margin-bottom:8px;">🎯 تحاليل نايمة (${opportunities.length}):</p><ul style="padding-right:20px; font-size:0.88rem; line-height:1.8;">`;
       opportunities.slice(0, 5).forEach(t => { html += `<li><strong>${t.name}</strong> — ربح ${t.profitUnit}ج/تحليل، اتباعت ${t.count} مرة بس</li>`; });
       html += `</ul></div>`;
     }
-    if (losers.length === 0 && opportunities.length === 0) { html += `<p style="color:#4ade80; font-weight:bold;">✅ مفيش قرارات عاجلة — كل التحاليل شغالة كويس.</p>`; }
+    if (losers.length === 0 && opportunities.length === 0) { html += `<p style="color:#4ade80; font-weight:bold;">✅ مفيش قرارات عاجلة.</p>`; }
     card.innerHTML = html;
   }
 
@@ -526,7 +739,7 @@
     const alertBox = document.getElementById('bcgAlert');
     const merged = getMergedData();
     if (!merged || merged.length === 0) {
-      if (alertBox) { alertBox.innerHTML = '⚠️ لازم ترفع ملفي المبيعات والأسعار عشان المستشار يقدر يصنف التحاليل.'; alertBox.style.display = 'block'; }
+      if (alertBox) { alertBox.innerHTML = '⚠️ لازم ترفع ملفي المبيعات والأسعار.'; alertBox.style.display = 'block'; }
       if (summaryGrid) summaryGrid.innerHTML = '';
       const urgentCard = document.getElementById('bcgUrgentCard'); if (urgentCard) urgentCard.innerHTML = '';
       ['Stars','CashCows','Questions','Dogs'].forEach(k => { const el = document.getElementById('bcg' + k + 'Table'); if (el) el.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">لا توجد بيانات</td></tr>'; });
@@ -534,10 +747,10 @@
     }
     const seg = segmentTestsBCG(merged);
     const cards = [
-      { icon: '⭐', name: 'النجوم', count: seg.stars.length, color: '#4ade80', desc: 'مبيعتها عالية + ربحها عالي', action: 'ركز عليهم في التسويق والتوعية', top: seg.stars.slice(0,3) },
-      { icon: '🐄', name: 'الأحصنة', count: seg.cashCows.length, color: '#00bfff', desc: 'مبيعتها عالية + ربحها قليل', action: 'حسّن التكلفة أو ارفع السعر شوية', top: seg.cashCows.slice(0,3) },
+      { icon: '⭐', name: 'النجوم', count: seg.stars.length, color: '#4ade80', desc: 'مبيعتها عالية + ربحها عالي', action: 'ركز عليهم في التسويق', top: seg.stars.slice(0,3) },
+      { icon: '🐄', name: 'الأحصنة', count: seg.cashCows.length, color: '#00bfff', desc: 'مبيعتها عالية + ربحها قليل', action: 'حسّن التكلفة', top: seg.cashCows.slice(0,3) },
       { icon: '❓', name: 'علامات استفهام', count: seg.questions.length, color: '#fbbf24', desc: 'مبيعتها قليلة + ربحها عالي', action: 'اعملهم عروض وباقات', top: seg.questions.slice(0,3) },
-      { icon: '🐕', name: 'الكلاب', count: seg.dogs.length, color: '#f87171', desc: 'مبيعتها قليلة + ربحها قليل', action: 'فكر تشيلهم أو تدمجهم', top: seg.dogs.slice(0,3) }
+      { icon: '🐕', name: 'الكلاب', count: seg.dogs.length, color: '#f87171', desc: 'مبيعتها قليلة + ربحها قليل', action: 'فكر تشيلهم', top: seg.dogs.slice(0,3) }
     ];
     if (summaryGrid) {
       summaryGrid.innerHTML = cards.map(c => `
@@ -550,7 +763,7 @@
         </div>
       `).join('');
     }
-    if (alertBox) { alertBox.innerHTML = `📊 <strong>تحليل ${merged.length} تحليل:</strong> الفاصل بين "مبيعات عالية" و"قليلة" = <strong>${seg.medCount.toFixed(0)} مرة</strong>، والفاصل بين "ربح عالي" و"قليل" = <strong>${seg.medProfit.toFixed(0)} ج</strong> للتحليل.`; alertBox.style.display = 'block'; }
+    if (alertBox) { alertBox.innerHTML = `📊 <strong>تحليل ${merged.length} تحليل:</strong> الفاصل "مبيعات عالية" = <strong>${seg.medCount.toFixed(0)} مرة</strong>، "ربح عالي" = <strong>${seg.medProfit.toFixed(0)} ج</strong>.`; alertBox.style.display = 'block'; }
     renderBCGUrgent(merged);
     fillBCGTable('bcgStarsTable', seg.stars, '#4ade80');
     fillBCGTable('bcgCashCowsTable', seg.cashCows, '#00bfff');
@@ -558,6 +771,7 @@
     fillBCGTable('bcgDogsTable', seg.dogs, '#f87171');
   };
 
+  /* ========== تفصيل المصاريف ========== */
   function extractExpenseBreakdown(year, month, branch) {
     const wb = year === '2025' ? detailedWorkbook2025 : year === '2026' ? detailedWorkbook2026 : null;
     if (!wb) return null;
@@ -625,7 +839,7 @@
       const cats = [];
       if (breakdown.salaries > 0) cats.push({ name: 'مرتبات', value: breakdown.salaries, color: '#22c55e' });
       if (breakdown.chemicals > 0) cats.push({ name: 'كيماويات', value: breakdown.chemicals, color: '#00bfff' });
-      const miscColors = { 'ايجار': '#fbbf24', 'كهربا': '#f87171', 'مياة': '#a78bfa', 'مياه': '#a78bfa', 'صيانة': '#f472b6', 'مطبوعات': '#fb923c', 'مروحة': '#94a3b8', 'صيانة اجهزة': '#f472b6' };
+      const miscColors = { 'ايجار': '#fbbf24', 'كهربا': '#f87171', 'مياة': '#a78bfa', 'مياه': '#a78bfa', 'صيانة': '#f472b6', 'مطبوعات': '#fb923c' };
       if (breakdown.misc) { Object.keys(breakdown.misc).forEach(k => { if (breakdown.misc[k] > 0) { cats.push({ name: k, value: breakdown.misc[k], color: miscColors[k] || '#64748b' }); } }); }
       const monthly = extractMonthData(year, month, b.name);
       const fixedSum = cats.reduce((a,c) => a + c.value, 0);
@@ -649,12 +863,7 @@
     }
   };
 
-  function getTestMovementData() {
-    const data = getSheetData('تكرار التحاليل'); let testData = [];
-    for (let i = 2; i < data.length; i++) { const row = data[i]; if (row && row[0] && typeof row[0] === 'string' && row[0].trim() !== '') { let count = Number(row[2]) || Number(row[1]) || 0; testData.push({ name: row[0].trim(), count: count }); } }
-    return testData;
-  }
-
+  /* ========== التقارير التسويقية ========== */
   window.renderTopSellers = function() {
     const tbody = document.getElementById('topSellersTableBody'); if (!tbody) return;
     let tests = getTestMovementData();
@@ -665,86 +874,65 @@
     tbody.innerHTML = html;
   };
 
-  function getMergedData() {
-    if (!pricesWorkbook) return [];
-    let tests = getTestMovementData(); if (!tests || tests.length === 0) return [];
-    let priceSheetName = pricesWorkbook.SheetNames.find(n => n.includes('التحاليل')) || pricesWorkbook.SheetNames[0];
-    const priceData = XLSX.utils.sheet_to_json(pricesWorkbook.Sheets[priceSheetName], { header: 1, defval: "" });
-    let priceMap = {};
-    for (let i = 1; i < priceData.length; i++) { const row = priceData[i]; if (row && row[0]) { const testName = String(row[0]).trim().toLowerCase(); const cost = Number(row[1]) || 0; const sellPrice = Number(row[2]) || 0; if (sellPrice > 0) priceMap[testName] = { cost, sellPrice }; } }
-    let merged = [];
-    tests.forEach(t => { let searchName = t.name.trim().toLowerCase(); if (priceMap[searchName]) { const cost = priceMap[searchName].cost; const sell = priceMap[searchName].sellPrice; const profitUnit = sell - cost; merged.push({ name: t.name, count: t.count, cost: cost, sell: sell, profitUnit: profitUnit, totalProfit: profitUnit * t.count }); } });
-    return merged;
-  }
-
   window.renderMostProfitable = function() {
     const tbody = document.getElementById('mostProfitableTableBody'); if (!tbody) return;
     let data = getMergedData();
-    if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">لا توجد تطابق بين الأسماء في الملفين</td></tr>'; return; }
+    if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">لا توجد تطابق</td></tr>'; return; }
     data.sort((a, b) => b.totalProfit - a.totalProfit);
     let html = '';
-    data.slice(0, 20).forEach((test, index) => {
-        html += `<tr><td style="color:var(--gold);">${index + 1}</td><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f;">${test.sell} ج</td><td style="color: #f87171;">${test.cost} ج</td><td style="color: #fbbf24;">${test.profitUnit} ج</td><td style="color: #00ff7f; font-weight:bold;">${test.totalProfit.toLocaleString()} ج</td></tr>`;
-    });
+    data.slice(0, 20).forEach((test, index) => { html += `<tr><td style="color:var(--gold);">${index + 1}</td><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f;">${test.sell} ج</td><td style="color: #f87171;">${test.cost} ج</td><td style="color: #fbbf24;">${test.profitUnit} ج</td><td style="color: #00ff7f; font-weight:bold;">${test.totalProfit.toLocaleString()} ج</td></tr>`; });
     tbody.innerHTML = html;
   };
 
   window.renderLeastProfitable = function() {
     const tbody = document.getElementById('leastProfitableTableBody'); if (!tbody) return;
     let data = getMergedData();
-    if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">لا توجد تطابق بين الأسماء في الملفين</td></tr>'; return; }
+    if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">لا توجد تطابق</td></tr>'; return; }
     let profitableOnly = data.filter(t => t.profitUnit > 0);
     profitableOnly.sort((a, b) => a.totalProfit - b.totalProfit);
     let html = '';
-    profitableOnly.slice(0, 20).forEach((test, index) => {
-        html += `<tr><td style="color:var(--gold);">${index + 1}</td><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f;">${test.sell} ج</td><td style="color: #f87171;">${test.cost} ج</td><td style="color: #fbbf24;">${test.profitUnit} ج</td><td style="color: #fbbf24; font-weight:bold;">${test.totalProfit.toLocaleString()} ج</td></tr>`;
-    });
+    profitableOnly.slice(0, 20).forEach((test, index) => { html += `<tr><td style="color:var(--gold);">${index + 1}</td><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f;">${test.sell} ج</td><td style="color: #f87171;">${test.cost} ج</td><td style="color: #fbbf24;">${test.profitUnit} ج</td><td style="color: #fbbf24; font-weight:bold;">${test.totalProfit.toLocaleString()} ج</td></tr>`; });
     tbody.innerHTML = html;
   };
 
   window.renderNeedOffers = function() {
     const tbody = document.getElementById('needOffersTableBody'); if (!tbody) return;
     let data = getMergedData();
-    if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">لا توجد تطابق بين الأسماء في الملفين</td></tr>'; return; }
+    if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">لا توجد تطابق</td></tr>'; return; }
     let needs = data.filter(t => t.count < 5 && t.sell > 0);
     needs.sort((a, b) => a.count - b.count);
     let html = '';
-    needs.slice(0, 50).forEach((test) => {
-        html += `<tr><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f;">${test.sell} ج</td><td style="color: #f87171; font-weight:bold;">${test.count} مرات</td></tr>`;
-    });
+    needs.slice(0, 50).forEach((test) => { html += `<tr><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f;">${test.sell} ج</td><td style="color: #f87171; font-weight:bold;">${test.count} مرات</td></tr>`; });
     tbody.innerHTML = html;
   };
 
   window.renderLossMakers = function() {
     const tbody = document.getElementById('lossMakersTableBody'); if (!tbody) return;
     let data = getMergedData();
-    if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">لا توجد تطابق بين الأسماء في الملفين</td></tr>'; return; }
+    if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">لا توجد تطابق</td></tr>'; return; }
     let losers = data.filter(t => t.cost > t.sell);
     losers.sort((a, b) => a.profitUnit - b.profitUnit);
     let html = '';
-    losers.forEach((test) => {
-        html += `<tr><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f;">${test.sell} ج</td><td style="color: #f87171;">${test.cost} ج</td><td style="color: #ef4444; font-weight:bold;">${test.profitUnit} ج</td></tr>`;
-    });
+    losers.forEach((test) => { html += `<tr><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #00ff7f;">${test.sell} ج</td><td style="color: #f87171;">${test.cost} ج</td><td style="color: #ef4444; font-weight:bold;">${test.profitUnit} ج</td></tr>`; });
     tbody.innerHTML = html;
   };
 
+  /* ========== AI Assistant ========== */
   window.openAIAssistant = function() {
     const modal = document.getElementById('aiModal');
     const body = document.getElementById('aiModalBody');
     if (!modal || !body) return;
     modal.classList.add('show');
-    if (!salesWorkbook) { body.innerHTML = `<p style="color:#f87171; font-weight:bold;">⚠️ ارفع الملفات أولاً عشان المستشار يقدر يحلل.</p>`; return; }
-    let insights = `<p style="color:var(--primary-glow); font-weight:bold; font-size:1.1rem;">أهلاً يا دكتور أحمد! 👨‍⚕️</p><p>قمت بتحليل البيانات المتاحة:</p><ul style="line-height:2;">`;
+    if (!salesWorkbook) { body.innerHTML = `<p style="color:#f87171; font-weight:bold;">⚠️ ارفع الملفات أولاً.</p>`; return; }
+    let insights = `<p style="color:var(--primary-glow); font-weight:bold; font-size:1.1rem;">أهلاً يا دكتور أحمد! 👨‍⚕️</p><p>تحليل سريع للبيانات:</p><ul style="line-height:2;">`;
     const merged = getMergedData();
     if (merged.length > 0) {
       const totalProfit = merged.reduce((a, t) => a + t.totalProfit, 0);
       const losers = merged.filter(t => t.cost > t.sell).length;
-      insights += `<li>💼 إجمالي الربح المتوقع من التحاليل: <strong>${totalProfit.toLocaleString()} ج</strong></li>`;
-      insights += `<li>📊 عدد التحاليل المطابقة: <strong>${merged.length}</strong> تحليل</li>`;
-      if (losers > 0) insights += `<li style="color:#f87171;">⚠️ عندك <strong>${losers}</strong> تحليل خاسر — راجع صفحة "التحاليل الخاسرة"</li>`;
-    } else {
-      insights += `<li>ℹ️ محتاج ترفع ملف الأسعار كمان عشان أقدر أحلل الأرباح</li>`;
-    }
+      insights += `<li>💼 إجمالي الربح المتوقع: <strong>${totalProfit.toLocaleString()} ج</strong></li>`;
+      insights += `<li>📊 عدد التحاليل المطابقة: <strong>${merged.length}</strong></li>`;
+      if (losers > 0) insights += `<li style="color:#f87171;">⚠️ <strong>${losers}</strong> تحليل خاسر</li>`;
+    } else { insights += `<li>ℹ️ محتاج ترفع ملف الأسعار عشان أحلل الأرباح</li>`; }
     insights += `</ul><p style="text-align:center; margin-top:20px; color:var(--text-muted); font-size:0.9rem;">معامل طيبة دايماً في تقدم! 🚀</p>`;
     body.innerHTML = insights;
   };
