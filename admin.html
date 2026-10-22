@@ -56,20 +56,13 @@
       <h1>📊 لوحة التحكم</h1>
     </div>
     <div class="admin-header-right">
-      
-      <!-- v52: تاريخ آخر تحديث -->
       <div class="admin-last-updated" id="lastUpdatedText" title="تاريخ آخر رفع للملفات">📅 آخر تحديث: —</div>
-      
       <div class="storage-indicator" title="مساحة التخزين المستخدمة">
         <div class="storage-bar-bg"><div id="storageBar" class="storage-bar-fill"></div></div>
         <span id="storageText" class="storage-text">—</span>
       </div>
-      
       <span class="admin-user">👨‍⚕️ د/ أحمد طه</span>
-      
-      <!-- v52: زرار الوضع النهاري/الليلي -->
       <button class="admin-theme-btn" id="adminThemeToggle" onclick="toggleAdminTheme()" title="تغيير المظهر">☀️</button>
-      
       <button class="admin-logout" onclick="logoutAdmin()">خروج</button>
     </div>
   </header>
@@ -122,8 +115,12 @@
 
     <main class="admin-content">
       <section class="admin-section active" id="report-overview">
-        <div class="admin-section-head"><h2>📈 نظرة عامة على الأداء</h2></div>
+        <div class="admin-section-head">
+          <h2>📈 نظرة عامة على الأداء</h2>
+          <button class="btn-export" onclick="exportPDF('advisorReport', 'تقرير_المستشار')">📄 تصدير تقرير المستشار (PDF)</button>
+        </div>
         <div id="advisorReport"></div>
+        
         <div class="admin-section-head" style="margin-top:40px; padding-top:20px; border-top:2px dashed var(--border);">
           <h3 style="color:var(--text-muted); font-size:1.1rem; margin:0;">📊 الأرقام الإجمالية (مرجع)</h3>
         </div>
@@ -236,12 +233,27 @@
       </section>
 
       <section class="admin-section" id="report-financial">
-        <div class="admin-section-head"><h2>💰 التقرير الشهري</h2></div>
+        <div class="admin-section-head">
+          <h2>💰 التقرير الشهري</h2>
+          <button class="btn-export" onclick="exportTableToExcel('fin-table-export', 'التقرير_المالي')">📊 تصدير Excel</button>
+        </div>
         <div class="filter-group">
           <div><label>الفرع:</label><select id="branchSelector" onchange="renderFinancialReport()"><option value="combined">🏥 إجمالي الفرعين</option><option value="jaafara">🏥 فرع الجعافرة</option><option value="bahtim">🏥 فرع بهتيم</option></select></div>
           <div><label>السنة:</label><select id="yearSelector" onchange="renderFinancialReport()"><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option></select></div>
           <div><label>الشهر:</label><select id="monthSelector" onchange="renderFinancialReport()"><option value="all">كل السنة</option><option value="1">يناير</option><option value="2">فبراير</option><option value="3">مارس</option><option value="4">ابريل</option><option value="5">مايو</option><option value="6">يونيو</option><option value="7">يوليو</option><option value="8">اغسطس</option><option value="9">سبتمبر</option><option value="10">اكتوبر</option><option value="11">نوفمبر</option><option value="12">ديسمبر</option></select></div>
         </div>
+        
+        <div id="fin-table-export" style="display: none;">
+          <table class="fin-table">
+            <thead><tr><th>البيان</th><th>القيمة</th></tr></thead>
+            <tbody>
+              <tr><td>الإيراد</td><td id="ex-fin-revenue">0</td></tr>
+              <tr><td>المصروفات</td><td id="ex-fin-expenses">0</td></tr>
+              <tr><td>الربح</td><td id="ex-fin-profit">0</td></tr>
+            </tbody>
+          </table>
+        </div>
+
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
           <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border-glow); text-align: center;">
             <h4 style="color: var(--text-muted); font-size: 0.9rem;">إجمالي الإيراد</h4><div id="fin-revenue" style="font-size: 2rem; font-weight: bold; color: #00ff7f;">0</div>
@@ -257,14 +269,17 @@
       </section>
 
       <section class="admin-section" id="report-annual">
-        <div class="admin-section-head"><h2>📊 التقرير السنوي</h2></div>
+        <div class="admin-section-head">
+          <h2>📊 التقرير السنوي</h2>
+          <button class="btn-export" onclick="exportTableToExcel('annual-table-export', 'التقرير_السنوي')">📊 تصدير Excel</button>
+        </div>
         <div class="filter-group">
           <div><label>الفرع:</label><select id="annualBranchSelector" onchange="renderAnnualReport()"><option value="combined">🏥 إجمالي الفرعين</option><option value="jaafara">🏥 فرع الجعافرة</option><option value="bahtim">🏥 فرع بهتيم</option></select></div>
           <div><label>السنة:</label><select id="annualYearSelector" onchange="renderAnnualReport()"><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select></div>
         </div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 20px;">
           <div class="table-responsive">
-            <table class="fin-table">
+            <table class="fin-table" id="annual-table-export">
               <thead><tr><th>السنة</th><th>إجمالي الإيراد</th><th>إجمالي المصروفات</th><th>صافي الربح</th></tr></thead>
               <tbody id="annualTableBody"></tbody>
             </table>
@@ -283,7 +298,10 @@
       </section>
 
       <section class="admin-section" id="report-cases">
-        <div class="admin-section-head"><h2>👥 تحليل أعداد الحالات الشهرية</h2></div>
+        <div class="admin-section-head">
+          <h2>👥 تحليل أعداد الحالات الشهرية</h2>
+          <button class="btn-export" onclick="exportTableToExcel('cases-monthly-table', 'تحليل_الحالات')">📊 تصدير Excel</button>
+        </div>
         <div class="filter-group">
           <div><label>السنة:</label><select id="casesYearSelector" onchange="renderCaseAnalysis()"><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option></select></div>
           <div><label>الفرع:</label><select id="casesBranchSelector" onchange="renderCaseAnalysis()"><option value="combined">🏥 إجمالي الفرعين</option><option value="jaafara">🏥 فرع الجعافرة</option><option value="bahtim">🏥 فرع بهتيم</option></select></div>
@@ -298,7 +316,7 @@
         <div class="cases-section-card">
           <h4>📊 مقارنة شهرية (3 سنين)</h4>
           <div class="table-responsive">
-            <table class="fin-table">
+            <table class="fin-table" id="cases-monthly-table">
               <thead><tr><th>الشهر</th><th>2024</th><th>2025</th><th>2026</th><th>التغير (2026 vs 2025)</th></tr></thead>
               <tbody id="casesMonthlyTableBody"></tbody>
             </table>
@@ -346,11 +364,20 @@
       <section class="admin-section" id="report-bcg">
         <div class="admin-section-head">
           <h2>💎 تصنيف التحاليل (BCG Matrix)</h2>
+          <button class="btn-export" onclick="exportTableToExcel('bcg-full-export', 'تصنيف_BCG')">📊 تصدير Excel</button>
           <p>تقسيم التحاليل لـ 4 فئات على حسب المبيعات والربح</p>
         </div>
         <div id="bcgAlert" class="cases-alert" style="display:none;"></div>
         <div class="bcg-summary-grid" id="bcgSummaryGrid"></div>
         <div class="bcg-urgent-card" id="bcgUrgentCard"></div>
+        
+        <div id="bcg-full-export" style="display: none;">
+          <table class="fin-table">
+            <thead><tr><th>الفئة</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة</th><th>ربح/تحليل</th><th>إجمالي الربح</th></tr></thead>
+            <tbody id="bcgExportBody"></tbody>
+          </table>
+        </div>
+
         <div class="cases-section-card">
           <h4 style="color:#4ade80;">⭐ النجوم (Stars) — مبيعات عالية + ربح عالي</h4>
           <div class="table-responsive">
@@ -392,6 +419,7 @@
       <section class="admin-section" id="report-monthlyPlan">
         <div class="admin-section-head">
           <h2>📋 خطة الشهر — استراتيجية 3 شهور</h2>
+          <button class="btn-export" onclick="exportPDF('planContent', 'خطة_الشهر')">📄 تصدير الخطة (PDF)</button>
           <p id="planSubtitle">جاري التحميل...</p>
         </div>
         <div id="planContent"></div>
@@ -474,9 +502,11 @@
   </div>
 </div>
 
-<!-- CDN scripts with defer so they don't block first paint -->
+<!-- CDN scripts with defer -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js" defer></script>
+<!-- مكتبة تصدير الـ PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
 <script src="admin.js" defer></script>
 </body>
 </html>

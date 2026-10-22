@@ -1,8 +1,8 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v51 - Performance Package)
+   TEBA LABS - Service Worker (v53 - Sharing Package)
    ===================================================== */
 
-const CACHE_VERSION = 'v51';
+const CACHE_VERSION = 'v53'; // تم تحديث الإصدار
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
@@ -25,12 +25,14 @@ const PRECACHE_ASSETS = [
 const PRECACHE_CDN = [
   'https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap',
   'https://cdn.jsdelivr.net/npm/chart.js',
-  'https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js'
+  'https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js' // v53: مكتبة الـ PDF
 ];
 
 const CDN_ORIGINS = [
   'https://cdn.jsdelivr.net',
   'https://cdn.sheetjs.com',
+  'https://cdnjs.cloudflare.com',
   'https://fonts.googleapis.com',
   'https://fonts.gstatic.com'
 ];

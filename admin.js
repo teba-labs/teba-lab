@@ -1,5 +1,5 @@
 ﻿﻿/* =====================================================
-   TEBA LABS - Admin Logic (v52 - Light Mode & UX)
+   TEBA LABS - Admin Logic (v53 - Sharing Package)
    ===================================================== */
 
 (function(){
@@ -17,7 +17,7 @@
   const LOCK_DURATION = 15 * 60 * 1000;
   const DEFAULT_PASSWORD = 'teba2026admin';
   const MAX_FILE_SIZE = 20 * 1024 * 1024;
-  const BACKUP_VERSION = 'v52'; // Updated version
+  const BACKUP_VERSION = 'v53';
 
   let salesWorkbook = null;
   let pricesWorkbook = null;
@@ -29,7 +29,6 @@
     const isLight = document.body.classList.toggle('light-mode');
     localStorage.setItem('teba_admin_theme', isLight ? 'light' : 'dark');
     document.getElementById('adminThemeToggle').textContent = isLight ? '🌙' : '☀️';
-    // Update charts to match theme if they exist
     updateChartsTheme();
   };
 
@@ -48,14 +47,10 @@
     const isLight = document.body.classList.contains('light-mode');
     const textColor = isLight ? '#334155' : '#fff';
     const gridColor = isLight ? '#e2e8f0' : '#a8b5a8';
-    
-    // Update all active charts
     const charts = [window.ovChart, window.finChart, window.anRevChart, window.anProfChart, window.casesChartInst, window.expensePieJaafaraChart, window.expensePieBahtimChart];
     charts.forEach(chart => {
       if (!chart) return;
-      if (chart.options.plugins && chart.options.plugins.legend) {
-        chart.options.plugins.legend.labels.color = textColor;
-      }
+      if (chart.options.plugins && chart.options.plugins.legend) chart.options.plugins.legend.labels.color = textColor;
       if (chart.options.scales) {
         if (chart.options.scales.x) chart.options.scales.x.ticks.color = gridColor;
         if (chart.options.scales.y) chart.options.scales.y.ticks.color = gridColor;
@@ -63,6 +58,53 @@
       chart.update();
     });
   }
+
+  /* ============= v53: EXPORT LOGIC ============= */
+  window.exportPDF = function(elementId, filename) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    // تأكيد إن الشاشة مش فاضية
+    if (element.innerHTML.trim() === '' || element.innerHTML.includes('جاري التحميل')) {
+      alert('مفيش بيانات كفاية عشان ننزلها PDF. ارفع الملفات الأول.');
+      return;
+    }
+
+    showLoading('جاري تجهيز ملف PDF...');
+    
+    // إعدادات الـ PDF
+    const opt = {
+      margin:       [10, 10, 10, 10],
+      filename:     `${filename}_${new Date().toISOString().slice(0,10)}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // عمل الـ PDF من العنصر المطلوب
+    html2pdf().set(opt).from(element).save().then(() => {
+      hideLoading();
+    }).catch(err => {
+      hideLoading();
+      alert('حدث خطأ أثناء تصدير الـ PDF: ' + err.message);
+    });
+  };
+
+  window.exportTableToExcel = function(tableId, filename) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    
+    showLoading('جاري تجهيز ملف Excel...');
+    try {
+      // تحويل الجدول لملف إكسيل
+      const wb = XLSX.utils.table_to_book(table, {sheet: "التقرير"});
+      XLSX.writeFile(wb, `${filename}_${new Date().toISOString().slice(0,10)}.xlsx`);
+      hideLoading();
+    } catch (err) {
+      hideLoading();
+      alert('حدث خطأ أثناء تصدير الـ Excel: ' + err.message);
+    }
+  };
 
   /* ============= PERFORMANCE: CACHE LAYER ============= */
   const _monthCache = new Map();
@@ -338,7 +380,7 @@
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('adminDashboard').style.display = 'flex';
     await loadSavedDataFromDB();
-    updateLastUpdatedUI(); // v52
+    updateLastUpdatedUI();
     window.showReport('overview');
     if ('requestIdleCallback' in window) {
       requestIdleCallback(() => updateStorageIndicator(), { timeout: 2000 });
@@ -378,7 +420,7 @@
     try {
       salesWorkbook = null; pricesWorkbook = null; detailedWorkbook2025 = null; detailedWorkbook2026 = null;
       invalidateDataCache();
-      localStorage.removeItem('teba_last_upload_date'); // v52
+      localStorage.removeItem('teba_last_upload_date');
       const db = await openDB();
       const tx = db.transaction(STORE_NAME, 'readwrite');
       tx.objectStore(STORE_NAME).clear();
@@ -415,7 +457,6 @@
         if(type === 'detail2025') detailedWorkbook2025 = workbook;
         if(type === 'detail2026') detailedWorkbook2026 = workbook;
         
-        // v52: Save upload timestamp
         localStorage.setItem('teba_last_upload_date', Date.now());
         updateLastUpdatedUI();
         
@@ -449,21 +490,6 @@
       if(detail2026Buffer) { detailedWorkbook2026 = XLSX.read(detail2026Buffer, { type: 'array' }); const el = document.getElementById('uploadStatusDetail2026'); if (el) { el.className = 'upload-status success'; el.innerHTML = '✅ تفصيل 2026 محمل.'; } }
       hideLoading();
     } catch(e) { hideLoading(); console.log("لا توجد بيانات محفوظة.", e); }
-  }
-
-  function renderAllReports() {
-    renderOverview();
-    renderFinancialReport();
-    renderAnnualReport();
-    renderCaseAnalysis();
-    renderTopSellers();
-    renderMostProfitable();
-    renderLeastProfitable();
-    renderNeedOffers();
-    renderLossMakers();
-    renderExpenseBreakdown();
-    renderBCGMatrix();
-    renderMonthlyPlan();
   }
 
   function getSheetData(sheetKey) { if (!salesWorkbook) return []; const sheetName = salesWorkbook.SheetNames.find(n => n.includes(sheetKey)); if (!sheetName) return []; return XLSX.utils.sheet_to_json(salesWorkbook.Sheets[sheetName], { header: 1, defval: "" }); }
@@ -823,9 +849,16 @@
     let totalRev = 0, totalExp = 0;
     let branchesToProcess = selectedBranch === 'combined' ? ['الجعافرة', 'بهتيم'] : [selectedBranch === 'jaafara' ? 'الجعافرة' : 'بهتيم'];
     branchesToProcess.forEach(b => { let res = extractMonthData(selectedYear, selectedMonth, b); totalRev += res.rev; totalExp += res.exp; });
+    
     document.getElementById('fin-revenue').textContent = totalRev.toLocaleString('en-US') + ' ج';
     document.getElementById('fin-expenses').textContent = totalExp.toLocaleString('en-US') + ' ج';
     document.getElementById('fin-profit').textContent = (totalRev - totalExp).toLocaleString('en-US') + ' ج';
+    
+    // v53: Update hidden export table
+    document.getElementById('ex-fin-revenue').textContent = totalRev.toLocaleString('en-US') + ' ج';
+    document.getElementById('ex-fin-expenses').textContent = totalExp.toLocaleString('en-US') + ' ج';
+    document.getElementById('ex-fin-profit').textContent = (totalRev - totalExp).toLocaleString('en-US') + ' ج';
+
     const canvas = document.getElementById('financeChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -842,8 +875,10 @@
     let branchesToProcess = selectedBranch === 'combined' ? ['الجعافرة', 'بهتيم'] : [selectedBranch === 'jaafara' ? 'الجعافرة' : 'بهتيم'];
     branchesToProcess.forEach(b => { let res = extractYearData(selectedYear, b); finalRev += res.rev; finalExp += res.exp; });
     document.getElementById('annualTableBody').innerHTML = `<tr><td style="color:var(--gold);">${selectedYear}</td><td style="color:#16a34a;">${finalRev.toLocaleString()} ج</td><td style="color:#dc2626;">${finalExp.toLocaleString()} ج</td><td style="color:#d97706;">${(finalRev - finalExp).toLocaleString()} ج</td></tr>`;
+    
     let labels = ['2024', '2025', '2026'], revs = [], exps = [], profits = [];
     labels.forEach(yr => { let yRev = 0, yExp = 0; branchesToProcess.forEach(b => { let r = extractYearData(yr, b); yRev += r.rev; yExp += r.exp; }); revs.push(yRev); exps.push(yExp); profits.push(yRev - yExp); });
+    
     const revCanvas = document.getElementById('annualRevChart'); if (!revCanvas) return;
     const revCtx = revCanvas.getContext('2d');
     if (window.anRevChart) window.anRevChart.destroy();
@@ -1052,6 +1087,18 @@
     fillBCGTable('bcgCashCowsTable', seg.cashCows, '#0284c7');
     fillBCGTable('bcgQuestionsTable', seg.questions, '#d97706');
     fillBCGTable('bcgDogsTable', seg.dogs, '#dc2626');
+    
+    // v53: Fill Export Table
+    const exportBody = document.getElementById('bcgExportBody');
+    if (exportBody) {
+      let exportHtml = '';
+      const addRows = (arr, catName) => arr.forEach(t => { exportHtml += `<tr><td>${catName}</td><td>${t.name}</td><td>${t.count}</td><td>${t.sell}</td><td>${t.cost}</td><td>${t.profitUnit}</td><td>${t.totalProfit}</td></tr>`; });
+      addRows(seg.stars, 'نجوم');
+      addRows(seg.cashCows, 'أحصنة');
+      addRows(seg.questions, 'علامات استفهام');
+      addRows(seg.dogs, 'كلاب');
+      exportBody.innerHTML = exportHtml;
+    }
   };
 
   function extractExpenseBreakdown(year, month, branch) {
@@ -1227,7 +1274,7 @@
   window.closeAIAssistant = function() { const modal = document.getElementById('aiModal'); if (modal) modal.classList.remove('show'); };
 
   /* ============= INIT ============= */
-  initTheme(); // v52: تفعيل المظهر قبل الدخول
+  initTheme();
   
   if(isSessionValid()) showDashboard();
   const passInput = document.getElementById('adminPassword');
