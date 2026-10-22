@@ -262,6 +262,7 @@
     if(reportName === 'expenseBreakdown') renderExpenseBreakdown();
     if(reportName === 'bcg') renderBCGMatrix();
     if(reportName === 'monthlyPlan') renderMonthlyPlan();
+    if(reportName === 'consultant') renderConsultant();
     if(reportName === 'topSellers') renderTopSellers();
     if(reportName === 'mostProfitable') renderMostProfitable();
     if(reportName === 'leastProfitable') renderLeastProfitable();
@@ -399,6 +400,7 @@
     renderExpenseBreakdown();
     renderBCGMatrix();
     renderMonthlyPlan();
+    renderConsultant();
   }
 
   function getSheetData(sheetKey) { if (!salesWorkbook) return []; const sheetName = salesWorkbook.SheetNames.find(n => n.includes(sheetKey)); if (!sheetName) return []; return XLSX.utils.sheet_to_json(salesWorkbook.Sheets[sheetName], { header: 1, defval: "" }); }
@@ -719,6 +721,131 @@
     const strategy3 = buildStrategy(ctx, monthsAr[plan3.month - 1]);
     const strategyHtml = `<div class="plan-strategy-grid"><div class="plan-strategy-card"><div class="plan-strategy-title">🎯 استراتيجية ${monthsAr[plan2.month - 1]} ${plan2.year}</div><ul class="plan-strategy-points">${strategy2.map(s => `<li>${s}</li>`).join('')}</ul></div><div class="plan-strategy-card"><div class="plan-strategy-title">🎯 استراتيجية ${monthsAr[plan3.month - 1]} ${plan3.year}</div><ul class="plan-strategy-points">${strategy3.map(s => `<li>${s}</li>`).join('')}</ul></div></div>`;
     container.innerHTML = summaryHtml + kpiHtml + indicatorsHtml + weeklyHtml + tasksHtml + strategyHtml;
+  };
+
+  /* ============= المستشار الاستراتيجي (v5) ============= */
+  window.renderConsultant = function() {
+    const container = document.getElementById('consultantReport');
+    if (!container) return;
+    
+    if (!salesWorkbook) { 
+      container.innerHTML = `<div class="advisor-card"><div class="advisor-card-body">⚠️ ارفع ملف المتابعة السنوية أولاً عشان المستشار يشتغل.</div></div>`; 
+      return; 
+    }
+    
+    const ref = findLatestReportMonth();
+    if (!ref) { 
+      container.innerHTML = `<div class="advisor-card"><div class="advisor-card-body">ℹ️ مفيش بيانات شهرية كافية.</div></div>`; 
+      return; 
+    }
+
+    const monthsAr = ['يناير','فبراير','مارس','ابريل','مايو','يونيو','يوليو','اغسطس','سبتمبر','اكتوبر','نوفمبر','ديسمبر'];
+    const refJ = extractMonthData(ref.year, ref.month, 'الجعافرة');
+    const refB = extractMonthData(ref.year, ref.month, 'بهتيم');
+    const refRev = refJ.rev + refB.rev;
+    const refExp = refJ.exp + refB.exp;
+    const refProfit = refRev - refExp;
+    const refCases = refJ.cases + refB.cases;
+    const refMargin = refRev > 0 ? (refProfit / refRev * 100) : 0;
+    const refExpRatio = refRev > 0 ? (refExp / refRev * 100) : 0;
+    const avgInvoice = refCases > 0 ? (refRev / refCases) : 0;
+
+    let prevM = ref.month - 1, prevY = ref.year;
+    if (prevM < 1) { prevM = 12; prevY--; }
+    const pJ = extractMonthData(prevY, prevM, 'الجعافرة');
+    const pB = extractMonthData(prevY, prevM, 'بهتيم');
+    const prevRev = pJ.rev + pB.rev;
+    const prevExp = pJ.exp + pB.exp;
+    
+    const merged = getMergedData();
+    const losingTests = merged.filter(t => t.cost > t.sell && t.count > 0).sort((a,b) => a.profitUnit - b.profitUnit);
+    const topProfitable = [...merged].sort((a,b) => b.totalProfit - a.totalProfit).slice(0, 3);
+    const topSellers = [...merged].sort((a,b) => b.count - a.count).slice(0, 3);
+
+    // حساب بعض النسب
+    const expMoM = growthInfo(refExp, prevExp);
+    const revMoM = growthInfo(refRev, prevRev);
+    const refJMargin = refJ.rev > 0 ? ((refJ.rev - refJ.exp) / refJ.rev * 100) : 0;
+    const refBMargin = refB.rev > 0 ? ((refB.rev - refB.exp) / refB.rev * 100) : 0;
+
+    let html = `
+      <div class="advisor-card" style="border-right: 5px solid var(--primary-glow);">
+        <div class="advisor-card-title">👨‍⚕️ تقرير المستشار الاستراتيجي — ${monthsAr[ref.month - 1]} ${ref.year}</div>
+        <div class="advisor-card-body">
+          أهلاً يا دكتور أحمد. أنا المستشار بتاعك. قعدت أقرأ في أرقام شهر <strong>${monthsAr[ref.month - 1]}</strong>، ودي خلاصة اللي فهمته، والتوصيات اللي شايفها ليك عشان الشهر الجاي:
+        </div>
+      </div>
+
+      <div class="cases-section-card">
+        <h4>📊 أولاً: قراءة سريعة في الأرقام</h4>
+        <ul class="plan-strategy-points">
+          <li><strong>الإيراد:</strong> حققت <strong>${refRev.toLocaleString()} ج</strong> (${revMoM.icon} ${revMoM.label} عن الشهر اللي فات).</li>
+          <li><strong>المصاريف:</strong> صرفت <strong>${refExp.toLocaleString()} ج</strong> (${expMoM.icon} ${expMoM.label} عن الشهر اللي فات).</li>
+          <li><strong>صافي الربح:</strong> <strong>${refProfit.toLocaleString()} ج</strong> (هامش ربح ${refMargin.toFixed(1)}%).</li>
+          <li><strong>متوسط الفاتورة:</strong> الحالة الواحدة بتجيبلك <strong>${Math.round(avgInvoice)} ج</strong>.</li>
+        </ul>
+      </div>
+
+      <div class="cases-section-card">
+        <h4>🏥 ثانياً: مين شايل ومين بيشد لتحت؟</h4>
+        <ul class="plan-strategy-points">
+    `;
+
+    if (refJMargin > refBMargin) {
+      html += `<li>✅ <strong>فرع الجعافرة هو نجم الشهر:</strong> هامش ربحه ${refJMargin.toFixed(1)}%، وده ممتاز. لازم نبص على تجربته ونطبقها في بهتيم.</li>`;
+      html += `<li>⚠️ <strong>فرع بهتيم محتاج وقفة:</strong> هامش ربحه ${refBMargin.toFixed(1)}% بس. لو الإيراد هناك مش عالي، يبقى المصاريف الثابتة هناك بتبلع الربح.</li>`;
+    } else {
+      html += `<li>✅ <strong>فرع بهتيم هو نجم الشهر:</strong> هامش ربحه ${refBMargin.toFixed(1)}%. عاش جداً.</li>`;
+      html += `<li>⚠️ <strong>فرع الجعافرة محتاج وقفة:</strong> هامش ربحه ${refJMargin.toFixed(1)}% بس. راجع مصاريف الجعافرة (الكيماويات أو المعمل الخارجي).</li>`;
+    }
+
+    html += `
+        </ul>
+      </div>
+
+      <div class="cases-section-card">
+        <h4>💎 ثالثاً: التحاليل اللي بتعملك فلوس.. واللي بتخسرك</h4>
+        <ul class="plan-strategy-points">
+    `;
+
+    if (losingTests.length > 0) {
+      html += `<li>🚨 <strong>عندك ${losingTests.length} تحليل بيخسروا:</strong> أخطرهم "${losingTests[0].name}" (بتخسر فيه ${Math.abs(losingTests[0].profitUnit)} ج كل مرة). لازم ترفع سعره أو توقفه فوراً.</li>`;
+    } else {
+      html += `<li>✅ <strong>مفيش تحاليل خاسرة:</strong> كل أسعارك مغطية التكلفة وزيادة. استمر.</li>`;
+    }
+
+    if (topProfitable.length > 0) {
+      html += `<li>💰 <strong>أعلى 3 تحاليل في الربح:</strong> ${topProfitable.map(t => `"${t.name}"`).join('، ')}. لازم نعملهم عروض ونشجع الدكاترة يطلبوهم عشان يرفعوا إيرادك.</li>`;
+    }
+
+    html += `
+        </ul>
+      </div>
+
+      <div class="bcg-urgent-card" style="background: linear-gradient(135deg, rgba(251,191,36,0.1), rgba(0,255,127,0.1)); border-color: #fbbf24;">
+        <h4 style="color: #fbbf24;">🎯 رابعاً: خطة العمل الفورية (الشهر الجاي)</h4>
+        <ul style="padding-right: 20px; line-height: 2; font-size: 0.95rem;">
+    `;
+
+    if (refMargin < 35) {
+      html += `<li>📉 <strong>الهامش بتاعك أقل من 35%، ده خطر:</strong> لازم تقلل مصاريفك 10% الشهر الجاي (راجع فاتورة الكيماويات أو المعمل الخارجي).</li>`;
+    } else {
+      html += `<li>📈 <strong>الهامش بتاعك كويس (${refMargin.toFixed(1)}%):</strong> ركز على زيادة عدد الحالات عن طريق عروض الباقات عشان تزود الإيراد.</li>`;
+    }
+
+    if (refExpRatio > 60) {
+      html += `<li>💸 <strong>المصاريف بتاخد ${refExpRatio.toFixed(1)}% من الإيراد:</strong> ده رقم عالي. حاول تتفاوض مع موردين الكيماويات، وشوف المعمل الخارجي فين بياخد فلوس أكتر من اللازم.</li>`;
+    }
+
+    html += `<li>🏥 <strong>أضعف فرع (${refJMargin < refBMargin ? 'الجعافرة' : 'بهتيم'}):</strong> اعمل حملة تسويق مخصصة للفرع ده الشهر الجاي (اعلانات ممولة، أو عروض سحب من المنزل للمنطقة دي).</li>`;
+    html += `<li>🧪 <strong>التحاليل النايمة:</strong> خلي الاستقبال يعرض على كل مريض تحليل "فيتامين د3" أو "السكر التراكمي" كإضافة (Upsell)، ده هيزود الفاتورة 15% من غير مجهود.</li>`;
+
+    html += `
+        </ul>
+      </div>
+    `;
+
+    container.innerHTML = html;
   };
 
   function renderOverview() {

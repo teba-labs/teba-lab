@@ -92,6 +92,7 @@
       <h3>📋 التخطيط والتنفيذ</h3>
       <ul class="admin-nav">
         <li><button data-report="monthlyPlan" onclick="showReport('monthlyPlan')">📋 خطة الشهر</button></li>
+        <li><button data-report="consultant" onclick="showReport('consultant')">🧠 المستشار الاستراتيجي</button></li>
       </ul>
       <h3>📢 التسويق والدعاية</h3>
       <ul class="admin-nav">
@@ -386,6 +387,15 @@
           <p id="planSubtitle">جاري التحميل...</p>
         </div>
         <div id="planContent"></div>
+      </section>
+
+      <!-- قسم المستشار الاستراتيجي الجديد -->
+      <section class="admin-section" id="report-consultant">
+        <div class="admin-section-head">
+          <h2>🧠 المستشار الاستراتيجي</h2>
+          <p>تحليل شامل لأداء المعمل وتوصيات مباشرة للشهر القادم</p>
+        </div>
+        <div id="consultantReport"></div>
       </section>
 
       <section class="admin-section" id="report-topSellers">
