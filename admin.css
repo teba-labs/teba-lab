@@ -1,4 +1,4 @@
-﻿.admin-body { background-color: var(--bg); background-image: var(--bg-body-image); background-attachment: fixed; color: var(--text); font-family: var(--font); min-height: 100vh; }
+﻿﻿.admin-body { background-color: var(--bg); background-image: var(--bg-body-image); background-attachment: fixed; color: var(--text); font-family: var(--font); min-height: 100vh; }
 
 /* ============= 1. شاشة الدخول ============= */
 .login-screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 30%, rgba(0,255,127,.1), transparent 60%), var(--bg); z-index: 9999; padding: 20px; }
@@ -129,7 +129,42 @@ body.light-mode .admin-header { background: rgba(253,252,247,.98); }
 .bcg-urgent-card { background: linear-gradient(135deg, rgba(220,38,38,0.08), rgba(251,191,36,0.08)); border: 2px solid #f87171; border-radius: 18px; padding: 20px; margin-bottom: 20px; }
 .bcg-urgent-card h4 { color: #f87171; margin-bottom: 15px; font-size: 1.05rem; }
 
-/* ============= 13. الموبايل ============= */
+/* ============= 13. تقرير المستشار الشهري (المرحلة 3) ============= */
+.advisor-card { background: linear-gradient(135deg, rgba(0,255,127,0.08), rgba(0,191,255,0.08)); border: 2px solid var(--border-glow); border-radius: 20px; padding: 25px; margin-bottom: 20px; position: relative; overflow: hidden; }
+.advisor-card::before { content: '👨‍⚕️'; position: absolute; top: -20px; left: 20px; font-size: 6rem; opacity: 0.05; pointer-events: none; }
+.advisor-card-title { color: var(--primary-glow); font-size: 1.2rem; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.advisor-card-body { color: var(--text); font-size: 0.95rem; line-height: 1.9; }
+.advisor-card-body strong { color: var(--gold); }
+.advisor-period-badge { display: inline-block; background: var(--btn-primary-bg); color: #fff; padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 800; }
+.advisor-period-note { background: rgba(251,191,36,0.1); border: 1px solid #fbbf24; color: #fbbf24; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.7; }
+.advisor-rec-list { margin-top: 15px; padding: 0; list-style: none; }
+.advisor-rec-item { background: rgba(0,0,0,0.2); border-right: 4px solid var(--primary-glow); border-radius: 8px; padding: 12px 15px; margin-bottom: 10px; font-size: 0.9rem; line-height: 1.7; }
+.advisor-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 15px; padding: 20px; margin-bottom: 20px; }
+.advisor-section h4 { color: var(--text-strong); font-size: 1rem; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+.advisor-compare-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+.advisor-compare-card { background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 12px; padding: 15px; text-align: center; }
+.advisor-compare-label { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+.advisor-compare-value { font-size: 1.3rem; font-weight: 800; margin-bottom: 5px; }
+.advisor-compare-growth { font-size: 0.85rem; font-weight: 700; }
+.advisor-compare-profit { margin-top: 8px; font-size: 0.8rem; color: #fbbf24; font-weight: 600; }
+.advisor-branch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.advisor-branch-card { background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 12px; padding: 15px; }
+.advisor-branch-card h5 { color: var(--primary-glow); margin-bottom: 12px; font-size: 0.95rem; text-align: center; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; }
+.advisor-branch-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.88rem; border-bottom: 1px dashed var(--border); }
+.advisor-branch-row:last-child { border-bottom: none; }
+.advisor-tests-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+.advisor-test-card { background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 12px; padding: 15px; }
+.advisor-test-card h5 { font-size: 0.9rem; margin-bottom: 12px; text-align: center; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.advisor-test-item { padding: 8px 0; font-size: 0.85rem; border-bottom: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.advisor-test-item:last-child { border-bottom: none; }
+.advisor-test-name { flex: 1; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.advisor-test-value { font-weight: 700; font-size: 0.8rem; white-space: nowrap; }
+.advisor-alert-critical { background: linear-gradient(135deg, rgba(220,38,38,0.15), rgba(251,191,36,0.1)); border: 2px solid #f87171; border-radius: 15px; padding: 18px; margin-bottom: 20px; }
+.advisor-alert-critical h4 { color: #f87171; margin-bottom: 12px; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+.advisor-alert-item { background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 8px; margin-bottom: 8px; font-size: 0.88rem; line-height: 1.7; }
+.advisor-alert-item:last-child { margin-bottom: 0; }
+
+/* ============= 14. الموبايل ============= */
 @media (max-width: 900px) {
   .admin-menu-btn { display: grid; place-items: center; }
   .admin-layout { grid-template-columns: 1fr; }
@@ -149,6 +184,11 @@ body.light-mode .admin-header { background: rgba(253,252,247,.98); }
   .forecast-card { padding: 18px; }
   .bcg-summary-grid { grid-template-columns: 1fr; }
   .bcg-count { font-size: 1.6rem; }
+  .advisor-card { padding: 18px; }
+  .advisor-compare-grid { grid-template-columns: 1fr; }
+  .advisor-branch-grid { grid-template-columns: 1fr; }
+  .advisor-tests-grid { grid-template-columns: 1fr; }
+  .advisor-compare-value { font-size: 1.1rem; }
 }
 @media (min-width: 901px) {
   .sidebar-header-mobile { display: none; }

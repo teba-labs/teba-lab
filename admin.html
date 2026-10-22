@@ -85,6 +85,14 @@
       
       <section class="admin-section active" id="report-overview">
         <div class="admin-section-head"><h2>📈 نظرة عامة على الأداء</h2></div>
+        
+        <!-- المرحلة 3: تقرير المستشار الشهري -->
+        <div id="advisorReport"></div>
+        
+        <div class="admin-section-head" style="margin-top:40px; padding-top:20px; border-top:2px dashed var(--border);">
+          <h3 style="color:var(--text-muted); font-size:1.1rem; margin:0;">📊 الأرقام الإجمالية (مرجع)</h3>
+        </div>
+        
         <div id="overviewAlert" style="background: rgba(0,255,127,0.1); border: 1px solid var(--border-glow); color: var(--primary-glow); padding: 15px; border-radius: 12px; margin-bottom: 20px; font-weight: bold; display: none;"></div>
         <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
           <div class="kpi-card" style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border-glow); text-align: center;">
@@ -280,9 +288,6 @@
         </div>
       </section>
 
-      <!-- ================================================ -->
-      <!-- المرحلة 2: تصنيف التحاليل BCG -->
-      <!-- ================================================ -->
       <section class="admin-section" id="report-bcg">
         <div class="admin-section-head">
           <h2>💎 تصنيف التحاليل (BCG Matrix)</h2>
