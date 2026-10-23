@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Admin Logic (v55 - Multi-Branch True Cost)
+   TEBA LABS - Admin Logic (v56 - DeepSeek & PWA)
    ===================================================== */
 
 (function(){
@@ -17,7 +17,7 @@
   const LOCK_DURATION = 15 * 60 * 1000;
   const DEFAULT_PASSWORD = 'teba2026admin';
   const MAX_FILE_SIZE = 20 * 1024 * 1024;
-  const BACKUP_VERSION = 'v55';
+  const BACKUP_VERSION = 'v56';
 
   let salesWorkbook = null;
   let pricesWorkbook = null;
@@ -407,13 +407,12 @@
   }
 
   // =====================================================
-  // v55: المعادلة الجديدة لحساب التكلفة لكل فرع
+  // v56: المعادلة الجديدة لحساب التكلفة لكل فرع
   // =====================================================
   function getMergedData(branchFilter = 'combined') {
     if (_mergedCache[branchFilter]) return _mergedCache[branchFilter];
     if (!pricesWorkbook) return [];
     
-    // 1. قراءة ملف الأسعار (موحد للفرعين)
     const priceSheetName = pricesWorkbook.SheetNames.find(n => n.includes('التحاليل')) || pricesWorkbook.SheetNames[0];
     const priceData = XLSX.utils.sheet_to_json(pricesWorkbook.Sheets[priceSheetName], { header: 1, defval: "" });
     const priceMap = {};
@@ -479,7 +478,6 @@
       return res.list;
     } 
     else {
-      // Combined
       const resJ = calcBranch('الجعافرة', dJ.exp);
       const resB = calcBranch('بهتيم', dB.exp);
       
@@ -497,8 +495,6 @@
       });
       
       map.forEach(t => {
-        // في الدمج بنعيد حساب التكلفة الحقيقية للواحد بناءً على إجمالي الربح / إجمالي العدد
-        // أو بنسيب تكلفة الجعافرة (لأنها غالباً شبه بهتيم). الأفضل نحسبها كمتوسط.
         t.trueProfitUnit = t.count > 0 ? t.trueTotalProfit / t.count : 0;
         t.trueCost = t.sell - t.trueProfitUnit;
         combinedList.push(t);
@@ -508,6 +504,7 @@
       return combinedList;
     }
   }
+
   window.renderMonthlyAdvisor = function() {
     const container = document.getElementById('advisorReport');
     if (!container) return;
@@ -548,7 +545,6 @@
     else if (margin > 55) recs.push(`✅ <strong>هامش الربح ${margin.toFixed(1)}%</strong> — ممتاز! حافظ على التكاليف.`);
     else recs.push(`💰 <strong>هامش الربح ${margin.toFixed(1)}%</strong> — كويس، ممكن يتحسن.`);
     
-    // في المستشار بنعرض الإجمالي عشان يديك نظرة شاملة
     const merged = getMergedData('combined');
     if (merged.length > 0) { 
       const topProfitable = [...merged].sort((a, b) => b.trueTotalProfit - a.trueTotalProfit)[0]; 
@@ -1126,7 +1122,6 @@
 
   window.renderTopSellers = function() {
     const tbody = document.getElementById('topSellersTableBody'); if (!tbody) return;
-    // Top sellers specific to the main page (we show combined by default here, or we can just show jaafara + bahtim combined by recalculating)
     const dataJ = getTestMovementData('الجعافرة');
     const dataB = getTestMovementData('بهتيم');
     const combinedTests = {};
@@ -1209,6 +1204,87 @@
 
   window.closeAIAssistant = function() { const modal = document.getElementById('aiModal'); if (modal) modal.classList.remove('show'); };
 
+  /* ============= AI COPY REPORT LOGIC (DeepSeek) ============= */
+  window.copyAIReport = function(type) {
+    if (!salesWorkbook) {
+      alert('⚠️ لازم ترفع الملفات الأول عشان أقدر أطلع تقرير.');
+      return;
+    }
+
+    const period = findLatestReportMonth();
+    if (!period) return;
+
+    const monthsAr = ['يناير','فبراير','مارس','ابريل','مايو','يونيو','يوليو','اغسطس','سبتمبر','اكتوبر','نوفمبر','ديسمبر'];
+    const monthName = monthsAr[period.month - 1];
+    
+    const currJ = extractMonthData(period.year, period.month, 'الجعافرة');
+    const currB = extractMonthData(period.year, period.month, 'بهتيم');
+    const currRev = currJ.rev + currB.rev;
+    const currExp = currJ.exp + currB.exp;
+    const currProfit = currRev - currExp;
+    const margin = currRev > 0 ? (currProfit / currRev * 100).toFixed(1) : 0;
+    
+    const merged = getMergedData('combined');
+    const topProfitable = [...merged].sort((a, b) => b.trueTotalProfit - a.trueTotalProfit).slice(0, 5);
+    const losingTests = merged.filter(t => t.trueCost > t.sell && t.count > 0).sort((a, b) => a.trueProfitUnit - b.trueProfitUnit).slice(0, 5);
+
+    let prompt = `أهلاً DeepSeek. أنت الآن "مستشار مالي واستراتيجي" خبير في إدارة المعامل الطبية. أنا الدكتور أحمد طه، صاحب "معامل طيبة".\n`;
+    prompt += `أحتاج منك تحليل شامل ودراسة استراتيجية بناءً على بيانات شهر [${monthName} ${period.year}] التالية:\n\n`;
+    
+    prompt += `📊 **[1] الملخص المالي والأداء العام:**\n`;
+    prompt += `- إجمالي الإيراد: ${currRev.toLocaleString()} جنيه.\n`;
+    prompt += `- إجمالي المصاريف: ${currExp.toLocaleString()} جنيه.\n`;
+    prompt += `- صافي الربح: ${currProfit.toLocaleString()} جنيه (هامش ربح ${margin}%).\n\n`;
+
+    prompt += `🏥 **[2] مقارنة الفروع:**\n`;
+    prompt += `- فرع الجعافرة: إيراد ${currJ.rev.toLocaleString()} ج، مصاريف ${currJ.exp.toLocaleString()} ج، حالات ${currJ.cases.toLocaleString()}.\n`;
+    prompt += `- فرع بهتيم: إيراد ${currB.rev.toLocaleString()} ج، مصاريف ${currB.exp.toLocaleString()} ج، حالات ${currB.cases.toLocaleString()}.\n\n`;
+
+    prompt += `💎 **[3] أفضل 5 تحاليل (الأكثر ربحاً صافياً - بعد خصم التكلفة الحقيقية والثوابت):**\n`;
+    topProfitable.forEach((t, i) => {
+      prompt += `${i+1}. ${t.name}: ربح صافي (${t.trueProfitUnit.toFixed(1)} ج) للتحليل، إجمالي ربح (${t.trueTotalProfit.toLocaleString()} ج) من ${t.count} حالة.\n`;
+    });
+    prompt += `\n`;
+
+    if (losingTests.length > 0) {
+      prompt += `🚨 **[4] تحاليل خاسرة (سعرها أقل من تكلفتها الحقيقية):**\n`;
+      losingTests.forEach((t, i) => {
+        prompt += `${i+1}. ${t.name}: سعر البيع ${t.sell} ج، التكلفة الحقيقية ${t.trueCost.toFixed(1)} ج (خسارة ${Math.abs(t.trueProfitUnit).toFixed(1)} ج/تحليل).\n`;
+      });
+      prompt += `\n`;
+    }
+
+    if (type === 'plan') {
+      prompt += `🎯 **المطلوب منك كخبير:**\n`;
+      prompt += `بناءً على هذه البيانات، ضع لي "خطة عمل استراتيجية للشهر القادم" في نقاط واضحة تشمل:\n`;
+      prompt += `1. كيف أزيد هامش الربح الحالي (${margin}%)؟\n`;
+      prompt += `2. كيف أتعامل مع التحاليل الخاسرة؟ وكيف أروج للأكثر ربحاً؟\n`;
+      prompt += `3. بناءً على مقارنة الفروع، أين يجب أن أركز جهدي التسويقي؟\n`;
+      prompt += `4. 3 قرارات إدارية عاجلة يجب أن أتخذها فوراً.\n`;
+      prompt += `أرجو أن يكون الرد باللغة العربية، عملياً ومباشراً وبدون مقدمات.`;
+    } else {
+      prompt += `🎯 **المطلوب منك كخبير:**\n`;
+      prompt += `حلل هذه الأرقام بموضوعية، وأعطني "رسالة مستشار" تلخص وضع المعمل الحالي، مع إبراز نقطة قوة واحدة يجب الاستمرار عليها، ونقطة ضعف واحدة يجب إصلاحها فوراً.`;
+    }
+
+    // نسخ النص
+    navigator.clipboard.writeText(prompt).then(() => {
+      const toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg, #4d6bfe, #3b5bdb);color:#fff;padding:15px 30px;border-radius:12px;font-weight:bold;font-size:1.1rem;z-index:999999;box-shadow:0 10px 30px rgba(0,0,0,0.5);text-align:center;direction:rtl;';
+      toast.innerHTML = `✅ تم نسخ التقرير بنجاح!<br><span style="font-size:0.85rem;font-weight:normal;opacity:0.9;">افتح DeepSeek والصق النص (Paste) هناك.</span>`;
+      
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        window.open('https://chat.deepseek.com', '_blank');
+      }, 500);
+
+      setTimeout(() => toast.remove(), 4000);
+    }).catch(err => {
+      alert('❌ فشل نسخ النص. المتصفح قد لا يدعم هذه الميزة. الخطأ: ' + err);
+    });
+  };
+
   /* ============= INIT ============= */
   initTheme();
   
@@ -1223,6 +1299,7 @@
       sessionStorage.setItem(SESSION_TS_KEY, String(Date.now()));
     }, { passive: true });
   });
+
   /* ============= PWA INSTALL LOGIC ============= */
   let deferredPrompt;
   window.addEventListener('beforeinstallprompt', (e) => {

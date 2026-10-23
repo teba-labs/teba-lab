@@ -54,6 +54,7 @@
       <button class="admin-logout" onclick="logoutAdmin()">خروج</button>
     </div>
   </header>
+
   <div id="mobileOverlay" class="sidebar-overlay" onclick="toggleAdminSidebar()"></div>
 
   <div class="admin-layout">
@@ -104,7 +105,10 @@
       <section class="admin-section active" id="report-overview">
         <div class="admin-section-head">
           <h2>📈 نظرة عامة على الأداء</h2>
-          <button class="btn-export" onclick="exportPDF('advisorReport', 'تقرير_المستشار')">📄 تصدير تقرير المستشار (PDF)</button>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn-export" onclick="exportPDF('advisorReport', 'تقرير_المستشار')">📄 تصدير تقرير المستشار (PDF)</button>
+            <button class="btn-export" style="background: linear-gradient(135deg, #4d6bfe, #3b5bdb); box-shadow: 0 4px 15px rgba(77, 107, 254, 0.3);" onclick="copyAIReport('overview')">🤖 نسخ التقرير لـ DeepSeek</button>
+          </div>
         </div>
         <div id="advisorReport"></div>
         
@@ -415,7 +419,10 @@
       <section class="admin-section" id="report-monthlyPlan">
         <div class="admin-section-head">
           <h2>📋 خطة الشهر — استراتيجية 3 شهور</h2>
-          <button class="btn-export" onclick="exportPDF('planContent', 'خطة_الشهر')">📄 تصدير الخطة (PDF)</button>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn-export" onclick="exportPDF('planContent', 'خطة_الشهر')">📄 تصدير الخطة (PDF)</button>
+            <button class="btn-export" style="background: linear-gradient(135deg, #4d6bfe, #3b5bdb); box-shadow: 0 4px 15px rgba(77, 107, 254, 0.3);" onclick="copyAIReport('plan')">🤖 نسخ الخطة لـ DeepSeek</button>
+          </div>
           <p id="planSubtitle">جاري التحميل...</p>
         </div>
         <div id="planContent"></div>
@@ -538,7 +545,8 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
 <script src="admin.js" defer></script>
-  <!-- Service Worker Registration for PWA -->
+
+<!-- Service Worker Registration for PWA -->
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
@@ -552,5 +560,6 @@
     });
   }
 </script>
+
 </body>
 </html>
