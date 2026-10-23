@@ -1204,7 +1204,7 @@
 
   window.closeAIAssistant = function() { const modal = document.getElementById('aiModal'); if (modal) modal.classList.remove('show'); };
 
-  /* ============= AI COPY REPORT LOGIC (DeepSeek) ============= */
+  /* ============= AI COPY REPORT LOGIC (DeepSeek)     /* ============= AI COPY REPORT LOGIC (DeepSeek Advanced) ============= */
   window.copyAIReport = function(type) {
     if (!salesWorkbook) {
       alert('⚠️ لازم ترفع الملفات الأول عشان أقدر أطلع تقرير.');
@@ -1217,6 +1217,21 @@
     const monthsAr = ['يناير','فبراير','مارس','ابريل','مايو','يونيو','يوليو','اغسطس','سبتمبر','اكتوبر','نوفمبر','ديسمبر'];
     const monthName = monthsAr[period.month - 1];
     
+    // 1. جمع البيانات التاريخية (3 سنين)
+    let historyText = "";
+    [2024, 2025, 2026].forEach(y => {
+      let yRev = 0, yExp = 0, yCases = 0;
+      ['الجعافرة', 'بهتيم'].forEach(b => {
+        let r = extractYearData(y, b);
+        yRev += r.rev; yExp += r.exp;
+        yCases += extractMonthData(y, 'all', b).cases;
+      });
+      if (yRev > 0 || yCases > 0) {
+        historyText += `- سنة ${y}: إيراد ${yRev.toLocaleString()} ج، مصاريف ${yExp.toLocaleString()} ج، حالات ${yCases.toLocaleString()}\n`;
+      }
+    });
+
+    // 2. جمع بيانات الشهر الحالي
     const currJ = extractMonthData(period.year, period.month, 'الجعافرة');
     const currB = extractMonthData(period.year, period.month, 'بهتيم');
     const currRev = currJ.rev + currB.rev;
@@ -1224,54 +1239,64 @@
     const currProfit = currRev - currExp;
     const margin = currRev > 0 ? (currProfit / currRev * 100).toFixed(1) : 0;
     
+    // 3. بناء جدول الموسمية (شهر بشهر لمدة 3 سنين)
+    let seasonalityText = "";
+    for (let m = 1; m <= 12; m++) {
+      let rowStr = `- ${monthsAr[m-1]}: `;
+      let hasData = false;
+      [2024, 2025, 2026].forEach(y => {
+        const mJ = extractMonthData(y, m, 'الجعافرة');
+        const mB = extractMonthData(y, m, 'بهتيم');
+        const totalCases = mJ.cases + mB.cases;
+        const totalRev = mJ.rev + mB.rev;
+        if (totalCases > 0 || totalRev > 0) {
+          rowStr += `[${y}: ${totalCases} حالة, إيراد ${totalRev.toLocaleString()} ج] `;
+          hasData = true;
+        }
+      });
+      if (hasData) seasonalityText += rowStr + "\n";
+    }
+
+    // 4. تحليل التحاليل
     const merged = getMergedData('combined');
     const topProfitable = [...merged].sort((a, b) => b.trueTotalProfit - a.trueTotalProfit).slice(0, 5);
     const losingTests = merged.filter(t => t.trueCost > t.sell && t.count > 0).sort((a, b) => a.trueProfitUnit - b.trueProfitUnit).slice(0, 5);
 
-    let prompt = `أهلاً DeepSeek. أنت الآن "مستشار مالي واستراتيجي" خبير في إدارة المعامل الطبية. أنا الدكتور أحمد طه، صاحب "معامل طيبة".\n`;
-    prompt += `أحتاج منك تحليل شامل ودراسة استراتيجية بناءً على بيانات شهر [${monthName} ${period.year}] التالية:\n\n`;
+    // 5. بناء البرومبت (Prompt)
+    let prompt = `أهلاً DeepSeek. أنت الآن "مستشار مالي وتشغيلي" خبير في إدارة المعامل الطبية. أنا الدكتور أحمد طه، صاحب "معامل طيبة".\n`;
+    prompt += `أحتاج منك تحليل شامل ودراسة استراتيجية بناءً على البيانات التالية. أرجو أن يكون ردك عملياً ومبنياً على الأرقام، وبدون مقدمات إنشائية.\n\n`;
     
-    prompt += `📊 **[1] الملخص المالي والأداء العام:**\n`;
-    prompt += `- إجمالي الإيراد: ${currRev.toLocaleString()} جنيه.\n`;
-    prompt += `- إجمالي المصاريف: ${currExp.toLocaleString()} جنيه.\n`;
-    prompt += `- صافي الربح: ${currProfit.toLocaleString()} جنيه (هامش ربح ${margin}%).\n\n`;
+    prompt += `📊 **[1] البيانات التاريخية (السياق):**\n${historyText}\n`;
 
-    prompt += `🏥 **[2] مقارنة الفروع:**\n`;
-    prompt += `- فرع الجعافرة: إيراد ${currJ.rev.toLocaleString()} ج، مصاريف ${currJ.exp.toLocaleString()} ج، حالات ${currJ.cases.toLocaleString()}.\n`;
-    prompt += `- فرع بهتيم: إيراد ${currB.rev.toLocaleString()} ج، مصاريف ${currB.exp.toLocaleString()} ج، حالات ${currB.cases.toLocaleString()}.\n\n`;
+    prompt += `📍 **[2] بيانات الشهر الحالي (${monthName} ${period.year}):**\n`;
+    prompt += `- الإجمالي: إيراد ${currRev.toLocaleString()} ج، مصاريف ${currExp.toLocaleString()} ج، صافي ربح ${currProfit.toLocaleString()} ج (هامش ${margin}%).\n`;
+    prompt += `- فرع الجعافرة: إيراد ${currJ.rev.toLocaleString()} ج، مصاريف ${currJ.exp.toLocaleString()} ج، عدد الحالات ${currJ.cases.toLocaleString()} حالة.\n`;
+    prompt += `- فرع بهتيم: إيراد ${currB.rev.toLocaleString()} ج، مصاريف ${currB.exp.toLocaleString()} ج، عدد الحالات ${currB.cases.toLocaleString()} حالة.\n\n`;
 
-    prompt += `💎 **[3] أفضل 5 تحاليل (الأكثر ربحاً صافياً - بعد خصم التكلفة الحقيقية والثوابت):**\n`;
-    topProfitable.forEach((t, i) => {
-      prompt += `${i+1}. ${t.name}: ربح صافي (${t.trueProfitUnit.toFixed(1)} ج) للتحليل، إجمالي ربح (${t.trueTotalProfit.toLocaleString()} ج) من ${t.count} حالة.\n`;
-    });
+    prompt += `🗓️ **[3] مصفوفة الموسمية (شهر بشهر لـ 3 سنين):**\n`;
+    prompt += `(ملاحظة: الاعتماد على عدد الحالات كمؤشر للضغط التشغيلي، والإيراد كمؤشر مالي)\n`;
+    prompt += seasonalityText + `\n`;
+
+    prompt += `💎 **[4] التحاليل (بناءً على التكلفة الحقيقية):**\n`;
+    prompt += `- أفضل 5 تحاليل ربحية (النجوم):\n`;
+    topProfitable.forEach((t, i) => { prompt += `  ${i+1}. ${t.name}: ربح صافي (${t.trueProfitUnit.toFixed(1)} ج)، إجمالي (${t.trueTotalProfit.toLocaleString()} ج).\n`; });
+    if (losingTests.length > 0) {
+      prompt += `- أسوأ 5 تحاليل (خاسرة):\n`;
+      losingTests.forEach((t, i) => { prompt += `  ${i+1}. ${t.name}: سعر البيع ${t.sell} ج، التكلفة ${t.trueCost.toFixed(1)} ج (خسارة ${Math.abs(t.trueProfitUnit).toFixed(1)} ج/تحليل).\n`; });
+    }
     prompt += `\n`;
 
-    if (losingTests.length > 0) {
-      prompt += `🚨 **[4] تحاليل خاسرة (سعرها أقل من تكلفتها الحقيقية):**\n`;
-      losingTests.forEach((t, i) => {
-        prompt += `${i+1}. ${t.name}: سعر البيع ${t.sell} ج، التكلفة الحقيقية ${t.trueCost.toFixed(1)} ج (خسارة ${Math.abs(t.trueProfitUnit).toFixed(1)} ج/تحليل).\n`;
-      });
-      prompt += `\n`;
-    }
-
-    if (type === 'plan') {
-      prompt += `🎯 **المطلوب منك كخبير:**\n`;
-      prompt += `بناءً على هذه البيانات، ضع لي "خطة عمل استراتيجية للشهر القادم" في نقاط واضحة تشمل:\n`;
-      prompt += `1. كيف أزيد هامش الربح الحالي (${margin}%)؟\n`;
-      prompt += `2. كيف أتعامل مع التحاليل الخاسرة؟ وكيف أروج للأكثر ربحاً؟\n`;
-      prompt += `3. بناءً على مقارنة الفروع، أين يجب أن أركز جهدي التسويقي؟\n`;
-      prompt += `4. 3 قرارات إدارية عاجلة يجب أن أتخذها فوراً.\n`;
-      prompt += `أرجو أن يكون الرد باللغة العربية، عملياً ومباشراً وبدون مقدمات.`;
-    } else {
-      prompt += `🎯 **المطلوب منك كخبير:**\n`;
-      prompt += `حلل هذه الأرقام بموضوعية، وأعطني "رسالة مستشار" تلخص وضع المعمل الحالي، مع إبراز نقطة قوة واحدة يجب الاستمرار عليها، ونقطة ضعف واحدة يجب إصلاحها فوراً.`;
-    }
+    prompt += `🎯 **المطلوب منك كخبير (قم بالإجابة على النقاط التالية بالتفصيل):**\n`;
+    prompt += `1. **تحليل الموسمية:** بناءً على جدول الموسمية، ما هي شهور الذروة (الزحمة) وشهور الهدوء؟ وكيف يجب أن أجهز فريق العمل والمخزون بناءً على ذلك؟\n`;
+    prompt += `2. **مقارنة الفروع:** قارن بين الجعافرة وبهتيم من حيث "متوسط قيمة الفاتورة" (الإيراد ÷ الحالات). أيهما أكثر كفاءة تشغيلية؟\n`;
+    prompt += `3. **الوضع المالي:** هل هامش الربح الحالي (${margin}%) جيد؟ وكيف أتعامل مع المصاريف بناءً على البيانات التاريخية؟\n`;
+    prompt += `4. **خطة العمل:** ضع لي 3 قرارات إدارية عاجلة لتنفيذها الشهر القادم لزيادة الأرباح وتقليل الهدر.\n`;
 
     // نسخ النص
     navigator.clipboard.writeText(prompt).then(() => {
       const toast = document.createElement('div');
       toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg, #4d6bfe, #3b5bdb);color:#fff;padding:15px 30px;border-radius:12px;font-weight:bold;font-size:1.1rem;z-index:999999;box-shadow:0 10px 30px rgba(0,0,0,0.5);text-align:center;direction:rtl;';
-      toast.innerHTML = `✅ تم نسخ التقرير بنجاح!<br><span style="font-size:0.85rem;font-weight:normal;opacity:0.9;">افتح DeepSeek والصق النص (Paste) هناك.</span>`;
+      toast.innerHTML = `✅ تم نسخ التقرير الشامل بنجاح!<br><span style="font-size:0.85rem;font-weight:normal;opacity:0.9;">افتح DeepSeek والصق النص (Paste) هناك.</span>`;
       
       document.body.appendChild(toast);
       
