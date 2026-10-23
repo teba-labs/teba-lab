@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Admin Logic (v54 - True Cost & Weights)
+   TEBA LABS - Admin Logic (v55 - Multi-Branch True Cost)
    ===================================================== */
 
 (function(){
@@ -17,7 +17,7 @@
   const LOCK_DURATION = 15 * 60 * 1000;
   const DEFAULT_PASSWORD = 'teba2026admin';
   const MAX_FILE_SIZE = 20 * 1024 * 1024;
-  const BACKUP_VERSION = 'v54';
+  const BACKUP_VERSION = 'v55';
 
   let salesWorkbook = null;
   let pricesWorkbook = null;
@@ -97,13 +97,14 @@
   const _monthCache = new Map();
   const _yearCache = new Map();
   const _expenseBreakdownCache = new Map();
-  let _mergedCache = null;
-  let _testMovementCache = null;
+  const _mergedCache = { combined: null, jaafara: null, bahtim: null };
+  let _testMovementCache = { jaafara: null, bahtim: null };
   let _chartResizeTimer = null;
 
   function invalidateDataCache() {
     _monthCache.clear(); _yearCache.clear(); _expenseBreakdownCache.clear();
-    _mergedCache = null; _testMovementCache = null;
+    _mergedCache.combined = null; _mergedCache.jaafara = null; _mergedCache.bahtim = null;
+    _testMovementCache.jaafara = null; _testMovementCache.bahtim = null;
   }
 
   function memoizeMap(cache, fn) {
@@ -362,7 +363,12 @@
     } catch(e) { hideLoading(); console.log("لا توجد بيانات محفوظة.", e); }
   }
 
-  function getSheetData(sheetKey) { if (!salesWorkbook) return []; const sheetName = salesWorkbook.SheetNames.find(n => n.includes(sheetKey)); if (!sheetName) return []; return XLSX.utils.sheet_to_json(salesWorkbook.Sheets[sheetName], { header: 1, defval: "" }); }
+  function getSheetData(sheetKey) { 
+    if (!salesWorkbook) return []; 
+    const sheetName = salesWorkbook.SheetNames.find(n => n.includes(sheetKey)); 
+    if (!sheetName) return []; 
+    return XLSX.utils.sheet_to_json(salesWorkbook.Sheets[sheetName], { header: 1, defval: "" }); 
+  }
 
   const extractYearData = memoizeMap(_yearCache, function(year, branch) {
     const annualData = getSheetData('السنوية'); let totalRev = 0, totalExp = 0;
@@ -382,26 +388,34 @@
     return null;
   }
 
-  function getTestMovementData() {
-    if (_testMovementCache) return _testMovementCache;
-    const data = getSheetData('تكرار التحاليل'); const testData = [];
-    for (let i = 2; i < data.length; i++) { const row = data[i]; if (row && row[0] && typeof row[0] === 'string' && row[0].trim() !== '') { const count = Number(row[2]) || Number(row[1]) || 0; testData.push({ name: row[0].trim(), count: count }); } }
-    _testMovementCache = testData; return testData;
+  function getTestMovementData(branch) {
+    const cacheKey = branch === 'الجعافرة' ? 'jaafara' : 'bahtim';
+    if (_testMovementCache[cacheKey]) return _testMovementCache[cacheKey];
+    
+    const sheetKey = branch === 'الجعافرة' ? 'تكرار التحاليل فرع الجعافرة' : 'تكرار التحاليل فرع بهتيم';
+    const data = getSheetData(sheetKey); 
+    const testData = [];
+    for (let i = 2; i < data.length; i++) { 
+      const row = data[i]; 
+      if (row && row[0] && typeof row[0] === 'string' && row[0].trim() !== '') { 
+        const count = Number(row[2]) || Number(row[1]) || 0; 
+        testData.push({ name: row[0].trim(), count: count }); 
+      } 
+    }
+    _testMovementCache[cacheKey] = testData; 
+    return testData;
   }
 
   // =====================================================
-  // v54: المعادلة الجديدة لحساب "التكلفة الحقيقية" و "الربح الصافي"
+  // v55: المعادلة الجديدة لحساب التكلفة لكل فرع
   // =====================================================
-  function getMergedData() {
-    if (_mergedCache) return _mergedCache;
+  function getMergedData(branchFilter = 'combined') {
+    if (_mergedCache[branchFilter]) return _mergedCache[branchFilter];
     if (!pricesWorkbook) return [];
     
-    const tests = getTestMovementData();
-    if (!tests || tests.length === 0) return [];
-
+    // 1. قراءة ملف الأسعار (موحد للفرعين)
     const priceSheetName = pricesWorkbook.SheetNames.find(n => n.includes('التحاليل')) || pricesWorkbook.SheetNames[0];
     const priceData = XLSX.utils.sheet_to_json(pricesWorkbook.Sheets[priceSheetName], { header: 1, defval: "" });
-    
     const priceMap = {};
     for (let i = 1; i < priceData.length; i++) {
       const row = priceData[i];
@@ -409,54 +423,90 @@
         const testName = String(row[0]).trim().toLowerCase();
         const type = row[1] ? String(row[1]).trim() : 'خارجي';
         const baseCost = Number(row[2]) || 0;
-        const weight = Number(row[3]) || 1; // الوزن 1 لـ 5
+        const weight = Number(row[3]) || 1; 
         const sellPrice = Number(row[4]) || 0; 
-        
-        if (sellPrice > 0) {
-          priceMap[testName] = { type, baseCost, weight, sellPrice };
-        }
+        if (sellPrice > 0) priceMap[testName] = { type, baseCost, weight, sellPrice };
       }
     }
 
-    const merged = [];
-    let totalVariableCost = 0;
-    let totalPoints = 0;
-
-    // 1. حساب إجمالي التكلفة المتغيرة (كيماويات + لاب تو لاب) وإجمالي النقاط
-    tests.forEach(t => {
-      const searchName = t.name.trim().toLowerCase();
-      if (priceMap[searchName]) {
-        const { type, baseCost, weight, sellPrice } = priceMap[searchName];
-        totalVariableCost += (baseCost * t.count);
-        totalPoints += (weight * t.count);
-        merged.push({ name: t.name, count: t.count, type, baseCost, weight, sell: sellPrice });
-      }
-    });
-
-    // 2. حساب المصاريف الثابتة (إجمالي مصاريف المعمل - التكلفة المتغيرة)
     const period = findLatestReportMonth();
-    let totalExpenses = 0;
+    let dJ = { exp: 0 }, dB = { exp: 0 };
     if (period) {
-      const dJ = extractMonthData(period.year, period.month, 'الجعافرة');
-      const dB = extractMonthData(period.year, period.month, 'بهتيم');
-      totalExpenses = dJ.exp + dB.exp;
+      dJ = extractMonthData(period.year, period.month, 'الجعافرة');
+      dB = extractMonthData(period.year, period.month, 'بهتيم');
     }
     
-    // المصاريف الثابتة الحقيقية (المرتبات، الإيجار، الكهربا)
-    const totalFixedCost = Math.max(0, totalExpenses - totalVariableCost);
-    
-    // 3. حساب قيمة النقطة الواحدة
-    const pointValue = totalPoints > 0 ? (totalFixedCost / totalPoints) : 0;
+    const merged = [];
 
-    // 4. حساب التكلفة النهائية والربح الصافي لكل تحليل
-    merged.forEach(t => {
-      t.trueCost = t.baseCost + (t.weight * pointValue); // التكلفة الحقيقية
-      t.trueProfitUnit = t.sell - t.trueCost; // الربح الصافي للتحليل
-      t.trueTotalProfit = t.trueProfitUnit * t.count; // إجمالي الربح الصافي
-    });
+    function calcBranch(branchName, branchExpenses) {
+      const tests = getTestMovementData(branchName);
+      if (!tests || tests.length === 0) return { list: [], totalExp: 0, totalVar: 0, totalPts: 0, ptValue: 0 };
+      
+      let totalVariableCost = 0;
+      let totalPoints = 0;
+      const branchList = [];
+      
+      tests.forEach(t => {
+        const searchName = t.name.trim().toLowerCase();
+        if (priceMap[searchName]) {
+          const { type, baseCost, weight, sellPrice } = priceMap[searchName];
+          totalVariableCost += (baseCost * t.count);
+          totalPoints += (weight * t.count);
+          branchList.push({ name: t.name, count: t.count, type, baseCost, weight, sell: sellPrice });
+        }
+      });
+      
+      const totalFixedCost = Math.max(0, branchExpenses - totalVariableCost);
+      const pointValue = totalPoints > 0 ? (totalFixedCost / totalPoints) : 0;
+      
+      branchList.forEach(t => {
+        t.trueCost = t.baseCost + (t.weight * pointValue);
+        t.trueProfitUnit = t.sell - t.trueCost;
+        t.trueTotalProfit = t.trueProfitUnit * t.count;
+      });
+      
+      return { list: branchList, totalExp: branchExpenses, totalVar: totalVariableCost, totalPts: totalPoints, ptValue: pointValue };
+    }
 
-    _mergedCache = merged;
-    return merged;
+    if (branchFilter === 'jaafara') {
+      const res = calcBranch('الجعافرة', dJ.exp);
+      _mergedCache.jaafara = res.list;
+      return res.list;
+    } 
+    else if (branchFilter === 'bahtim') {
+      const res = calcBranch('بهتيم', dB.exp);
+      _mergedCache.bahtim = res.list;
+      return res.list;
+    } 
+    else {
+      // Combined
+      const resJ = calcBranch('الجعافرة', dJ.exp);
+      const resB = calcBranch('بهتيم', dB.exp);
+      
+      const combinedList = [];
+      const map = new Map();
+      
+      [...resJ.list, ...resB.list].forEach(t => {
+        const key = t.name.toLowerCase();
+        if (!map.has(key)) {
+          map.set(key, { ...t, count: 0, trueTotalProfit: 0 });
+        }
+        const existing = map.get(key);
+        existing.count += t.count;
+        existing.trueTotalProfit += t.trueTotalProfit;
+      });
+      
+      map.forEach(t => {
+        // في الدمج بنعيد حساب التكلفة الحقيقية للواحد بناءً على إجمالي الربح / إجمالي العدد
+        // أو بنسيب تكلفة الجعافرة (لأنها غالباً شبه بهتيم). الأفضل نحسبها كمتوسط.
+        t.trueProfitUnit = t.count > 0 ? t.trueTotalProfit / t.count : 0;
+        t.trueCost = t.sell - t.trueProfitUnit;
+        combinedList.push(t);
+      });
+      
+      _mergedCache.combined = combinedList;
+      return combinedList;
+    }
   }
   window.renderMonthlyAdvisor = function() {
     const container = document.getElementById('advisorReport');
@@ -497,7 +547,9 @@
     if (margin < 30) recs.push(`💸 <strong>هامش الربح ${margin.toFixed(1)}%</strong> — منخفض جداً، راجع المصاريف.`);
     else if (margin > 55) recs.push(`✅ <strong>هامش الربح ${margin.toFixed(1)}%</strong> — ممتاز! حافظ على التكاليف.`);
     else recs.push(`💰 <strong>هامش الربح ${margin.toFixed(1)}%</strong> — كويس، ممكن يتحسن.`);
-    const merged = getMergedData();
+    
+    // في المستشار بنعرض الإجمالي عشان يديك نظرة شاملة
+    const merged = getMergedData('combined');
     if (merged.length > 0) { 
       const topProfitable = [...merged].sort((a, b) => b.trueTotalProfit - a.trueTotalProfit)[0]; 
       if (topProfitable) recs.push(`💎 <strong>ركز على "${topProfitable.name}"</strong> — أكتر تحليل بيجيب ربح صافي (${topProfitable.trueTotalProfit.toLocaleString()} ج).`); 
@@ -664,7 +716,7 @@
     const refBMargin = refB.rev > 0 ? ((refB.rev - refB.exp) / refB.rev * 100) : 0;
     const jRevGrowth = pJ.rev > 0 ? ((refJ.rev - pJ.rev) / pJ.rev * 100) : 0;
     const bRevGrowth = pB.rev > 0 ? ((refB.rev - pB.rev) / pB.rev * 100) : 0;
-    const merged = getMergedData();
+    const merged = getMergedData('combined');
     const topSellers = [...merged].sort((a,b) => b.count - a.count).slice(0, 5);
     const topProfitable = [...merged].sort((a,b) => b.trueTotalProfit - a.trueTotalProfit).slice(0, 5);
     const losingTests = merged.filter(t => t.trueCost > t.sell && t.count > 0).sort((a,b) => (a.sell-a.trueCost) - (b.sell-b.trueCost));
@@ -927,7 +979,9 @@
   window.renderBCGMatrix = function() {
     const summaryGrid = document.getElementById('bcgSummaryGrid');
     const alertBox = document.getElementById('bcgAlert');
-    const merged = getMergedData();
+    const branchFilter = document.getElementById('bcgBranchSel') ? document.getElementById('bcgBranchSel').value : 'combined';
+    const merged = getMergedData(branchFilter);
+    
     if (!merged || merged.length === 0) {
       if (alertBox) { alertBox.innerHTML = '⚠️ لازم ترفع ملفي المبيعات والأسعار.'; alertBox.style.display = 'block'; }
       if (summaryGrid) summaryGrid.innerHTML = '';
@@ -1072,7 +1126,14 @@
 
   window.renderTopSellers = function() {
     const tbody = document.getElementById('topSellersTableBody'); if (!tbody) return;
-    let tests = getTestMovementData();
+    // Top sellers specific to the main page (we show combined by default here, or we can just show jaafara + bahtim combined by recalculating)
+    const dataJ = getTestMovementData('الجعافرة');
+    const dataB = getTestMovementData('بهتيم');
+    const combinedTests = {};
+    dataJ.forEach(t => combinedTests[t.name.toLowerCase()] = (combinedTests[t.name.toLowerCase()] || 0) + t.count);
+    dataB.forEach(t => combinedTests[t.name.toLowerCase()] = (combinedTests[t.name.toLowerCase()] || 0) + t.count);
+    
+    let tests = Object.keys(combinedTests).map(k => ({ name: k, count: combinedTests[k] })).filter(t => t.count > 0);
     if(!tests || tests.length === 0) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">لا توجد بيانات</td></tr>'; return; }
     tests.sort((a, b) => b.count - a.count);
     let html = '';
@@ -1082,7 +1143,8 @@
 
   window.renderMostProfitable = function() {
     const tbody = document.getElementById('mostProfitableTableBody'); if (!tbody) return;
-    let data = getMergedData();
+    const branchFilter = document.getElementById('mostProfBranchSel') ? document.getElementById('mostProfBranchSel').value : 'combined';
+    let data = getMergedData(branchFilter);
     if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">لا توجد تطابق</td></tr>'; return; }
     data.sort((a, b) => b.trueTotalProfit - a.trueTotalProfit);
     let html = '';
@@ -1092,7 +1154,8 @@
 
   window.renderLeastProfitable = function() {
     const tbody = document.getElementById('leastProfitableTableBody'); if (!tbody) return;
-    let data = getMergedData();
+    const branchFilter = document.getElementById('leastProfBranchSel') ? document.getElementById('leastProfBranchSel').value : 'combined';
+    let data = getMergedData(branchFilter);
     if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">لا توجد تطابق</td></tr>'; return; }
     let profitableOnly = data.filter(t => t.trueProfitUnit > 0);
     profitableOnly.sort((a, b) => a.trueTotalProfit - b.trueTotalProfit);
@@ -1103,7 +1166,8 @@
 
   window.renderNeedOffers = function() {
     const tbody = document.getElementById('needOffersTableBody'); if (!tbody) return;
-    let data = getMergedData();
+    const branchFilter = document.getElementById('needOffersBranchSel') ? document.getElementById('needOffersBranchSel').value : 'combined';
+    let data = getMergedData(branchFilter);
     if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">لا توجد تطابق</td></tr>'; return; }
     let needs = data.filter(t => t.count < 5 && t.sell > 0);
     needs.sort((a, b) => a.count - b.count);
@@ -1114,7 +1178,8 @@
 
   window.renderLossMakers = function() {
     const tbody = document.getElementById('lossMakersTableBody'); if (!tbody) return;
-    let data = getMergedData();
+    const branchFilter = document.getElementById('lossMakersBranchSel') ? document.getElementById('lossMakersBranchSel').value : 'combined';
+    let data = getMergedData(branchFilter);
     if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">لا توجد تطابق</td></tr>'; return; }
     let losers = data.filter(t => t.trueCost > t.sell);
     losers.sort((a, b) => a.trueProfitUnit - b.trueProfitUnit);
@@ -1130,7 +1195,7 @@
     modal.classList.add('show');
     if (!salesWorkbook) { body.innerHTML = `<p style="color:#dc2626; font-weight:bold;">⚠️ ارفع الملفات أولاً.</p>`; return; }
     let insights = `<p style="color:var(--primary-glow); font-weight:bold; font-size:1.1rem;">أهلاً يا دكتور أحمد! 👨‍⚕️</p><p>تحليل سريع للبيانات (بناءً على التكلفة الحقيقية):</p><ul style="line-height:2;">`;
-    const merged = getMergedData();
+    const merged = getMergedData('combined');
     if (merged.length > 0) {
       const totalTrueProfit = merged.reduce((a, t) => a + t.trueTotalProfit, 0);
       const losers = merged.filter(t => t.trueCost > t.sell).length;

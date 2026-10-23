@@ -354,6 +354,15 @@
           <button class="btn-export" onclick="exportTableToExcel('bcg-full-export', 'تصنيف_BCG')">📊 تصدير Excel</button>
           <p>تقسيم التحاليل لـ 4 فئات على حسب المبيعات والربح الصافي</p>
         </div>
+        <div class="filter-group">
+          <div><label>الفرع:</label>
+            <select id="bcgBranchSel" onchange="renderBCGMatrix()">
+              <option value="combined">🏥 إجمالي الفرعين</option>
+              <option value="jaafara">🏥 فرع الجعافرة</option>
+              <option value="bahtim">🏥 فرع بهتيم</option>
+            </select>
+          </div>
+        </div>
         <div id="bcgAlert" class="cases-alert" style="display:none;"></div>
         <div class="bcg-summary-grid" id="bcgSummaryGrid"></div>
         <div class="bcg-urgent-card" id="bcgUrgentCard"></div>
@@ -426,6 +435,15 @@
 
       <section class="admin-section" id="report-mostProfitable">
         <div class="admin-section-head"><h2>💎 الأكثر ربحاً (صافي الربح)</h2></div>
+        <div class="filter-group">
+          <div><label>الفرع:</label>
+            <select id="mostProfBranchSel" onchange="renderMostProfitable()">
+              <option value="combined">🏥 إجمالي الفرعين</option>
+              <option value="jaafara">🏥 فرع الجعافرة</option>
+              <option value="bahtim">🏥 فرع بهتيم</option>
+            </select>
+          </div>
+        </div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
           <div class="table-responsive">
             <table class="fin-table">
@@ -438,6 +456,15 @@
 
       <section class="admin-section" id="report-leastProfitable">
         <div class="admin-section-head"><h2>📉 الأقل ربحية (صافي الربح)</h2></div>
+        <div class="filter-group">
+          <div><label>الفرع:</label>
+            <select id="leastProfBranchSel" onchange="renderLeastProfitable()">
+              <option value="combined">🏥 إجمالي الفرعين</option>
+              <option value="jaafara">🏥 فرع الجعافرة</option>
+              <option value="bahtim">🏥 فرع بهتيم</option>
+            </select>
+          </div>
+        </div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
           <div class="table-responsive">
             <table class="fin-table">
@@ -450,6 +477,15 @@
 
       <section class="admin-section" id="report-needOffers">
         <div class="admin-section-head"><h2>🎯 محتاجة عروض</h2></div>
+        <div class="filter-group">
+          <div><label>الفرع:</label>
+            <select id="needOffersBranchSel" onchange="renderNeedOffers()">
+              <option value="combined">🏥 إجمالي الفرعين</option>
+              <option value="jaafara">🏥 فرع الجعافرة</option>
+              <option value="bahtim">🏥 فرع بهتيم</option>
+            </select>
+          </div>
+        </div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
           <div class="table-responsive">
             <table class="fin-table">
@@ -462,6 +498,15 @@
 
       <section class="admin-section" id="report-lossMakers">
         <div class="admin-section-head"><h2>📉 التحاليل الخاسرة</h2></div>
+        <div class="filter-group">
+          <div><label>الفرع:</label>
+            <select id="lossMakersBranchSel" onchange="renderLossMakers()">
+              <option value="combined">🏥 إجمالي الفرعين</option>
+              <option value="jaafara">🏥 فرع الجعافرة</option>
+              <option value="bahtim">🏥 فرع بهتيم</option>
+            </select>
+          </div>
+        </div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
           <div class="table-responsive">
             <table class="fin-table">

@@ -1,8 +1,8 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v54 - True Cost)
+   TEBA LABS - Service Worker (v55 - True Cost)
    ===================================================== */
 
-const CACHE_VERSION = 'v54'; 
+const CACHE_VERSION = 'v55'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
