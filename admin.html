@@ -6,31 +6,18 @@
 <title>لوحة التحكم | معامل طيبة - TEBA LABS</title>
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a0e0a">
-
-<!-- Preconnect: open TCP+TLS early -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://cdn.sheetjs.com" crossorigin>
-
-<!-- DNS prefetch for images -->
 <link rel="dns-prefetch" href="https://images.unsplash.com">
-
-<!-- Fonts (display=swap to avoid FOIT) -->
 <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
-
-<!-- Preload critical CSS, then apply -->
 <link rel="preload" href="styles.css" as="style">
 <link rel="preload" href="admin.css" as="style">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="admin.css">
-
-<!-- Preload logo (above fold) -->
 <link rel="preload" href="logo.png" as="image">
-
-<!-- PWA manifest -->
 <link rel="manifest" href="manifest.json">
-
 <style>
   .chart-container { position: relative; height: 350px; width: 100%; margin-bottom: 20px; }
   @media (max-width: 768px) { .chart-container { height: 300px; } }
@@ -98,8 +85,8 @@
       <h3>📢 التسويق والدعاية</h3>
       <ul class="admin-nav">
         <li><button data-report="topSellers" onclick="showReport('topSellers')">🏆 الأكثر مبيعاً</button></li>
-        <li><button data-report="mostProfitable" onclick="showReport('mostProfitable')">💎 الأكثر ربحاً</button></li>
-        <li><button data-report="leastProfitable" onclick="showReport('leastProfitable')">📉 الأقل ربحية</button></li>
+        <li><button data-report="mostProfitable" onclick="showReport('mostProfitable')">💎 الأكثر ربحاً (صافي)</button></li>
+        <li><button data-report="leastProfitable" onclick="showReport('leastProfitable')">📉 الأقل ربحية (صافي)</button></li>
         <li><button data-report="needOffers" onclick="showReport('needOffers')">🎯 محتاجة عروض</button></li>
         <li><button data-report="lossMakers" onclick="showReport('lossMakers')">📉 التحاليل الخاسرة</button></li>
       </ul>
@@ -159,7 +146,7 @@
             <div id="uploadStatusSales" class="upload-status" style="margin-top:10px;"></div>
           </div>
           <div>
-            <h3 style="color:var(--gold); margin-bottom:10px; font-size:1rem;">2. ملف أسعار التحاليل</h3>
+            <h3 style="color:var(--gold); margin-bottom:10px; font-size:1rem;">2. ملف أسعار التحاليل (الجديد)</h3>
             <div class="upload-zone" onclick="document.getElementById('fileInputPrices').click()">
               <div class="upload-icon">🏷️</div>
               <h3>ارفع ملف الأسعار</h3>
@@ -365,7 +352,7 @@
         <div class="admin-section-head">
           <h2>💎 تصنيف التحاليل (BCG Matrix)</h2>
           <button class="btn-export" onclick="exportTableToExcel('bcg-full-export', 'تصنيف_BCG')">📊 تصدير Excel</button>
-          <p>تقسيم التحاليل لـ 4 فئات على حسب المبيعات والربح</p>
+          <p>تقسيم التحاليل لـ 4 فئات على حسب المبيعات والربح الصافي</p>
         </div>
         <div id="bcgAlert" class="cases-alert" style="display:none;"></div>
         <div class="bcg-summary-grid" id="bcgSummaryGrid"></div>
@@ -373,43 +360,43 @@
         
         <div id="bcg-full-export" style="display: none;">
           <table class="fin-table">
-            <thead><tr><th>الفئة</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة</th><th>ربح/تحليل</th><th>إجمالي الربح</th></tr></thead>
+            <thead><tr><th>الفئة</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة الحقيقية</th><th>ربح صافي/تحليل</th><th>إجمالي الربح الصافي</th></tr></thead>
             <tbody id="bcgExportBody"></tbody>
           </table>
         </div>
 
         <div class="cases-section-card">
-          <h4 style="color:#4ade80;">⭐ النجوم (Stars) — مبيعات عالية + ربح عالي</h4>
+          <h4 style="color:#4ade80;">⭐ النجوم (Stars) — مبيعات عالية + ربح صافي عالي</h4>
           <div class="table-responsive">
             <table class="fin-table">
-              <thead><tr><th>#</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة</th><th>ربح/تحليل</th><th>إجمالي الربح</th></tr></thead>
+              <thead><tr><th>#</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة الحقيقية</th><th>ربح صافي/تحليل</th><th>إجمالي الربح الصافي</th></tr></thead>
               <tbody id="bcgStarsTable"></tbody>
             </table>
           </div>
         </div>
         <div class="cases-section-card">
-          <h4 style="color:#00bfff;">🐄 الأحصنة (Cash Cows) — مبيعات عالية + ربح قليل</h4>
+          <h4 style="color:#00bfff;">🐄 الأحصنة (Cash Cows) — مبيعات عالية + ربح صافي قليل</h4>
           <div class="table-responsive">
             <table class="fin-table">
-              <thead><tr><th>#</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة</th><th>ربح/تحليل</th><th>إجمالي الربح</th></tr></thead>
+              <thead><tr><th>#</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة الحقيقية</th><th>ربح صافي/تحليل</th><th>إجمالي الربح الصافي</th></tr></thead>
               <tbody id="bcgCashCowsTable"></tbody>
             </table>
           </div>
         </div>
         <div class="cases-section-card">
-          <h4 style="color:#fbbf24;">❓ علامات استفهام (Question Marks) — مبيعات قليلة + ربح عالي</h4>
+          <h4 style="color:#fbbf24;">❓ علامات استفهام (Question Marks) — مبيعات قليلة + ربح صافي عالي</h4>
           <div class="table-responsive">
             <table class="fin-table">
-              <thead><tr><th>#</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة</th><th>ربح/تحليل</th><th>إجمالي الربح</th></tr></thead>
+              <thead><tr><th>#</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة الحقيقية</th><th>ربح صافي/تحليل</th><th>إجمالي الربح الصافي</th></tr></thead>
               <tbody id="bcgQuestionsTable"></tbody>
             </table>
           </div>
         </div>
         <div class="cases-section-card">
-          <h4 style="color:#f87171;">🐕 الكلاب (Dogs) — مبيعات قليلة + ربح قليل</h4>
+          <h4 style="color:#f87171;">🐕 الكلاب (Dogs) — مبيعات قليلة + ربح صافي قليل</h4>
           <div class="table-responsive">
             <table class="fin-table">
-              <thead><tr><th>#</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة</th><th>ربح/تحليل</th><th>إجمالي الربح</th></tr></thead>
+              <thead><tr><th>#</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة الحقيقية</th><th>ربح صافي/تحليل</th><th>إجمالي الربح الصافي</th></tr></thead>
               <tbody id="bcgDogsTable"></tbody>
             </table>
           </div>
@@ -438,11 +425,11 @@
       </section>
 
       <section class="admin-section" id="report-mostProfitable">
-        <div class="admin-section-head"><h2>💎 الأكثر ربحاً</h2></div>
+        <div class="admin-section-head"><h2>💎 الأكثر ربحاً (صافي الربح)</h2></div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
           <div class="table-responsive">
             <table class="fin-table">
-              <thead><tr><th>الترتيب</th><th>اسم التحليل</th><th>سعر البيع</th><th>التكلفة</th><th>ربح التحليل</th><th>إجمالي الربح المتوقع</th></tr></thead>
+              <thead><tr><th>الترتيب</th><th>اسم التحليل</th><th>سعر البيع</th><th>التكلفة الحقيقية</th><th>ربح صافي/تحليل</th><th>إجمالي الربح الصافي</th></tr></thead>
               <tbody id="mostProfitableTableBody"></tbody>
             </table>
           </div>
@@ -450,11 +437,11 @@
       </section>
 
       <section class="admin-section" id="report-leastProfitable">
-        <div class="admin-section-head"><h2>📉 الأقل ربحية</h2></div>
+        <div class="admin-section-head"><h2>📉 الأقل ربحية (صافي الربح)</h2></div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
           <div class="table-responsive">
             <table class="fin-table">
-              <thead><tr><th>الترتيب</th><th>اسم التحليل</th><th>سعر البيع</th><th>التكلفة</th><th>ربح التحليل</th><th>إجمالي الربح المتوقع</th></tr></thead>
+              <thead><tr><th>الترتيب</th><th>اسم التحليل</th><th>سعر البيع</th><th>التكلفة الحقيقية</th><th>ربح صافي/تحليل</th><th>إجمالي الربح الصافي</th></tr></thead>
               <tbody id="leastProfitableTableBody"></tbody>
             </table>
           </div>
@@ -478,7 +465,7 @@
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
           <div class="table-responsive">
             <table class="fin-table">
-              <thead><tr><th>اسم التحليل</th><th>سعر البيع</th><th>التكلفة</th><th>الخسارة للتحليل</th></tr></thead>
+              <thead><tr><th>اسم التحليل</th><th>سعر البيع</th><th>التكلفة الحقيقية</th><th>صافي الخسارة/تحليل</th></tr></thead>
               <tbody id="lossMakersTableBody"></tbody>
             </table>
           </div>
@@ -502,10 +489,8 @@
   </div>
 </div>
 
-<!-- CDN scripts with defer -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js" defer></script>
-<!-- مكتبة تصدير الـ PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
 <script src="admin.js" defer></script>
 </body>
