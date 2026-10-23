@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v56 - True Cost)
+   TEBA LABS - Service Worker (v57 - True Cost)
    ===================================================== */
 
 const CACHE_VERSION = 'v55'; 
