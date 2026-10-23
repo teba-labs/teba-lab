@@ -1223,5 +1223,26 @@
       sessionStorage.setItem(SESSION_TS_KEY, String(Date.now()));
     }, { passive: true });
   });
+  /* ============= PWA INSTALL LOGIC ============= */
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const installBtn = document.getElementById('pwaInstallBtn');
+    if (installBtn) installBtn.style.display = 'inline-flex'; 
+  });
 
+  window.installPWA = async function() {
+    if (!deferredPrompt) {
+      alert('التطبيق مثبت بالفعل أو متصفحك لا يدعم هذه الميزة.');
+      return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      const installBtn = document.getElementById('pwaInstallBtn');
+      if (installBtn) installBtn.style.display = 'none';
+    }
+    deferredPrompt = null;
+  };
 })();
