@@ -1,0 +1,361 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معامل طيبة - بوابة المعمل (v11)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-bg: #f4f7f6; --surface-bg: #ffffff; --primary-color: #2c3e50;
+            --accent-color: #3498db; --success-color: #2ecc71; --danger-color: #e74c3c;
+            --warning-color: #f39c12; --text-main: #333; --text-muted: #7f8c8d; 
+            --border-color: #dcdde1; --shadow-sm: 0 2px 5px rgba(0,0,0,0.05);
+            --shadow-md: 0 5px 15px rgba(0,0,0,0.08); --radius: 8px; 
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-family); background-color: var(--primary-bg); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+
+        /* Header (نفس الاستقبال) */
+        header { background-color: var(--primary-color); color: white; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; box-shadow: var(--shadow-md); z-index: 10; }
+        .brand-info { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px;}
+        .nav-links { display: flex; gap: 10px; }
+        .nav-btn { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.95rem; display: flex; align-items: center; gap: 5px; transition: 0.2s; font-family: inherit;}
+        .nav-btn:hover { background: rgba(255,255,255,0.2); }
+        .nav-btn.rec { background: var(--accent-color); color: white; border-color: var(--accent-color); }
+        .nav-btn.rec:hover { background: #2980b9; }
+
+        /* Layout */
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; width: 100%; flex-grow: 1; }
+
+        /* Toolbar */
+        .toolbar { background: var(--surface-bg); border-radius: var(--radius); padding: 15px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); }
+        
+        .search-box { flex-grow: 1; position: relative; }
+        .search-box input { width: 100%; padding: 10px 15px; border: 2px solid var(--border-color); border-radius: var(--radius); font-size: 1rem; outline: none; font-family: inherit; transition: 0.2s;}
+        .search-box input:focus { border-color: var(--accent-color); }
+
+        .tabs { display: flex; gap: 5px; background: #eee; padding: 4px; border-radius: var(--radius); }
+        .tab { padding: 8px 16px; border: none; background: transparent; cursor: pointer; font-weight: bold; color: var(--text-muted); border-radius: 5px; transition: 0.2s; font-family: inherit; font-size: 0.95rem;}
+        .tab.active { background: var(--surface-bg); color: var(--primary-color); box-shadow: var(--shadow-sm); }
+
+        /* Grid */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; }
+        .card { background: var(--surface-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); overflow: hidden; display: flex; flex-direction: column; transition: 0.2s; }
+        .card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+        
+        .card.pending { border-top: 4px solid var(--warning-color); }
+        .card.done { border-top: 4px solid var(--success-color); }
+
+        .card-header { padding: 12px 15px; border-bottom: 1px solid var(--border-color); background: #f8f9fa; display: flex; justify-content: space-between; align-items: flex-start;}
+        .p-name { font-weight: bold; font-size: 1.1rem; color: var(--primary-color); margin-bottom: 4px; }
+        .p-meta { font-size: 0.85rem; color: var(--text-muted); }
+        
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .badge.pending { background: #ffeaa7; color: #d35400; }
+        .badge.done { background: #d4edda; color: #27ae60; }
+
+        .card-body { padding: 15px; flex-grow: 1; }
+        .test-info { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center;}
+        .test-name { font-weight: bold; font-size: 1rem; }
+        .test-code { font-size: 0.8rem; color: var(--text-muted); background: #eee; padding: 2px 6px; border-radius: 4px; }
+        
+        .result-display { background: #fdfbf7; border: 1px dashed var(--border-color); padding: 10px; border-radius: 6px; text-align: center; margin-top: 10px;}
+        .result-val { font-size: 1.3rem; font-weight: bold; }
+        .result-val.high { color: var(--danger-color); }
+        .result-val.low { color: var(--accent-color); }
+        .result-val.normal { color: var(--success-color); }
+
+        .card-footer { padding: 12px 15px; border-top: 1px solid var(--border-color); background: #fafafa; display: flex; justify-content: space-between; align-items: center;}
+        .v-code { font-size: 0.85rem; color: var(--text-muted); font-weight: bold;}
+        
+        .btn { padding: 8px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; color: white; font-family: inherit; font-size: 0.9rem;}
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-primary { background: var(--accent-color); }
+        .btn-success { background: var(--success-color); }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: var(--radius); width: 90%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; box-shadow: var(--shadow-md);}
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .modal-header h3 { color: var(--primary-color); }
+        .close-modal { background: var(--danger-color); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;}
+        
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 0.9rem; font-weight: bold; color: var(--text-muted); }
+        .form-group input, .form-group select, .form-group textarea { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 1rem; outline: none; }
+        .form-group input:focus { border-color: var(--accent-color); }
+        
+        .empty-msg { text-align: center; padding: 50px; color: var(--text-muted); font-size: 1.2rem; grid-column: 1 / -1; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-info">🔬 بوابة المعمل - معامل طيبة (v11)</div>
+        <div class="nav-links">
+            <button class="nav-btn rec" onclick="window.location.href='reception.html'">🏥 بوابة الاستقبال</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="toolbar">
+            <div class="tabs">
+                <button class="tab active" onclick="setFilter('all')" id="tab-all">الكل</button>
+                <button class="tab" onclick="setFilter('pending')" id="tab-pending">مطلوب</button>
+                <button class="tab" onclick="setFilter('done')" id="tab-done">تم الانتهاء</button>
+            </div>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="بحث باسم المريض أو كود التحليل..." onkeyup="renderData()">
+            </div>
+        </div>
+
+        <div class="grid" id="labGrid">
+            <div class="empty-msg">جاري تحميل الطلبات من السحابة...</div>
+        </div>
+    </div>
+
+    <!-- Modal: إدخال النتيجة -->
+    <div class="modal" id="resultModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>إدخال نتيجة التحليل</h3>
+                <button class="close-modal" onclick="closeModal()">X</button>
+            </div>
+            <div id="modalPatientInfo" style="background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 0.95rem;">
+                <!-- JS will fill this -->
+            </div>
+            <div class="form-group">
+                <label>قيمة النتيجة (مطلوب)</label>
+                <input type="text" id="resValue" placeholder="مثال: 15.5 أو Positive" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>الوحدة (Unit)</label>
+                <input type="text" id="resUnit" placeholder="مثال: mg/dL" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>التقييم (Flag)</label>
+                <select id="resFlag">
+                    <option value="normal">طبيعي (Normal)</option>
+                    <option value="high">مرتفع (High)</option>
+                    <option value="low">منخفض (Low)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>ملاحظات إضافية</label>
+                <textarea id="resNotes" rows="2" placeholder="أي ملاحظات..."></textarea>
+            </div>
+            <button class="btn btn-success" onclick="saveResult()" id="saveResBtn" style="padding: 12px; font-size: 1.1rem; margin-top: 10px;">💾 حفظ النتيجة</button>
+        </div>
+    </div>
+
+    <script>
+        // 1. إعدادات السحابة
+        const supabaseUrl = 'https://khjzoleiuiipyodpkieg.supabase.co';
+        const supabaseKey = 'sb_publishable_2Q7SPvruXJar3gvOxtvl5w_p4CVDfcU';
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let allData = []; // هنحفظ فيها كل الطلبات
+        let currentFilter = 'all';
+        let currentRow = null; // الطلب اللي بنكتب نتيجته دلوقتي
+
+        // 2. جلب البيانات
+        async function loadLabData() {
+            // بنجيب التحاليل اللي في visit_tests وبنربطها بالزيارة والمريض
+            const { data: vtData, error: vtErr } = await _supabase
+                .from('visit_tests')
+                .select(`
+                    id, 
+                    visit_id, 
+                    test_code, 
+                    price_at_time,
+                    visits ( id, status, patients ( full_name, age, gender ) )
+                `)
+                .order('id', { ascending: false });
+
+            if (vtErr) {
+                document.getElementById('labGrid').innerHTML = `<div class="empty-msg" style="color:red;">خطأ في التحميل: ${vtErr.message}</div>`;
+                return;
+            }
+
+            // بنجيب الكتالوج عشان نعرف أسماء التحاليل
+            const { data: catalog } = await _supabase.from('tests_catalog').select('*');
+            const catalogMap = {};
+            if(catalog) {
+                catalog.forEach(c => catalogMap[c.code] = c);
+            }
+
+            // بنجيب النتائج اللي اتكتبت خلاص
+            const { data: results } = await _supabase.from('test_results').select('*');
+            const resultsMap = {};
+            if(results) {
+                results.forEach(r => resultsMap[r.visit_test_id] = r);
+            }
+
+            // دمج البيانات كلها مع بعض
+            allData = vtData.map(vt => {
+                const cat = catalogMap[vt.test_code] || { name: vt.test_code, price: 0 };
+                const res = resultsMap[vt.id] || null;
+                return {
+                    ...vt,
+                    test_name: cat.name,
+                    result: res
+                };
+            });
+
+            renderData();
+        }
+
+        // 3. رسم الكروت
+        function renderData() {
+            const grid = document.getElementById('labGrid');
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            
+            // الفلترة
+            let filtered = allData.filter(item => {
+                const pName = item.visits?.patients?.full_name || 'غير معروف';
+                const tCode = item.test_code || '';
+                const matchSearch = pName.toLowerCase().includes(query) || tCode.toLowerCase().includes(query);
+                
+                const isDone = item.result !== null;
+                let matchFilter = true;
+                if (currentFilter === 'pending') matchFilter = !isDone;
+                if (currentFilter === 'done') matchFilter = isDone;
+
+                return matchSearch && matchFilter;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="empty-msg">لا توجد طلبات تطابق بحثك</div>';
+                return;
+            }
+
+            grid.innerHTML = filtered.map(item => {
+                const p = item.visits?.patients || {};
+                const isDone = item.result !== null;
+                const statusClass = isDone ? 'done' : 'pending';
+                const statusText = isDone ? 'تم الانتهاء' : 'مطلوب';
+                
+                let resultHtml = '';
+                if(isDone) {
+                    const flag = item.result.flag || 'normal';
+                    resultHtml = `
+                        <div class="result-display">
+                            <div class="result-val ${flag}">${item.result.result_value} ${item.result.unit || ''}</div>
+                            <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">تقييم: ${flag.toUpperCase()}</div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="card ${statusClass}">
+                        <div class="card-header">
+                            <div>
+                                <div class="p-name">${p.full_name || 'غير معروف'}</div>
+                                <div class="p-meta">${p.gender === 'male' ? 'ذكر' : p.gender === 'female' ? 'أنثى' : ''} • ${p.age || '?'} سنة</div>
+                            </div>
+                            <span class="badge ${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="test-info">
+                                <span class="test-name">${item.test_name}</span>
+                                <span class="test-code">${item.test_code}</span>
+                            </div>
+                            ${resultHtml}
+                        </div>
+                        <div class="card-footer">
+                            <span class="v-code">زيارة #${item.visit_id}</span>
+                            <button class="btn ${isDone ? 'btn-primary' : 'btn-success'}" onclick='openModal(${JSON.stringify(item)})'>
+                                ${isDone ? '✏️ تعديل' : '➕ إدخال نتيجة'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function setFilter(type) {
+            currentFilter = type;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + type).classList.add('active');
+            renderData();
+        }
+
+        // 4. المودال وإدخال النتيجة
+        function openModal(item) {
+            currentRow = item;
+            const pName = item.visits?.patients?.full_name || 'غير معروف';
+            
+            document.getElementById('modalPatientInfo').innerHTML = `
+                <strong>المريض:</strong> ${pName} <br>
+                <strong>التحليل:</strong> ${item.test_name} (${item.test_code})
+            `;
+
+            if(item.result) {
+                document.getElementById('resValue').value = item.result.result_value || '';
+                document.getElementById('resUnit').value = item.result.unit || '';
+                document.getElementById('resFlag').value = item.result.flag || 'normal';
+                document.getElementById('resNotes').value = item.result.notes || '';
+            } else {
+                document.getElementById('resValue').value = '';
+                document.getElementById('resUnit').value = '';
+                document.getElementById('resFlag').value = 'normal';
+                document.getElementById('resNotes').value = '';
+            }
+
+            document.getElementById('resultModal').style.display = 'flex';
+            document.getElementById('resValue').focus();
+        }
+
+        function closeModal() {
+            document.getElementById('resultModal').style.display = 'none';
+            currentRow = null;
+        }
+
+        // 5. الحفظ في السحابة
+        async function saveResult() {
+            if(!currentRow) return;
+            const val = document.getElementById('resValue').value.trim();
+            if(!val) return alert('الرجاء إدخال قيمة النتيجة!');
+
+            const btn = document.getElementById('saveResBtn');
+            btn.innerText = 'جاري الحفظ...';
+            btn.disabled = true;
+
+            const payload = {
+                visit_test_id: currentRow.id,
+                result_value: val,
+                unit: document.getElementById('resUnit').value.trim(),
+                flag: document.getElementById('resFlag').value,
+                notes: document.getElementById('resNotes').value.trim(),
+                entered_at: new Date().toISOString()
+            };
+
+            try {
+                // Upsert (لو موجود يعدل، لو مش موجود يضيف)
+                const { error } = await _supabase
+                    .from('test_results')
+                    .upsert(payload, { onConflict: 'visit_test_id' });
+
+                if(error) throw error;
+                
+                // نقفل المودال ونحدث الشاشة
+                closeModal();
+                loadLabData(); 
+                
+            } catch(err) {
+                alert('خطأ في الحفظ: ' + err.message);
+            } finally {
+                btn.innerText = '💾 حفظ النتيجة';
+                btn.disabled = false;
+            }
+        }
+
+        // التشغيل
+        window.onload = () => {
+            loadLabData();
+        };
+    </script>
+</body>
+</html>
