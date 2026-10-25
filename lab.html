@@ -150,41 +150,41 @@
         let currentFilter = 'all';
         let currentRow = null; 
 
+        // 2. جلب البيانات (هنفصلهم عن بعض عشان نمنع أي إيرور)
         async function loadLabData() {
-            // التعديل هنا: شيلنا full_name وحطينا * عشان يسحب أي أعمدة موجودة
-            const { data: vtData, error: vtErr } = await _supabase
-                .from('visit_tests')
-                .select(`
-                    id, 
-                    visit_id, 
-                    test_code, 
-                    price_at_time,
-                    visits ( id, status, patients ( * ) )
-                `)
-                .order('id', { ascending: false });
-
+            // بنجيب كل الجداول لوحدها
+            const { data: vtData, error: vtErr } = await _supabase.from('visit_tests').select('*').order('id', { ascending: false });
             if (vtErr) {
                 document.getElementById('labGrid').innerHTML = `<div class="empty-msg" style="color:red;">خطأ في التحميل: ${vtErr.message}</div>`;
                 return;
             }
 
-            const { data: catalog } = await _supabase.from('tests_catalog').select('*');
+            const { data: visitsData } = await _supabase.from('visits').select('*');
+            const visitsMap = {};
+            if(visitsData) visitsData.forEach(v => visitsMap[v.id] = v);
+
+            const { data: patientsData } = await _supabase.from('patients').select('*');
+            const patientsMap = {};
+            if(patientsData) patientsData.forEach(p => patientsMap[p.id] = p);
+
+            const { data: catalogData } = await _supabase.from('tests_catalog').select('*');
             const catalogMap = {};
-            if(catalog) {
-                catalog.forEach(c => catalogMap[c.code] = c);
-            }
+            if(catalogData) catalogData.forEach(c => catalogMap[c.code] = c);
 
-            const { data: results } = await _supabase.from('test_results').select('*');
+            const { data: resultsData } = await _supabase.from('test_results').select('*');
             const resultsMap = {};
-            if(results) {
-                results.forEach(r => resultsMap[r.visit_test_id] = r);
-            }
+            if(resultsData) resultsData.forEach(r => resultsMap[r.visit_test_id] = r);
 
+            // بنجمعهم مع بعض في الجافاسكريبت
             allData = vtData.map(vt => {
+                const visit = visitsMap[vt.visit_id] || {};
+                const patient = patientsMap[visit.patient_id] || {};
                 const cat = catalogMap[vt.test_code] || { name: vt.test_code, price: 0 };
                 const res = resultsMap[vt.id] || null;
+
                 return {
                     ...vt,
+                    patient: patient,
                     test_name: cat.name,
                     result: res
                 };
@@ -193,14 +193,15 @@
             renderData();
         }
 
+        // 3. رسم الكروت
         function renderData() {
             const grid = document.getElementById('labGrid');
             const query = document.getElementById('searchInput').value.toLowerCase();
             
             let filtered = allData.filter(item => {
-                const p = item.visits?.patients || {};
-                // التعديل هنا: بندور على full_name أو name عشان نضمن إنه يشتغل
-                const pName = (p.full_name || p.name || 'غير معروف').toLowerCase();
+                const p = item.patient || {};
+                // بندور على الاسم سواء اسمه full_name أو name
+                const pName = (p.full_name || p.name || '').toLowerCase();
                 const tCode = (item.test_code || '').toLowerCase();
                 const matchSearch = pName.includes(query) || tCode.includes(query);
                 
@@ -218,8 +219,7 @@
             }
 
             grid.innerHTML = filtered.map(item => {
-                const p = item.visits?.patients || {};
-                // التعديل هنا
+                const p = item.patient || {};
                 const pNameDisplay = p.full_name || p.name || 'غير معروف';
                 
                 const isDone = item.result !== null;
@@ -242,7 +242,7 @@
                         <div class="card-header">
                             <div>
                                 <div class="p-name">${pNameDisplay}</div>
-                                <div class="p-meta">${p.gender === 'male' ? 'ذكر' : p.gender === 'female' ? 'أنثى' : (p.gender === 'ذكر' ? 'ذكر' : p.gender === 'أنثى' ? 'أنثى' : '')} • ${p.age || '?'} سنة</div>
+                                <div class="p-meta">${p.gender === 'male' || p.gender === 'ذكر' ? 'ذكر' : 'أنثى'} • ${p.age || '?'} سنة</div>
                             </div>
                             <span class="badge ${statusClass}">${statusText}</span>
                         </div>
@@ -271,9 +271,10 @@
             renderData();
         }
 
+        // 4. المودال
         function openModal(item) {
             currentRow = item;
-            const p = item.visits?.patients || {};
+            const p = item.patient || {};
             const pName = p.full_name || p.name || 'غير معروف';
             
             document.getElementById('modalPatientInfo').innerHTML = `
@@ -302,6 +303,7 @@
             currentRow = null;
         }
 
+        // 5. الحفظ
         async function saveResult() {
             if(!currentRow) return;
             const val = document.getElementById('resValue').value.trim();
@@ -338,6 +340,7 @@
             }
         }
 
+        // التشغيل
         window.onload = () => {
             loadLabData();
         };
