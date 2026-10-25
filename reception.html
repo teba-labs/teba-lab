@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -153,14 +153,14 @@
     </div>
 
     <script>
-                // ==========================================
+        // ==========================================
         // 1. إعداد الاتصال بـ Supabase (المفاتيح بتاعتك)
         // ==========================================
-        const supabaseUrl = 'https://khjzoleiuiipyodpkieg.supabase.co'; // ضفت السطر ده
+        const supabaseUrl = 'https://khjzoleiuiipyodpkieg.supabase.co';
         const supabaseKey = 'sb_publishable_2Q7SPvruXJar3gvOxtvl5w_p4CVDfcU';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // 2. كتالوج تجريبي (هنستبدله بجدول tests_catalog بعدين)
+        // 2. كتالوج تجريبي (الـ 10 تحاليل اللي طلعت اختفت)
         const masterTests = [
             { code: 'CBC', name: 'صورة دم كاملة', price: 100, category: 'دم' },
             { code: 'LIPID', name: 'دهون كاملة', price: 200, category: 'كيمياء' },
@@ -286,7 +286,7 @@
                     .from('visits')
                     .insert([{
                         patient_id: patientId,
-                        branch_id: 1, // فرع الجعافرة افتراضياً
+                        branch_id: 1,
                         total_amount: netTotal,
                         paid_amount: paid,
                         discount: discount,
@@ -342,7 +342,7 @@
         }
 
         // تشغيل الشاشة
-window.onload = () => { renderCatalog(); renderCart(); };
+        window.onload = () => { renderCatalog(); renderCart(); };
     </script>
 </body>
 </html>
