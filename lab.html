@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - بوابة المعمل (v11)</title>
+    <title>معامل طيبة - بوابة المعمل (v12 - Panels)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -18,79 +18,59 @@
         body { font-family: var(--font-family); background-color: var(--primary-bg); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
 
         header { background-color: var(--primary-color); color: white; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; box-shadow: var(--shadow-md); z-index: 10; }
-        .brand-info { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px;}
-        .nav-links { display: flex; gap: 10px; }
-        .nav-btn { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.95rem; display: flex; align-items: center; gap: 5px; transition: 0.2s; font-family: inherit;}
-        .nav-btn:hover { background: rgba(255,255,255,0.2); }
-        .nav-btn.rec { background: var(--accent-color); color: white; border-color: var(--accent-color); }
-        .nav-btn.rec:hover { background: #2980b9; }
+        .brand-info { font-weight: bold; font-size: 1.1rem; }
+        .nav-btn { background: var(--accent-color); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-family: inherit;}
 
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; width: 100%; flex-grow: 1; }
-        .toolbar { background: var(--surface-bg); border-radius: var(--radius); padding: 15px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); }
+        .toolbar { background: var(--surface-bg); border-radius: var(--radius); padding: 15px; margin-bottom: 20px; display: flex; gap: 15px; align-items: center; box-shadow: var(--shadow-sm); }
         
-        .search-box { flex-grow: 1; position: relative; }
-        .search-box input { width: 100%; padding: 10px 15px; border: 2px solid var(--border-color); border-radius: var(--radius); font-size: 1rem; outline: none; font-family: inherit; transition: 0.2s;}
-        .search-box input:focus { border-color: var(--accent-color); }
-
+        .search-box input { width: 100%; padding: 10px 15px; border: 2px solid var(--border-color); border-radius: var(--radius); outline: none; font-family: inherit;}
         .tabs { display: flex; gap: 5px; background: #eee; padding: 4px; border-radius: var(--radius); }
-        .tab { padding: 8px 16px; border: none; background: transparent; cursor: pointer; font-weight: bold; color: var(--text-muted); border-radius: 5px; transition: 0.2s; font-family: inherit; font-size: 0.95rem;}
+        .tab { padding: 8px 16px; border: none; background: transparent; cursor: pointer; font-weight: bold; border-radius: 5px; font-family: inherit;}
         .tab.active { background: var(--surface-bg); color: var(--primary-color); box-shadow: var(--shadow-sm); }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; }
-        .card { background: var(--surface-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); overflow: hidden; display: flex; flex-direction: column; transition: 0.2s; }
-        .card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-        
+        .card { background: var(--surface-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; flex-direction: column; }
         .card.pending { border-top: 4px solid var(--warning-color); }
         .card.done { border-top: 4px solid var(--success-color); }
-
-        .card-header { padding: 12px 15px; border-bottom: 1px solid var(--border-color); background: #f8f9fa; display: flex; justify-content: space-between; align-items: flex-start;}
-        .p-name { font-weight: bold; font-size: 1.1rem; color: var(--primary-color); margin-bottom: 4px; }
-        .p-meta { font-size: 0.85rem; color: var(--text-muted); }
-        
+        .card-header { padding: 12px 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; }
+        .p-name { font-weight: bold; color: var(--primary-color); }
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
         .badge.pending { background: #ffeaa7; color: #d35400; }
         .badge.done { background: #d4edda; color: #27ae60; }
-
+        
         .card-body { padding: 15px; flex-grow: 1; }
-        .test-info { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center;}
-        .test-name { font-weight: bold; font-size: 1rem; }
-        .test-code { font-size: 0.8rem; color: var(--text-muted); background: #eee; padding: 2px 6px; border-radius: 4px; }
-        
-        .result-display { background: #fdfbf7; border: 1px dashed var(--border-color); padding: 10px; border-radius: 6px; text-align: center; margin-top: 10px;}
-        .result-val { font-size: 1.3rem; font-weight: bold; }
-        .result-val.high { color: var(--danger-color); }
-        .result-val.low { color: var(--accent-color); }
-        .result-val.normal { color: var(--success-color); }
-
+        .test-info { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold;}
         .card-footer { padding: 12px 15px; border-top: 1px solid var(--border-color); background: #fafafa; display: flex; justify-content: space-between; align-items: center;}
-        .v-code { font-size: 0.85rem; color: var(--text-muted); font-weight: bold;}
         
-        .btn { padding: 8px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; color: white; font-family: inherit; font-size: 0.9rem;}
-        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn { padding: 8px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; font-family: inherit;}
         .btn-primary { background: var(--accent-color); }
         .btn-success { background: var(--success-color); }
+
+        /* Modal & Table */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: var(--radius); width: 95%; max-width: 800px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;}
         
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 20px; border-radius: var(--radius); width: 90%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; box-shadow: var(--shadow-md);}
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
-        .modal-header h3 { color: var(--primary-color); }
-        .close-modal { background: var(--danger-color); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;}
+        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .data-table th, .data-table td { padding: 8px; border: 1px solid var(--border-color); text-align: right; font-size: 0.9rem;}
+        .data-table th { background: #f8f9fa; }
         
-        .form-group { display: flex; flex-direction: column; gap: 5px; }
-        .form-group label { font-size: 0.9rem; font-weight: bold; color: var(--text-muted); }
-        .form-group input, .form-group select, .form-group textarea { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 1rem; outline: none; }
-        .form-group input:focus { border-color: var(--accent-color); }
+        .res-input { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 1rem; font-weight: bold; text-align: center;}
+        .res-input:focus { border-color: var(--accent-color); outline: none;}
         
-        .empty-msg { text-align: center; padding: 50px; color: var(--text-muted); font-size: 1.2rem; grid-column: 1 / -1; }
+        .flag-high { color: var(--danger-color); font-weight: bold; }
+        .flag-low { color: var(--accent-color); font-weight: bold; }
+        .flag-normal { color: var(--success-color); font-weight: bold; }
+        
+        .empty-msg { text-align: center; padding: 50px; color: var(--text-muted); }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="brand-info">🔬 بوابة المعمل - معامل طيبة (v11)</div>
-        <div class="nav-links">
-            <button class="nav-btn rec" onclick="window.location.href='reception.html'">🏥 بوابة الاستقبال</button>
-        </div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v12)</div>
+        <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
     </header>
 
     <div class="container">
@@ -100,44 +80,26 @@
                 <button class="tab" onclick="setFilter('pending')" id="tab-pending">مطلوب</button>
                 <button class="tab" onclick="setFilter('done')" id="tab-done">تم الانتهاء</button>
             </div>
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="بحث باسم المريض أو كود التحليل..." onkeyup="renderData()">
+            <div class="search-box" style="flex-grow:1;">
+                <input type="text" id="searchInput" placeholder="بحث..." onkeyup="renderData()">
             </div>
         </div>
 
-        <div class="grid" id="labGrid">
-            <div class="empty-msg">جاري تحميل الطلبات من السحابة...</div>
-        </div>
+        <div class="grid" id="labGrid"></div>
     </div>
 
     <div class="modal" id="resultModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>إدخال نتيجة التحليل</h3>
-                <button class="close-modal" onclick="closeModal()">X</button>
+                <h3 id="modalTitle">إدخال نتيجة</h3>
+                <button class="btn" style="background:#e74c3c;" onclick="closeModal()">X</button>
             </div>
-            <div id="modalPatientInfo" style="background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 0.95rem;"></div>
-            <div class="form-group">
-                <label>قيمة النتيجة (مطلوب)</label>
-                <input type="text" id="resValue" placeholder="مثال: 15.5 أو Positive" autocomplete="off">
-            </div>
-            <div class="form-group">
-                <label>الوحدة (Unit)</label>
-                <input type="text" id="resUnit" placeholder="مثال: mg/dL" autocomplete="off">
-            </div>
-            <div class="form-group">
-                <label>التقييم (Flag)</label>
-                <select id="resFlag">
-                    <option value="normal">طبيعي (Normal)</option>
-                    <option value="high">مرتفع (High)</option>
-                    <option value="low">منخفض (Low)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>ملاحظات إضافية</label>
-                <textarea id="resNotes" rows="2" placeholder="أي ملاحظات..."></textarea>
-            </div>
-            <button class="btn btn-success" onclick="saveResult()" id="saveResBtn" style="padding: 12px; font-size: 1.1rem; margin-top: 10px;">💾 حفظ النتيجة</button>
+            <div id="modalPatientInfo" style="background: #f0f4f8; padding: 10px; border-radius: 6px; margin-bottom: 15px;"></div>
+            
+            <!-- هنا هيترسم الجدول الديناميكي -->
+            <div id="dynamicFormArea"></div>
+
+            <button class="btn btn-success" onclick="saveResult()" id="saveResBtn" style="width: 100%; padding: 12px; font-size: 1.1rem;">💾 حفظ النتائج</button>
         </div>
     </div>
 
@@ -146,64 +108,43 @@
         const supabaseKey = 'sb_publishable_2Q7SPvruXJar3gvOxtvl5w_p4CVDfcU';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        let allData = []; 
-        let currentFilter = 'all';
-        let currentRow = null; 
+        let allData = [], currentFilter = 'all', currentRow = null;
 
-        // 2. جلب البيانات (هنفصلهم عن بعض عشان نمنع أي إيرور)
         async function loadLabData() {
-            // بنجيب كل الجداول لوحدها
-            const { data: vtData, error: vtErr } = await _supabase.from('visit_tests').select('*').order('id', { ascending: false });
-            if (vtErr) {
-                document.getElementById('labGrid').innerHTML = `<div class="empty-msg" style="color:red;">خطأ في التحميل: ${vtErr.message}</div>`;
-                return;
-            }
+            const { data: vtData, error } = await _supabase.from('visit_tests').select('*').order('id', { ascending: false });
+            if (error) return document.getElementById('labGrid').innerHTML = `<div class="empty-msg" style="color:red;">خطأ: ${error.message}</div>`;
 
-            const { data: visitsData } = await _supabase.from('visits').select('*');
-            const visitsMap = {};
-            if(visitsData) visitsData.forEach(v => visitsMap[v.id] = v);
+            const { data: visits } = await _supabase.from('visits').select('*');
+            const { data: patients } = await _supabase.from('patients').select('*');
+            const { data: catalog } = await _supabase.from('tests_catalog').select('*');
+            const { data: results } = await _supabase.from('test_results').select('*');
 
-            const { data: patientsData } = await _supabase.from('patients').select('*');
-            const patientsMap = {};
-            if(patientsData) patientsData.forEach(p => patientsMap[p.id] = p);
+            const vMap = {}, pMap = {}, cMap = {}, rMap = {};
+            visits?.forEach(v => vMap[v.id] = v);
+            patients?.forEach(p => pMap[p.id] = p);
+            catalog?.forEach(c => cMap[c.code] = c);
+            results?.forEach(r => rMap[r.visit_test_id] = r);
 
-            const { data: catalogData } = await _supabase.from('tests_catalog').select('*');
-            const catalogMap = {};
-            if(catalogData) catalogData.forEach(c => catalogMap[c.code] = c);
-
-            const { data: resultsData } = await _supabase.from('test_results').select('*');
-            const resultsMap = {};
-            if(resultsData) resultsData.forEach(r => resultsMap[r.visit_test_id] = r);
-
-            // بنجمعهم مع بعض في الجافاسكريبت
             allData = vtData.map(vt => {
-                const visit = visitsMap[vt.visit_id] || {};
-                const patient = patientsMap[visit.patient_id] || {};
-                const cat = catalogMap[vt.test_code] || { name: vt.test_code, price: 0 };
-                const res = resultsMap[vt.id] || null;
+                const visit = vMap[vt.visit_id] || {};
+                const patient = pMap[visit.patient_id] || {};
+                const test = cMap[vt.test_code] || { name: vt.test_code, parameters: [] };
+                const result = rMap[vt.id] || null;
 
-                return {
-                    ...vt,
-                    patient: patient,
-                    test_name: cat.name,
-                    result: res
-                };
+                return { ...vt, patient, test_name: test.name, parameters: test.parameters, result };
             });
 
             renderData();
         }
 
-        // 3. رسم الكروت
         function renderData() {
             const grid = document.getElementById('labGrid');
             const query = document.getElementById('searchInput').value.toLowerCase();
             
             let filtered = allData.filter(item => {
                 const p = item.patient || {};
-                // بندور على الاسم سواء اسمه full_name أو name
                 const pName = (p.full_name || p.name || '').toLowerCase();
-                const tCode = (item.test_code || '').toLowerCase();
-                const matchSearch = pName.includes(query) || tCode.includes(query);
+                const matchSearch = pName.includes(query) || (item.test_code || '').toLowerCase().includes(query);
                 
                 const isDone = item.result !== null;
                 let matchFilter = true;
@@ -213,50 +154,28 @@
                 return matchSearch && matchFilter;
             });
 
-            if (filtered.length === 0) {
-                grid.innerHTML = '<div class="empty-msg">لا توجد طلبات تطابق بحثك</div>';
-                return;
-            }
+            if (!filtered.length) return grid.innerHTML = '<div class="empty-msg">لا توجد طلبات</div>';
 
             grid.innerHTML = filtered.map(item => {
                 const p = item.patient || {};
-                const pNameDisplay = p.full_name || p.name || 'غير معروف';
-                
                 const isDone = item.result !== null;
                 const statusClass = isDone ? 'done' : 'pending';
-                const statusText = isDone ? 'تم الانتهاء' : 'مطلوب';
+                const pName = p.full_name || p.name || 'غير معروف';
                 
-                let resultHtml = '';
-                if(isDone) {
-                    const flag = item.result.flag || 'normal';
-                    resultHtml = `
-                        <div class="result-display">
-                            <div class="result-val ${flag}">${item.result.result_value} ${item.result.unit || ''}</div>
-                            <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">تقييم: ${flag.toUpperCase()}</div>
-                        </div>
-                    `;
-                }
-
                 return `
                     <div class="card ${statusClass}">
                         <div class="card-header">
-                            <div>
-                                <div class="p-name">${pNameDisplay}</div>
-                                <div class="p-meta">${p.gender === 'male' || p.gender === 'ذكر' ? 'ذكر' : 'أنثى'} • ${p.age || '?'} سنة</div>
-                            </div>
-                            <span class="badge ${statusClass}">${statusText}</span>
+                            <div><div class="p-name">${pName}</div><div style="font-size:0.8rem; color:#666;">${p.gender} • ${p.age} سنة</div></div>
+                            <span class="badge ${statusClass}">${isDone ? 'تم' : 'مطلوب'}</span>
                         </div>
                         <div class="card-body">
-                            <div class="test-info">
-                                <span class="test-name">${item.test_name}</span>
-                                <span class="test-code">${item.test_code}</span>
-                            </div>
-                            ${resultHtml}
+                            <div class="test-info"><span>${item.test_name}</span> <span>${item.test_code}</span></div>
+                            ${isDone ? `<div style="text-align:center; font-size:1.5rem; color:var(--success-color);">✅ تم إدخال النتائج</div>` : ''}
                         </div>
                         <div class="card-footer">
-                            <span class="v-code">زيارة #${item.visit_id}</span>
+                            <span>زيارة #${item.visit_id}</span>
                             <button class="btn ${isDone ? 'btn-primary' : 'btn-success'}" onclick='openModal(${JSON.stringify(item)})'>
-                                ${isDone ? '✏️ تعديل' : '➕ إدخال نتيجة'}
+                                ${isDone ? '✏️ تعديل' : '➕ إدخال'}
                             </button>
                         </div>
                     </div>
@@ -271,31 +190,75 @@
             renderData();
         }
 
-        // 4. المودال
+        // دالة حساب التقييم التلقائي
+        function calcFlag(val, ref) {
+            if (!val || !ref) return 'normal';
+            const num = parseFloat(val);
+            if (isNaN(num)) return 'normal';
+            
+            const range = ref.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
+            if (range) {
+                const min = parseFloat(range[1]), max = parseFloat(range[2]);
+                if (num < min) return 'low';
+                if (num > max) return 'high';
+            }
+            return 'normal';
+        }
+
         function openModal(item) {
             currentRow = item;
             const p = item.patient || {};
-            const pName = p.full_name || p.name || 'غير معروف';
-            
             document.getElementById('modalPatientInfo').innerHTML = `
-                <strong>المريض:</strong> ${pName} <br>
+                <strong>المريض:</strong> ${p.full_name || p.name} (${p.gender === 'female' ? 'أنثى' : 'ذكر'}) <br>
                 <strong>التحليل:</strong> ${item.test_name} (${item.test_code})
             `;
 
-            if(item.result) {
-                document.getElementById('resValue').value = item.result.result_value || '';
-                document.getElementById('resUnit').value = item.result.unit || '';
-                document.getElementById('resFlag').value = item.result.flag || 'normal';
-                document.getElementById('resNotes').value = item.result.notes || '';
+            const params = item.parameters || [];
+            const savedData = item.result?.results_data || {};
+            let html = '';
+
+            if (params.length > 0) {
+                // تحليل معقد (Panel)
+                html += `<table class="data-table">
+                    <thead><tr><th>الفحص</th><th>النتيجة</th><th>الوحدة</th><th>المدى المرجعي</th><th>الحالة</th></tr></thead>
+                    <tbody>`;
+                
+                params.forEach(param => {
+                    // لو البيانات جاية من الـ JSONB بالشكل اللي إنت مدخله
+                    const ref = p.gender === 'female' ? (param.ref_female || param.ref) : (param.ref_male || param.ref);
+                    const savedVal = savedData[param.name]?.value || '';
+                    const savedFlag = savedData[param.name]?.flag || 'normal';
+                    const flagText = savedFlag === 'high' ? 'H' : savedFlag === 'low' ? 'L' : 'N';
+
+                    html += `<tr>
+                        <td><strong>${param.label || param.name}</strong><br><small style="color:#777">${param.name}</small></td>
+                        <td><input type="text" class="res-input" id="val_${param.name}" value="${savedVal}" oninput="updateRowFlag('${param.name}', '${ref}')"></td>
+                        <td>${param.unit || ''}</td>
+                        <td>${ref || ''}</td>
+                        <td id="flag_${param.name}" class="flag-${savedFlag}">${flagText}</td>
+                    </tr>`;
+                });
+                html += `</tbody></table>`;
             } else {
-                document.getElementById('resValue').value = '';
-                document.getElementById('resUnit').value = '';
-                document.getElementById('resFlag').value = 'normal';
-                document.getElementById('resNotes').value = '';
+                // تحليل بسيط (خانة واحدة)
+                const val = savedData['result']?.value || '';
+                html += `<div style="margin-bottom:15px;">
+                    <label style="font-weight:bold; display:block; margin-bottom:5px;">النتيجة:</label>
+                    <input type="text" class="res-input" id="val_simple" value="${val}" style="text-align:right; padding:10px;">
+                </div>`;
             }
 
+            document.getElementById('dynamicFormArea').innerHTML = html;
             document.getElementById('resultModal').style.display = 'flex';
-            document.getElementById('resValue').focus();
+        }
+
+        // دالة تفاعلية عشان تظهر H أو L فوراً وإنت بتكتب
+        window.updateRowFlag = function(paramName, refRange) {
+            const val = document.getElementById(`val_${paramName}`).value;
+            const flag = calcFlag(val, refRange);
+            const cell = document.getElementById(`flag_${paramName}`);
+            cell.className = `flag-${flag}`;
+            cell.innerText = flag === 'high' ? 'H' : flag === 'low' ? 'L' : 'N';
         }
 
         function closeModal() {
@@ -303,47 +266,49 @@
             currentRow = null;
         }
 
-        // 5. الحفظ
         async function saveResult() {
             if(!currentRow) return;
-            const val = document.getElementById('resValue').value.trim();
-            if(!val) return alert('الرجاء إدخال قيمة النتيجة!');
+            const params = currentRow.parameters || [];
+            const resultsData = {};
+            const p = currentRow.patient || {};
+
+            if (params.length > 0) {
+                for (let param of params) {
+                    const val = document.getElementById(`val_${param.name}`).value.trim();
+                    if (!val) return alert(`الرجاء إدخال نتيجة ${param.label || param.name}`);
+                    
+                    const ref = p.gender === 'female' ? (param.ref_female || param.ref) : (param.ref_male || param.ref);
+                    const flag = calcFlag(val, ref);
+                    
+                    resultsData[param.name] = { value: val, flag: flag };
+                }
+            } else {
+                const val = document.getElementById('val_simple').value.trim();
+                if (!val) return alert('الرجاء إدخال النتيجة');
+                resultsData['result'] = { value: val, flag: 'normal' };
+            }
 
             const btn = document.getElementById('saveResBtn');
-            btn.innerText = 'جاري الحفظ...';
-            btn.disabled = true;
-
-            const payload = {
-                visit_test_id: currentRow.id,
-                result_value: val,
-                unit: document.getElementById('resUnit').value.trim(),
-                flag: document.getElementById('resFlag').value,
-                notes: document.getElementById('resNotes').value.trim(),
-                entered_at: new Date().toISOString()
-            };
+            btn.innerText = 'جاري الحفظ...'; btn.disabled = true;
 
             try {
-                const { error } = await _supabase
-                    .from('test_results')
-                    .upsert(payload, { onConflict: 'visit_test_id' });
+                const { error } = await _supabase.from('test_results').upsert({
+                    visit_test_id: currentRow.id,
+                    results_data: resultsData,
+                    entered_at: new Date().toISOString()
+                }, { onConflict: 'visit_test_id' });
 
                 if(error) throw error;
-                
                 closeModal();
-                loadLabData(); 
-                
+                loadLabData();
             } catch(err) {
-                alert('خطأ في الحفظ: ' + err.message);
+                alert('خطأ: ' + err.message);
             } finally {
-                btn.innerText = '💾 حفظ النتيجة';
-                btn.disabled = false;
+                btn.innerText = '💾 حفظ النتائج'; btn.disabled = false;
             }
         }
 
-        // التشغيل
-        window.onload = () => {
-            loadLabData();
-        };
+        window.onload = loadLabData;
     </script>
 </body>
 </html>
