@@ -10,7 +10,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://cdn.sheetjs.com" crossorigin>
-<link rel="dns-prefetch" href="https://images.unsplash.com">
 <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
 <link rel="preload" href="styles.css" as="style">
 <link rel="preload" href="admin.css" as="style">
@@ -434,6 +433,15 @@
 
       <section class="admin-section" id="report-topSellers">
         <div class="admin-section-head"><h2>🏆 الأكثر مبيعاً</h2></div>
+        <div class="filter-group">
+          <div><label>الفرع:</label>
+            <select id="topSellersBranchSel" onchange="renderTopSellers()">
+              <option value="combined">🏥 إجمالي الفرعين</option>
+              <option value="jaafara">🏥 فرع الجعافرة</option>
+              <option value="bahtim">🏥 فرع بهتيم</option>
+            </select>
+          </div>
+        </div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
           <input type="text" class="table-search-input" placeholder="🔍 ابحث..." onkeyup="filterTable(this, 'topSellersTableBody')">
           <div class="table-responsive">
@@ -555,17 +563,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
 <script src="admin.js" defer></script>
 
-<!-- Service Worker Registration for PWA -->
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('./service-worker.js')
-        .then(function (reg) {
-          console.log('✅ SW Registered from Admin');
-        })
-        .catch(function (err) {
-          console.warn('SW registration failed:', err);
-        });
+        .then(function (reg) { console.log('✅ SW Registered from Admin'); })
+        .catch(function (err) { console.warn('SW registration failed:', err); });
     });
   }
 </script>
