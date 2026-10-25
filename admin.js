@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Admin Logic (v59 - Stable + Fixes + Search)
+   TEBA LABS - Admin Logic (v60 - Real AI Integration)
    ===================================================== */
 
 (function(){
@@ -17,7 +17,7 @@
   const LOCK_DURATION = 15 * 60 * 1000;
   const DEFAULT_PASSWORD = 'teba2026admin';
   const MAX_FILE_SIZE = 20 * 1024 * 1024;
-  const BACKUP_VERSION = 'v59';
+  const BACKUP_VERSION = 'v60';
 
   let salesWorkbook = null;
   let pricesWorkbook = null;
@@ -1327,88 +1327,96 @@
 
   window.closeAIAssistant = function() { const modal = document.getElementById('aiModal'); if (modal) modal.classList.remove('show'); };
 
-  window.copyAIReport = function(type) {
+  /* ============= AI REAL API INTEGRATION ============= */
+  window.copyAIReport = async function(type) {
     if (!salesWorkbook) {
-      alert('⚠️ لازم ترفع الملفات الأول عشان أقدر أطلع تقرير.');
+      alert('⚠️ لازم ترفع ملفات الإكسل الأول عشان أقدر أحلل.');
       return;
     }
-    const period = findLatestReportMonth();
-    if (!period) return;
 
+    const period = findLatestReportMonth();
+    if (!period) {
+      alert('⚠️ مفيش بيانات كفاية.');
+      return;
+    }
+
+    // 1. سحب الأرقام والبيانات
     const monthsAr = ['يناير','فبراير','مارس','ابريل','مايو','يونيو','يوليو','اغسطس','سبتمبر','اكتوبر','نوفمبر','ديسمبر'];
     const monthName = monthsAr[period.month - 1];
     
-    let historyText = "";
-    [2024, 2025, 2026].forEach(y => {
-      let yRev = 0, yExp = 0, yCases = 0;
-      ['الجعافرة', 'بهتيم'].forEach(b => {
-        let r = extractYearData(y, b);
-        yRev += r.rev; yExp += r.exp;
-        yCases += extractMonthData(y, 'all', b).cases;
-      });
-      if (yRev > 0 || yCases > 0) {
-        historyText += `- سنة ${y}: إيراد ${yRev.toLocaleString()} ج، مصاريف ${yExp.toLocaleString()} ج، حالات ${yCases.toLocaleString()}\n`;
-      }
-    });
-
     const currJ = extractMonthData(period.year, period.month, 'الجعافرة');
     const currB = extractMonthData(period.year, period.month, 'بهتيم');
     const currRev = currJ.rev + currB.rev;
     const currExp = currJ.exp + currB.exp;
     const currProfit = currRev - currExp;
+    const currCases = currJ.cases + currB.cases;
     const margin = currRev > 0 ? (currProfit / currRev * 100).toFixed(1) : 0;
-    
-    let seasonalityText = "";
-    for (let m = 1; m <= 12; m++) {
-      let rowStr = `- ${monthsAr[m-1]}: `;
-      let hasData = false;
-      [2024, 2025, 2026].forEach(y => {
-        const mJ = extractMonthData(y, m, 'الجعافرة');
-        const mB = extractMonthData(y, m, 'بهتيم');
-        const totalCases = mJ.cases + mB.cases;
-        const totalRev = mJ.rev + mB.rev;
-        if (totalCases > 0 || totalRev > 0) {
-          rowStr += `[${y}: ${totalCases} حالة, إيراد ${totalRev.toLocaleString()} ج] `;
-          hasData = true;
-        }
-      });
-      if (hasData) seasonalityText += rowStr + "\n";
-    }
 
     const merged = getMergedData('combined');
     const topProfitable = [...merged].sort((a, b) => b.trueTotalProfit - a.trueTotalProfit).slice(0, 5);
     const losingTests = merged.filter(t => t.trueCost > t.sell && t.count > 0).sort((a, b) => a.trueProfitUnit - b.trueProfitUnit).slice(0, 5);
+    const topSellers = [...merged].sort((a, b) => b.count - a.count).slice(0, 5);
 
-    let prompt = `أهلاً DeepSeek. أنت الآن "مستشار مالي وتشغيلي" خبير في إدارة المعامل الطبية. أنا الدكتور أحمد طه، صاحب "معامل طيبة".\n`;
-    prompt += `أحتاج منك تحليل شامل ودراسة استراتيجية بناءً على البيانات التالية. أرجو أن يكون ردك عملياً ومبنياً على الأرقام، وبدون مقدمات إنشائية.\n\n`;
-    prompt += `📊 **[1] البيانات التاريخية (السياق):**\n${historyText}\n`;
-    prompt += `📍 **[2] بيانات الشهر الحالي (${monthName} ${period.year}):**\n`;
-    prompt += `- الإجمالي: إيراد ${currRev.toLocaleString()} ج، مصاريف ${currExp.toLocaleString()} ج، صافي ربح ${currProfit.toLocaleString()} ج (هامش ${margin}%).\n`;
-    prompt += `- فرع الجعافرة: إيراد ${currJ.rev.toLocaleString()} ج، مصاريف ${currJ.exp.toLocaleString()} ج، عدد الحالات ${currJ.cases.toLocaleString()} حالة.\n`;
-    prompt += `- فرع بهتيم: إيراد ${currB.rev.toLocaleString()} ج، مصاريف ${currB.exp.toLocaleString()} ج، عدد الحالات ${currB.cases.toLocaleString()} حالة.\n\n`;
-    prompt += `🗓️ **[3] مصفوفة الموسمية (شهر بشهر لـ 3 سنين):**\n`;
-    prompt += `(ملاحظة: الاعتماد على عدد الحالات كمؤشر للضغط التشغيلي، والإيراد كمؤشر مالي)\n${seasonalityText}\n`;
-    prompt += `💎 **[4] التحاليل (بناءً على التكلفة الحقيقية):**\n`;
-    prompt += `- أفضل 5 تحاليل ربحية (النجوم):\n`;
-    topProfitable.forEach((t, i) => { prompt += `  ${i+1}. ${t.name}: ربح صافي (${t.trueProfitUnit.toFixed(1)} ج)، إجمالي (${t.trueTotalProfit.toLocaleString()} ج).\n`; });
+    // 2. بناء البرومبت (شامل مالي + عددي + تطوير + تشغيل)
+    let prompt = `أنت الآن "مستشار مالي وتشغيلي واستراتيجي" خبير في إدارة المعامل الطبية. أنا الدكتور أحمد طه، صاحب "معامل طيبة".\n`;
+    prompt += `أحتاج منك تقريراً استشارياً شاملاً ومفصلاً (ليس تقييماً مالياً فقط). بناءً على البيانات التالية لشهر ${monthName} ${period.year}:\n\n`;
+    
+    prompt += `📊 **[1] المؤشرات المالية:**\n`;
+    prompt += `- الإيراد: ${currRev.toLocaleString()} ج، المصاريف: ${currExp.toLocaleString()} ج، صافي الربح: ${currProfit.toLocaleString()} ج (هامش الربح ${margin}%).\n`;
+    prompt += `- فرع الجعافرة: إيراد ${currJ.rev.toLocaleString()} ج، حالات ${currJ.cases.toLocaleString()} (متوسط فاتورة ${(currJ.rev/currJ.cases).toFixed(1)} ج).\n`;
+    prompt += `- فرع بهتيم: إيراد ${currB.rev.toLocaleString()} ج، حالات ${currB.cases.toLocaleString()} (متوسط فاتورة ${(currB.rev/currB.cases).toFixed(1)} ج).\n`;
+    prompt += `- إجمالي الحالات: ${currCases.toLocaleString()} حالة.\n\n`;
+
+    prompt += `🔬 **[2] أداء التحاليل (بناءً على التكلفة الحقيقية):**\n`;
+    prompt += `- الأكثر مبيعاً: ${topSellers.map(t => `${t.name} (${t.count} مرة)`).join('، ')}.\n`;
+    prompt += `- الأكثر ربحاً: ${topProfitable.map(t => `${t.name} (ربح ${t.trueTotalProfit.toLocaleString()} ج)`).join('، ')}.\n`;
     if (losingTests.length > 0) {
-      prompt += `- أسوأ 5 تحاليل (خاسرة):\n`;
-      losingTests.forEach((t, i) => { prompt += `  ${i+1}. ${t.name}: سعر البيع ${t.sell} ج، التكلفة ${t.trueCost.toFixed(1)} ج (خسارة ${Math.abs(t.trueProfitUnit).toFixed(1)} ج/تحليل).\n`; });
+      prompt += `- التحاليل الخاسرة: ${losingTests.map(t => `${t.name} (خسارة ${Math.abs(t.trueProfitUnit).toFixed(1)} ج/تحليل)`).join('، ')}.\n`;
     }
-    prompt += `\n🎯 **المطلوب منك كخبير:**\n`;
-    prompt += `1. **تحليل الموسمية:** بناءً على جدول الموسمية، ما هي شهور الذروة (الزحمة) وشهور الهدوء؟\n`;
-    prompt += `2. **مقارنة الفروع:** قارن بين الجعافرة وبهتيم من حيث "متوسط قيمة الفاتورة" (الإيراد ÷ الحالات).\n`;
-    prompt += `3. **الوضع المالي:** هل هامش الربح الحالي (${margin}%) جيد؟\n`;
-    prompt += `4. **خطة العمل:** ضع لي 3 قرارات إدارية عاجلة لتنفيذها الشهر القادم لزيادة الأرباح.\n`;
+    prompt += `\n`;
 
-    navigator.clipboard.writeText(prompt).then(() => {
-      const toast = document.createElement('div');
-      toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg, #4d6bfe, #3b5bdb);color:#fff;padding:15px 30px;border-radius:12px;font-weight:bold;font-size:1.1rem;z-index:999999;box-shadow:0 10px 30px rgba(0,0,0,0.5);text-align:center;direction:rtl;';
-      toast.innerHTML = `✅ تم نسخ التقرير الشامل بنجاح!<br><span style="font-size:0.85rem;font-weight:normal;opacity:0.9;">افتح DeepSeek والصق النص (Paste) هناك.</span>`;
-      document.body.appendChild(toast);
-      setTimeout(() => { window.open('https://chat.deepseek.com', '_blank'); }, 500);
-      setTimeout(() => toast.remove(), 4000);
-    }).catch(err => { alert('❌ فشل نسخ النص. المتصفح قد لا يدعم هذه الميزة. الخطأ: ' + err); });
+    prompt += `🎯 **المطلوب منك كخبير (اكتب تقرير مفصل ومقسم للعناوين دي):**\n`;
+    prompt += `1. **التحليل المالي والعددي:** تقييم الأرباح، الهوامش، ومقارنة كفاءة الفروع (مين بيجيب حالات أكتر ومين فاتورته أعلى؟).\n`;
+    prompt += `2. **التشغيل والحالات:** تحليل أعداد الحالات وعلاقتها بالإيراد، وإيه اللي ممكن يتحسن في استقبال الحالات.\n`;
+    prompt += `3. **التطوير والتحاليل:** بناءً على بيانات التحاليل اللي فوق، إيه الفرص اللي ممكن نستغلها (زي تسويق التحاليل المربحة أو تعديل أسعار الخاسرة)؟\n`;
+    prompt += `4. **خطة عمل تنفيذية (Action Plan):** اعطني 5 قرارات أو خطوات عملية ومحددة جداً عشان أنفذها الشهر القادم لتحسين التشغيل وزيادة الأرباح.\n`;
+    prompt += `\n(ملاحظة: اكتب بلغة عربية واضحة ومباشرة، وبدون مقدمات إنشائية).`;
+
+    // 3. إظهار شاشة التحميل
+    const modal = document.getElementById('aiModal');
+    const body = document.getElementById('aiModalBody');
+    if (modal && body) {
+      body.innerHTML = `<div style="text-align:center; padding: 40px;"><div class="loading-spinner" style="margin: 0 auto 20px; border-top-color: var(--primary-glow);"></div><p style="color:var(--primary-glow); font-weight:bold; font-size:1.1rem;">⏳ جاري استشارة المحلل الذكي...<br><span style="font-size:0.85rem; color:var(--text-muted); font-weight:normal;">قد يستغرق الأمر بضع ثوانٍ.</span></p></div>`;
+      modal.classList.add('show');
+    }
+
+    // 4. الاتصال بالسيرفر بتاعك
+    try {
+      const response = await fetch('https://teba-ai.aabunada20.workers.dev/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: prompt })
+      });
+
+      const data = await response.json();
+      
+      if (data.error) throw new Error(data.error);
+
+      // 5. عرض النتيجة داخل الموقع
+      let aiText = data.result;
+      aiText = aiText.replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--gold); font-size:1.1rem;">$1</strong>');
+      aiText = aiText.replace(/\n/g, '<br>');
+      aiText = aiText.replace(/- (.*?)(<br>|$)/g, '<li style="margin-right:20px; margin-bottom:8px;">$1</li>');
+
+      if (body) {
+        body.innerHTML = `<div style="line-height: 1.8; font-size: 0.95rem;">${aiText}</div>`;
+      }
+
+    } catch (error) {
+      if (body) {
+        body.innerHTML = `<p style="color:#dc2626; font-weight:bold; text-align:center; padding:20px;">❌ حدث خطأ أثناء الاتصال بالمستشار الذكي: <br><br>${error.message}<br><br>تأكد من إعدادات الـ API Key في Cloudflare.</p>`;
+      }
+    }
   };
 
   /* ============= Table Search ============= */
