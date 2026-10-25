@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -17,7 +17,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: var(--font-family); background-color: var(--primary-bg); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
 
-        /* Header (نفس الاستقبال) */
         header { background-color: var(--primary-color); color: white; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; box-shadow: var(--shadow-md); z-index: 10; }
         .brand-info { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px;}
         .nav-links { display: flex; gap: 10px; }
@@ -26,10 +25,7 @@
         .nav-btn.rec { background: var(--accent-color); color: white; border-color: var(--accent-color); }
         .nav-btn.rec:hover { background: #2980b9; }
 
-        /* Layout */
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; width: 100%; flex-grow: 1; }
-
-        /* Toolbar */
         .toolbar { background: var(--surface-bg); border-radius: var(--radius); padding: 15px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); }
         
         .search-box { flex-grow: 1; position: relative; }
@@ -40,7 +36,6 @@
         .tab { padding: 8px 16px; border: none; background: transparent; cursor: pointer; font-weight: bold; color: var(--text-muted); border-radius: 5px; transition: 0.2s; font-family: inherit; font-size: 0.95rem;}
         .tab.active { background: var(--surface-bg); color: var(--primary-color); box-shadow: var(--shadow-sm); }
 
-        /* Grid */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; }
         .card { background: var(--surface-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); overflow: hidden; display: flex; flex-direction: column; transition: 0.2s; }
         .card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
@@ -75,7 +70,6 @@
         .btn-primary { background: var(--accent-color); }
         .btn-success { background: var(--success-color); }
         
-        /* Modal */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px; border-radius: var(--radius); width: 90%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; box-shadow: var(--shadow-md);}
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
@@ -116,16 +110,13 @@
         </div>
     </div>
 
-    <!-- Modal: إدخال النتيجة -->
     <div class="modal" id="resultModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>إدخال نتيجة التحليل</h3>
                 <button class="close-modal" onclick="closeModal()">X</button>
             </div>
-            <div id="modalPatientInfo" style="background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 0.95rem;">
-                <!-- JS will fill this -->
-            </div>
+            <div id="modalPatientInfo" style="background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 0.95rem;"></div>
             <div class="form-group">
                 <label>قيمة النتيجة (مطلوب)</label>
                 <input type="text" id="resValue" placeholder="مثال: 15.5 أو Positive" autocomplete="off">
@@ -151,18 +142,16 @@
     </div>
 
     <script>
-        // 1. إعدادات السحابة
         const supabaseUrl = 'https://khjzoleiuiipyodpkieg.supabase.co';
         const supabaseKey = 'sb_publishable_2Q7SPvruXJar3gvOxtvl5w_p4CVDfcU';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        let allData = []; // هنحفظ فيها كل الطلبات
+        let allData = []; 
         let currentFilter = 'all';
-        let currentRow = null; // الطلب اللي بنكتب نتيجته دلوقتي
+        let currentRow = null; 
 
-        // 2. جلب البيانات
         async function loadLabData() {
-            // بنجيب التحاليل اللي في visit_tests وبنربطها بالزيارة والمريض
+            // التعديل هنا: شيلنا full_name وحطينا * عشان يسحب أي أعمدة موجودة
             const { data: vtData, error: vtErr } = await _supabase
                 .from('visit_tests')
                 .select(`
@@ -170,7 +159,7 @@
                     visit_id, 
                     test_code, 
                     price_at_time,
-                    visits ( id, status, patients ( full_name, age, gender ) )
+                    visits ( id, status, patients ( * ) )
                 `)
                 .order('id', { ascending: false });
 
@@ -179,21 +168,18 @@
                 return;
             }
 
-            // بنجيب الكتالوج عشان نعرف أسماء التحاليل
             const { data: catalog } = await _supabase.from('tests_catalog').select('*');
             const catalogMap = {};
             if(catalog) {
                 catalog.forEach(c => catalogMap[c.code] = c);
             }
 
-            // بنجيب النتائج اللي اتكتبت خلاص
             const { data: results } = await _supabase.from('test_results').select('*');
             const resultsMap = {};
             if(results) {
                 results.forEach(r => resultsMap[r.visit_test_id] = r);
             }
 
-            // دمج البيانات كلها مع بعض
             allData = vtData.map(vt => {
                 const cat = catalogMap[vt.test_code] || { name: vt.test_code, price: 0 };
                 const res = resultsMap[vt.id] || null;
@@ -207,16 +193,16 @@
             renderData();
         }
 
-        // 3. رسم الكروت
         function renderData() {
             const grid = document.getElementById('labGrid');
             const query = document.getElementById('searchInput').value.toLowerCase();
             
-            // الفلترة
             let filtered = allData.filter(item => {
-                const pName = item.visits?.patients?.full_name || 'غير معروف';
-                const tCode = item.test_code || '';
-                const matchSearch = pName.toLowerCase().includes(query) || tCode.toLowerCase().includes(query);
+                const p = item.visits?.patients || {};
+                // التعديل هنا: بندور على full_name أو name عشان نضمن إنه يشتغل
+                const pName = (p.full_name || p.name || 'غير معروف').toLowerCase();
+                const tCode = (item.test_code || '').toLowerCase();
+                const matchSearch = pName.includes(query) || tCode.includes(query);
                 
                 const isDone = item.result !== null;
                 let matchFilter = true;
@@ -233,6 +219,9 @@
 
             grid.innerHTML = filtered.map(item => {
                 const p = item.visits?.patients || {};
+                // التعديل هنا
+                const pNameDisplay = p.full_name || p.name || 'غير معروف';
+                
                 const isDone = item.result !== null;
                 const statusClass = isDone ? 'done' : 'pending';
                 const statusText = isDone ? 'تم الانتهاء' : 'مطلوب';
@@ -252,8 +241,8 @@
                     <div class="card ${statusClass}">
                         <div class="card-header">
                             <div>
-                                <div class="p-name">${p.full_name || 'غير معروف'}</div>
-                                <div class="p-meta">${p.gender === 'male' ? 'ذكر' : p.gender === 'female' ? 'أنثى' : ''} • ${p.age || '?'} سنة</div>
+                                <div class="p-name">${pNameDisplay}</div>
+                                <div class="p-meta">${p.gender === 'male' ? 'ذكر' : p.gender === 'female' ? 'أنثى' : (p.gender === 'ذكر' ? 'ذكر' : p.gender === 'أنثى' ? 'أنثى' : '')} • ${p.age || '?'} سنة</div>
                             </div>
                             <span class="badge ${statusClass}">${statusText}</span>
                         </div>
@@ -282,10 +271,10 @@
             renderData();
         }
 
-        // 4. المودال وإدخال النتيجة
         function openModal(item) {
             currentRow = item;
-            const pName = item.visits?.patients?.full_name || 'غير معروف';
+            const p = item.visits?.patients || {};
+            const pName = p.full_name || p.name || 'غير معروف';
             
             document.getElementById('modalPatientInfo').innerHTML = `
                 <strong>المريض:</strong> ${pName} <br>
@@ -313,7 +302,6 @@
             currentRow = null;
         }
 
-        // 5. الحفظ في السحابة
         async function saveResult() {
             if(!currentRow) return;
             const val = document.getElementById('resValue').value.trim();
@@ -333,14 +321,12 @@
             };
 
             try {
-                // Upsert (لو موجود يعدل، لو مش موجود يضيف)
                 const { error } = await _supabase
                     .from('test_results')
                     .upsert(payload, { onConflict: 'visit_test_id' });
 
                 if(error) throw error;
                 
-                // نقفل المودال ونحدث الشاشة
                 closeModal();
                 loadLabData(); 
                 
@@ -352,7 +338,6 @@
             }
         }
 
-        // التشغيل
         window.onload = () => {
             loadLabData();
         };
