@@ -1,0 +1,349 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معامل طيبة - الاستقبال (السحابة)</title>
+    <!-- استدعاء مكتبة Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-bg: #f4f7f6; --surface-bg: #ffffff; --primary-color: #2c3e50;
+            --accent-color: #3498db; --success-color: #2ecc71; --danger-color: #e74c3c;
+            --warning-color: #f39c12; --text-main: #333; --text-muted: #7f8c8d; 
+            --border-color: #dcdde1; --shadow-sm: 0 2px 5px rgba(0,0,0,0.05);
+            --shadow-md: 0 5px 15px rgba(0,0,0,0.08); --radius: 8px; 
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-family); background-color: var(--primary-bg); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        header { background-color: var(--primary-color); color: white; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; box-shadow: var(--shadow-md); z-index: 10; }
+        .brand-info { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px;}
+        
+        .main-container { display: grid; grid-template-columns: 340px 1fr 340px; gap: 15px; padding: 15px; flex-grow: 1; height: calc(100vh - 60px); }
+        .panel { background: var(--surface-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; border: 1px solid var(--border-color); overflow: hidden; }
+        .panel-header { background: #f8f9fa; padding: 12px 15px; border-bottom: 1px solid var(--border-color); font-weight: bold; color: var(--primary-color); display: flex; justify-content: space-between;}
+
+        .patient-form { padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto;}
+        .form-group { display: flex; flex-direction: column; gap: 4px; }
+        .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+        .form-group input, .form-group select { padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 0.95rem; outline: none;}
+        .form-group input:focus, .form-group select:focus { border-color: var(--accent-color); box-shadow: 0 0 0 2px rgba(52,152,219,0.2);}
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        .catalog-search { padding: 10px; border-bottom: 1px solid var(--border-color); }
+        .catalog-search input { width: 100%; padding: 10px; border: 2px solid var(--accent-color); border-radius: 6px; font-size: 1rem; outline: none;}
+        .catalog-grid { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; overflow-y: auto; align-content: start; }
+        .test-btn { background: white; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 5px; }
+        .test-btn:hover { border-color: var(--accent-color); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+        .test-btn .t-code { font-weight: bold; color: var(--primary-color); font-size: 0.95rem;}
+        .test-btn .t-name { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .test-btn .t-price { font-size: 0.85rem; color: var(--accent-color); font-weight: bold; }
+
+        .cart-items { flex-grow: 1; overflow-y: auto; padding: 10px; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
+        .cart-item:last-child { border-bottom: none; }
+        .cart-item .item-name { font-weight: bold; }
+        .cart-item .item-price { color: var(--accent-color); font-size: 0.85rem; }
+        .cart-item .remove-btn { background: var(--danger-color); color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem; }
+        
+        .cart-summary { background: #f8f9fa; padding: 15px; border-top: 2px solid var(--border-color); }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 1rem; }
+        .summary-row.total { color: var(--primary-color); font-size: 1.2rem; font-weight: bold; margin-top: 5px; border-top: 1px dashed #ccc; padding-top: 5px;}
+        .summary-row.remain { color: var(--danger-color); font-weight: bold; }
+        
+        .discount-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .discount-row input { width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; text-align: center; outline: none;}
+        
+        .payment-actions { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 15px; }
+        .btn { padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; color: white; font-family: inherit; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-save { background: var(--success-color); font-size: 1.1rem; }
+
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--success-color); color: white; padding: 15px 30px; border-radius: 8px; font-weight: bold; box-shadow: var(--shadow-md); display: none; z-index: 1000; }
+        .toast.error { background: var(--danger-color); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (سحابي)</div>
+        <div style="font-size: 0.9rem;">مرحباً، الموظف</div>
+    </header>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toastMsg">تم الحفظ بنجاح!</div>
+
+    <div class="main-container">
+        <!-- Right: Patient Info -->
+        <div class="panel">
+            <div class="panel-header">بيانات المريض</div>
+            <div class="patient-form">
+                <div class="form-group">
+                    <label>اسم المريض (مطلوب)</label>
+                    <input type="text" id="pName" placeholder="الاسم بالكامل" onkeydown="moveToNext(event, 'pPhone')">
+                </div>
+                <div class="form-group">
+                    <label>رقم التليفون</label>
+                    <input type="text" id="pPhone" placeholder="01xxxxxxxxx" onkeydown="moveToNext(event, 'pDoctor')">
+                </div>
+                <div class="form-group">
+                    <label>الطبيب المحول</label>
+                    <input type="text" id="pDoctor" placeholder="اسم الدكتور" onkeydown="moveToNext(event, 'pAge')">
+                </div>
+                <div class="row-2">
+                    <div class="form-group">
+                        <label>النوع</label>
+                        <select id="pGender"><option value="ذكر">ذكر</option><option value="أنثى">أنثى</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>العمر</label>
+                        <input type="number" id="pAge" value="30" onkeydown="moveToNext(event, 'catalogSearch')">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle: Cart -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>سلة التحاليل</span>
+                <span id="cartCount" style="background: var(--accent-color); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;">0</span>
+            </div>
+            <div class="cart-items" id="cartList">
+                <div style="text-align: center; color: #7f8c8d; margin-top: 20px;">السلة فارغة</div>
+            </div>
+            
+            <div class="cart-summary">
+                <div class="summary-row">
+                    <span>الإجمالي:</span>
+                    <span id="totalAmount">0.00 ج.م</span>
+                </div>
+                <div class="discount-row">
+                    <input type="number" id="discountFixed" placeholder="خصم (ج.م)" oninput="calculateChanges()" onkeydown="moveToNext(event, 'paidAmount')">
+                </div>
+                <div class="summary-row total">
+                    <span>الصافي المطلوب:</span>
+                    <span id="netTotalAmount">0.00 ج.م</span>
+                </div>
+                <div class="summary-row" style="margin-top: 10px;">
+                    <span>المدفوع:</span>
+                    <input type="number" id="paidAmount" placeholder="0.00" oninput="calculateChanges()" onkeydown="if(event.key === 'Enter') saveOrderToSupabase()" style="width: 100px; text-align:left; padding:4px; font-weight:bold;">
+                </div>
+                <div class="summary-row remain">
+                    <span>الباقي:</span>
+                    <span id="remainAmount">0.00 ج.م</span>
+                </div>
+                
+                <div class="payment-actions">
+                    <button class="btn btn-save" id="saveBtn" onclick="saveOrderToSupabase()">💾 حفظ الطلب في السحابة</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Left: Catalog -->
+        <div class="panel">
+            <div class="panel-header">كتالوج التحاليل</div>
+            <div class="catalog-search">
+                <input type="text" id="catalogSearch" placeholder="ابحث واضغط Enter..." onkeyup="filterCatalog()">
+            </div>
+            <div class="catalog-grid" id="catalogGrid"></div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. إعداد الاتصال بـ Supabase (المفاتيح بتاعتك)
+        // ==========================================
+        const supabaseUrl = 'https://khjzoleuijpyodpkieg.supabase.co';
+        const supabaseKey = 'sb_publishable_2Q7SPvruXJar3gvOxtvl5w_p4CVDfcU';
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // 2. كتالوج تجريبي (هنستبدله بجدول tests_catalog بعدين)
+        const masterTests = [
+            { code: 'CBC', name: 'صورة دم كاملة', price: 100, category: 'دم' },
+            { code: 'LIPID', name: 'دهون كاملة', price: 200, category: 'كيمياء' },
+            { code: 'FBS', name: 'سكر صائم', price: 30, category: 'كيمياء' },
+            { code: 'ALT', name: 'وظائف كبد', price: 50, category: 'كيمياء' },
+            { code: 'CREAT', name: 'وظائف كلى', price: 50, category: 'كيمياء' },
+            { code: 'TSH', name: 'هرمون الغدة', price: 100, category: 'هرمونات' },
+            { code: 'HBA1C', name: 'سكر تراكمي', price: 125, category: 'كيمياء' },
+        ];
+
+        let cart = [];
+
+        // دالة التنقل بالإنتر
+        function moveToNext(event, nextId) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                document.getElementById(nextId).focus();
+            }
+        }
+
+        // 3. رسم الكتالوج
+        function renderCatalog(data = masterTests) {
+            const grid = document.getElementById('catalogGrid');
+            grid.innerHTML = '';
+            data.forEach(test => {
+                const btn = document.createElement('div');
+                btn.className = 'test-btn';
+                btn.onclick = () => addToCart(test);
+                btn.innerHTML = `
+                    <div class="t-code">${test.code}</div>
+                    <div class="t-name">${test.name}</div>
+                    <div class="t-price">${test.price} ج.م</div>
+                `;
+                grid.appendChild(btn);
+            });
+        }
+
+        function filterCatalog() {
+            const query = document.getElementById('catalogSearch').value.toLowerCase();
+            const filtered = masterTests.filter(t => t.code.toLowerCase().includes(query) || t.name.toLowerCase().includes(query));
+            renderCatalog(filtered);
+        }
+
+        // 4. السلة
+        function addToCart(test) {
+            if (!cart.find(item => item.code === test.code)) {
+                cart.push(test);
+                renderCart();
+            }
+        }
+
+        function renderCart() {
+            const list = document.getElementById('cartList');
+            const count = document.getElementById('cartCount');
+            if (cart.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: #7f8c8d; margin-top: 20px;">السلة فارغة</div>';
+            } else {
+                list.innerHTML = cart.map((item, index) => `
+                    <div class="cart-item">
+                        <div><span class="item-name">${item.name}</span> <br> <span class="item-price">${item.price} ج.م</span></div>
+                        <button class="remove-btn" onclick="removeFromCart(${index})">حذف</button>
+                    </div>
+                `).join('');
+            }
+            count.innerText = cart.length;
+            calculateChanges();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            renderCart();
+        }
+
+        // 5. الحسابات
+        function calculateChanges() {
+            const subTotal = cart.reduce((sum, item) => sum + item.price, 0);
+            const discount = parseFloat(document.getElementById('discountFixed').value) || 0;
+            
+            let netTotal = subTotal - discount;
+            if (netTotal < 0) netTotal = 0;
+
+            const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
+
+            document.getElementById('totalAmount').innerText = `${subTotal.toFixed(2)} ج.م`;
+            document.getElementById('netTotalAmount').innerText = `${netTotal.toFixed(2)} ج.م`;
+            document.getElementById('remainAmount').innerText = `${(netTotal - paid).toFixed(2)} ج.م`;
+        }
+
+        // ==========================================
+        // 6. الحفظ في Supabase (السحر كله هنا)
+        // ==========================================
+        async function saveOrderToSupabase() {
+            const pName = document.getElementById('pName').value.trim();
+            if (!pName) return alert('الرجاء إدخال اسم المريض!');
+            if (cart.length === 0) return alert('السلة فارغة!');
+
+            const btn = document.getElementById('saveBtn');
+            btn.innerText = 'جاري الحفظ في السحابة...';
+            btn.disabled = true;
+
+            try {
+                // أ. إدخال المريض
+                const { data: patientData, error: patientError } = await _supabase
+                    .from('patients')
+                    .insert([{
+                        name: pName,
+                        phone: document.getElementById('pPhone').value,
+                        age: parseInt(document.getElementById('pAge').value),
+                        gender: document.getElementById('pGender').value,
+                        doctor_name: document.getElementById('pDoctor').value
+                    }])
+                    .select();
+
+                if (patientError) throw patientError;
+                const patientId = patientData[0].id;
+
+                // ب. إدخال الزيارة
+                const netTotal = parseFloat(document.getElementById('netTotalAmount').innerText);
+                const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
+                const discount = parseFloat(document.getElementById('discountFixed').value) || 0;
+
+                const { data: visitData, error: visitError } = await _supabase
+                    .from('visits')
+                    .insert([{
+                        patient_id: patientId,
+                        branch_id: 1, // فرع الجعافرة افتراضياً
+                        total_amount: netTotal,
+                        paid_amount: paid,
+                        discount: discount,
+                        status: 'Pending'
+                    }])
+                    .select();
+
+                if (visitError) throw visitError;
+                const visitId = visitData[0].visit_id;
+
+                // ج. إدخال التحاليل المطلوبة
+                const testsToInsert = cart.map(item => ({
+                    visit_id: visitId,
+                    test_code: item.code,
+                    price_at_time: item.price
+                }));
+
+                const { error: testsError } = await _supabase
+                    .from('visit_tests')
+                    .insert(testsToInsert);
+
+                if (testsError) throw testsError;
+
+                // النجاح
+                showToast('✅ تم حفظ الطلب في السحابة بنجاح!');
+                resetForm();
+
+            } catch (error) {
+                console.error(error);
+                showToast('❌ حدث خطأ: ' + error.message, true);
+            } finally {
+                btn.innerText = '💾 حفظ الطلب في السحابة';
+                btn.disabled = false;
+            }
+        }
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toastMsg');
+            toast.innerText = msg;
+            toast.className = isError ? 'toast error' : 'toast';
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 4000);
+        }
+
+        function resetForm() {
+            cart = [];
+            document.getElementById('pName').value = '';
+            document.getElementById('pPhone').value = '';
+            document.getElementById('pDoctor').value = '';
+            document.getElementById('paidAmount').value = '';
+            document.getElementById('discountFixed').value = '';
+            renderCart();
+        }
+
+        // تشغيل الشاشة
+        window.onload = () => { renderCatalog(); renderCart(); };
+
+    </script>
+</body>
+</html>
