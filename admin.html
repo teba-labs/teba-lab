@@ -106,8 +106,10 @@
           <h2>📈 نظرة عامة على الأداء</h2>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <button class="btn-export" onclick="exportPDF('advisorReport', 'تقرير_المستشار')">📄 تصدير تقرير المستشار (PDF)</button>
-            <!-- تعديل زرار الـ AI هنا -->
+            <!-- زرار الـ AI (بفلوس) -->
             <button class="btn-export" style="background: linear-gradient(135deg, #4d6bfe, #3b5bdb); box-shadow: 0 4px 15px rgba(77, 107, 254, 0.3);" onclick="copyAIReport('overview')">🤖 استشارة المحلل الذكي (AI)</button>
+            <!-- زرار النسخ (مجاني) -->
+            <button class="btn-export" style="background: linear-gradient(135deg, #64748b, #475569); box-shadow: 0 4px 15px rgba(100, 116, 139, 0.3);" onclick="copyToDeepSeek('overview')">📋 نسخ التقرير لـ DeepSeek (مجاني)</button>
           </div>
         </div>
         <div id="advisorReport"></div>
@@ -425,8 +427,10 @@
           <h2>📋 خطة الشهر — استراتيجية 3 شهور</h2>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <button class="btn-export" onclick="exportPDF('planContent', 'خطة_الشهر')">📄 تصدير الخطة (PDF)</button>
-            <!-- تعديل زرار الـ AI هنا كمان -->
+            <!-- زرار الـ AI (بفلوس) -->
             <button class="btn-export" style="background: linear-gradient(135deg, #4d6bfe, #3b5bdb); box-shadow: 0 4px 15px rgba(77, 107, 254, 0.3);" onclick="copyAIReport('plan')">🤖 استشارة المحلل الذكي (AI)</button>
+            <!-- زرار النسخ (مجاني) -->
+            <button class="btn-export" style="background: linear-gradient(135deg, #64748b, #475569); box-shadow: 0 4px 15px rgba(100, 116, 139, 0.3);" onclick="copyToDeepSeek('plan')">📋 نسخ الخطة لـ DeepSeek (مجاني)</button>
           </div>
           <p id="planSubtitle">جاري التحميل...</p>
         </div>
