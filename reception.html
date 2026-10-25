@@ -221,7 +221,7 @@
         </div>
     </div>
 
-    <!-- Modal: Invoice Preview (جديد) -->
+    <!-- Modal: Invoice Preview -->
     <div class="modal" id="invoicePreviewModal">
         <div class="modal-content" style="max-width: 600px;">
             <button class="close-modal" onclick="closeModal('invoicePreviewModal')">X</button>
@@ -277,9 +277,8 @@
             }
         }
 
-        // 4. جلب التحاليل من السحابة (تم إصلاح المشكلة هنا)
+        // 4. جلب التحاليل من السحابة
         async function fetchCatalogFromCloud() {
-            // شيلنا order('category') عشان ميعملش Error لو العمود مش موجود
             const { data, error } = await _supabase.from('tests_catalog').select('*');
             
             if (error) {
@@ -293,7 +292,6 @@
                 return;
             }
 
-            // بندعم الأسماء المختلفة للأعمدة عشان نضمن إنها تظهر
             masterTests = data.map(t => ({
                 id: t.id,
                 code: t.code || t.test_code || '---',
@@ -377,7 +375,7 @@
             renderCart();
         }
 
-        // 8. الحسابات (خصم % وثابت)
+        // 8. الحسابات
         function calculateChanges() {
             const subTotal = cart.reduce((sum, item) => sum + item.price, 0);
             const percent = parseFloat(document.getElementById('discountPercent').value) || 0;
@@ -394,7 +392,7 @@
             document.getElementById('remainAmount').innerText = `${(netTotal - paid).toFixed(2)} ج.م`;
         }
 
-        // 9. الحفظ في السحابة (تم تعديل أسماء الأعمدة لتطابق lab.html)
+        // 9. الحفظ في السحابة
         async function saveOrderToSupabase() {
             const pName = document.getElementById('pName').value.trim();
             if (!pName) return alert('الرجاء إدخال اسم المريض!');
@@ -405,9 +403,9 @@
             btn.disabled = true;
 
             try {
-                // أ. المريض (استخدمنا full_name بدل name)
+                // أ. المريض (استخدمنا name بدل full_name بناءً على السحابة)
                 const { data: pData, error: pErr } = await _supabase.from('patients').insert([{
-                    full_name: pName, 
+                    name: pName, 
                     phone: document.getElementById('pPhone').value, 
                     age: parseInt(document.getElementById('pAge').value), 
                     gender: document.getElementById('pGender').value, 
@@ -430,13 +428,13 @@
                     total_amount: netTotal, 
                     paid_amount: paid, 
                     discount: discountAmount, 
-                    status: 'pending' // تأكد من تسمية الحالة زي السحابة عندك
+                    status: 'pending'
                 }]).select();
                 if (vErr) throw vErr;
 
-                // ج. التحاليل (بنمرر test_id لو الجدول بيطلبه بدل test_code)
+                // ج. التحاليل
                 const tests = cart.map(i => ({ 
-                    visit_id: vData[0].id, // في lab.html كنا بنقرأ id
+                    visit_id: vData[0].id,
                     test_code: i.code, 
                     price_at_time: i.price 
                 }));
@@ -478,7 +476,7 @@
             renderCart();
         }
 
-        // 10. معاينة الفاتورة والطباعة (جديد)
+        // 10. معاينة الفاتورة والطباعة
         function openInvoicePreview() {
             if(cart.length === 0) return alert('السلة فارغة!');
 
@@ -488,7 +486,6 @@
             const paid = document.getElementById('paidAmount').value || '0';
             const remain = document.getElementById('remainAmount').innerText;
 
-            // تجهيز شكل المعاينة
             let html = `
                 <div style="text-align:center; margin-bottom: 15px;">
                     <h3 style="margin-bottom:5px;">معامل طيبة للتحاليل</h3>
@@ -509,7 +506,6 @@
 
             document.getElementById('previewContent').innerHTML = html;
 
-            // تجهيز النسخة اللي هتطبع
             document.getElementById('printName').innerText = pName;
             document.getElementById('printDate').innerText = date;
             document.getElementById('printTotal').innerText = total;
@@ -517,7 +513,6 @@
             document.getElementById('printRemain').innerText = remain;
             document.getElementById('printTableBody').innerHTML = cart.map(i => `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.price}</td></tr>`).join('');
 
-            // فتح المودال
             document.getElementById('invoicePreviewModal').style.display = 'flex';
         }
 
@@ -528,15 +523,15 @@
             document.getElementById('print-section').style.display = 'none';
         }
 
-        // 11. حالات اليوم (سحب من السحابة - تم تعديل الأعمدة)
+        // 11. حالات اليوم
         async function openDailyCases() {
             const tbody = document.getElementById('dailyCasesBody');
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">جاري التحميل...</td></tr>';
             document.getElementById('dailyCasesModal').style.display = 'flex';
 
-            // استخدمنا full_name و visit_code بدل name و visit_id
+            // تم تعديلها لـ name
             const { data, error } = await _supabase.from('visits')
-                .select(`id, visit_code, total_amount, paid_amount, status, visit_date, patients (full_name)`)
+                .select(`id, visit_code, total_amount, paid_amount, status, visit_date, patients (name)`)
                 .order('id', {ascending: false});
             
             if(error) {
@@ -547,7 +542,7 @@
             tbody.innerHTML = data.map(v => `
                 <tr>
                     <td>${v.visit_code || v.id}</td>
-                    <td>${v.patients ? v.patients.full_name : 'غير معروف'}</td>
+                    <td>${v.patients ? v.patients.name : 'غير معروف'}</td>
                     <td>${v.visit_date || '---'}</td>
                     <td>${parseFloat(v.total_amount).toFixed(2)}</td>
                     <td>${(parseFloat(v.total_amount) - parseFloat(v.paid_amount)).toFixed(2)}</td>
@@ -559,7 +554,7 @@
 
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        // 12. حذف زيارة من السحابة
+        // 12. حذف زيارة
         async function deleteVisit(visitId) {
             if(!confirm('هل أنت متأكد من حذف هذه الزيارة نهائياً؟')) return;
             try {
@@ -572,14 +567,14 @@
             }
         }
 
-        // دالة بحث المريض
+        // دالة بحث المريض (تم تعديلها لـ name)
         async function searchPatient() {
             const query = document.getElementById('patientSearch').value.trim();
             if(!query) return;
-            const { data, error } = await _supabase.from('patients').select('*').or(`phone.eq.${query},full_name.ilike.%${query}%`).limit(1);
+            const { data, error } = await _supabase.from('patients').select('*').or(`phone.eq.${query},name.ilike.%${query}%`).limit(1);
             if(error) return console.error(error);
             if(data && data.length > 0) {
-                document.getElementById('pName').value = data[0].full_name;
+                document.getElementById('pName').value = data[0].name;
                 document.getElementById('pPhone').value = data[0].phone;
                 document.getElementById('pAge').value = data[0].age;
                 document.getElementById('pGender').value = data[0].gender;
