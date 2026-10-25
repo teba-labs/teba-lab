@@ -2,7 +2,7 @@
    TEBA LABS - Service Worker (v57 - True Cost)
    ===================================================== */
 
-const CACHE_VERSION = 'v55'; 
+const CACHE_VERSION = 'v60'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
