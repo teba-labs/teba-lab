@@ -1,5 +1,5 @@
-﻿﻿/* =====================================================
-   TEBA LABS - Admin Styles (v53 - Sharing Package)
+﻿/* =====================================================
+   TEBA LABS - Admin Styles (v59 - Stable + Search)
    ===================================================== */
 
 .admin-body { background-color: var(--bg); background-image: var(--bg-body-image); background-attachment: fixed; color: var(--text); font-family: var(--font); min-height: 100vh; transition: background 0.3s, color 0.3s; }
@@ -386,4 +386,27 @@
     background: transparent !important; border: 1px solid #ccc !important; break-inside: avoid; box-shadow: none !important; color: #000 !important;
   }
   * { text-shadow: none !important; color: #000 !important; }
+}
+
+/* ============= v59: Table Search ============= */
+.table-search-input {
+    width: 100%;
+    padding: 12px 16px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.95rem;
+    transition: 0.25s;
+}
+.table-search-input:focus {
+    outline: none;
+    border-color: var(--border-glow);
+    box-shadow: 0 0 0 3px rgba(22,163,74,0.15);
+}
+.table-search-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
 }

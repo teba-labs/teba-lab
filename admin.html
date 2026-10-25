@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -380,6 +380,7 @@
 
         <div class="cases-section-card">
           <h4 style="color:#4ade80;">⭐ النجوم (Stars) — مبيعات عالية + ربح صافي عالي</h4>
+          <input type="text" class="table-search-input" placeholder="🔍 ابحث في النجوم..." onkeyup="filterTable(this, 'bcgStarsTable')">
           <div class="table-responsive">
             <table class="fin-table">
               <thead><tr><th>#</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة الحقيقية</th><th>ربح صافي/تحليل</th><th>إجمالي الربح الصافي</th></tr></thead>
@@ -389,6 +390,7 @@
         </div>
         <div class="cases-section-card">
           <h4 style="color:#00bfff;">🐄 الأحصنة (Cash Cows) — مبيعات عالية + ربح صافي قليل</h4>
+          <input type="text" class="table-search-input" placeholder="🔍 ابحث في الأحصنة..." onkeyup="filterTable(this, 'bcgCashCowsTable')">
           <div class="table-responsive">
             <table class="fin-table">
               <thead><tr><th>#</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة الحقيقية</th><th>ربح صافي/تحليل</th><th>إجمالي الربح الصافي</th></tr></thead>
@@ -398,6 +400,7 @@
         </div>
         <div class="cases-section-card">
           <h4 style="color:#fbbf24;">❓ علامات استفهام (Question Marks) — مبيعات قليلة + ربح صافي عالي</h4>
+          <input type="text" class="table-search-input" placeholder="🔍 ابحث في علامات الاستفهام..." onkeyup="filterTable(this, 'bcgQuestionsTable')">
           <div class="table-responsive">
             <table class="fin-table">
               <thead><tr><th>#</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة الحقيقية</th><th>ربح صافي/تحليل</th><th>إجمالي الربح الصافي</th></tr></thead>
@@ -407,6 +410,7 @@
         </div>
         <div class="cases-section-card">
           <h4 style="color:#f87171;">🐕 الكلاب (Dogs) — مبيعات قليلة + ربح صافي قليل</h4>
+          <input type="text" class="table-search-input" placeholder="🔍 ابحث في الكلاب..." onkeyup="filterTable(this, 'bcgDogsTable')">
           <div class="table-responsive">
             <table class="fin-table">
               <thead><tr><th>#</th><th>اسم التحليل</th><th>المبيعات</th><th>سعر البيع</th><th>التكلفة الحقيقية</th><th>ربح صافي/تحليل</th><th>إجمالي الربح الصافي</th></tr></thead>
@@ -431,6 +435,7 @@
       <section class="admin-section" id="report-topSellers">
         <div class="admin-section-head"><h2>🏆 الأكثر مبيعاً</h2></div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
+          <input type="text" class="table-search-input" placeholder="🔍 ابحث..." onkeyup="filterTable(this, 'topSellersTableBody')">
           <div class="table-responsive">
             <table class="fin-table">
               <thead><tr><th>الترتيب</th><th>اسم التحليل</th><th>عدد التكرار (آخر 3 شهور)</th></tr></thead>
@@ -452,6 +457,7 @@
           </div>
         </div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
+          <input type="text" class="table-search-input" placeholder="🔍 ابحث..." onkeyup="filterTable(this, 'mostProfitableTableBody')">
           <div class="table-responsive">
             <table class="fin-table">
               <thead><tr><th>الترتيب</th><th>اسم التحليل</th><th>سعر البيع</th><th>التكلفة الحقيقية</th><th>ربح صافي/تحليل</th><th>إجمالي الربح الصافي</th></tr></thead>
@@ -473,6 +479,7 @@
           </div>
         </div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
+          <input type="text" class="table-search-input" placeholder="🔍 ابحث..." onkeyup="filterTable(this, 'leastProfitableTableBody')">
           <div class="table-responsive">
             <table class="fin-table">
               <thead><tr><th>الترتيب</th><th>اسم التحليل</th><th>سعر البيع</th><th>التكلفة الحقيقية</th><th>ربح صافي/تحليل</th><th>إجمالي الربح الصافي</th></tr></thead>
@@ -494,6 +501,7 @@
           </div>
         </div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
+          <input type="text" class="table-search-input" placeholder="🔍 ابحث..." onkeyup="filterTable(this, 'needOffersTableBody')">
           <div class="table-responsive">
             <table class="fin-table">
               <thead><tr><th>اسم التحليل</th><th>سعر البيع</th><th>التكرار (آخر 3 شهور)</th></tr></thead>
@@ -515,6 +523,7 @@
           </div>
         </div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
+          <input type="text" class="table-search-input" placeholder="🔍 ابحث..." onkeyup="filterTable(this, 'lossMakersTableBody')">
           <div class="table-responsive">
             <table class="fin-table">
               <thead><tr><th>اسم التحليل</th><th>سعر البيع</th><th>التكلفة الحقيقية</th><th>صافي الخسارة/تحليل</th></tr></thead>
