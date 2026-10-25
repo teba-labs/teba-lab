@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Admin Logic (v61 - Full System + AI + Fallback)
+   TEBA LABS - Admin Logic (v62 - AI + Any AI Fallback)
    ===================================================== */
 
 (function(){
@@ -17,7 +17,7 @@
   const LOCK_DURATION = 15 * 60 * 1000;
   const DEFAULT_PASSWORD = 'teba2026admin';
   const MAX_FILE_SIZE = 20 * 1024 * 1024;
-  const BACKUP_VERSION = 'v61';
+  const BACKUP_VERSION = 'v62';
 
   let salesWorkbook = null;
   let pricesWorkbook = null;
@@ -1419,8 +1419,8 @@
     }
   };
 
-  /* ============= Copy to DeepSeek (Legacy Fallback) ============= */
-  window.copyToDeepSeek = function(type) {
+  /* ============= Copy to Any AI (Legacy Fallback) ============= */
+  window.copyToAnyAI = function(type) {
     if (!salesWorkbook) {
       alert('⚠️ لازم ترفع الملفات الأول عشان أقدر أطلع تقرير.');
       return;
@@ -1442,7 +1442,7 @@
     const topProfitable = [...merged].sort((a, b) => b.trueTotalProfit - a.trueTotalProfit).slice(0, 5);
     const losingTests = merged.filter(t => t.trueCost > t.sell && t.count > 0).sort((a, b) => a.trueProfitUnit - b.trueProfitUnit).slice(0, 5);
 
-    let prompt = `أهلاً DeepSeek. أنت الآن "مستشار مالي وتشغيلي" خبير في إدارة المعامل الطبية. أنا الدكتور أحمد طه، صاحب "معامل طيبة".\n`;
+    let prompt = `أهلاً. أنت الآن "مستشار مالي وتشغيلي" خبير في إدارة المعامل الطبية. أنا الدكتور أحمد طه، صاحب "معامل طيبة".\n`;
     prompt += `أحتاج منك تحليل شامل ودراسة استراتيجية بناءً على البيانات التالية. أرجو أن يكون ردك عملياً ومبنياً على الأرقام، وبدون مقدمات إنشائية.\n\n`;
     prompt += `📍 **[1] بيانات الشهر الحالي (${monthName} ${period.year}):**\n`;
     prompt += `- الإجمالي: إيراد ${currRev.toLocaleString()} ج، مصاريف ${currExp.toLocaleString()} ج، صافي ربح ${currProfit.toLocaleString()} ج (هامش ${margin}%).\n`;
@@ -1465,9 +1465,8 @@
     navigator.clipboard.writeText(prompt).then(() => {
       const toast = document.createElement('div');
       toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg, #4d6bfe, #3b5bdb);color:#fff;padding:15px 30px;border-radius:12px;font-weight:bold;font-size:1.1rem;z-index:999999;box-shadow:0 10px 30px rgba(0,0,0,0.5);text-align:center;direction:rtl;';
-      toast.innerHTML = `✅ تم نسخ التقرير الشامل بنجاح!<br><span style="font-size:0.85rem;font-weight:normal;opacity:0.9;">افتح DeepSeek والصق النص (Paste) هناك.</span>`;
+      toast.innerHTML = `✅ تم نسخ التقرير الشامل بنجاح!<br><span style="font-size:0.85rem;font-weight:normal;opacity:0.9;">افتح أي تطبيق ذكاء اصطناعي (ChatGPT, Gemini, DeepSeek...) والصق النص هناك.</span>`;
       document.body.appendChild(toast);
-      setTimeout(() => { window.open('https://chat.deepseek.com', '_blank'); }, 500);
       setTimeout(() => toast.remove(), 4000);
     }).catch(err => { alert('❌ فشل نسخ النص. المتصفح قد لا يدعم هذه الميزة. الخطأ: ' + err); });
   };
