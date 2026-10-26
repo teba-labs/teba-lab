@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - بوابة الاستقبال (v12)</title>
+    <title>معامل طيبة - بوابة الاستقبال (v12.1)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -99,7 +99,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (v12)</div>
+        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (v12.1)</div>
         <div class="nav-links">
             <button class="nav-btn lab" onclick="window.location.href='lab.html'">🔬 بوابة المعمل</button>
             <button class="nav-btn" onclick="openDailyCases()">📋 حالات اليوم</button>
@@ -354,9 +354,9 @@
             btn.innerText = 'جاري الحفظ...'; btn.disabled = true;
 
             try {
-                // أ. المريض (استخدمنا full_name)
+                // أ. المريض (رجعناها name)
                 const { data: pData, error: pErr } = await _supabase.from('patients').insert([{
-                    full_name: pName, 
+                    name: pName, 
                     phone: document.getElementById('pPhone').value, 
                     age: parseInt(document.getElementById('pAge').value), 
                     gender: document.getElementById('pGender').value, 
@@ -447,9 +447,9 @@
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">جاري التحميل...</td></tr>';
             document.getElementById('dailyCasesModal').style.display = 'flex';
 
-            // السحر هنا: استخدمنا visit_id بدل id
+            // تعديل: استخدام name بدل full_name
             const { data, error } = await _supabase.from('visits')
-                .select(`visit_id, total_amount, paid_amount, status, visit_date, patients (full_name)`)
+                .select(`visit_id, total_amount, paid_amount, status, visit_date, patients (name)`)
                 .order('visit_id', {ascending: false});
             
             if(error) {
@@ -460,7 +460,7 @@
             tbody.innerHTML = data.map(v => `
                 <tr>
                     <td>${v.visit_id}</td>
-                    <td>${v.patients ? v.patients.full_name : 'غير معروف'}</td>
+                    <td>${v.patients ? v.patients.name : 'غير معروف'}</td>
                     <td>${v.visit_date || '---'}</td>
                     <td>${parseFloat(v.total_amount).toFixed(2)}</td>
                     <td>${(parseFloat(v.total_amount) - parseFloat(v.paid_amount)).toFixed(2)}</td>
@@ -484,10 +484,11 @@
         async function searchPatient() {
             const query = document.getElementById('patientSearch').value.trim();
             if(!query) return;
-            const { data, error } = await _supabase.from('patients').select('*').or(`phone.eq.${query},full_name.ilike.%${query}%`).limit(1);
+            // تعديل: استخدام name بدل full_name
+            const { data, error } = await _supabase.from('patients').select('*').or(`phone.eq.${query},name.ilike.%${query}%`).limit(1);
             if(error) return console.error(error);
             if(data && data.length > 0) {
-                document.getElementById('pName').value = data[0].full_name;
+                document.getElementById('pName').value = data[0].name;
                 document.getElementById('pPhone').value = data[0].phone;
                 document.getElementById('pAge').value = data[0].age;
                 document.getElementById('pGender').value = data[0].gender;
