@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - محطة العمل (v14)</title>
+    <title>معامل طيبة - محطة العمل (v15)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -20,118 +20,108 @@
         /* Header */
         header { background-color: var(--primary-color); color: white; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; box-shadow: var(--shadow-md); z-index: 10; }
         .brand-info { font-weight: bold; font-size: 1.1rem; }
-        .nav-btn { background: var(--accent-color); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-family: inherit; text-decoration: none;}
-        .nav-btn.back { background: var(--warning-color); color: #333;}
-
-        /* Views */
-        .view { display: none; flex-grow: 1; height: calc(100vh - 60px); overflow: hidden; }
-        .view.active { display: flex; flex-direction: column; }
-
-        /* --- View 1: Queue (Cards) --- */
-        .queue-container { max-width: 1400px; margin: 0 auto; padding: 20px; width: 100%; overflow-y: auto; }
-        .toolbar { background: var(--surface-bg); border-radius: var(--radius); padding: 15px; margin-bottom: 20px; display: flex; gap: 15px; align-items: center; box-shadow: var(--shadow-sm); }
-        .search-box input { width: 100%; padding: 10px 15px; border: 2px solid var(--border-color); border-radius: var(--radius); outline: none; font-family: inherit;}
-        .tabs { display: flex; gap: 5px; background: #eee; padding: 4px; border-radius: var(--radius); }
-        .tab { padding: 8px 16px; border: none; background: transparent; cursor: pointer; font-weight: bold; border-radius: 5px; font-family: inherit;}
-        .tab.active { background: var(--surface-bg); color: var(--primary-color); box-shadow: var(--shadow-sm); }
-
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; }
-        .card { background: var(--surface-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; flex-direction: column; cursor: pointer; transition: 0.2s;}
-        .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--accent-color);}
-        .card.pending { border-top: 4px solid var(--warning-color); }
-        .card.done { border-top: 4px solid var(--success-color); }
-        .card-header { padding: 12px 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; }
-        .p-name { font-weight: bold; color: var(--primary-color); }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
-        .badge.pending { background: #ffeaa7; color: #d35400; }
-        .badge.done { background: #d4edda; color: #27ae60; }
-        .card-body { padding: 15px; flex-grow: 1; }
-        .test-info { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold;}
-        .card-footer { padding: 12px 15px; border-top: 1px solid var(--border-color); background: #fafafa; text-align: center;}
-        .btn-open { background: var(--accent-color); color: white; padding: 8px 15px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; width: 100%;}
-
-        /* --- View 2: Workstation (3 Columns) --- */
-        .workstation { display: grid; grid-template-columns: 300px 1fr 1fr; gap: 15px; padding: 15px; height: 100%; overflow: hidden; background: var(--primary-bg); }
-        .column { background: var(--surface-bg); border-radius: var(--radius); border: 1px solid var(--border-color); display: flex; flex-direction: column; overflow: hidden; }
-        .col-header { padding: 15px; background: #f8f9fa; border-bottom: 2px solid var(--border-color); font-weight: bold; color: var(--primary-color); text-align: center; }
-        .col-body { padding: 15px; overflow-y: auto; flex-grow: 1; }
-
-        /* Column 1: Patient Queue */
-        .patient-list-item { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
-        .patient-list-item:hover, .patient-list-item.active { background: #e3f2fd; border-color: var(--accent-color); }
-        .patient-list-item .name { font-weight: bold; color: var(--primary-color); }
-        .patient-list-item .meta { font-size: 0.8rem; color: var(--text-muted); }
-
-        /* Column 2 & 3: Tests */
-        .test-block { border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 15px; overflow: hidden; }
-        .test-block-header { background: #f1f5f9; padding: 10px 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color);}
-        .test-block-body { padding: 15px; }
+        .header-btns { display: flex; gap: 10px; }
+        .nav-btn { background: var(--accent-color); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-family: inherit; font-size: 0.95rem;}
+        .btn-print { background: var(--success-color); }
         
-        .form-group { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
-        .form-group label { flex: 1; font-size: 0.9rem; font-weight: bold;}
-        .form-group input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; text-align: center; font-weight: bold;}
-        .form-group .unit { width: 60px; font-size: 0.8rem; color: var(--text-muted); text-align: center;}
-        .form-group .ref { width: 80px; font-size: 0.8rem; color: var(--text-muted); text-align: center;}
+        /* Layout */
+        .main-container { display: grid; grid-template-columns: 300px 1fr 1fr; gap: 15px; padding: 15px; flex-grow: 1; height: calc(100vh - 60px); }
+        .panel { background: var(--surface-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; border: 1px solid var(--border-color); overflow: hidden; }
+        .panel-header { background: #f8f9fa; padding: 12px 15px; border-bottom: 1px solid var(--border-color); font-weight: bold; color: var(--primary-color); font-size: 1.1rem;}
+
+        /* Right Column: Patients */
+        .patient-list { overflow-y: auto; flex-grow: 1; }
+        .patient-item { padding: 12px 15px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; }
+        .patient-item:hover { background: #f1f8ff; }
+        .patient-item.active { background: #e3f2fd; border-right: 4px solid var(--accent-color); }
+        .p-name { font-weight: bold; font-size: 1rem; color: var(--primary-color); margin-bottom: 4px; }
+        .p-meta { font-size: 0.85rem; color: var(--text-muted); display: flex; justify-content: space-between;}
+
+        /* Middle & Left Columns: Tests */
+        .test-list { padding: 15px; overflow-y: auto; flex-grow: 1; }
+        .empty-msg { text-align: center; color: var(--text-muted); margin-top: 50px; }
+
+        /* Single Test Box */
+        .single-test-box { background: #fafafa; border: 1px solid var(--border-color); border-radius: 6px; padding: 15px; margin-bottom: 15px; }
+        .test-title { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px; color: var(--primary-color);}
+        .input-group { display: flex; gap: 10px; align-items: center; }
+        .input-group input { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 1rem;}
+        .btn-save-small { background: var(--success-color); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-family: inherit;}
         
-        .save-btn { background: var(--success-color); color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+        /* Profile Accordion */
+        .profile-box { border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 15px; overflow: hidden; }
+        .profile-header { background: #f8f9fa; padding: 12px 15px; cursor: pointer; display: flex; justify-content: space-between; font-weight: bold; color: var(--primary-color); transition: 0.2s;}
+        .profile-header:hover { background: #eee; }
+        .profile-content { display: none; padding: 15px; background: #fff; border-top: 1px solid var(--border-color); }
+        .profile-content.open { display: block; }
         
-        .flag-high { color: var(--danger-color); font-weight: bold; }
-        .flag-low { color: var(--accent-color); font-weight: bold; }
-        .flag-normal { color: var(--success-color); font-weight: bold; }
+        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        .data-table th, .data-table td { padding: 6px; border-bottom: 1px solid #eee; text-align: right; font-size: 0.9rem; }
+        .data-table input { width: 100%; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
+        .flag-text { font-weight: bold; font-size: 0.85rem;}
+        .flag-high { color: var(--danger-color); }
+        .flag-low { color: var(--accent-color); }
+        .flag-normal { color: var(--success-color); }
+
+        /* Modal Preview */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 30px; border-radius: var(--radius); width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; }
+        .print-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
+        .print-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .print-table th, .print-table td { border: 1px solid #000; padding: 8px; text-align: right; }
         
-        .empty-msg { text-align: center; padding: 20px; color: var(--text-muted); }
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; }
+            .modal { position: absolute; background: white; display: block !important; }
+            .modal-content { box-shadow: none; max-height: none; width: 100%; padding: 0;}
+            .no-print { display: none !important; }
+        }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v14)</div>
-        <div>
-            <button class="nav-btn back" id="backBtn" style="display:none;" onclick="switchView('queue')">↩ رجوع للطابور</button>
+        <div class="brand-info">🔬 محطة عمل المعمل (v15)</div>
+        <div class="header-btns">
+            <button class="nav-btn btn-print" onclick="openPrintPreview()">🖨️ معاينة وطباعة النتائج</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
         </div>
     </header>
 
-    <!-- View 1: Queue -->
-    <div class="view active" id="queueView">
-        <div class="queue-container">
-            <div class="toolbar">
-                <div class="tabs">
-                    <button class="tab active" onclick="setFilter('all')" id="tab-all">الكل</button>
-                    <button class="tab" onclick="setFilter('pending')" id="tab-pending">مطلوب</button>
-                    <button class="tab" onclick="setFilter('done')" id="tab-done">تم الانتهاء</button>
-                </div>
-                <div class="search-box" style="flex-grow:1;">
-                    <input type="text" id="searchInput" placeholder="بحث باسم المريض..." onkeyup="renderQueue()">
-                </div>
-            </div>
-            <div class="grid" id="labGrid"></div>
+    <div class="main-container">
+        <!-- المرضى -->
+        <div class="panel">
+            <div class="panel-header">المرضى (الطابور)</div>
+            <div class="patient-list" id="patientList"></div>
+        </div>
+
+        <!-- التحاليل الفردية -->
+        <div class="panel">
+            <div class="panel-header">التحاليل الفردية (Single)</div>
+            <div class="test-list" id="singleTests"></div>
+        </div>
+
+        <!-- التحاليل المركبة -->
+        <div class="panel">
+            <div class="panel-header">التحاليل المركبة (Profiles)</div>
+            <div class="test-list" id="profileTests"></div>
         </div>
     </div>
 
-    <!-- View 2: Workstation (3 Columns) -->
-    <div class="view" id="workstationView">
-        <div class="workstation">
-            <!-- Right: Patients List -->
-            <div class="column">
-                <div class="col-header">المرضى (طابور)</div>
-                <div class="col-body" id="wsPatientList"></div>
+    <!-- Modal للطباعة -->
+    <div class="modal" id="printModal">
+        <div class="modal-content" id="print-area">
+            <div class="print-header">
+                <h2>معامل طيبة للتحاليل الطبية</h2>
+                <p>تقرير نتائج التحاليل</p>
+                <div id="printPatientInfo" style="margin-top: 10px; font-weight: bold;"></div>
             </div>
-
-            <!-- Middle: Single Tests -->
-            <div class="column">
-                <div class="col-header">التحاليل الفردية (Single)</div>
-                <div class="col-body" id="wsSingleTests">
-                    <div class="empty-msg">اختر مريض من القائمة</div>
-                </div>
-            </div>
-
-            <!-- Left: Profile Tests -->
-            <div class="column">
-                <div class="col-header">التحاليل المركبة (Profiles)</div>
-                <div class="col-body" id="wsProfileTests">
-                    <div class="empty-msg">اختر مريض من القائمة</div>
-                </div>
+            <div id="printResultsBody"></div>
+            <div class="no-print" style="text-align: center; margin-top: 20px;">
+                <button class="nav-btn btn-print" onclick="window.print()" style="padding: 10px 30px; font-size: 1.1rem;">🖨️ طباعة الآن</button>
+                <button class="nav-btn" onclick="document.getElementById('printModal').style.display='none'" style="background: #7f8c8d;">إغلاق</button>
             </div>
         </div>
     </div>
@@ -141,279 +131,288 @@
         const supabaseKey = 'sb_publishable_2Q7SPvruXJar3gvOxtvl5w_p4CVDfcU';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        let allVisits = []; // كل الزيارات
-        let allVT = [];     // كل التحاليل المطلوبة
-        let allCatalog = []; // الكتالوج
-        let allResults = []; // النتائج
-        let activeVisitId = null;
-        let currentFilter = 'all';
+        let allVisits = [], allPatients = [], allCatalog = [], allVisitTests = [], allResults = [];
+        let currentVisitId = null, currentPatient = null;
 
-        // دالة مساعدة لحساب التقييم
-        function calcFlag(val, ref) {
-            if (!val || !ref) return 'normal';
-            const num = parseFloat(val);
-            if (isNaN(num)) return 'normal';
-            const range = ref.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
-            if (range) {
-                const min = parseFloat(range[1]), max = parseFloat(range[2]);
-                if (num < min) return 'low';
-                if (num > max) return 'high';
-            }
-            return 'normal';
-        }
-
-        // 1. تحميل كل البيانات من السحابة مرة واحدة
         async function loadData() {
-            try {
-                const { data: v } = await _supabase.from('visits').select('*').order('visit_id', { ascending: false });
-                const { data: p } = await _supabase.from('patients').select('*');
-                const { data: vt } = await _supabase.from('visit_tests').select('*');
-                const { data: c } = await _supabase.from('tests_catalog').select('*');
-                const { data: r } = await _supabase.from('test_results').select('*');
+            // جلب البيانات
+            const { data: visits } = await _supabase.from('visits').select('*').order('visit_id', { ascending: false });
+            const { data: patients } = await _supabase.from('patients').select('*');
+            const { data: catalog } = await _supabase.from('tests_catalog').select('*');
+            const { data: vt } = await _supabase.from('visit_tests').select('*');
+            const { data: results } = await _supabase.from('test_results').select('*');
 
-                // ربط المريض بالزيارة
-                allVisits = (v || []).map(visit => {
-                    const pat = (p || []).find(pat => pat.id == visit.patient_id || pat.patient_id == visit.patient_id) || {};
-                    return { ...visit, patient: pat };
-                });
+            allVisits = visits || [];
+            allPatients = patients || [];
+            allCatalog = catalog || [];
+            allVisitTests = vt || [];
+            allResults = results || [];
 
-                allVT = vt || [];
-                allCatalog = c || [];
-                allResults = r || [];
-
-                renderQueue();
-            } catch (err) {
-                alert('خطأ في تحميل البيانات: ' + err.message);
+            renderPatientList();
+            
+            // اختيار أول مريض أوتوماتيك
+            if (allVisits.length > 0) {
+                selectPatient(allVisits[0].visit_id);
+            } else {
+                document.getElementById('patientList').innerHTML = '<div class="empty-msg">لا يوجد مرضى</div>';
             }
         }
 
-        // 2. رسم الكروت (Queue View)
-        function renderQueue() {
-            const grid = document.getElementById('labGrid');
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            
-            // فلترة الزيارات
-            let filtered = allVisits.filter(visit => {
-                const pName = (visit.patient.full_name || visit.patient.name || '').toLowerCase();
-                if (query && !pName.includes(query)) return false;
-
-                // فلترة الحالة
-                const visitTests = allVT.filter(vt => vt.visit_id == visit.visit_id || vt.visit_id == visit.id);
-                if (visitTests.length === 0) return false;
-
-                const allDone = visitTests.every(vt => allResults.find(r => r.visit_test_id == vt.id));
-                if (currentFilter === 'pending' && allDone) return false;
-                if (currentFilter === 'done' && !allDone) return false;
-
-                return true;
-            });
-
-            if (!filtered.length) {
-                grid.innerHTML = '<div class="empty-msg">لا توجد طلبات</div>';
-                return;
-            }
-
-            grid.innerHTML = filtered.map(visit => {
-                const p = visit.patient;
-                const visitTests = allVT.filter(vt => vt.visit_id == visit.visit_id || vt.visit_id == visit.id);
-                const allDone = visitTests.every(vt => allResults.find(r => r.visit_test_id == vt.id));
-                const statusClass = allDone ? 'done' : 'pending';
-                const pName = p.full_name || p.name || 'غير معروف';
+        function renderPatientList() {
+            const list = document.getElementById('patientList');
+            list.innerHTML = allVisits.map(v => {
+                const p = allPatients.find(pt => pt.id === v.patient_id) || {};
+                const isActive = v.visit_id === currentVisitId ? 'active' : '';
                 
+                // حساب عدد التحاليل
+                const vTests = allVisitTests.filter(t => t.visit_id === v.visit_id);
+                const count = vTests.length;
+
                 return `
-                    <div class="card ${statusClass}" onclick="openWorkstation('${visit.visit_id || visit.id}')">
-                        <div class="card-header">
-                            <div><div class="p-name">${pName}</div><div style="font-size:0.8rem; color:#666;">${p.gender === 'female' || p.gender === 'أنثى' ? 'أنثى' : 'ذكر'} • ${p.age || '?'} سنة</div></div>
-                            <span class="badge ${statusClass}">${allDone ? 'مكتمل' : 'مطلوب'}</span>
-                        </div>
-                        <div class="card-body">
-                            <div class="test-info"><span>عدد التحاليل: ${visitTests.length}</span> <span>زيارة #${visit.visit_id || visit.id}</span></div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="btn-open">فتح محطة العمل ➡</button>
+                    <div class="patient-item ${isActive}" onclick="selectPatient(${v.visit_id})">
+                        <div class="p-name">${p.name || 'غير معروف'}</div>
+                        <div class="p-meta">
+                            <span>زيارة #${v.visit_id}</span>
+                            <span>عدد التحاليل: ${count}</span>
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        // 3. فتح محطة العمل (Workstation)
-        window.openWorkstation = function(visitId) {
-            activeVisitId = visitId;
-            document.getElementById('queueView').classList.remove('active');
-            document.getElementById('workstationView').classList.add('active');
-            document.getElementById('backBtn').style.display = 'inline-block';
+        function selectPatient(visitId) {
+            currentVisitId = visitId;
+            const visit = allVisits.find(v => v.visit_id === visitId);
+            currentPatient = allPatients.find(p => p.id === visit.patient_id) || {};
 
-            renderWsPatientList();
-            renderWsTests();
+            renderPatientList(); // عشان نلون المريض المختار
+            renderTests();
         }
 
-        window.switchView = function(view) {
-            if(view === 'queue') {
-                document.getElementById('workstationView').classList.remove('active');
-                document.getElementById('queueView').classList.add('active');
-                document.getElementById('backBtn').style.display = 'none';
-                activeVisitId = null;
-                renderQueue(); // تحديث الكروت
-            }
-        }
-
-        // 4. رسم قائمة المرضى في محطة العمل
-        function renderWsPatientList() {
-            const list = document.getElementById('wsPatientList');
-            list.innerHTML = allVisits.map(visit => {
-                const p = visit.patient;
-                const pName = p.full_name || p.name || 'غير معروف';
-                const isActive = (visit.visit_id == activeVisitId || visit.id == activeVisitId);
-                
-                return `
-                    <div class="patient-list-item ${isActive ? 'active' : ''}" onclick="openWorkstation('${visit.visit_id || visit.id}')">
-                        <div class="name">${pName}</div>
-                        <div class="meta">زيارة #${visit.visit_id || visit.id} - ${p.age || '?'} سنة</div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // 5. رسم التحاليل في الأعمدة (فردي ومركب)
-        function renderWsTests() {
-            const singleCol = document.getElementById('wsSingleTests');
-            const profileCol = document.getElementById('wsProfileTests');
+        function renderTests() {
+            const singleDiv = document.getElementById('singleTests');
+            const profileDiv = document.getElementById('profileTests');
             
-            const visitTests = allVT.filter(vt => vt.visit_id == activeVisitId);
+            // جلب تحاليل المريض الحالي
+            const vTests = allVisitTests.filter(t => t.visit_id === currentVisitId);
             
-            if (!visitTests.length) {
-                singleCol.innerHTML = '<div class="empty-msg">لا توجد تحاليل</div>';
-                profileCol.innerHTML = '<div class="empty-msg">لا توجد تحاليل</div>';
+            let singleHtml = '', profileHtml = '';
+
+            if (vTests.length === 0) {
+                singleDiv.innerHTML = '<div class="empty-msg">لا توجد تحاليل</div>';
+                profileDiv.innerHTML = '<div class="empty-msg">لا توجد تحاليل</div>';
                 return;
             }
 
-            let singleHtml = '';
-            let profileHtml = '';
+            vTests.forEach(vt => {
+                const test = allCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, parameters: [] };
+                const result = allResults.find(r => r.visit_test_id === vt.id);
+                
+                let params = test.parameters;
+                if (typeof params === 'string') {
+                    try { params = JSON.parse(params); } catch(e) { params = []; }
+                }
+                if (!Array.isArray(params)) params = [];
 
-            visitTests.forEach(vt => {
-                const cat = allCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, parameters: [] };
-                const result = allResults.find(r => r.visit_test_id == vt.id);
-                const savedData = result?.results_data || {};
-                const params = cat.parameters || [];
-
-                if (params.length > 0) {
-                    // تحليل مركب (Profile)
-                    let inputsHtml = '';
-                    params.forEach(param => {
-                        const ref = ref = param.ref_male; // للتبسيط دلوقتي
-                        const savedVal = savedData[param.name]?.value || '';
-                        const savedFlag = savedData[param.name]?.flag || 'normal';
-                        
-                        inputsHtml += `
-                            <div class="form-group">
-                                <label>${param.label}</label>
-                                <input type="text" id="val_${vt.id}_${param.name}" value="${savedVal}" oninput="checkFlag('${vt.id}', '${param.name}', '${ref}')">
-                                <span class="unit">${param.unit}</span>
-                                <span class="ref">${ref}</span>
-                                <span id="flag_${vt.id}_${param.name}" class="flag-${savedFlag}">${savedFlag === 'high' ? 'H' : savedFlag === 'low' ? 'L' : 'N'}</span>
+                // تحليل فردي
+                if (params.length === 0) {
+                    const savedVal = result && result.results_data && result.results_data['result'] ? result.results_data['result'].value : '';
+                    singleHtml += `
+                        <div class="single-test-box">
+                            <div class="test-title">
+                                <span>${test.name} (${vt.test_code})</span>
                             </div>
+                            <div class="input-group">
+                                <input type="text" id="res_${vt.id}" value="${savedVal}" placeholder="النتيجة...">
+                                <button class="btn-save-small" onclick="saveSingle(${vt.id})">💾 حفظ</button>
+                            </div>
+                        </div>
+                    `;
+                } 
+                // تحليل مركب
+                else {
+                    const savedData = (result && result.results_data) ? result.results_data : {};
+                    let tableRows = '';
+                    
+                    params.forEach(param => {
+                        const pName = param.name;
+                        const ref = currentPatient.gender === 'female' || currentPatient.gender === 'أنثى' ? param.ref_female : param.ref_male;
+                        const savedVal = savedData[pName] ? savedData[pName].value : '';
+                        const savedFlag = savedData[pName] ? savedData[pName].flag : 'normal';
+                        const flagText = savedFlag === 'high' ? 'H' : savedFlag === 'low' ? 'L' : 'N';
+
+                        tableRows += `
+                            <tr>
+                                <td>${param.label || pName}</td>
+                                <td><input type="text" id="p_${vt.id}_${pName}" value="${savedVal}" oninput="calcFlag('${vt.id}', '${pName}', '${ref}')"></td>
+                                <td>${param.unit || ''}</td>
+                                <td style="font-size:0.8rem;">${ref || ''}</td>
+                                <td class="flag-text flag-${savedFlag}" id="flag_${vt.id}_${pName}">${flagText}</td>
+                            </tr>
                         `;
                     });
 
                     profileHtml += `
-                        <div class="test-block">
-                            <div class="test-block-header"><span>${cat.name}</span> <span>${vt.test_code}</span></div>
-                            <div class="test-block-body">
-                                ${inputsHtml}
-                                <button class="save-btn" onclick="saveProfileResult(${vt.id})">💾 حفظ نتيجة ${cat.name}</button>
+                        <div class="profile-box">
+                            <div class="profile-header" onclick="toggleAccordion('acc_${vt.id}')">
+                                <span>${test.name} (${vt.test_code})</span>
+                                <span>▼</span>
                             </div>
-                        </div>
-                    `;
-                } else {
-                    // تحليل فردي (Single)
-                    const val = savedData['result']?.value || '';
-                    singleHtml += `
-                        <div class="test-block">
-                            <div class="test-block-header"><span>${cat.name}</span> <span>${vt.test_code}</span></div>
-                            <div class="test-block-body">
-                                <div class="form-group">
-                                    <label>النتيجة:</label>
-                                    <input type="text" id="val_single_${vt.id}" value="${val}">
-                                </div>
-                                <button class="save-btn" onclick="saveSingleResult(${vt.id})">💾 حفظ النتيجة</button>
+                            <div class="profile-content" id="acc_${vt.id}">
+                                <table class="data-table">
+                                    <thead><tr><th>الفحص</th><th>النتيجة</th><th>الوحدة</th><th>المرجع</th><th>الحالة</th></tr></thead>
+                                    <tbody>${tableRows}</tbody>
+                                </table>
+                                <button class="btn-save-small" style="width:100%;" onclick="saveProfile(${vt.id})">💾 حفظ نتائج ${test.name}</button>
                             </div>
                         </div>
                     `;
                 }
             });
 
-            singleCol.innerHTML = singleHtml || '<div class="empty-msg">لا توجد تحاليل فردية</div>';
-            profileCol.innerHTML = profileHtml || '<div class="empty-msg">لا توجد تحاليل مركبة</div>';
+            singleDiv.innerHTML = singleHtml || '<div class="empty-msg">لا توجد تحاليل فردية</div>';
+            profileDiv.innerHTML = profileHtml || '<div class="empty-msg">لا توجد تحاليل مركبة</div>';
         }
 
-        // 6. دوال الحفظ
-        window.checkFlag = function(vtId, paramName, ref) {
-            const val = document.getElementById(`val_${vtId}_${paramName}`).value;
-            const flag = calcFlag(val, ref);
-            const span = document.getElementById(`flag_${vtId}_${paramName}`);
-            span.className = `flag-${flag}`;
-            span.innerText = flag === 'high' ? 'H' : flag === 'low' ? 'L' : 'N';
-        }
-
-        window.saveSingleResult = async function(vtId) {
-            const val = document.getElementById(`val_single_${vtId}`).value.trim();
-            if(!val) return alert('أدخل النتيجة أولاً');
-
-            const btn = event.target;
-            btn.innerText = 'جاري الحفظ...'; btn.disabled = true;
-
-            try {
-                const { error } = await _supabase.from('test_results').upsert({
-                    visit_test_id: vtId,
-                    results_data: { 'result': { value: val, flag: 'normal' } }
-                }, { onConflict: 'visit_test_id' });
-                if(error) throw error;
-                
-                // تحديث الداتا المحلية
-                const existing = allResults.find(r => r.visit_test_id == vtId);
-                if(existing) existing.results_data = { 'result': { value: val, flag: 'normal' } };
-                else allResults.push({ visit_test_id: vtId, results_data: { 'result': { value: val, flag: 'normal' } } });
-                
-                btn.innerText = '✅ تم الحفظ'; btn.style.background = '#2c3e50';
-                setTimeout(() => { btn.innerText = '💾 حفظ النتيجة'; btn.disabled = false; btn.style.background = 'var(--success-color)'; }, 2000);
-
-            } catch(err) { alert('خطأ: ' + err.message); btn.disabled = false; btn.innerText = '💾 حفظ النتيجة';}
-        }
-
-        window.saveProfileResult = async function(vtId) {
-            const cat = allCatalog.find(c => c.code === allVT.find(v => v.id == vtId).test_code);
-            const params = cat.parameters;
-            const resultsData = {};
-
-            for(let param of params) {
-                const val = document.getElementById(`val_${vtId}_${param.name}`).value.trim();
-                if(!val) return alert(`أدخل نتيجة ${param.label}`);
-                const flag = calcFlag(val, param.ref_male);
-                resultsData[param.name] = { value: val, flag: flag };
+        function toggleAccordion(id) {
+            const el = document.getElementById(id);
+            if (el.classList.contains('open')) {
+                el.classList.remove('open');
+            } else {
+                el.classList.add('open');
             }
-
-            const btn = event.target;
-            btn.innerText = 'جاري الحفظ...'; btn.disabled = true;
-
-            try {
-                const { error } = await _supabase.from('test_results').upsert({
-                    visit_test_id: vtId,
-                    results_data: resultsData
-                }, { onConflict: 'visit_test_id' });
-                if(error) throw error;
-                
-                const existing = allResults.find(r => r.visit_test_id == vtId);
-                if(existing) existing.results_data = resultsData;
-                else allResults.push({ visit_test_id: vtId, results_data: resultsData });
-                
-                btn.innerText = '✅ تم الحفظ'; btn.style.background = '#2c3e50';
-                setTimeout(() => { btn.innerText = `💾 حفظ نتيجة ${cat.name}`; btn.disabled = false; btn.style.background = 'var(--success-color)'; }, 2000);
-
-            } catch(err) { alert('خطأ: ' + err.message); btn.disabled = false; btn.innerText = `💾 حفظ نتيجة ${cat.name}`;}
         }
 
-        // تشغيل
+        // حساب التقييم (H/L)
+        function calcFlag(vtId, pName, ref) {
+            const val = document.getElementById(`p_${vtId}_${pName}`).value;
+            const flagEl = document.getElementById(`flag_${vtId}_${pName}`);
+            
+            let flag = 'normal';
+            const num = parseFloat(val);
+            if (!isNaN(num) && ref) {
+                const range = ref.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
+                if (range) {
+                    const min = parseFloat(range[1]), max = parseFloat(range[2]);
+                    if (num < min) flag = 'low';
+                    if (num > max) flag = 'high';
+                }
+            }
+            
+            flagEl.className = `flag-text flag-${flag}`;
+            flagEl.innerText = flag === 'high' ? 'H' : flag === 'low' ? 'L' : 'N';
+        }
+
+        // الحفظ للتحاليل الفردية
+        async function saveSingle(vtId) {
+            const val = document.getElementById(`res_${vtId}`).value.trim();
+            if (!val) return alert('أدخل النتيجة أولاً');
+            
+            const payload = {
+                visit_test_id: vtId,
+                results_data: { 'result': { value: val, flag: 'normal' } }
+            };
+
+            const { error } = await _supabase.from('test_results').upsert(payload, { onConflict: 'visit_test_id' });
+            if (error) return alert('خطأ: ' + error.message);
+            
+            alert('✅ تم الحفظ');
+            await loadData(); // تحديث
+        }
+
+        // الحفظ للتحاليل المركبة
+        async function saveProfile(vtId) {
+            const test = allCatalog.find(c => c.code === allVisitTests.find(vt => vt.id === vtId).test_code);
+            let params = test.parameters;
+            if (typeof params === 'string') { try { params = JSON.parse(params); } catch(e) { params = []; } }
+            
+            const results_data = {};
+            let hasEmpty = false;
+
+            params.forEach(p => {
+                const val = document.getElementById(`p_${vtId}_${p.name}`).value.trim();
+                if (!val) hasEmpty = true; // ممكن نمنع الحفظ لو فيه خانة فاضية، أو نسمح
+                
+                const ref = currentPatient.gender === 'female' || currentPatient.gender === 'أنثى' ? p.ref_female : p.ref_male;
+                let flag = 'normal';
+                const num = parseFloat(val);
+                if (!isNaN(num) && ref) {
+                    const range = ref.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
+                    if (range) {
+                        if (num < parseFloat(range[1])) flag = 'low';
+                        if (num > parseFloat(range[2])) flag = 'high';
+                    }
+                }
+                results_data[p.name] = { value: val, flag: flag };
+            });
+
+            if (hasEmpty && !confirm('بعض الخانات فارغة، هل تريد الحفظ؟')) return;
+
+            const { error } = await _supabase.from('test_results').upsert({
+                visit_test_id: vtId,
+                results_data: results_data
+            }, { onConflict: 'visit_test_id' });
+
+            if (error) return alert('خطأ: ' + error.message);
+            
+            alert('✅ تم الحفظ');
+            await loadData();
+        }
+
+        // معاينة وطباعة النتائج
+        function openPrintPreview() {
+            if (!currentVisitId) return alert('اختر مريض أولاً');
+            
+            const visit = allVisits.find(v => v.visit_id === currentVisitId);
+            const vTests = allVisitTests.filter(t => t.visit_id === currentVisitId);
+            
+            document.getElementById('printPatientInfo').innerHTML = `
+                اسم المريض: ${currentPatient.name || 'غير معروف'} <br>
+                العمر: ${currentPatient.age || ''} - النوع: ${currentPatient.gender === 'female' || currentPatient.gender === 'أنثى' ? 'أنثى' : 'ذكر'} <br>
+                زيارة رقم: ${currentVisitId} - التاريخ: ${visit.visit_date || new Date().toLocaleDateString('ar-EG')}
+            `;
+
+            let html = '';
+            
+            vTests.forEach(vt => {
+                const test = allCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, parameters: [] };
+                const result = allResults.find(r => r.visit_test_id === vt.id);
+                if (!result) return; // لو مفيش نتيجة مسجلة، منعرضهاش
+
+                let params = test.parameters;
+                if (typeof params === 'string') { try { params = JSON.parse(params); } catch(e) { params = []; } }
+                if (!Array.isArray(params)) params = [];
+
+                html += `<h4 style="margin: 15px 0 5px 0; background: #eee; padding: 5px;">${test.name} (${vt.test_code})</h4>`;
+                html += `<table class="print-table"><thead><tr><th>الفحص</th><th>النتيجة</th><th>الوحدة</th><th>المدى المرجعي</th></tr></thead><tbody>`;
+
+                if (params.length === 0) {
+                    // تحليل فردي
+                    html += `<tr><td>${test.name}</td><td>${result.results_data['result']?.value || '-'}</td><td>-</td><td>-</td></tr>`;
+                } else {
+                    // تحليل مركب
+                    params.forEach(p => {
+                        const rData = result.results_data[p.name] || { value: '-', flag: 'normal' };
+                        const ref = currentPatient.gender === 'female' || currentPatient.gender === 'أنثى' ? p.ref_female : p.ref_male;
+                        const color = rData.flag === 'high' ? 'red' : rData.flag === 'low' ? 'blue' : 'black';
+                        
+                        html += `<tr>
+                            <td>${p.label || p.name}</td>
+                            <td style="color:${color}; font-weight:bold;">${rData.value} <span style="font-size:10px">${rData.flag === 'high' ? '(H)' : rData.flag === 'low' ? '(L)' : ''}</span></td>
+                            <td>${p.unit || ''}</td>
+                            <td>${ref || ''}</td>
+                        </tr>`;
+                    });
+                }
+                html += `</tbody></table>`;
+            });
+
+            if (!html) return alert('لا توجد نتائج مسجلة لهذا المريض لطباعتها.');
+
+            document.getElementById('printResultsBody').innerHTML = html;
+            document.getElementById('printModal').style.display = 'flex';
+        }
+
         window.onload = loadData;
     </script>
 </body>
