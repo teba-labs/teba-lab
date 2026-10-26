@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل الذكي (v23)</title>
+    <title>معامل طيبة - المعمل الذكي (v24)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -72,7 +72,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v23)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v24)</div>
         <div>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
@@ -102,31 +102,34 @@
             <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; background: #fff; position: relative; overflow: hidden; min-height: 800px;">
                 
                 <!-- الهيدر -->
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1b5e20; padding-bottom: 15px; margin-bottom: 20px; z-index: 2; position: relative;">
-                    <div style="width: 40%; display: flex; align-items: center;">
-                        <img src="header.png" alt="TEBA LABS" style="max-height: 90px; object-fit: contain;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; z-index: 2; position: relative;">
+                    <!-- النص الإنجليزي على الشمال -->
+                    <div style="width: 50%; text-align: left;">
+                        <h1 style="margin: 0; color: #000; font-size: 28px; font-weight: 900; letter-spacing: 1px;">TEBA LABS</h1>
+                        <p style="margin: 4px 0 0 0; font-size: 15px; font-weight: 600; color: #000;">For Medical Analyzes</p>
+                        <p style="margin: 2px 0 0 0; font-size: 14px; color: #333;">Dr. Ahmed Taha Abonda</p>
                     </div>
-                    <div style="width: 60%; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; padding-right: 15px;">
-                        <h1 style="margin: 0; color: #1b5e20; font-size: 26px; font-weight: 900; letter-spacing: 1px;">TEBA LABS</h1>
-                        <p style="margin: 4px 0 0 0; font-size: 14px; font-weight: 600; color: #333;">For Medical Analyzes</p>
-                        <p style="margin: 2px 0 0 0; font-size: 13px; color: #555;">Dr. Ahmed Taha Abonda</p>
+                    <!-- اللوجو العربي على اليمين -->
+                    <div style="width: 50%; display: flex; justify-content: flex-end;">
+                        <img src="header.png" alt="TEBA LABS" style="max-height: 100px; object-fit: contain;">
                     </div>
                 </div>
 
                 <!-- بيانات المريض -->
-                <div style="display: flex; justify-content: space-between; border: 1px solid #b0bec5; padding: 12px 20px; border-radius: 8px; background: #f8f9fa; font-size: 14px; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 2; position: relative;">
+                <div style="display: flex; justify-content: space-between; border: 1.5px solid #000; padding: 12px 20px; border-radius: 4px; background: #fff; font-size: 14px; margin-bottom: 25px; z-index: 2; position: relative;">
                     <div style="width: 50%; display: flex; flex-direction: column; gap: 8px;">
-                        <div><strong style="color: #555; display: inline-block; width: 110px;">Patient:</strong> <span id="pNamePrint" style="font-weight: bold; color: #1b5e20;"></span></div>
-                        <div><strong style="color: #555; display: inline-block; width: 110px;">Age/Gender:</strong> <span id="pAgeGenderPrint" style="font-weight: bold;"></span></div>
+                        <div><strong style="color: #000; display: inline-block; width: 110px;">Patient:</strong> <span id="pNamePrint" style="font-weight: bold; color: #000;"></span></div>
+                        <div><strong style="color: #000; display: inline-block; width: 110px;">Age/Gender:</strong> <span id="pAgeGenderPrint" style="font-weight: bold;"></span></div>
                     </div>
-                    <div style="width: 50%; display: flex; flex-direction: column; gap: 8px; text-align: right; border-left: 1px solid #ddd; padding-left: 15px;">
-                        <div><strong style="color: #555; display: inline-block; width: 80px;">Visit ID:</strong> <span id="vIdPrint" style="font-weight: bold;"></span></div>
-                        <div><strong style="color: #555; display: inline-block; width: 80px;">Date:</strong> <span id="vDatePrint" style="font-weight: bold;"></span></div>
+                    <div style="width: 50%; display: flex; flex-direction: column; gap: 8px; text-align: right; border-left: 1.5px solid #000; padding-left: 15px;">
+                        <div><strong style="color: #000; display: inline-block; width: 100px;">Visit ID:</strong> <span id="vIdPrint" style="font-weight: bold;"></span></div>
+                        <div><strong style="color: #000; display: inline-block; width: 100px;">Request Date:</strong> <span id="vReqDatePrint" style="font-weight: bold;"></span></div>
+                        <div><strong style="color: #000; display: inline-block; width: 100px;">Print Date:</strong> <span id="vPrintDatePrint" style="font-weight: bold;"></span></div>
                     </div>
                 </div>
 
                 <!-- الخلفية المائية -->
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; opacity: 0.04; pointer-events: none; z-index: 0;">
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; opacity: 0.02; pointer-events: none; z-index: 0;">
                     <img src="logo.png" alt="watermark" style="width: 60%; transform: rotate(-15deg);">
                 </div>
 
@@ -134,9 +137,17 @@
                 <div id="reportTableBody" style="position: relative; z-index: 2;"></div>
 
                 <!-- الفوتر -->
-                <div style="margin-top: 50px; border-top: 2px solid #1b5e20; padding-top: 15px; font-size: 12px; text-align: center; z-index: 2; position: relative; color: #555;">
-                    <p style="margin: 4px 0; font-weight: bold; font-size: 13px;">Phone: 01123702062 / 01099003494</p>
-                    <p style="margin: 4px 0;">Address: Masaken Esko - Front of Al-Khattab School - Bahgatim</p>
+                <div style="margin-top: 50px; border-top: 2px solid #000; padding-top: 15px; font-size: 12px; z-index: 2; position: relative; display: flex; justify-content: space-between;">
+                    <!-- التليفونات على الشمال -->
+                    <div style="width: 40%; text-align: left; direction: ltr;">
+                        <p style="margin: 4px 0; font-weight: bold; font-size: 14px; color: #000;">Tel: 01123702062</p>
+                        <p style="margin: 4px 0; font-weight: bold; font-size: 14px; color: #000;">WhatsApp: 01099003494</p>
+                    </div>
+                    <!-- الفروع بالعربي على اليمين -->
+                    <div style="width: 60%; text-align: right; direction: rtl; color: #000; font-weight: bold;">
+                        <p style="margin: 4px 0;">الفرع الأول: الجعافرة - الطريق العمومي - أعلى صيدلية الصحابة</p>
+                        <p style="margin: 4px 0;">الفرع الثاني: بهتيم - مساكن اسكو - أمام مدرسة ابن الخطاب - عيادة د. محمد رمضان</p>
+                    </div>
                 </div>
 
             </div>
@@ -466,10 +477,18 @@
             const visit = allVisits.find(v => v.visit_id === selectedVisitId);
             const vTests = visitTests.filter(vt => vt.visit_id === selectedVisitId);
 
+            // تجهيز التواريخ
+            const reqDate = visit.visit_date ? new Date(visit.visit_date) : new Date();
+            const printDate = new Date();
+
+            // تنسيق التاريخ (DD-MMM-YYYY)
+            const options = { day: '2-digit', month: 'short', year: 'numeric' };
+            
             document.getElementById('pNamePrint').innerText = visit.patient.name || 'Unknown';
             document.getElementById('pAgeGenderPrint').innerText = `${visit.patient.age} Years / ${visit.patient.gender}`;
             document.getElementById('vIdPrint').innerText = visit.visit_id;
-            document.getElementById('vDatePrint').innerText = new Date(visit.visit_date || Date.now()).toLocaleDateString('en-GB');
+            document.getElementById('vReqDatePrint').innerText = reqDate.toLocaleDateString('en-GB', options);
+            document.getElementById('vPrintDatePrint').innerText = printDate.toLocaleDateString('en-GB', options);
 
             const tbody = document.getElementById('reportTableBody');
             let rows = '';
@@ -499,16 +518,17 @@
                             const match = range.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
                             if (!isNaN(num) && match) {
                                 const min = parseFloat(match[1]), max = parseFloat(match[2]);
-                                if (num < min) flagStr = '<span style="background-color: #e3f2fd; color: #1565c0; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block;">Low</span>';
-                                else if (num > max) flagStr = '<span style="background-color: #ffebee; color: #c62828; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block;">High</span>';
+                                // تنسيق الأبيض والأسود (إطار أسود وخط عريض)
+                                if (num < min) flagStr = '<span style="border: 1px solid #000; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #000; display: inline-block;">Low</span>';
+                                else if (num > max) flagStr = '<span style="border: 1px solid #000; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #000; display: inline-block;">High</span>';
                             }
                             
                             testRows += `<tr>
-                                <td style="border-bottom: 1px solid #eee; padding: 8px 6px;">${param.label || param.name}</td>
-                                <td style="border-bottom: 1px solid #eee; padding: 8px 6px; text-align:center; font-weight:bold; color: #1b5e20;">${val}</td>
-                                <td style="border-bottom: 1px solid #eee; padding: 8px 6px; text-align:center;">${flagStr}</td>
-                                <td style="border-bottom: 1px solid #eee; padding: 8px 6px; text-align:center;">${unit}</td>
-                                <td style="border-bottom: 1px solid #eee; padding: 8px 6px; text-align:center;">${range}</td>
+                                <td style="border-bottom: 1px solid #ccc; padding: 8px 6px;">${param.label || param.name}</td>
+                                <td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center; font-weight:bold; color: #000;">${val}</td>
+                                <td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${flagStr}</td>
+                                <td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${unit}</td>
+                                <td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${range}</td>
                             </tr>`;
                         }
                     });
@@ -526,16 +546,16 @@
                         const match = range.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
                         if (!isNaN(num) && match) {
                             const min = parseFloat(match[1]), max = parseFloat(match[2]);
-                            if (num < min) flagStr = '<span style="background-color: #e3f2fd; color: #1565c0; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block;">Low</span>';
-                            else if (num > max) flagStr = '<span style="background-color: #ffebee; color: #c62828; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block;">High</span>';
+                            if (num < min) flagStr = '<span style="border: 1px solid #000; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #000; display: inline-block;">Low</span>';
+                            else if (num > max) flagStr = '<span style="border: 1px solid #000; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #000; display: inline-block;">High</span>';
                         }
 
                         testRows += `<tr>
-                            <td style="border-bottom: 1px solid #eee; padding: 8px 6px;">${catalogItem.name}</td>
-                            <td style="border-bottom: 1px solid #eee; padding: 8px 6px; text-align:center; font-weight:bold; color: #1b5e20;">${val}</td>
-                            <td style="border-bottom: 1px solid #eee; padding: 8px 6px; text-align:center;">${flagStr}</td>
-                            <td style="border-bottom: 1px solid #eee; padding: 8px 6px; text-align:center;">${unit}</td>
-                            <td style="border-bottom: 1px solid #eee; padding: 8px 6px; text-align:center;">${range}</td>
+                            <td style="border-bottom: 1px solid #ccc; padding: 8px 6px;">${catalogItem.name}</td>
+                            <td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center; font-weight:bold; color: #000;">${val}</td>
+                            <td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${flagStr}</td>
+                            <td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${unit}</td>
+                            <td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${range}</td>
                         </tr>`;
                     }
                 }
@@ -543,10 +563,10 @@
                 if (hasTestData) {
                     rows += `
                         <div style="margin-bottom: 25px; page-break-inside: avoid;">
-                            <h3 style="margin: 0 0 10px 0; background: #e8f5e9; padding: 8px 12px; border-left: 4px solid #1b5e20; font-size: 15px; text-transform: uppercase; color: #1b5e20; border-radius: 0 4px 4px 0;">${catalogItem.name}</h3>
+                            <h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000; border-radius: 0 4px 4px 0;">${catalogItem.name}</h3>
                             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                                 <thead>
-                                    <tr style="background: #1b5e20; color: #fff;">
+                                    <tr style="background: #000; color: #fff;">
                                         <th style="padding: 8px 6px; text-align:left; border-radius: 4px 0 0 0;">Test Name</th>
                                         <th style="padding: 8px 6px; text-align:center;">Result</th>
                                         <th style="padding: 8px 6px; text-align:center;">State</th>
