@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل الذكي (v17.1)</title>
+    <title>معامل طيبة - المعمل (v18)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -42,7 +42,7 @@
         .range-info { font-weight: normal; font-size: 0.75rem; color: var(--accent-color); background: #eaf4fc; padding: 2px 6px; border-radius: 4px;}
         .input-group input { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 1rem; font-family: inherit; outline: none; text-align: center;}
         .input-group input:focus { border-color: var(--accent-color); }
-        .input-calc { background-color: #f9f9f9; font-weight: bold; color: #555; }
+        .input-calc { background-color: #f9f9f9; font-weight: bold; color: #555; border: 1px dashed #ccc !important; }
         
         .btn-save-test { width: 100%; padding: 10px; background: var(--success-color); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: inherit; margin-top: 5px;}
         .empty-msg { text-align: center; padding: 50px 20px; color: var(--text-muted); font-size: 1.1rem; }
@@ -71,7 +71,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v17.1)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v18)</div>
         <div>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
@@ -121,6 +121,20 @@
         let allVisits = [], visitTests = [], testsCatalog = [], testResults = [];
         let selectedVisitId = null;
 
+        // 🧠 مخ المعادلات (جوه الكود ومش محتاج سحابة)
+        const formulasMap = {
+            'CBC': {
+                'HCT': 'HGB * 3', 
+                'MCV': '(HCT * 10) / RBC',
+                'MCH': '(HGB * 10) / RBC',
+                'MCHC': '(HGB * 100) / HCT'
+            },
+            'LIPID': {
+                'VLDL': 'TRIG / 5',
+                'LDL': 'CHO - HDL - (TRIG / 5)'
+            }
+        };
+
         async function loadData() {
             const { data: visits } = await _supabase.from('visits').select('*').order('visit_id', { ascending: false });
             const { data: patients } = await _supabase.from('patients').select('*');
@@ -142,7 +156,6 @@
         function renderPatients() {
             const list = document.getElementById('patientList');
             if (allVisits.length === 0) return list.innerHTML = '<div class="empty-msg">لا توجد زيارات</div>';
-
             list.innerHTML = allVisits.map(v => `
                 <div class="patient-card ${v.visit_id === selectedVisitId ? 'active' : ''}" onclick="selectPatient(${v.visit_id})">
                     <div class="p-name">${v.patient.name}</div>
@@ -178,19 +191,20 @@
                 if (isProfile) {
                     catalogItem.parameters.forEach(param => {
                         const val = savedData[param.name]?.value || '';
-                        const unit = param.unit || param.units || '';
-                        const range = param.ref_male || param.reference_range || param.range || '';
+                        const unit = param.unit || '';
+                        const range = param.ref_male || ''; 
                         
-                        const isCalc = param.is_calc === true || param.is_calculated === true || param.formula;
-                        const readonly = isCalc ? 'readonly' : '';
-                        const calcClass = isCalc ? 'input-calc' : '';
-                        const placeholder = isCalc ? 'تلقائى' : 'أدخل النتيجة...';
+                        // نشوف هل البارامتر ده ليه معادلة في المخ بتاعنا؟
+                        const hasFormula = formulasMap[catalogItem.code] && formulasMap[catalogItem.code][param.name];
+                        
+                        const readonly = hasFormula ? 'readonly' : '';
+                        const calcClass = hasFormula ? 'input-calc' : '';
+                        const placeholder = hasFormula ? 'تلقائي' : 'أدخل النتيجة...';
 
-                        // تم تعديل الخانة هنا لـ type="text" عشان تقبل كلام وأرقام
                         inputsHtml += `
                             <div class="input-group">
                                 <label><span>${param.label || param.name}</span><span class="range-info">${range} ${unit}</span></label>
-                                <input type="text" class="${calcClass}" id="res_${vt.id}_${param.name}" value="${val}" placeholder="${placeholder}" ${readonly} oninput="triggerCalc(${vt.id}, '${vt.test_code}')">
+                                <input type="text" class="${calcClass}" id="res_${vt.id}_${param.name}" value="${val}" placeholder="${placeholder}" ${readonly} oninput="triggerCalc(${vt.id}, '${catalogItem.code}')">
                             </div>
                         `;
                     });
@@ -223,31 +237,31 @@
         }
 
         function triggerCalc(visitTestId, testCode) {
-            const catalogItem = testsCatalog.find(c => c.code === testCode);
-            if (!catalogItem || !catalogItem.parameters) return;
+            const formulas = formulasMap[testCode];
+            if (!formulas) return; // لو التحليل ده مفيهوش معادلات، اخرج
 
             let vals = {};
-            catalogItem.parameters.forEach(p => {
-                const input = document.getElementById(`res_${visitTestId}_${p.name}`);
-                if (input) vals[p.name] = parseFloat(input.value) || 0;
+            const inputs = document.querySelectorAll(`[id^="res_${visitTestId}_"]`);
+            inputs.forEach(input => {
+                const paramName = input.id.replace(`res_${visitTestId}_`, '');
+                vals[paramName] = parseFloat(input.value) || 0;
             });
 
-            catalogItem.parameters.forEach(p => {
-                if (p.formula) {
-                    try {
-                        let formula = p.formula;
-                        for (let key in vals) {
-                            formula = formula.replace(new RegExp(key, 'g'), vals[key]);
-                        }
-                        let result = Function('"use strict";return (' + formula + ')')();
-                        if (isFinite(result) && result > 0) {
-                            document.getElementById(`res_${visitTestId}_${p.name}`).value = result.toFixed(2);
-                        }
-                    } catch (e) {
-                        console.error('Formula error for ' + p.name, e);
-                    }
+            for (let targetParam in formulas) {
+                let formula = formulas[targetParam];
+                for (let key in vals) {
+                    formula = formula.replace(new RegExp('\\b' + key + '\\b', 'g'), vals[key]);
                 }
-            });
+                try {
+                    let result = Function('"use strict";return (' + formula + ')')();
+                    if (isFinite(result) && result > 0) {
+                        const targetInput = document.getElementById(`res_${visitTestId}_${targetParam}`);
+                        if(targetInput) targetInput.value = result.toFixed(2);
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
         }
 
         async function saveTestResult(visitTestId, isProfile) {
@@ -319,8 +333,8 @@
                         const val = savedData[param.name]?.value;
                         if (val) {
                             hasResults = true;
-                            const range = param.ref_male || param.reference_range || param.range || '-';
-                            const unit = param.unit || param.units || '-';
+                            const range = param.ref_male || '-';
+                            const unit = param.unit || '-';
                             const flag = calcFlag(val, range);
                             rows += `<tr><td>${param.label || param.name}</td><td>${val} ${flag}</td><td>${unit}</td><td>${range}</td></tr>`;
                         }
