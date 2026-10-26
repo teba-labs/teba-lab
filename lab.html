@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل (V15)</title>
+    <title>معامل طيبة - المعمل الذكي (v17.1)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -21,12 +21,10 @@
         .nav-btn { background: var(--accent-color); color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; font-family: inherit; font-size: 1rem;}
         .nav-btn.print { background: var(--warning-color); color: #333; margin-left: 10px;}
 
-        /* 3 Columns Layout */
         .main-grid { display: grid; grid-template-columns: 300px 1fr 1fr; gap: 15px; padding: 15px; flex-grow: 1; height: calc(100vh - 60px); }
         .panel { background: var(--surface-bg); border-radius: var(--radius); box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; border: 1px solid var(--border-color); overflow: hidden; }
         .panel-header { background: #f8f9fa; padding: 15px; border-bottom: 1px solid var(--border-color); font-weight: bold; color: var(--primary-color); text-align: center; font-size: 1.1rem;}
 
-        /* Patient List (Right) */
         .patient-list { flex-grow: 1; overflow-y: auto; padding: 10px; }
         .patient-card { padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; background: white; }
         .patient-card:hover { border-color: var(--accent-color); background: #f0f8ff; }
@@ -34,25 +32,21 @@
         .p-name { font-weight: bold; margin-bottom: 5px; color: var(--primary-color);}
         .p-meta { font-size: 0.8rem; color: var(--text-muted); display: flex; justify-content: space-between;}
 
-        /* Tests Columns (Middle & Left) */
         .tests-list { flex-grow: 1; overflow-y: auto; padding: 15px; }
         .test-item { border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 15px; overflow: hidden; background: white; }
         .test-header { background: #f8f9fa; padding: 10px 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; font-weight: bold;}
         .test-body { padding: 15px; }
         
-        /* Inputs */
         .input-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
         .input-group label { font-size: 0.85rem; font-weight: bold; color: var(--text-muted); display: flex; justify-content: space-between;}
         .range-info { font-weight: normal; font-size: 0.75rem; color: var(--accent-color); background: #eaf4fc; padding: 2px 6px; border-radius: 4px;}
         .input-group input { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 1rem; font-family: inherit; outline: none; text-align: center;}
-        .input-group input:focus { border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(52,152,219,0.2); }
+        .input-group input:focus { border-color: var(--accent-color); }
+        .input-calc { background-color: #f9f9f9; font-weight: bold; color: #555; }
         
         .btn-save-test { width: 100%; padding: 10px; background: var(--success-color); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: inherit; margin-top: 5px;}
-        
-        /* Empty State */
         .empty-msg { text-align: center; padding: 50px 20px; color: var(--text-muted); font-size: 1.1rem; }
 
-        /* Modal for Printing */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 800px; max-height: 95vh; overflow-y: auto; }
         .report-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
@@ -61,6 +55,10 @@
         .report-table th { background: #f8f9fa; }
         .btn-print { background: var(--success-color); color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; margin-top: 20px;}
         .btn-close { background: var(--danger-color); color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px;}
+        
+        .flag-high { color: red; font-weight: bold; }
+        .flag-low { color: blue; font-weight: bold; }
+        .flag-normal { color: green; font-weight: bold; }
 
         @media print {
             body * { visibility: hidden; }
@@ -73,7 +71,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (V15)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v17.1)</div>
         <div>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
@@ -81,32 +79,20 @@
     </header>
 
     <div class="main-grid">
-        <!-- المرضى -->
         <div class="panel">
             <div class="panel-header">طابور المرضى</div>
-            <div class="patient-list" id="patientList">
-                <div class="empty-msg">جاري التحميل...</div>
-            </div>
+            <div class="patient-list" id="patientList"><div class="empty-msg">جاري التحميل...</div></div>
         </div>
-
-        <!-- التحاليل الفردية -->
         <div class="panel">
             <div class="panel-header">التحاليل الفردية (Single)</div>
-            <div class="tests-list" id="singleList">
-                <div class="empty-msg">اختر مريضاً من القائمة</div>
-            </div>
+            <div class="tests-list" id="singleList"><div class="empty-msg">اختر مريضاً</div></div>
         </div>
-
-        <!-- التحاليل المركبة -->
         <div class="panel">
             <div class="panel-header">التحاليل المركبة (Profiles)</div>
-            <div class="tests-list" id="profileList">
-                <div class="empty-msg">اختر مريضاً من القائمة</div>
-            </div>
+            <div class="tests-list" id="profileList"><div class="empty-msg">اختر مريضاً</div></div>
         </div>
     </div>
 
-    <!-- مودال الطباعة -->
     <div class="modal" id="printModal">
         <div class="modal-content">
             <div id="print-area">
@@ -117,12 +103,7 @@
                 </div>
                 <table class="report-table">
                     <thead>
-                        <tr>
-                            <th>التحليل / الفحص</th>
-                            <th>النتيجة</th>
-                            <th>الوحدة</th>
-                            <th>المدى المرجعي</th>
-                        </tr>
+                        <tr><th>التحليل / الفحص</th><th>النتيجة</th><th>الوحدة</th><th>المدى المرجعي</th></tr>
                     </thead>
                     <tbody id="reportTableBody"></tbody>
                 </table>
@@ -137,7 +118,7 @@
         const supabaseKey = 'sb_publishable_2Q7SPvruXJar3gvOxtvl5w_p4CVDfcU';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        let allVisits = []; let visitTests = []; let testsCatalog = []; let testResults = [];
+        let allVisits = [], visitTests = [], testsCatalog = [], testResults = [];
         let selectedVisitId = null;
 
         async function loadData() {
@@ -147,10 +128,12 @@
             const { data: catalog } = await _supabase.from('tests_catalog').select('*');
             const { data: results } = await _supabase.from('test_results').select('*');
 
-            testsCatalog = catalog || []; visitTests = vt || []; testResults = results || [];
+            testsCatalog = catalog || [];
+            visitTests = vt || [];
+            testResults = results || [];
 
             allVisits = (visits || []).map(v => {
-                const p = (patients || []).find(x => x.id == v.patient_id) || { name: 'غير معروف', age: 0, gender: 'male' };
+                const p = (patients || []).find(x => x.id == v.patient_id) || { name: 'غير معروف', age: 0, gender: 'ذكر' };
                 return { ...v, patient: p };
             });
             renderPatients();
@@ -163,10 +146,7 @@
             list.innerHTML = allVisits.map(v => `
                 <div class="patient-card ${v.visit_id === selectedVisitId ? 'active' : ''}" onclick="selectPatient(${v.visit_id})">
                     <div class="p-name">${v.patient.name}</div>
-                    <div class="p-meta">
-                        <span>زيارة #${v.visit_id}</span>
-                        <span>${v.patient.gender === 'female' ? 'أنثى' : 'ذكر'} • ${v.patient.age} سنة</span>
-                    </div>
+                    <div class="p-meta"><span>زيارة #${v.visit_id}</span><span>${v.patient.gender} • ${v.patient.age} سنة</span></div>
                 </div>
             `).join('');
         }
@@ -177,16 +157,15 @@
 
             const singleList = document.getElementById('singleList');
             const profileList = document.getElementById('profileList');
-            const visit = allVisits.find(v => v.visit_id === visitId);
             const vTests = visitTests.filter(vt => vt.visit_id === visitId);
 
             if (vTests.length === 0) {
-                singleList.innerHTML = '<div class="empty-msg">لا توجد تحاليل فردية</div>';
-                profileList.innerHTML = '<div class="empty-msg">لا توجد تحاليل مركبة</div>';
+                singleList.innerHTML = '<div class="empty-msg">لا توجد تحاليل</div>';
+                profileList.innerHTML = '<div class="empty-msg">لا توجد تحاليل</div>';
                 return;
             }
 
-            let singlesHtml = ''; let profilesHtml = '';
+            let singlesHtml = '', profilesHtml = '';
 
             vTests.forEach(vt => {
                 const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, parameters: [] };
@@ -199,16 +178,19 @@
                 if (isProfile) {
                     catalogItem.parameters.forEach(param => {
                         const val = savedData[param.name]?.value || '';
-                        const unit = param.unit || '';
-                        // تحديد المدى حسب النوع
-                        const range = visit.patient.gender === 'female' ? (param.ref_female || param.ref_male || '') : (param.ref_male || '');
+                        const unit = param.unit || param.units || '';
+                        const range = param.ref_male || param.reference_range || param.range || '';
+                        
+                        const isCalc = param.is_calc === true || param.is_calculated === true || param.formula;
+                        const readonly = isCalc ? 'readonly' : '';
+                        const calcClass = isCalc ? 'input-calc' : '';
+                        const placeholder = isCalc ? 'تلقائى' : 'أدخل النتيجة...';
+
+                        // تم تعديل الخانة هنا لـ type="text" عشان تقبل كلام وأرقام
                         inputsHtml += `
                             <div class="input-group">
-                                <label>
-                                    <span>${param.label || param.name}</span>
-                                    <span class="range-info">${range} ${unit}</span>
-                                </label>
-                                <input type="text" class="res-input" id="res_${vt.id}_${param.name}" value="${val}" placeholder="النتيجة..." onkeydown="handleEnter(event)">
+                                <label><span>${param.label || param.name}</span><span class="range-info">${range} ${unit}</span></label>
+                                <input type="text" class="${calcClass}" id="res_${vt.id}_${param.name}" value="${val}" placeholder="${placeholder}" ${readonly} oninput="triggerCalc(${vt.id}, '${vt.test_code}')">
                             </div>
                         `;
                     });
@@ -218,69 +200,69 @@
                     const range = catalogItem.reference_range || '';
                     inputsHtml += `
                         <div class="input-group">
-                            <label>
-                                <span>النتيجة</span>
-                                <span class="range-info">${range} ${unit}</span>
-                            </label>
-                            <input type="text" class="res-input" id="res_${vt.id}_simple" value="${val}" placeholder="النتيجة..." onkeydown="handleEnter(event)">
+                            <label><span>النتيجة</span><span class="range-info">${range} ${unit}</span></label>
+                            <input type="text" id="res_${vt.id}_simple" value="${val}" placeholder="أدخل النتيجة هنا...">
                         </div>
                     `;
                 }
 
                 const cardHtml = `
                     <div class="test-item">
-                        <div class="test-header">
-                            <span>${catalogItem.name}</span>
-                            <span style="font-size:0.8rem; color:#666;">${vt.test_code}</span>
-                        </div>
+                        <div class="test-header"><span>${catalogItem.name}</span><span style="font-size:0.8rem; color:#666;">${vt.test_code}</span></div>
                         <div class="test-body">
                             ${inputsHtml}
-                            <button class="btn-save-test" id="btn_${vt.id}" onclick="saveTestResult(${vt.id}, ${isProfile})">💾 حفظ</button>
+                            <button class="btn-save-test" onclick="saveTestResult(${vt.id}, ${isProfile})">💾 حفظ</button>
                         </div>
                     </div>
                 `;
-                if (isProfile) profilesHtml += cardHtml;
-                else singlesHtml += cardHtml;
+                if (isProfile) profilesHtml += cardHtml; else singlesHtml += cardHtml;
             });
 
             singleList.innerHTML = singlesHtml || '<div class="empty-msg">لا توجد تحاليل فردية</div>';
             profileList.innerHTML = profilesHtml || '<div class="empty-msg">لا توجد تحاليل مركبة</div>';
-
-            // فوكس على أول خانة
-            setTimeout(() => {
-                const firstInput = document.querySelector('.res-input');
-                if (firstInput) firstInput.focus();
-            }, 100);
         }
 
-        // التنقل بالإنتر
-        function handleEnter(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                const inputs = Array.from(document.querySelectorAll('.res-input'));
-                const currentIndex = inputs.indexOf(event.target);
-                if (currentIndex > -1 && currentIndex < inputs.length - 1) {
-                    inputs[currentIndex + 1].focus();
-                } else {
-                    // لو ده آخر خانة، اعمل حفظ للتحليل الحالي
-                    const btnId = event.target.closest('.test-body').querySelector('button').id;
-                    document.getElementById(btnId).click();
+        function triggerCalc(visitTestId, testCode) {
+            const catalogItem = testsCatalog.find(c => c.code === testCode);
+            if (!catalogItem || !catalogItem.parameters) return;
+
+            let vals = {};
+            catalogItem.parameters.forEach(p => {
+                const input = document.getElementById(`res_${visitTestId}_${p.name}`);
+                if (input) vals[p.name] = parseFloat(input.value) || 0;
+            });
+
+            catalogItem.parameters.forEach(p => {
+                if (p.formula) {
+                    try {
+                        let formula = p.formula;
+                        for (let key in vals) {
+                            formula = formula.replace(new RegExp(key, 'g'), vals[key]);
+                        }
+                        let result = Function('"use strict";return (' + formula + ')')();
+                        if (isFinite(result) && result > 0) {
+                            document.getElementById(`res_${visitTestId}_${p.name}`).value = result.toFixed(2);
+                        }
+                    } catch (e) {
+                        console.error('Formula error for ' + p.name, e);
+                    }
                 }
-            }
+            });
         }
 
         async function saveTestResult(visitTestId, isProfile) {
-            const catalogItem = testsCatalog.find(c => c.code === visitTests.find(v => v.id === visitTestId).test_code);
+            const vt = visitTests.find(v => v.id === visitTestId);
+            const catalogItem = testsCatalog.find(c => c.code === vt.test_code);
             let resultsData = {};
 
             if (isProfile) {
                 catalogItem.parameters.forEach(param => {
-                    const val = document.getElementById(`res_${visitTestId}_${param.name}`).value.trim();
-                    if (val) resultsData[param.name] = { value: val };
+                    const input = document.getElementById(`res_${visitTestId}_${param.name}`);
+                    if (input && input.value.trim() !== '') resultsData[param.name] = { value: input.value.trim() };
                 });
             } else {
-                const val = document.getElementById(`res_${visitTestId}_simple`).value.trim();
-                if (val) resultsData['result'] = { value: val };
+                const input = document.getElementById(`res_${visitTestId}_simple`);
+                if (input && input.value.trim() !== '') resultsData['result'] = { value: input.value.trim() };
             }
 
             if (Object.keys(resultsData).length === 0) return alert('لم يتم إدخال أي نتائج!');
@@ -299,19 +281,32 @@
             alert('تم الحفظ بنجاح ✅');
         }
 
+        function calcFlag(val, range) {
+            if (!val || !range || range === '-') return '';
+            const num = parseFloat(val);
+            if (isNaN(num)) return '';
+            const match = range.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
+            if (match) {
+                const min = parseFloat(match[1]), max = parseFloat(match[2]);
+                if (num < min) return '<span class="flag-low">L</span>';
+                if (num > max) return '<span class="flag-high">H</span>';
+            }
+            return '<span class="flag-normal">N</span>';
+        }
+
         function openPrintModal() {
             if (!selectedVisitId) return alert('اختر مريضاً أولاً!');
-            
             const visit = allVisits.find(v => v.visit_id === selectedVisitId);
             const vTests = visitTests.filter(vt => vt.visit_id === selectedVisitId);
 
             document.getElementById('reportPatientInfo').innerHTML = `
-                اسم المريض: ${visit.patient.name} | العمر: ${visit.patient.age} | النوع: ${visit.patient.gender === 'female' ? 'أنثى' : 'ذكر'}<br>
+                اسم المريض: ${visit.patient.name} | العمر: ${visit.patient.age} | النوع: ${visit.patient.gender}<br>
                 رقم الزيارة: ${visit.visit_id} | التاريخ: ${new Date(visit.visit_date || Date.now()).toLocaleDateString('ar-EG')}
             `;
 
             const tbody = document.getElementById('reportTableBody');
             let rows = '';
+            let hasResults = false;
 
             vTests.forEach(vt => {
                 const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, parameters: [] };
@@ -322,33 +317,33 @@
                 if (isProfile) {
                     catalogItem.parameters.forEach(param => {
                         const val = savedData[param.name]?.value;
-                        // شرط الطباعة: لو فيه نتيجة بس
                         if (val) {
-                            const unit = param.unit || '-';
-                            const range = visit.patient.gender === 'female' ? (param.ref_female || param.ref_male || '-') : (param.ref_male || '-');
-                            rows += `<tr><td><b>${catalogItem.name}</b> - ${param.label || param.name}</td><td style="font-weight:bold; color:#2980b9;">${val}</td><td>${unit}</td><td>${range}</td></tr>`;
+                            hasResults = true;
+                            const range = param.ref_male || param.reference_range || param.range || '-';
+                            const unit = param.unit || param.units || '-';
+                            const flag = calcFlag(val, range);
+                            rows += `<tr><td>${param.label || param.name}</td><td>${val} ${flag}</td><td>${unit}</td><td>${range}</td></tr>`;
                         }
                     });
                 } else {
                     const val = savedData['result']?.value;
-                    // شرط الطباعة: لو فيه نتيجة بس
                     if (val) {
-                        const unit = catalogItem.unit || '-';
+                        hasResults = true;
                         const range = catalogItem.reference_range || '-';
-                        rows += `<tr><td><b>${catalogItem.name}</b></td><td style="font-weight:bold; color:#2980b9;">${val}</td><td>${unit}</td><td>${range}</td></tr>`;
+                        const unit = catalogItem.unit || '-';
+                        const flag = calcFlag(val, range);
+                        rows += `<tr><td>${catalogItem.name}</td><td>${val} ${flag}</td><td>${unit}</td><td>${range}</td></tr>`;
                     }
                 }
             });
 
-            if (rows === '') rows = '<tr><td colspan="4" style="text-align:center; color:red; font-weight:bold;">لا توجد نتائج مسجلة لهذه الزيارة</td></tr>';
+            if (!hasResults) rows = '<tr><td colspan="4" style="text-align:center;">لا توجد نتائج مسجلة</td></tr>';
 
             tbody.innerHTML = rows;
             document.getElementById('printModal').style.display = 'flex';
         }
 
-        function closePrintModal() {
-            document.getElementById('printModal').style.display = 'none';
-        }
+        function closePrintModal() { document.getElementById('printModal').style.display = 'none'; }
 
         window.onload = loadData;
     </script>
