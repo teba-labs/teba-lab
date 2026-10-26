@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - بوابة المعمل (v14)</title>
+    <title>معامل طيبة - بوابة المعمل (v19.1 - Final)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -49,7 +49,7 @@
         .btn-print { background: var(--primary-color); }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 20px; border-radius: var(--radius); width: 95%; max-width: 800px; max-height: 90vh; overflow-y: auto; }
+        .modal-content { background: white; padding: 20px; border-radius: var(--radius); width: 95%; max-width: 900px; max-height: 90vh; overflow-y: auto; }
         .modal-header { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;}
         
         .data-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
@@ -65,7 +65,9 @@
         
         .empty-msg { text-align: center; padding: 50px; color: var(--text-muted); }
 
-        /* إعدادات الطباعة */
+        .phase-selector { background: #eaf2f8; padding: 10px; border-radius: 6px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;}
+        .phase-selector select { padding: 8px; border-radius: 4px; border: 1px solid var(--border-color); font-family: inherit; flex-grow: 1;}
+
         @media print {
             body * { visibility: hidden; }
             #resultModal, #resultModal * { visibility: visible; }
@@ -78,7 +80,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v14)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v19.1)</div>
         <button class="nav-btn no-print" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
     </header>
 
@@ -121,6 +123,41 @@
 
         let allData = [], currentFilter = 'all', currentRow = null;
 
+        const cbcStages = [
+            { name: 'حديثي الولادة (1-3 أيام)', minAge: -1, maxAge: 0.01, ranges: { 'HB': '14.5-22.5', 'RBC': '4.8-7.1', 'WBC': '9.0-30.0', 'PLT': '150-450' } },
+            { name: 'الرضع (أسبوع-أسبوعين)', minAge: 0.01, maxAge: 0.04, ranges: { 'HB': '12.5-20.5', 'RBC': '4.0-6.5', 'WBC': '5.0-21.0', 'PLT': '150-450' } },
+            { name: 'الرضع (شهر-شهرين)', minAge: 0.04, maxAge: 0.17, ranges: { 'HB': '9.0-14.0', 'RBC': '3.0-4.5', 'WBC': '5.0-18.0', 'PLT': '150-450' } },
+            { name: 'الأطفال (3-6 شهور)', minAge: 0.17, maxAge: 0.5, ranges: { 'HB': '9.5-13.5', 'RBC': '3.5-5.0', 'WBC': '5.0-15.0', 'PLT': '150-450' } },
+            { name: 'الأطفال (7 شهور-سنتين)', minAge: 0.5, maxAge: 3, ranges: { 'HB': '10.5-13.5', 'RBC': '3.7-5.3', 'WBC': '6.0-14.0', 'PLT': '150-450' } },
+            { name: 'الأطفال (3-5 سنوات)', minAge: 3, maxAge: 6, ranges: { 'HB': '11.5-14.0', 'RBC': '3.9-5.3', 'WBC': '5.0-12.0', 'PLT': '150-450' } },
+            { name: 'الأطفال (6-11 سنة)', minAge: 6, maxAge: 12, ranges: { 'HB': '11.5-15.5', 'RBC': '4.0-5.2', 'WBC': '4.5-11.5', 'PLT': '150-450' } },
+            { name: 'بالغين ذكور (12+)', minAge: 12, maxAge: 200, gender: 'male', ranges: { 'HB': '13.5-17.5', 'RBC': '4.5-5.9', 'WBC': '4.0-11.0', 'PLT': '150-450' } },
+            { name: 'بالغين إناث (12+)', minAge: 12, maxAge: 200, gender: 'female', ranges: { 'HB': '12.0-15.5', 'RBC': '4.1-5.1', 'WBC': '4.0-11.0', 'PLT': '150-450' } }
+        ];
+
+        const hormonePhases = {
+            'Follicular': { name: 'طور الحويصلة', FSH: '3.5-12.5', LH: '2.4-12.6' },
+            'Ovulatory': { name: 'طور التبويض', FSH: '4.7-21.5', LH: '14.0-95.6' },
+            'Luteal': { name: 'الطور الأصفر', FSH: '1.7-7.7', LH: '1.0-11.4' },
+            'PostMenopausal': { name: 'سن الأمل', FSH: '25.8-134.8', LH: '7.7-58.5' }
+        };
+
+        function getSmartRef(paramName, paramObj, age, gender, phase = 'Follicular') {
+            const ageNum = parseFloat(age) || 0;
+            const isFemale = gender === 'female' || gender === 'أنثى';
+
+            if (['HB', 'RBC', 'WBC', 'PLT'].includes(paramName)) {
+                let stage = cbcStages.find(s => ageNum >= s.minAge && ageNum < s.maxAge && (!s.gender || s.gender === (isFemale ? 'female' : 'male')));
+                if (stage && stage.ranges[paramName]) return stage.ranges[paramName];
+            }
+
+            if (isFemale && (paramName === 'FSH' || paramName === 'LH')) {
+                return hormonePhases[phase][paramName];
+            }
+
+            return isFemale ? (paramObj.ref_female || paramObj.reference_range) : (paramObj.ref_male || paramObj.reference_range);
+        }
+
         async function loadLabData() {
             const { data: vtData, error } = await _supabase.from('visit_tests').select('*').order('id', { ascending: false });
             if (error) return document.getElementById('labGrid').innerHTML = `<div class="empty-msg" style="color:red;">خطأ: ${error.message}</div>`;
@@ -133,10 +170,20 @@
             allData = vtData.map(vt => {
                 const visit = visits?.find(v => v.visit_id == vt.visit_id || v.id == vt.visit_id) || {};
                 const patient = patients?.find(p => p.id == visit.patient_id || p.patient_id == visit.patient_id) || {};
-                const test = catalog?.find(c => c.code === vt.test_code) || { name: vt.test_code, parameters: [] };
+                const test = catalog?.find(c => c.code === vt.test_code) || { name: vt.test_code, parameters: [], test_type: 'Single' };
                 const result = results?.find(r => r.visit_test_id === vt.id) || null;
 
-                return { ...vt, patient, test_name: test.name, parameters: test.parameters, result };
+                return { 
+                    ...vt, 
+                    patient, 
+                    test_name: test.name, 
+                    parameters: test.parameters, 
+                    test_type: test.test_type, 
+                    male_ref: test.male_reference_range, 
+                    female_ref: test.female_reference_range, 
+                    child_ref: test.child_reference_range,
+                    result 
+                };
             });
 
             renderData();
@@ -179,7 +226,7 @@
                         </div>
                         <div class="card-footer">
                             <span>زيارة #${item.visit_id}</span>
-                            <button class="btn ${isDone ? 'btn-primary' : 'btn-success'}" onclick='openModal(${JSON.stringify(item)})'>
+                            <button class="btn ${isDone ? 'btn-primary' : 'btn-success'}" onclick='openModal(${item.id})'>
                                 ${isDone ? '✏️ تعديل' : '➕ إدخال'}
                             </button>
                         </div>
@@ -195,70 +242,93 @@
             renderData();
         }
 
-        function calcFlag(val, ref) {
-            if (!val || !ref) return 'normal';
-            const num = parseFloat(val);
-            if (isNaN(num)) return 'normal';
-            const range = ref.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
-            if (range) {
-                const min = parseFloat(range[1]), max = parseFloat(range[2]);
-                if (num < min) return 'low';
-                if (num > max) return 'high';
-            }
-            return 'normal';
-        }
-
-        function openModal(item) {
+        function openModal(itemId) {
+            const item = allData.find(d => d.id == itemId);
+            if (!item) return;
+            
             currentRow = item;
             const p = item.patient || {};
+            const isFemale = p.gender === 'female' || p.gender === 'أنثى';
+            const ageNum = parseFloat(p.age) || 0;
+            
             document.getElementById('modalPatientInfo').innerHTML = `
-                <strong>المريض:</strong> ${p.full_name || p.name || 'غير معروف'} (${p.gender === 'female' || p.gender === 'أنثى' ? 'أنثى' : 'ذكر'}) <br>
+                <strong>المريض:</strong> ${p.full_name || p.name || 'غير معروف'} (${isFemale ? 'أنثى' : 'ذكر'}) - ${p.age || '?'} سنة <br>
                 <strong>التحليل:</strong> ${item.test_name} (${item.test_code})
             `;
 
-            const params = item.parameters || [];
+            let params = item.parameters ? [...item.parameters] : [];
             const savedData = item.result?.results_data || {};
             let html = '';
 
-            if (params.length > 0) {
+            const savedPhase = savedData['_selectedPhase'] || 'Follicular';
+
+            // التحليل المركب
+            if (item.test_type === 'Profile' && params.length > 0) {
+                if (isFemale && (item.test_code === 'TL-046' || item.test_code === 'TL-060')) {
+                    html += `<div class="phase-selector">
+                        <label style="font-weight:bold; color:var(--primary-color);">تحديد طور الدورة:</label>
+                        <select id="hormonePhase" onchange="updateAllRanges()">
+                            <option value="Follicular" ${savedPhase === 'Follicular' ? 'selected' : ''}>طور الحويصلة</option>
+                            <option value="Ovulatory" ${savedPhase === 'Ovulatory' ? 'selected' : ''}>طور التبويض</option>
+                            <option value="Luteal" ${savedPhase === 'Luteal' ? 'selected' : ''}>الطور الأصفر</option>
+                            <option value="PostMenopausal" ${savedPhase === 'PostMenopausal' ? 'selected' : ''}>سن الأمل</option>
+                        </select>
+                    </div>`;
+                }
+
                 html += `<table class="data-table">
                     <thead><tr><th>الفحص</th><th>النتيجة</th><th>الوحدة</th><th>المدى المرجعي</th><th>الحالة</th></tr></thead>
                     <tbody>`;
                 
                 params.forEach((param, index) => {
-                    const ref = p.gender === 'female' || p.gender === 'أنثى' ? param.ref_female : param.ref_male;
+                    const ref = getSmartRef(param.name, param, p.age, p.gender, savedPhase);
                     const savedVal = savedData[param.name]?.value || '';
                     const savedFlag = savedData[param.name]?.flag || 'normal';
                     const flagText = savedFlag === 'high' ? 'H' : savedFlag === 'low' ? 'L' : 'N';
 
+                    // إصلاح: تمرير العنصر نفسه لتفادي مشاكل علامات التنصيص في الأسماء
                     html += `<tr>
                         <td><strong>${param.label}</strong><br><small style="color:#777">${param.name}</small></td>
                         <td><input type="text" class="res-input" id="val_${param.name}" value="${savedVal}" 
-                            oninput="updateRowFlag('${param.name}', '${ref}')"
+                            oninput="triggerCalc(this)"
                             onkeydown="handleEnter(event, ${index}, ${params.length})"></td>
                         <td>${param.unit}</td>
-                        <td>${ref}</td>
+                        <td id="ref_${param.name}">${ref}</td>
                         <td id="flag_${param.name}" class="flag-${savedFlag}">${flagText}</td>
                     </tr>`;
                 });
                 html += `</tbody></table>`;
-            } else {
+            } 
+            // التحليل الفردي
+            else {
+                let ref = isFemale ? item.female_ref : item.male_ref;
+                if (ageNum < 12 && item.child_ref) {
+                    ref = item.child_ref;
+                }
+                if (!ref) ref = ''; // حماية لو الريفيرنس فاضي
+
                 const val = savedData['result']?.value || '';
                 const flag = savedData['result']?.flag || 'normal';
+                const flagText = flag === 'high' ? 'H' : flag === 'low' ? 'L' : 'N';
+
+                // إصلاح: تمرير الريفيرنس في data-ref عشان لو فيه علامات تنصيص ميكسرش الكود
                 html += `<div style="display: flex; flex-direction: column; gap: 15px;">
                     <div>
                         <label style="font-weight:bold; display:block; margin-bottom:5px;">النتيجة:</label>
-                        <input type="text" class="res-input" id="val_simple" value="${val}" style="text-align:right; padding:10px; font-size: 1.5rem;"
+                        <input type="text" class="res-input" id="val_simple" value="${val}" 
+                        data-ref="${ref}" 
+                        style="text-align:right; padding:10px; font-size: 1.5rem;"
+                        oninput="calcSimpleFlag(this)"
                         onkeydown="if(event.key === 'Enter') { event.preventDefault(); saveResult(); }">
                     </div>
-                    <div style="display: flex; gap: 10px;">
-                        <div style="flex:1;">
-                            <label style="font-weight:bold; display:block; margin-bottom:5px;">التقييم:</label>
-                            <select id="flag_simple" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc; font-family:inherit;">
-                                <option value="normal" ${flag === 'normal' ? 'selected' : ''}>طبيعي (Normal)</option>
-                                <option value="high" ${flag === 'high' ? 'selected' : ''}>مرتفع (High)</option>
-                                <option value="low" ${flag === 'low' ? 'selected' : ''}>منخفض (Low)</option>
-                            </select>
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 10px; border-radius: 6px;">
+                        <div>
+                            <strong style="color:var(--text-muted); font-size:0.9rem;">المدى المرجعي:</strong> 
+                            <span style="font-weight:bold; color:var(--primary-color);">${ref || '—'}</span>
+                        </div>
+                        <div>
+                            <strong style="color:var(--text-muted); font-size:0.9rem;">الحالة:</strong> 
+                            <span id="flag_simple" class="flag-${flag}" style="font-size: 1.5rem; margin-right: 5px;">${flagText}</span>
                         </div>
                     </div>
                 </div>`;
@@ -273,6 +343,32 @@
             }, 100);
         }
 
+        window.updateAllRanges = function() {
+            if(!currentRow) return;
+            const p = currentRow.patient || {};
+            const phaseEl = document.getElementById('hormonePhase');
+            const phase = phaseEl ? phaseEl.value : 'Follicular';
+            
+            const params = currentRow.parameters || [];
+            params.forEach(param => {
+                const refCell = document.getElementById(`ref_${param.name}`);
+                if (refCell) {
+                    const newRef = getSmartRef(param.name, param, p.age, p.gender, phase);
+                    refCell.innerText = newRef;
+                    
+                    const inputEl = document.getElementById(`val_${param.name}`);
+                    if (inputEl && inputEl.value) {
+                        const flag = calcFlag(inputEl.value, newRef);
+                        const flagCell = document.getElementById(`flag_${param.name}`);
+                        if (flagCell) {
+                            flagCell.className = `flag-${flag}`;
+                            flagCell.innerText = flag === 'high' ? 'H' : flag === 'low' ? 'L' : 'N';
+                        }
+                    }
+                }
+            });
+        }
+
         function handleEnter(event, index, total) {
             if (event.key === 'Enter') {
                 event.preventDefault();
@@ -285,12 +381,171 @@
             }
         }
 
-        window.updateRowFlag = function(paramName, refRange) {
-            const val = document.getElementById(`val_${paramName}`).value;
-            const flag = calcFlag(val, refRange);
+        // دالة التلوين للتحليل الفردي
+        window.calcSimpleFlag = function(el) {
+            const ref = el.dataset.ref || '';
+            const val = el.value;
+            const flag = calcFlag(val, ref);
+            const cell = document.getElementById('flag_simple');
+            if(cell) {
+                cell.className = `flag-${flag}`;
+                cell.innerText = flag === 'high' ? 'H' : flag === 'low' ? 'L' : 'N';
+            }
+        }
+
+        function calcFlag(val, ref) {
+            if (!val || !ref) return 'normal';
+            const cleanVal = String(val).trim().toLowerCase();
+            
+            if (isNaN(parseFloat(val))) {
+                if (ref.toLowerCase().includes('negative') && cleanVal.includes('negative')) return 'normal';
+                if (ref.toLowerCase().includes('normal') && cleanVal.includes('normal')) return 'normal';
+                if (cleanVal.includes('positive') && !ref.toLowerCase().includes('positive')) return 'high';
+                return 'normal'; 
+            }
+
+            const num = parseFloat(val);
+            const cleanRef = ref.replace('–', '-'); 
+            const range = cleanRef.match(/([\d.]+)\s*[-]\s*([\d.]+)/);
+            if (range) {
+                const min = parseFloat(range[1]), max = parseFloat(range[2]);
+                if (num < min) return 'low';
+                if (num > max) return 'high';
+            } else if (cleanRef.includes('<')) {
+                const max = parseFloat(cleanRef.replace('<', ''));
+                if (num >= max) return 'high';
+            } else if (cleanRef.includes('>')) {
+                const min = parseFloat(cleanRef.replace('>', ''));
+                if (num <= min) return 'low';
+            }
+            return 'normal';
+        }
+
+        // المحرك الذكي (تم تمرير العنصر بدل الاسم لتفادي الأخطاء)
+        window.triggerCalc = function(el) {
+            if (!currentRow) return;
+            const paramName = el.id.replace('val_', '');
+            
+            const p = currentRow.patient || {};
+            const phaseEl = document.getElementById('hormonePhase');
+            const phase = phaseEl ? phaseEl.value : 'Follicular';
+
+            const paramObj = currentRow.parameters.find(pr => pr.name === paramName);
+            if (!paramObj) return;
+
+            const ref = getSmartRef(paramName, paramObj, p.age, p.gender, phase);
+            const flag = calcFlag(el.value, ref);
             const cell = document.getElementById(`flag_${paramName}`);
-            cell.className = `flag-${flag}`;
-            cell.innerText = flag === 'high' ? 'H' : flag === 'low' ? 'L' : 'N';
+            if (cell) {
+                cell.className = `flag-${flag}`;
+                cell.innerText = flag === 'high' ? 'H' : flag === 'low' ? 'L' : 'N';
+            }
+
+            if (currentRow.test_code === 'TL-035') calculateCBC();
+            else if (currentRow.test_code === 'TL-062') calculateLipids();
+            else if (currentRow.test_code === 'TL-049') calculateHbA1c();
+            else if (currentRow.test_code === 'TL-056') calculateHomaIR();
+            else if (currentRow.test_code === 'TL-003') calculateACR();
+            else if (currentRow.test_code === 'TL-068') calculatePT();
+        }
+
+        function calculateCBC() {
+            const hb = parseFloat(document.getElementById('val_HB')?.value);
+            const rbc = parseFloat(document.getElementById('val_RBC')?.value);
+            const wbc = parseFloat(document.getElementById('val_WBC')?.value);
+            let hctEl = document.getElementById('val_HCT');
+            let hct = hctEl ? parseFloat(hctEl.value) : NaN;
+
+            if (!isNaN(hb) && !isNaN(rbc)) {
+                if (isNaN(hct) || !hctEl.value) {
+                    hct = hb * 3;
+                    updateCalcField('HCT', hct);
+                }
+                if (rbc > 0 && hct > 0) {
+                    updateCalcField('MCV', (hct * 10) / rbc);
+                    updateCalcField('MCH', (hb * 10) / rbc);
+                    updateCalcField('MCHC', (hb * 100) / hct);
+                }
+            }
+            if (!isNaN(wbc)) {
+                updateAbsolute('NEU_P', 'NEU_N', wbc);
+                updateAbsolute('LYM_P', 'LYM_N', wbc);
+                updateAbsolute('MON_P', 'MON_N', wbc);
+                updateAbsolute('EOS_P', 'EOS_N', wbc);
+                updateAbsolute('BAS_P', 'BAS_N', wbc);
+            }
+        }
+
+        function updateAbsolute(pctId, absId, wbc) {
+            const pct = parseFloat(document.getElementById(`val_${pctId}`)?.value);
+            if (!isNaN(pct)) {
+                updateCalcField(absId, (wbc * pct) / 100);
+            }
+        }
+
+        function calculateLipids() {
+            const cho = parseFloat(document.getElementById('val_CHO')?.value);
+            const trig = parseFloat(document.getElementById('val_TRIG')?.value);
+            const hdl = parseFloat(document.getElementById('val_HDL')?.value);
+            if (!isNaN(cho) && !isNaN(trig) && !isNaN(hdl)) {
+                const vldlVal = (trig / 5);
+                updateCalcField('VLDL', vldlVal);
+                updateCalcField('LDL', (cho - hdl - vldlVal));
+            }
+        }
+
+        function calculateHbA1c() {
+            const a1c = parseFloat(document.getElementById('val_HBA1C')?.value);
+            if (!isNaN(a1c) && document.getElementById('val_eAG')) {
+                updateCalcField('eAG', (28.7 * a1c) - 46.7);
+            }
+        }
+
+        function calculateHomaIR() {
+            const fbs = parseFloat(document.getElementById('val_FBS')?.value);
+            const fins = parseFloat(document.getElementById('val_FINS')?.value);
+            if (!isNaN(fbs) && !isNaN(fins)) {
+                updateCalcField('HOMA_IND', (fbs * fins) / 405);
+            }
+        }
+
+        function calculateACR() {
+            const malb = parseFloat(document.getElementById('val_MALB')?.value);
+            const ucret = parseFloat(document.getElementById('val_UCRET')?.value);
+            if (!isNaN(malb) && !isNaN(ucret) && ucret > 0) {
+                updateCalcField('ACR_RAT', (malb / ucret) * 1000);
+            }
+        }
+
+        function calculatePT() {
+            const ptPat = parseFloat(document.getElementById('val_PT_PAT')?.value);
+            if (!isNaN(ptPat)) {
+                const ratio = ptPat / 12.8;
+                const inr = Math.pow(ratio, 1.5);
+                updateCalcField('PT_RAT', ratio);
+                updateCalcField('PT_INR', inr);
+            }
+        }
+
+        function updateCalcField(paramName, value) {
+            const inputEl = document.getElementById(`val_${paramName}`);
+            if (!inputEl) return;
+            inputEl.value = value.toFixed(2);
+            
+            const p = currentRow.patient || {};
+            const phaseEl = document.getElementById('hormonePhase');
+            const phase = phaseEl ? phaseEl.value : 'Follicular';
+            
+            const paramObj = currentRow.parameters.find(pr => pr.name === paramName);
+            if (paramObj) {
+                const ref = getSmartRef(paramName, paramObj, p.age, p.gender, phase);
+                const flag = calcFlag(value, ref);
+                const cell = document.getElementById(`flag_${paramName}`);
+                if (cell) {
+                    cell.className = `flag-${flag}`;
+                    cell.innerText = flag === 'high' ? 'H' : flag === 'low' ? 'L' : 'N';
+                }
+            }
         }
 
         function closeModal() {
@@ -300,25 +555,43 @@
 
         async function saveResult() {
             if(!currentRow) return;
-            const params = currentRow.parameters || [];
-            const resultsData = {};
             const p = currentRow.patient || {};
+            const isFemale = p.gender === 'female' || p.gender === 'أنثى';
+            const ageNum = parseFloat(p.age) || 0;
+            const phaseEl = document.getElementById('hormonePhase');
+            const phase = phaseEl ? phaseEl.value : 'Follicular';
+            
+            const resultsData = {};
+            
+            if (currentRow.test_type === 'Profile' && currentRow.parameters && currentRow.parameters.length > 0) {
+                for (let param of currentRow.parameters) {
+                    const inputEl = document.getElementById(`val_${param.name}`);
+                    if (!inputEl) continue;
 
-            if (params.length > 0) {
-                for (let param of params) {
-                    const val = document.getElementById(`val_${param.name}`).value.trim();
-                    if (!val) return alert(`الرجاء إدخال نتيجة ${param.label}`);
+                    const val = inputEl.value.trim();
+                    if (!val) return alert(`الرجاء إدخال نتيجة ${param.label} (أو تأكد من المدخلات المطلوبة لحسابها)`);
                     
-                    const ref = p.gender === 'female' || p.gender === 'أنثى' ? param.ref_female : param.ref_male;
+                    const ref = getSmartRef(param.name, param, p.age, p.gender, phase);
                     const flag = calcFlag(val, ref);
                     
-                    resultsData[param.name] = { value: val, flag: flag };
+                    resultsData[param.name] = { value: val, flag: flag, ref_used: ref };
+                }
+                if (isFemale && (currentRow.test_code === 'TL-046' || currentRow.test_code === 'TL-060')) {
+                    resultsData['_selectedPhase'] = phase;
                 }
             } else {
                 const val = document.getElementById('val_simple').value.trim();
                 if (!val) return alert('الرجاء إدخال النتيجة');
-                const flag = document.getElementById('flag_simple').value;
-                resultsData['result'] = { value: val, flag: flag };
+                
+                let ref = isFemale ? currentRow.female_ref : currentRow.male_ref;
+                if (ageNum < 12 && currentRow.child_ref) {
+                    ref = currentRow.child_ref;
+                }
+                if (!ref) ref = '';
+                
+                const flag = calcFlag(val, ref);
+                // إضافة ref_used عشان يتحفظ في الداتابيز
+                resultsData['result'] = { value: val, flag: flag, ref_used: ref };
             }
 
             const btn = document.getElementById('saveResBtn');
