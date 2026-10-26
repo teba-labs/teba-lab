@@ -47,7 +47,6 @@
         .btn-primary { background: var(--accent-color); }
         .btn-success { background: var(--success-color); }
 
-        /* Modal & Table */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px; border-radius: var(--radius); width: 95%; max-width: 800px; max-height: 90vh; overflow-y: auto; }
         .modal-header { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;}
@@ -96,7 +95,6 @@
             </div>
             <div id="modalPatientInfo" style="background: #f0f4f8; padding: 10px; border-radius: 6px; margin-bottom: 15px;"></div>
             
-            <!-- هنا هيترسم الجدول الديناميكي -->
             <div id="dynamicFormArea"></div>
 
             <button class="btn btn-success" onclick="saveResult()" id="saveResBtn" style="width: 100%; padding: 12px; font-size: 1.1rem;">💾 حفظ النتائج</button>
@@ -111,6 +109,7 @@
         let allData = [], currentFilter = 'all', currentRow = null;
 
         async function loadLabData() {
+            // بنجيب كل جدول لوحده عشان نمنع أي إيرور
             const { data: vtData, error } = await _supabase.from('visit_tests').select('*').order('id', { ascending: false });
             if (error) return document.getElementById('labGrid').innerHTML = `<div class="empty-msg" style="color:red;">خطأ: ${error.message}</div>`;
 
@@ -120,8 +119,12 @@
             const { data: results } = await _supabase.from('test_results').select('*');
 
             const vMap = {}, pMap = {}, cMap = {}, rMap = {};
-            visits?.forEach(v => vMap[v.id] = v);
-            patients?.forEach(p => pMap[p.id] = p);
+            
+            // ربط الزيارات بـ visit_id
+            visits?.forEach(v => vMap[v.visit_id || v.id] = v);
+            // ربط المرضى بـ id
+            patients?.forEach(p => pMap[p.id || p.patient_id] = p);
+            
             catalog?.forEach(c => cMap[c.code] = c);
             results?.forEach(r => rMap[r.visit_test_id] = r);
 
@@ -165,7 +168,7 @@
                 return `
                     <div class="card ${statusClass}">
                         <div class="card-header">
-                            <div><div class="p-name">${pName}</div><div style="font-size:0.8rem; color:#666;">${p.gender} • ${p.age} سنة</div></div>
+                            <div><div class="p-name">${pName}</div><div style="font-size:0.8rem; color:#666;">${p.gender === 'female' || p.gender === 'أنثى' ? 'أنثى' : 'ذكر'} • ${p.age || '?'} سنة</div></div>
                             <span class="badge ${statusClass}">${isDone ? 'تم' : 'مطلوب'}</span>
                         </div>
                         <div class="card-body">
@@ -190,12 +193,10 @@
             renderData();
         }
 
-        // دالة حساب التقييم التلقائي
         function calcFlag(val, ref) {
             if (!val || !ref) return 'normal';
             const num = parseFloat(val);
             if (isNaN(num)) return 'normal';
-            
             const range = ref.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
             if (range) {
                 const min = parseFloat(range[1]), max = parseFloat(range[2]);
@@ -209,7 +210,7 @@
             currentRow = item;
             const p = item.patient || {};
             document.getElementById('modalPatientInfo').innerHTML = `
-                <strong>المريض:</strong> ${p.full_name || p.name} (${p.gender === 'female' ? 'أنثى' : 'ذكر'}) <br>
+                <strong>المريض:</strong> ${p.full_name || p.name} (${p.gender === 'female' || p.gender === 'أنثى' ? 'أنثى' : 'ذكر'}) <br>
                 <strong>التحليل:</strong> ${item.test_name} (${item.test_code})
             `;
 
@@ -218,29 +219,26 @@
             let html = '';
 
             if (params.length > 0) {
-                // تحليل معقد (Panel)
                 html += `<table class="data-table">
                     <thead><tr><th>الفحص</th><th>النتيجة</th><th>الوحدة</th><th>المدى المرجعي</th><th>الحالة</th></tr></thead>
                     <tbody>`;
                 
                 params.forEach(param => {
-                    // لو البيانات جاية من الـ JSONB بالشكل اللي إنت مدخله
-                    const ref = p.gender === 'female' ? (param.ref_female || param.ref) : (param.ref_male || param.ref);
+                    const ref = p.gender === 'female' || p.gender === 'أنثى' ? param.ref_female : param.ref_male;
                     const savedVal = savedData[param.name]?.value || '';
                     const savedFlag = savedData[param.name]?.flag || 'normal';
                     const flagText = savedFlag === 'high' ? 'H' : savedFlag === 'low' ? 'L' : 'N';
 
                     html += `<tr>
-                        <td><strong>${param.label || param.name}</strong><br><small style="color:#777">${param.name}</small></td>
+                        <td><strong>${param.label}</strong><br><small style="color:#777">${param.name}</small></td>
                         <td><input type="text" class="res-input" id="val_${param.name}" value="${savedVal}" oninput="updateRowFlag('${param.name}', '${ref}')"></td>
-                        <td>${param.unit || ''}</td>
-                        <td>${ref || ''}</td>
+                        <td>${param.unit}</td>
+                        <td>${ref}</td>
                         <td id="flag_${param.name}" class="flag-${savedFlag}">${flagText}</td>
                     </tr>`;
                 });
                 html += `</tbody></table>`;
             } else {
-                // تحليل بسيط (خانة واحدة)
                 const val = savedData['result']?.value || '';
                 html += `<div style="margin-bottom:15px;">
                     <label style="font-weight:bold; display:block; margin-bottom:5px;">النتيجة:</label>
@@ -252,7 +250,6 @@
             document.getElementById('resultModal').style.display = 'flex';
         }
 
-        // دالة تفاعلية عشان تظهر H أو L فوراً وإنت بتكتب
         window.updateRowFlag = function(paramName, refRange) {
             const val = document.getElementById(`val_${paramName}`).value;
             const flag = calcFlag(val, refRange);
@@ -275,9 +272,9 @@
             if (params.length > 0) {
                 for (let param of params) {
                     const val = document.getElementById(`val_${param.name}`).value.trim();
-                    if (!val) return alert(`الرجاء إدخال نتيجة ${param.label || param.name}`);
+                    if (!val) return alert(`الرجاء إدخال نتيجة ${param.label}`);
                     
-                    const ref = p.gender === 'female' ? (param.ref_female || param.ref) : (param.ref_male || param.ref);
+                    const ref = p.gender === 'female' || p.gender === 'أنثى' ? param.ref_female : param.ref_male;
                     const flag = calcFlag(val, ref);
                     
                     resultsData[param.name] = { value: val, flag: flag };

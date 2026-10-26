@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - بوابة الاستقبال (v11)</title>
-    <!-- استدعاء مكتبة Supabase -->
+    <title>معامل طيبة - بوابة الاستقبال (v12)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -18,7 +17,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: var(--font-family); background-color: var(--primary-bg); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* Header */
         header { background-color: var(--primary-color); color: white; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; box-shadow: var(--shadow-md); z-index: 10; }
         .brand-info { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px;}
         .nav-links { display: flex; gap: 10px; }
@@ -27,12 +25,10 @@
         .nav-btn.lab { background: var(--warning-color); color: #333; border-color: var(--warning-color); }
         .nav-btn.lab:hover { background: #e67e22; }
 
-        /* Main Layout */
         .main-container { display: grid; grid-template-columns: 340px 1fr 340px; gap: 15px; padding: 15px; flex-grow: 1; height: calc(100vh - 60px); }
         .panel { background: var(--surface-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; border: 1px solid var(--border-color); overflow: hidden; }
         .panel-header { background: #f8f9fa; padding: 12px 15px; border-bottom: 1px solid var(--border-color); font-weight: bold; color: var(--primary-color); display: flex; justify-content: space-between; align-items: center;}
 
-        /* Right Column: Patient Info */
         .patient-form { padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto;}
         .form-group { display: flex; flex-direction: column; gap: 4px; }
         .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
@@ -40,7 +36,6 @@
         .form-group input:focus, .form-group select:focus { border-color: var(--accent-color); box-shadow: 0 0 0 2px rgba(52,152,219,0.2);}
         .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-        /* Middle Column: Cart */
         .cart-items { flex-grow: 1; overflow-y: auto; padding: 10px; }
         .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
         .cart-item:last-child { border-bottom: none; }
@@ -67,7 +62,6 @@
         .btn-print { background: var(--primary-color); }
         .btn-delete { background: #95a5a6; }
 
-        /* Left Column: Catalog */
         .catalog-actions { padding: 10px; border-bottom: 1px solid var(--border-color); display: flex; gap: 5px;}
         .ai-btn { background: var(--ai-color); color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; display: flex; justify-content: center; align-items: center; gap: 5px;}
         .ai-btn:hover { background: #8e44ad; }
@@ -81,7 +75,6 @@
         .test-btn .t-name { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .test-btn .t-price { font-size: 0.85rem; color: var(--accent-color); font-weight: bold; }
 
-        /* Modals & Toast */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px; border-radius: 8px; width: 80%; max-width: 900px; display: flex; flex-direction: column; gap: 15px; max-height: 90vh; overflow-y: auto;}
         .close-modal { background: var(--danger-color); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; align-self: flex-end;}
@@ -93,7 +86,6 @@
         .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--success-color); color: white; padding: 15px 30px; border-radius: 8px; font-weight: bold; box-shadow: var(--shadow-md); display: none; z-index: 1000; }
         .toast.error { background: var(--danger-color); }
 
-        /* Print Layout */
         @media print {
             body * { visibility: hidden; }
             #print-section, #print-section * { visibility: visible; }
@@ -107,7 +99,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (v11)</div>
+        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (v12)</div>
         <div class="nav-links">
             <button class="nav-btn lab" onclick="window.location.href='lab.html'">🔬 بوابة المعمل</button>
             <button class="nav-btn" onclick="openDailyCases()">📋 حالات اليوم</button>
@@ -118,7 +110,6 @@
     <div class="toast" id="toastMsg">تم الحفظ بنجاح!</div>
 
     <div class="main-container">
-        <!-- Right: Patient Info -->
         <div class="panel">
             <div class="panel-header">بيانات المريض</div>
             <div class="patient-form">
@@ -151,7 +142,6 @@
             </div>
         </div>
 
-        <!-- Middle: Cart -->
         <div class="panel">
             <div class="panel-header">
                 <span>سلة التحاليل</span>
@@ -192,7 +182,6 @@
             </div>
         </div>
 
-        <!-- Left: Catalog -->
         <div class="panel">
             <div class="panel-header">كتالوج التحاليل</div>
             <div class="catalog-actions">
@@ -205,7 +194,6 @@
         </div>
     </div>
 
-    <!-- Modal: Daily Cases -->
     <div class="modal" id="dailyCasesModal">
         <div class="modal-content">
             <button class="close-modal" onclick="closeModal('dailyCasesModal')">X</button>
@@ -221,14 +209,11 @@
         </div>
     </div>
 
-    <!-- Modal: Invoice Preview -->
     <div class="modal" id="invoicePreviewModal">
         <div class="modal-content" style="max-width: 600px;">
             <button class="close-modal" onclick="closeModal('invoicePreviewModal')">X</button>
             <h3 style="text-align: center;">🧾 معاينة الفاتورة</h3>
-            <div id="previewContent" style="padding: 20px; border: 1px dashed #ccc; border-radius: 8px; background: #fafafa;">
-                <!-- سيتم ملء الفاتورة هنا بالـ JS -->
-            </div>
+            <div id="previewContent" style="padding: 20px; border: 1px dashed #ccc; border-radius: 8px; background: #fafafa;"></div>
             <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
                 <button class="btn btn-print" onclick="executePrint()" style="width: 150px;">🖨️ طباعة الآن</button>
                 <button class="btn btn-delete" onclick="closeModal('invoicePreviewModal')" style="width: 100px;">إلغاء</button>
@@ -236,7 +221,6 @@
         </div>
     </div>
 
-    <!-- Print Section (مخفي ويظهر وقت الطباعة فقط) -->
     <div id="print-section" style="display: none;">
         <div class="print-header">
             <h2>معامل طيبة للتحاليل الطبية</h2>
@@ -254,7 +238,6 @@
     </div>
 
     <script>
-        // 1. إعدادات السحابة (Supabase)
         const supabaseUrl = 'https://khjzoleiuiipyodpkieg.supabase.co';
         const supabaseKey = 'sb_publishable_2Q7SPvruXJar3gvOxtvl5w_p4CVDfcU';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -262,35 +245,18 @@
         let masterTests = []; 
         let cart = [];
 
-        // 2. منع الماوس من تغيير الأرقام
         document.addEventListener("wheel", function(event){
-            if(document.activeElement.type === "number"){
-                document.activeElement.blur();
-            }
+            if(document.activeElement.type === "number"){ document.activeElement.blur(); }
         });
 
-        // 3. التنقل بالإنتر
         function moveToNext(event, nextId) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                document.getElementById(nextId).focus();
-            }
+            if (event.key === 'Enter') { event.preventDefault(); document.getElementById(nextId).focus(); }
         }
 
-        // 4. جلب التحاليل من السحابة
         async function fetchCatalogFromCloud() {
             const { data, error } = await _supabase.from('tests_catalog').select('*');
-            
-            if (error) {
-                console.error('Error fetching tests:', error);
-                alert('مشكلة في جلب التحاليل من السحابة: ' + error.message);
-                return;
-            }
-            
-            if(!data || data.length === 0) {
-                alert('الجدول موجود لكنه فاضي! تأكد من إضافة تحاليل في Supabase.');
-                return;
-            }
+            if (error) return alert('مشكلة في جلب التحاليل: ' + error.message);
+            if(!data || data.length === 0) return alert('جدول التحاليل فاضي!');
 
             masterTests = data.map(t => ({
                 id: t.id,
@@ -298,11 +264,9 @@
                 name: t.name || t.test_name || 'بدون اسم',
                 price: t.price || 0
             }));
-            
             renderCatalog();
         }
 
-        // 5. رسم الكتالوج
         function renderCatalog(data = masterTests) {
             const grid = document.getElementById('catalogGrid');
             grid.innerHTML = '';
@@ -319,17 +283,12 @@
             });
         }
 
-        // 6. بحث الكتالوج
         function filterCatalog() {
             const query = document.getElementById('catalogSearch').value.toLowerCase();
-            const filtered = masterTests.filter(t => 
-                t.code.toLowerCase().includes(query) || 
-                t.name.toLowerCase().includes(query)
-            );
+            const filtered = masterTests.filter(t => t.code.toLowerCase().includes(query) || t.name.toLowerCase().includes(query));
             renderCatalog(filtered);
         }
 
-        // زرار Esc لمسح البحث + Enter لإضافة أول تحليل
         function handleCatalogKeyDown(event) {
             if (event.key === 'Enter') {
                 const firstBtn = document.querySelector('#catalogGrid .test-btn');
@@ -345,7 +304,6 @@
             }
         }
 
-        // 7. السلة
         function addToCart(test) {
             if (!cart.find(item => item.code === test.code)) {
                 cart.push(test);
@@ -370,12 +328,8 @@
             calculateChanges();
         }
 
-        function removeFromCart(index) {
-            cart.splice(index, 1);
-            renderCart();
-        }
+        function removeFromCart(index) { cart.splice(index, 1); renderCart(); }
 
-        // 8. الحسابات
         function calculateChanges() {
             const subTotal = cart.reduce((sum, item) => sum + item.price, 0);
             const percent = parseFloat(document.getElementById('discountPercent').value) || 0;
@@ -384,7 +338,6 @@
             let discountAmount = (subTotal * (percent / 100)) + fixed;
             let netTotal = subTotal - discountAmount;
             if (netTotal < 0) netTotal = 0;
-
             const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
 
             document.getElementById('totalAmount').innerText = `${subTotal.toFixed(2)} ج.م`;
@@ -392,20 +345,18 @@
             document.getElementById('remainAmount').innerText = `${(netTotal - paid).toFixed(2)} ج.م`;
         }
 
-        // 9. الحفظ في السحابة
         async function saveOrderToSupabase() {
             const pName = document.getElementById('pName').value.trim();
             if (!pName) return alert('الرجاء إدخال اسم المريض!');
             if (cart.length === 0) return alert('السلة فارغة!');
 
             const btn = document.getElementById('saveBtn');
-            btn.innerText = 'جاري الحفظ...';
-            btn.disabled = true;
+            btn.innerText = 'جاري الحفظ...'; btn.disabled = true;
 
             try {
-                // أ. المريض (استخدمنا name بدل full_name بناءً على السحابة)
+                // أ. المريض (استخدمنا full_name)
                 const { data: pData, error: pErr } = await _supabase.from('patients').insert([{
-                    name: pName, 
+                    full_name: pName, 
                     phone: document.getElementById('pPhone').value, 
                     age: parseInt(document.getElementById('pAge').value), 
                     gender: document.getElementById('pGender').value, 
@@ -416,28 +367,18 @@
                 // ب. الزيارة
                 const netTotal = parseFloat(document.getElementById('netTotalAmount').innerText);
                 const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
-                
                 const percent = parseFloat(document.getElementById('discountPercent').value) || 0;
                 const fixed = parseFloat(document.getElementById('discountFixed').value) || 0;
                 const subTotal = cart.reduce((sum, item) => sum + item.price, 0);
                 const discountAmount = (subTotal * (percent / 100)) + fixed;
                 
                 const { data: vData, error: vErr } = await _supabase.from('visits').insert([{
-                    patient_id: pData[0].id, 
-                    branch_id: 1, 
-                    total_amount: netTotal, 
-                    paid_amount: paid, 
-                    discount: discountAmount, 
-                    status: 'pending'
+                    patient_id: pData[0].id, branch_id: 1, total_amount: netTotal, paid_amount: paid, discount: discountAmount, status: 'Pending'
                 }]).select();
                 if (vErr) throw vErr;
 
                 // ج. التحاليل
-                const tests = cart.map(i => ({ 
-                    visit_id: vData[0].id,
-                    test_code: i.code, 
-                    price_at_time: i.price 
-                }));
+                const tests = cart.map(i => ({ visit_id: vData[0].visit_id, test_code: i.code, price_at_time: i.price }));
                 const { error: tErr } = await _supabase.from('visit_tests').insert(tests);
                 if (tErr) throw tErr;
 
@@ -447,39 +388,29 @@
                 } else {
                     resetForm();
                 }
-
             } catch (error) {
-                console.error(error);
                 showToast('❌ حدث خطأ: ' + error.message, true);
             } finally {
-                btn.innerText = '💾 حفظ الطلب في السحابة';
-                btn.disabled = false;
+                btn.innerText = '💾 حفظ الطلب في السحابة'; btn.disabled = false;
             }
         }
 
         function showToast(msg, isError = false) {
             const toast = document.getElementById('toastMsg');
-            toast.innerText = msg;
-            toast.className = isError ? 'toast error' : 'toast';
+            toast.innerText = msg; toast.className = isError ? 'toast error' : 'toast';
             toast.style.display = 'block';
             setTimeout(() => { toast.style.display = 'none'; }, 4000);
         }
 
         function resetForm() {
             cart = [];
-            document.getElementById('pName').value = '';
-            document.getElementById('pPhone').value = '';
-            document.getElementById('pDoctor').value = '';
-            document.getElementById('paidAmount').value = '';
-            document.getElementById('discountPercent').value = '';
-            document.getElementById('discountFixed').value = '';
+            document.getElementById('pName').value = ''; document.getElementById('pPhone').value = ''; document.getElementById('pDoctor').value = '';
+            document.getElementById('paidAmount').value = ''; document.getElementById('discountPercent').value = ''; document.getElementById('discountFixed').value = '';
             renderCart();
         }
 
-        // 10. معاينة الفاتورة والطباعة
         function openInvoicePreview() {
             if(cart.length === 0) return alert('السلة فارغة!');
-
             const pName = document.getElementById('pName').value || 'غير مسجل';
             const date = new Date().toLocaleDateString('ar-EG');
             const total = document.getElementById('totalAmount').innerText;
@@ -487,32 +418,20 @@
             const remain = document.getElementById('remainAmount').innerText;
 
             let html = `
-                <div style="text-align:center; margin-bottom: 15px;">
-                    <h3 style="margin-bottom:5px;">معامل طيبة للتحاليل</h3>
-                    <p style="color:#666; font-size:0.9rem;">فاتورة مبدئية</p>
-                </div>
-                <p><strong>المريض:</strong> ${pName}</p>
-                <p><strong>التاريخ:</strong> ${date}</p>
+                <div style="text-align:center; margin-bottom: 15px;"><h3>معامل طيبة للتحاليل</h3><p style="color:#666; font-size:0.9rem;">فاتورة مبدئية</p></div>
+                <p><strong>المريض:</strong> ${pName}</p><p><strong>التاريخ:</strong> ${date}</p>
                 <table style="width:100%; text-align:right; margin-top:10px; border-collapse: collapse;">
                     <tr style="background:#eee;"><th style="padding:5px; border:1px solid #ddd;">التحليل</th><th style="padding:5px; border:1px solid #ddd;">السعر</th></tr>
                     ${cart.map(i => `<tr><td style="padding:5px; border:1px solid #ddd;">${i.name}</td><td style="padding:5px; border:1px solid #ddd;">${i.price} ج.م</td></tr>`).join('')}
                 </table>
                 <div style="margin-top:15px; border-top:1px solid #ccc; padding-top:10px;">
-                    <p><strong>الإجمالي:</strong> ${total}</p>
-                    <p><strong>المدفوع:</strong> ${paid} ج.م</p>
-                    <p style="color:red;"><strong>الباقي:</strong> ${remain}</p>
+                    <p><strong>الإجمالي:</strong> ${total}</p><p><strong>المدفوع:</strong> ${paid} ج.م</p><p style="color:red;"><strong>الباقي:</strong> ${remain}</p>
                 </div>
             `;
-
             document.getElementById('previewContent').innerHTML = html;
-
-            document.getElementById('printName').innerText = pName;
-            document.getElementById('printDate').innerText = date;
-            document.getElementById('printTotal').innerText = total;
-            document.getElementById('printPaid').innerText = paid;
-            document.getElementById('printRemain').innerText = remain;
+            document.getElementById('printName').innerText = pName; document.getElementById('printDate').innerText = date;
+            document.getElementById('printTotal').innerText = total; document.getElementById('printPaid').innerText = paid; document.getElementById('printRemain').innerText = remain;
             document.getElementById('printTableBody').innerHTML = cart.map(i => `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.price}</td></tr>`).join('');
-
             document.getElementById('invoicePreviewModal').style.display = 'flex';
         }
 
@@ -523,16 +442,15 @@
             document.getElementById('print-section').style.display = 'none';
         }
 
-        // 11. حالات اليوم
         async function openDailyCases() {
             const tbody = document.getElementById('dailyCasesBody');
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">جاري التحميل...</td></tr>';
             document.getElementById('dailyCasesModal').style.display = 'flex';
 
-            // تم تعديلها لـ name
+            // السحر هنا: استخدمنا visit_id بدل id
             const { data, error } = await _supabase.from('visits')
-                .select(`id, visit_code, total_amount, paid_amount, status, visit_date, patients (name)`)
-                .order('id', {ascending: false});
+                .select(`visit_id, total_amount, paid_amount, status, visit_date, patients (full_name)`)
+                .order('visit_id', {ascending: false});
             
             if(error) {
                 tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">حدث خطأ: ${error.message}</td></tr>`;
@@ -541,54 +459,43 @@
 
             tbody.innerHTML = data.map(v => `
                 <tr>
-                    <td>${v.visit_code || v.id}</td>
-                    <td>${v.patients ? v.patients.name : 'غير معروف'}</td>
+                    <td>${v.visit_id}</td>
+                    <td>${v.patients ? v.patients.full_name : 'غير معروف'}</td>
                     <td>${v.visit_date || '---'}</td>
                     <td>${parseFloat(v.total_amount).toFixed(2)}</td>
                     <td>${(parseFloat(v.total_amount) - parseFloat(v.paid_amount)).toFixed(2)}</td>
-                    <td><span style="color: ${v.status === 'pending' ? 'orange' : 'green'}; font-weight:bold;">${v.status}</span></td>
-                    <td><button class="btn btn-delete" style="padding: 2px 8px;" onclick="deleteVisit(${v.id})">حذف</button></td>
+                    <td><span style="color: ${v.status === 'Pending' ? 'orange' : 'green'}; font-weight:bold;">${v.status}</span></td>
+                    <td><button class="btn btn-delete" style="padding: 2px 8px;" onclick="deleteVisit(${v.visit_id})">حذف</button></td>
                 </tr>
             `).join('');
         }
 
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        // 12. حذف زيارة
         async function deleteVisit(visitId) {
             if(!confirm('هل أنت متأكد من حذف هذه الزيارة نهائياً؟')) return;
             try {
-                const { error } = await _supabase.from('visits').delete().eq('id', visitId);
+                const { error } = await _supabase.from('visits').delete().eq('visit_id', visitId);
                 if(error) throw error;
-                alert('تم حذف الزيارة بنجاح');
-                openDailyCases(); 
-            } catch(err) {
-                alert('حدث خطأ: ' + err.message);
-            }
+                alert('تم حذف الزيارة بنجاح'); openDailyCases(); 
+            } catch(err) { alert('حدث خطأ: ' + err.message); }
         }
 
-        // دالة بحث المريض (تم تعديلها لـ name)
         async function searchPatient() {
             const query = document.getElementById('patientSearch').value.trim();
             if(!query) return;
-            const { data, error } = await _supabase.from('patients').select('*').or(`phone.eq.${query},name.ilike.%${query}%`).limit(1);
+            const { data, error } = await _supabase.from('patients').select('*').or(`phone.eq.${query},full_name.ilike.%${query}%`).limit(1);
             if(error) return console.error(error);
             if(data && data.length > 0) {
-                document.getElementById('pName').value = data[0].name;
+                document.getElementById('pName').value = data[0].full_name;
                 document.getElementById('pPhone').value = data[0].phone;
                 document.getElementById('pAge').value = data[0].age;
                 document.getElementById('pGender').value = data[0].gender;
                 document.getElementById('pDoctor').value = data[0].doctor_name || '';
-            } else {
-                alert('لم يتم العثور على مريض');
-            }
+            } else { alert('لم يتم العثور على مريض'); }
         }
 
-        // التشغيل
-        window.onload = () => { 
-            fetchCatalogFromCloud(); 
-            renderCart(); 
-        };
+        window.onload = () => { fetchCatalogFromCloud(); renderCart(); };
     </script>
 </body>
 </html>
