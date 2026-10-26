@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - بوابة المعمل (v12 - Panels)</title>
+    <title>معامل طيبة - بوابة المعمل (v13)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -68,7 +68,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v12)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v13)</div>
         <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
     </header>
 
@@ -109,7 +109,6 @@
         let allData = [], currentFilter = 'all', currentRow = null;
 
         async function loadLabData() {
-            // بنجيب كل جدول لوحده عشان نمنع أي إيرور
             const { data: vtData, error } = await _supabase.from('visit_tests').select('*').order('id', { ascending: false });
             if (error) return document.getElementById('labGrid').innerHTML = `<div class="empty-msg" style="color:red;">خطأ: ${error.message}</div>`;
 
@@ -118,21 +117,12 @@
             const { data: catalog } = await _supabase.from('tests_catalog').select('*');
             const { data: results } = await _supabase.from('test_results').select('*');
 
-            const vMap = {}, pMap = {}, cMap = {}, rMap = {};
-            
-            // ربط الزيارات بـ visit_id
-            visits?.forEach(v => vMap[v.visit_id || v.id] = v);
-            // ربط المرضى بـ id
-            patients?.forEach(p => pMap[p.id || p.patient_id] = p);
-            
-            catalog?.forEach(c => cMap[c.code] = c);
-            results?.forEach(r => rMap[r.visit_test_id] = r);
-
+            // ربط البيانات بطريقة آمنة جداً (Find بدل Map)
             allData = vtData.map(vt => {
-                const visit = vMap[vt.visit_id] || {};
-                const patient = pMap[visit.patient_id] || {};
-                const test = cMap[vt.test_code] || { name: vt.test_code, parameters: [] };
-                const result = rMap[vt.id] || null;
+                const visit = visits?.find(v => v.visit_id == vt.visit_id || v.id == vt.visit_id) || {};
+                const patient = patients?.find(p => p.id == visit.patient_id || p.patient_id == visit.patient_id) || {};
+                const test = catalog?.find(c => c.code === vt.test_code) || { name: vt.test_code, parameters: [] };
+                const result = results?.find(r => r.visit_test_id === vt.id) || null;
 
                 return { ...vt, patient, test_name: test.name, parameters: test.parameters, result };
             });
@@ -210,7 +200,7 @@
             currentRow = item;
             const p = item.patient || {};
             document.getElementById('modalPatientInfo').innerHTML = `
-                <strong>المريض:</strong> ${p.full_name || p.name} (${p.gender === 'female' || p.gender === 'أنثى' ? 'أنثى' : 'ذكر'}) <br>
+                <strong>المريض:</strong> ${p.full_name || p.name || 'غير معروف'} (${p.gender === 'female' || p.gender === 'أنثى' ? 'أنثى' : 'ذكر'}) <br>
                 <strong>التحليل:</strong> ${item.test_name} (${item.test_code})
             `;
 
@@ -289,10 +279,10 @@
             btn.innerText = 'جاري الحفظ...'; btn.disabled = true;
 
             try {
+                // شيلنا entered_at عشان السحابة مش لاقياه
                 const { error } = await _supabase.from('test_results').upsert({
                     visit_test_id: currentRow.id,
-                    results_data: resultsData,
-                    entered_at: new Date().toISOString()
+                    results_data: resultsData
                 }, { onConflict: 'visit_test_id' });
 
                 if(error) throw error;
