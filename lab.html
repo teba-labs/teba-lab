@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل الذكي (v27)</title>
+    <title>معامل طيبة - المعمل الذكي (v26)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -53,54 +53,55 @@
         #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--success-color); color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); display: none; z-index: 1000; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 850px; max-height: 95vh; overflow-y: auto; }
+        .modal-content { background: white; padding: 20px; border-radius: 8px; width: 95%; max-width: 900px; max-height: 95vh; overflow-y: auto; }
         
-        .btn-print { background: var(--success-color); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; }
-        .btn-close { background: var(--danger-color); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; }
+        .btn-print { background: var(--success-color); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; margin-top: 15px; }
+        .btn-close { background: var(--danger-color); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; margin-top: 10px; }
 
-        /* تنسيقات الطباعة */
+        /* ستايل صفحات الطباعة */
+        .print-page {
+            background: #fff;
+            width: 100%;
+            min-height: 297mm; /* مقاس A4 */
+            padding: 15mm;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            position: relative;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .print-header {
+            display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; z-index: 2; position: relative;
+        }
+
+        .print-footer {
+            position: absolute; bottom: 15mm; left: 15mm; right: 15mm; border-top: 2px solid #000; padding-top: 10px; font-size: 12px; display: flex; justify-content: space-between;
+        }
+
         @media print {
-            html, body { height: auto !important; overflow: visible !important; background: #fff !important; margin: 0; padding: 0; }
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
-            .modal { position: static !important; display: block !important; background: transparent !important; overflow: visible !important; }
-            .modal-content { position: static !important; display: block !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; border: none !important; box-shadow: none !important; max-height: none !important; overflow: visible !important; }
-            #print-area { position: static !important; width: 100% !important; min-height: auto !important; margin: 0 !important; padding: 0 !important; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0;}
+            
+            .modal { position: absolute; background: transparent; display: block !important; }
+            .modal-content { box-shadow: none; padding: 0; border: none; max-height: none; overflow: visible; }
             .btn-print, .btn-close { display: none !important; }
-            @page { size: A4; margin: 20mm 15mm 15mm 15mm; }
             
-            .page-break { page-break-before: always; }
-            
-            /* تكرار الهيدر في كل صفحة */
-            .print-header {
-                position: fixed;
-                top: -10mm;
-                left: 0;
-                right: 0;
-                height: 40mm;
-                background: white;
-                z-index: 100;
+            .print-page {
+                border: none;
+                box-shadow: none;
+                margin: 0;
+                page-break-after: always;
             }
-            .print-footer {
-                position: fixed;
-                bottom: -5mm;
-                left: 0;
-                right: 0;
-                height: 20mm;
-                background: white;
-                z-index: 100;
-            }
-            .print-content {
-                margin-top: 45mm;
-                margin-bottom: 20mm;
-            }
+            @page { size: A4; margin: 0; }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v27)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v26)</div>
         <div>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
@@ -124,63 +125,17 @@
         </div>
     </div>
 
+    <!-- مودال الطباعة -->
     <div class="modal" id="printModal">
-        <div class="modal-content">
-            <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; background: #fff; position: relative; min-height: 800px;">
-                
-                <!-- الهيدر (هيتكرر في كل صفحة) -->
-                <div class="print-header">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px;">
-                        <div style="width: 50%; text-align: left;">
-                            <h1 style="margin: 0; color: #000; font-size: 26px; font-weight: 900; letter-spacing: 1px;">TEBA LABS</h1>
-                            <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 600; color: #000;">For Medical Analyzes</p>
-                            <p style="margin: 2px 0 0 0; font-size: 13px; color: #333;">Dr. Ahmed Taha Abonda</p>
-                        </div>
-                        <div style="width: 50%; display: flex; justify-content: flex-end;">
-                            <img src="header.png" alt="TEBA LABS" style="max-height: 80px; object-fit: contain;">
-                        </div>
-                    </div>
-
-                    <div style="display: flex; justify-content: space-between; border: 1px solid #000; padding: 8px 15px; border-radius: 4px; background: #fff; font-size: 12px; margin-top: 10px;">
-                        <div style="width: 50%; display: flex; flex-direction: column; gap: 4px;">
-                            <div><strong style="color: #000; display: inline-block; width: 90px;">Patient:</strong> <span id="pNamePrint" style="font-weight: bold; color: #000;"></span></div>
-                            <div><strong style="color: #000; display: inline-block; width: 90px;">Age/Gender:</strong> <span id="pAgeGenderPrint" style="font-weight: bold;"></span></div>
-                        </div>
-                        <div style="width: 50%; display: flex; flex-direction: column; gap: 4px; text-align: right; border-left: 1px solid #000; padding-left: 15px;">
-                            <div><strong style="color: #000; display: inline-block; width: 90px;">Visit ID:</strong> <span id="vIdPrint" style="font-weight: bold;"></span></div>
-                            <div><strong style="color: #000; display: inline-block; width: 90px;">Request Date:</strong> <span id="vReqDatePrint" style="font-weight: bold;"></span></div>
-                            <div><strong style="color: #000; display: inline-block; width: 90px;">Print Date:</strong> <span id="vPrintDatePrint" style="font-weight: bold;"></span></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- الفوتر -->
-                <div class="print-footer">
-                    <div style="border-top: 1px solid #000; padding-top: 10px; font-size: 11px; display: flex; justify-content: space-between;">
-                        <div style="width: 40%; text-align: left; direction: ltr;">
-                            <p style="margin: 2px 0; font-weight: bold;">Tel: 01123702062</p>
-                            <p style="margin: 2px 0; font-weight: bold;">WhatsApp: 01099003494</p>
-                        </div>
-                        <div style="width: 60%; text-align: right; direction: rtl; font-weight: bold;">
-                            <p style="margin: 2px 0;">الفرع الأول: الجعافرة - الطريق العمومي - أعلى صيدلية الصحابة</p>
-                            <p style="margin: 2px 0;">الفرع الثاني: بهتيم - مساكن اسكو - أمام مدرسة ابن الخطاب - عيادة د. محمد رمضان</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- الخلفية المائية -->
-                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; opacity: 0.03; pointer-events: none; z-index: -1;">
-                    <img src="logo.png" alt="watermark" style="width: 60%; transform: rotate(-15deg);">
-                </div>
-
-                <!-- محتوى التحاليل -->
-                <div id="reportTableBody" class="print-content"></div>
-
+        <div class="modal-content" style="background: #e0e0e0;">
+            
+            <!-- منطقة الطباعة -->
+            <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000;">
+                <!-- سيتم توليد الصفحات هنا بالجافاسكريبت -->
             </div>
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <button class="btn-print" onclick="window.print()">🖨️ Print Now</button>
-                <button class="btn-close" onclick="closePrintModal()">Close</button>
-            </div>
+
+            <button class="btn-print" onclick="window.print()">🖨️ Print Now</button>
+            <button class="btn-close" onclick="closePrintModal()">Close</button>
         </div>
     </div>
 
@@ -241,7 +196,9 @@
             
             if (isLipid) {
                 if (!Array.isArray(params)) params = [];
+                // شيل أي LDL قديم
                 params = params.filter(p => !p.name.toLowerCase().includes('ldl'));
+                // ضيف الـ LDL التلقائي
                 params.push({ name: 'LDL', label: 'LDL (Calc)', unit: 'mg/dL', ref_male: '0 - 130', ref_female: '0 - 130', is_calc: true });
             }
             return params;
@@ -405,6 +362,7 @@
                 let calcVal = null;
                 let formula = p.formula;
                 let pn = p.name.toLowerCase();
+
                 let hb = vals['Hemoglobin'] || vals['HGB'] || vals['HB'] || vals['Hb'];
                 let rbc = vals['RBCs'] || vals['RBC'] || vals['RBCs'];
                 let hct = vals['HCT'] || vals['Hct'];
@@ -426,7 +384,10 @@
                         for (let v of vars) {
                             let valToUse = undefined;
                             for (let key in vals) {
-                                if (key.toLowerCase() === v.toLowerCase()) { valToUse = vals[key]; break; }
+                                if (key.toLowerCase() === v.toLowerCase()) {
+                                    valToUse = vals[key];
+                                    break;
+                                }
                             }
                             if (valToUse === undefined) { hasAllVars = false; break; }
                             evalStr = evalStr.replace(new RegExp('\\b' + v + '\\b', 'g'), valToUse);
@@ -438,7 +399,10 @@
 
                 if (calcVal !== null && isFinite(calcVal) && calcVal >= 0) {
                     const input = document.getElementById(`res_${visitTestId}_${p.name}`);
-                    if (input) { input.value = parseFloat(calcVal.toFixed(1)); vals[p.name] = calcVal; }
+                    if (input) {
+                        input.value = parseFloat(calcVal.toFixed(1));
+                        vals[p.name] = calcVal;
+                    }
                 }
             });
         }
@@ -447,6 +411,7 @@
             const vt = visitTests.find(v => v.id === visitTestId);
             const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { code: vt.test_code, parameters: [] };
             const params = getSmartParams(catalogItem);
+            
             let resultsData = {};
 
             if (isProfile) {
@@ -465,7 +430,8 @@
             }
 
             const { error } = await _supabase.from('test_results').upsert({
-                visit_test_id: visitTestId, results_data: resultsData
+                visit_test_id: visitTestId,
+                results_data: resultsData
             }, { onConflict: 'visit_test_id' });
 
             if (error) return alert('خطأ: ' + error.message);
@@ -480,6 +446,7 @@
 
         async function deleteTestResult(visitTestId) {
             if(!confirm('هل أنت متأكد من حذف نتيجة هذا التحليل؟')) return;
+            
             const { error } = await _supabase.from('test_results').delete().eq('visit_test_id', visitTestId);
             if(error) return alert('خطأ في الحذف: ' + error.message);
 
@@ -488,7 +455,50 @@
 
             const card = document.getElementById(`card_${visitTestId}`);
             if(card) card.querySelectorAll('input').forEach(input => input.value = '');
+            
             showToast('🗑️ تم الحذف');
+        }
+
+        // دوال مساعدة لإنشاء الهيدر والفوتر
+        function getHeaderHtml(visit, reqDate, printDate) {
+            return `
+                <div class="print-header">
+                    <div style="width: 50%; text-align: left;">
+                        <h1 style="margin: 0; color: #000; font-size: 28px; font-weight: 900; letter-spacing: 1px;">TEBA LABS</h1>
+                        <p style="margin: 4px 0 0 0; font-size: 15px; font-weight: 600; color: #000;">For Medical Analyzes</p>
+                        <p style="margin: 2px 0 0 0; font-size: 14px; color: #333;">Dr. Ahmed Taha Abonda</p>
+                    </div>
+                    <div style="width: 50%; display: flex; justify-content: flex-end;">
+                        <img src="header.png" alt="TEBA LABS" style="max-height: 90px; object-fit: contain;">
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; border: 1.5px solid #000; padding: 10px 15px; border-radius: 4px; background: #fff; font-size: 13px; margin-bottom: 20px; z-index: 2; position: relative;">
+                    <div style="width: 50%; display: flex; flex-direction: column; gap: 5px;">
+                        <div><strong style="color: #000; display: inline-block; width: 100px;">Patient:</strong> <span style="font-weight: bold;">${visit.patient.name || 'Unknown'}</span></div>
+                        <div><strong style="color: #000; display: inline-block; width: 100px;">Age/Gender:</strong> <span style="font-weight: bold;">${visit.patient.age} Years / ${visit.patient.gender}</span></div>
+                    </div>
+                    <div style="width: 50%; display: flex; flex-direction: column; gap: 5px; text-align: right; border-left: 1.5px solid #000; padding-left: 15px;">
+                        <div><strong style="color: #000; display: inline-block; width: 100px;">Visit ID:</strong> <span style="font-weight: bold;">${visit.visit_id}</span></div>
+                        <div><strong style="color: #000; display: inline-block; width: 100px;">Request Date:</strong> <span style="font-weight: bold;">${reqDate}</span></div>
+                        <div><strong style="color: #000; display: inline-block; width: 100px;">Print Date:</strong> <span style="font-weight: bold;">${printDate}</span></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getFooterHtml() {
+            return `
+                <div class="print-footer">
+                    <div style="width: 40%; text-align: left; direction: ltr;">
+                        <p style="margin: 4px 0; font-weight: bold; font-size: 13px; color: #000;">Tel: 01123702062</p>
+                        <p style="margin: 4px 0; font-weight: bold; font-size: 13px; color: #000;">WhatsApp: 01099003494</p>
+                    </div>
+                    <div style="width: 60%; text-align: right; direction: rtl; color: #000; font-weight: bold; font-size: 12px;">
+                        <p style="margin: 4px 0;">الفرع الأول: الجعافرة - الطريق العمومي - أعلى صيدلية الصحابة</p>
+                        <p style="margin: 4px 0;">الفرع الثاني: بهتيم - مساكن اسكو - أمام مدرسة ابن الخطاب - عيادة د. محمد رمضان</p>
+                    </div>
+                </div>
+            `;
         }
 
         function openPrintModal() {
@@ -496,49 +506,45 @@
             const visit = allVisits.find(v => v.visit_id === selectedVisitId);
             const vTests = visitTests.filter(vt => vt.visit_id === selectedVisitId);
 
-            const reqDate = visit.visit_date ? new Date(visit.visit_date) : new Date();
-            const printDate = new Date();
-            const options = { day: '2-digit', month: 'short', year: 'numeric' };
-            
-            document.getElementById('pNamePrint').innerText = visit.patient.name || 'Unknown';
-            document.getElementById('pAgeGenderPrint').innerText = `${visit.patient.age} Years / ${visit.patient.gender}`;
-            document.getElementById('vIdPrint').innerText = visit.visit_id;
-            document.getElementById('vReqDatePrint').innerText = reqDate.toLocaleDateString('en-GB', options);
-            document.getElementById('vPrintDatePrint').innerText = printDate.toLocaleDateString('en-GB', options);
+            const reqDate = visit.visit_date ? new Date(visit.visit_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            const printDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
-            const tbody = document.getElementById('reportTableBody');
+            const printArea = document.getElementById('print-area');
+            printArea.innerHTML = '';
+
             let singlesRows = '';
-            let profilesHtml = '';
-            let hasResults = false;
-            let isFirstProfile = true;
+            let profilesData = []; 
 
             vTests.forEach(vt => {
                 const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, code: vt.test_code, parameters: [] };
                 const result = testResults.find(r => r.visit_test_id === vt.id);
-                const savedData = result ? JSON.parse(JSON.stringify(result.results_data)) : {};
+                const savedData = result ? result.results_data : {};
                 const params = getSmartParams(catalogItem);
                 const isProfile = params.length > 1 || (params.length === 1 && params[0].name !== 'Result');
-
-                // حساب الـ LDL لو الدهون (فقط للطباعة)
-                if (isProfile && catalogItem.name.toUpperCase().includes('LIPID')) {
-                    let cho = parseFloat(savedData['Total Cholesterol']?.value || savedData['CHO']?.value || 0);
-                    let hdl = parseFloat(savedData['HDL']?.value || 0);
-                    let trig = parseFloat(savedData['Triglycerides']?.value || savedData['TRIG']?.value || 0);
-                    if (cho && hdl) {
-                        let vldl = trig ? (trig / 5) : (parseFloat(savedData['VLDL']?.value) || 0);
-                        let ldl = cho - hdl - vldl;
-                        if (ldl > 0) savedData['LDL'] = { value: ldl.toFixed(1) };
-                    }
-                }
 
                 let hasTestData = false;
                 let testRows = '';
 
                 if (isProfile) {
+                    let localVals = {};
+                    params.forEach(param => { if(savedData[param.name]?.value) localVals[param.name] = parseFloat(savedData[param.name].value); });
+                    
+                    // حساب الـ LDL في الطباعة كاحتياط
+                    if (catalogItem.name.toUpperCase().includes('LIPID') || catalogItem.code === 'TL-062') {
+                        let trig = localVals['Triglycerides'] || localVals['TRIG'] || localVals['Trig'];
+                        let cho = localVals['Total Cholesterol'] || localVals['CHO'] || localVals['Cholesterol'];
+                        let hdl = localVals['HDL'] || localVals['Hdl'];
+                        if (localVals['VLDL'] === undefined && trig !== undefined) localVals['VLDL'] = trig / 5;
+                        if (localVals['LDL'] === undefined && cho !== undefined && hdl !== undefined && localVals['VLDL'] !== undefined) {
+                            let ldl = cho - hdl - localVals['VLDL'];
+                            localVals['LDL'] = ldl > 0 ? ldl : 0;
+                        }
+                    }
+
                     params.forEach(param => {
-                        const val = savedData[param.name]?.value;
+                        const val = localVals[param.name]?.toFixed(1) || savedData[param.name]?.value;
                         if (val) {
-                            hasResults = true; hasTestData = true;
+                            hasTestData = true;
                             const range = param.ref_male || param.reference_range || param.range || '-';
                             const unit = param.unit || param.units || '-';
                             
@@ -560,10 +566,13 @@
                             </tr>`;
                         }
                     });
+                    
+                    if (hasTestData) {
+                        profilesData.push({ name: catalogItem.name, rows: testRows });
+                    }
                 } else {
                     const val = savedData['result']?.value;
                     if (val) {
-                        hasResults = true; hasTestData = true;
                         const p = params[0] || {};
                         const range = p.ref_male || catalogItem.reference_range || '-';
                         const unit = p.unit || catalogItem.unit || '-';
@@ -586,14 +595,20 @@
                         </tr>`;
                     }
                 }
+            });
 
-                if (isProfile && hasTestData) {
-                    let pageBreakStyle = (isFirstProfile && !singlesRows) ? '' : 'page-break-before: always;';
-                    isFirstProfile = false;
+            let pageCount = 0;
 
-                    profilesHtml += `
-                        <div style="${pageBreakStyle} margin-bottom: 25px;">
-                            <h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000;">${catalogItem.name}</h3>
+            // 1. الصفحة الأولى (الفردية + بيانات المريض)
+            if (singlesRows !== '' || profilesData.length === 0) {
+                pageCount++;
+                let pageHtml = `<div class="print-page">`;
+                pageHtml += getHeaderHtml(visit, reqDate, printDate);
+                
+                if (singlesRows !== '') {
+                    pageHtml += `
+                        <div style="margin-bottom: 25px;">
+                            <h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000;">SINGLE TESTS</h3>
                             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                                 <thead>
                                     <tr style="background: #000; color: #fff;">
@@ -604,18 +619,27 @@
                                         <th style="padding: 8px 6px; text-align:center;">Ref. Range</th>
                                     </tr>
                                 </thead>
-                                <tbody>${testRows}</tbody>
+                                <tbody>${singlesRows}</tbody>
                             </table>
                         </div>
                     `;
+                } else {
+                    pageHtml += `<p style="text-align:center; font-weight:bold; margin-top:50px;">No results recorded for this visit.</p>`;
                 }
-            });
+                
+                pageHtml += getFooterHtml();
+                pageHtml += `</div>`;
+                printArea.innerHTML += pageHtml;
+            }
 
-            let finalHtml = '';
-            if (singlesRows) {
-                finalHtml += `
+            // 2. صفحات التحاليل المركبة (كل تحليل في صفحة)
+            profilesData.forEach(profile => {
+                pageCount++;
+                let pageHtml = `<div class="print-page">`;
+                pageHtml += getHeaderHtml(visit, reqDate, printDate);
+                pageHtml += `
                     <div style="margin-bottom: 25px;">
-                        <h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000;">SINGLE TESTS</h3>
+                        <h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000;">${profile.name}</h3>
                         <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                             <thead>
                                 <tr style="background: #000; color: #fff;">
@@ -626,17 +650,15 @@
                                     <th style="padding: 8px 6px; text-align:center;">Ref. Range</th>
                                 </tr>
                             </thead>
-                            <tbody>${singlesRows}</tbody>
+                            <tbody>${profile.rows}</tbody>
                         </table>
                     </div>
                 `;
-            }
+                pageHtml += getFooterHtml();
+                pageHtml += `</div>`;
+                printArea.innerHTML += pageHtml;
+            });
 
-            finalHtml += profilesHtml;
-
-            if (!hasResults) finalHtml = '<p style="text-align:center; font-weight:bold; margin-top:50px;">No results recorded for this visit.</p>';
-
-            tbody.innerHTML = finalHtml;
             document.getElementById('printModal').style.display = 'flex';
         }
 
