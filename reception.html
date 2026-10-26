@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - بوابة الاستقبال (v12.3)</title>
+    <title>معامل طيبة - بوابة الاستقبال (v13)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -99,7 +99,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (v12.3)</div>
+        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (v13)</div>
         <div class="nav-links">
             <button class="nav-btn lab" onclick="window.location.href='lab.html'">🔬 بوابة المعمل</button>
             <button class="nav-btn" onclick="openDailyCases()">📋 حالات اليوم</button>
@@ -115,7 +115,7 @@
             <div class="patient-form">
                 <div class="form-group">
                     <label>بحث سريع (تليفون أو اسم)</label>
-                    <input type="text" id="patientSearch" placeholder="اكتب للبحث..." onkeydown="if(event.key === 'Enter') searchPatient()">
+                    <input type="text" id="patientSearch" placeholder="اكتب للبحث واضغط Enter..." onkeydown="if(event.key === 'Enter') searchPatient()">
                 </div>
                 <div class="form-group">
                     <label>اسم المريض (مطلوب)</label>
@@ -471,34 +471,45 @@
         async function deleteVisit(visitId) {
             if(!confirm('هل أنت متأكد من حذف هذه الزيارة نهائياً؟')) return;
             try {
+                // 1. حذف النتائج المرتبطة بالتحاليل
                 const { data: vtData } = await _supabase.from('visit_tests').select('id').eq('visit_id', visitId);
                 if (vtData && vtData.length > 0) {
                     const vtIds = vtData.map(v => v.id);
                     await _supabase.from('test_results').delete().in('visit_test_id', vtIds);
                 }
+                // 2. حذف التحاليل
                 await _supabase.from('visit_tests').delete().eq('visit_id', visitId);
+                // 3. حذف الزيارة
                 const { error } = await _supabase.from('visits').delete().eq('visit_id', visitId);
                 
                 if(error) throw error;
                 alert('تم حذف الزيارة بنجاح'); openDailyCases(); 
-            } catch(err) { alert('حدث خطأ: ' + err.message); }
+            } catch(err) { 
+                alert('حدث خطأ: ' + err.message); 
+            }
         }
 
         async function searchPatient() {
             const query = document.getElementById('patientSearch').value.trim();
             if(!query) return;
-            const { data, error } = await _supabase.from('patients').select('*').or(`phone.eq.${query},name.ilike.%${query}%`).order('id', {ascending: false});
+            
+            // البحث بالاسم أو التليفون باستخدام ilike للبحث الجزئي
+            const { data, error } = await _supabase.from('patients')
+                .select('*')
+                .or(`name.ilike.%${query}%,phone.ilike.%${query}%`)
+                .order('id', {ascending: false});
+            
             if(error) return console.error(error);
             
             if(data && data.length > 0) {
-                const p = data[0];
+                const p = data[0]; // نختار أول نتيجة
                 document.getElementById('pName').value = p.name;
-                document.getElementById('pPhone').value = p.phone;
-                document.getElementById('pAge').value = p.age;
-                document.getElementById('pGender').value = p.gender;
+                document.getElementById('pPhone').value = p.phone || '';
+                document.getElementById('pAge').value = p.age || 30;
+                document.getElementById('pGender').value = p.gender || 'male';
                 document.getElementById('pDoctor').value = p.doctor_name || '';
             } else { 
-                alert('لم يتم العثور على مريض'); 
+                alert('لم يتم العثور على مريض بهذا الاسم أو الرقم'); 
             }
         }
 
