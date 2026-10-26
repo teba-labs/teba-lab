@@ -58,6 +58,7 @@
         .btn-print { background: var(--success-color); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; margin-top: 15px; }
         .btn-close { background: var(--danger-color); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; margin-top: 10px; }
 
+        /* ستايل صفحات الطباعة */
         .print-page { background: #fff; width: 100%; min-height: 297mm; padding: 15mm; margin-bottom: 20px; box-sizing: border-box; position: relative; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         .print-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; z-index: 2; position: relative; }
         .print-footer { position: absolute; bottom: 15mm; left: 15mm; right: 15mm; border-top: 2px solid #000; padding-top: 10px; font-size: 12px; display: flex; justify-content: space-between; }
@@ -130,19 +131,14 @@
             setTimeout(() => t.style.display = 'none', 2000);
         }
 
-        // الدالة السحرية للسرعة: بتجيب آخر 100 زيارة بس وتربطهم ببعض
         async function loadData() {
-            // 1. هات آخر 100 زيارة
             const { data: visits } = await _supabase.from('visits').select('*').order('visit_id', { ascending: false }).limit(100);
             if (!visits || visits.length === 0) return renderPatients();
 
             const visitIds = visits.map(v => v.visit_id);
-            const patientIds = [...new Set(visits.map(v => v.patient_id))]; // عشان نمنع التكرار
+            const patientIds = [...new Set(visits.map(v => v.patient_id))];
 
-            // 2. هات المرضى بتوع الزيارات دي بس
             const { data: patients } = await _supabase.from('patients').select('*').in('id', patientIds);
-            
-            // 3. هات التحاليل والنتايج بتاعة الزيارات دي بس
             const { data: vt } = await _supabase.from('visit_tests').select('*').in('visit_id', visitIds);
             const vtIds = vt ? vt.map(v => v.id) : [];
             
@@ -152,7 +148,6 @@
                 results = res || [];
             }
 
-            // 4. هات الكتالوج
             const { data: catalog } = await _supabase.from('tests_catalog').select('*');
 
             testsCatalog = catalog || [];
@@ -325,6 +320,7 @@
                 }
             });
 
+            // حسابات الدهون (Lipid Profile)
             let trig = vals['Triglycerides'] || vals['TRIG'] || vals['Trig'];
             let vldlInput = document.getElementById(`res_${visitTestId}_VLDL`);
             if (trig !== undefined && vldlInput) {
@@ -342,24 +338,55 @@
                 let ldlVal = cho - hdl - vldl;
                 if (ldlVal < 0) ldlVal = 0;
                 ldlInput.value = ldlVal.toFixed(1);
+                vals['LDL'] = ldlVal;
             }
 
+            let risk1Input = document.getElementById(`res_${visitTestId}_RISK1`);
+            let risk2Input = document.getElementById(`res_${visitTestId}_RISK2`);
+            
+            if (cho !== undefined && hdl !== undefined && hdl > 0 && risk1Input) {
+                risk1Input.value = (cho / hdl).toFixed(1);
+            }
+            if (vals['LDL'] !== undefined && hdl !== undefined && hdl > 0 && risk2Input) {
+                risk2Input.value = (vals['LDL'] / hdl).toFixed(1);
+            }
+
+            // حسابات صورة الدم (CBC)
+            let hb = vals['Hemoglobin'] || vals['HGB'] || vals['HB'] || vals['Hb'];
+            let rbc = vals['RBCs'] || vals['RBC'] || vals['RBCs'];
+            let hct = vals['HCT'] || vals['Hct'];
+
+            if (hb !== undefined) {
+                let hctInput = document.getElementById(`res_${visitTestId}_HCT`);
+                if (hctInput) {
+                    hct = hb * 3;
+                    hctInput.value = hct.toFixed(1);
+                    vals['HCT'] = hct;
+                }
+            }
+            if (hct !== undefined && rbc !== undefined && rbc > 0) {
+                let mcvInput = document.getElementById(`res_${visitTestId}_MCV`);
+                if (mcvInput) {
+                    mcvInput.value = ((hct * 10) / rbc).toFixed(1);
+                }
+            }
+            if (hb !== undefined && rbc !== undefined && rbc > 0) {
+                let mchInput = document.getElementById(`res_${visitTestId}_MCH`);
+                if (mchInput) {
+                    mchInput.value = ((hb * 10) / rbc).toFixed(1);
+                }
+            }
+            if (hb !== undefined && hct !== undefined && hct > 0) {
+                let mchcInput = document.getElementById(`res_${visitTestId}_MCHC`);
+                if (mchcInput) {
+                    mchcInput.value = ((hb * 100) / hct).toFixed(1);
+                }
+            }
+
+            // باقي الحسابات (زي PT, INR لو موجودة)
             params.forEach(p => {
                 let calcVal = null;
                 let formula = p.formula;
-                let pn = p.name.toLowerCase();
-
-                let hb = vals['Hemoglobin'] || vals['HGB'] || vals['HB'] || vals['Hb'];
-                let rbc = vals['RBCs'] || vals['RBC'] || vals['RBCs'];
-                let hct = vals['HCT'] || vals['Hct'];
-
-                if (!formula) {
-                    if (pn === 'hct' && hb !== undefined) calcVal = hb * 3;
-                    else if (pn === 'mcv' && hct !== undefined && rbc !== undefined && rbc > 0) calcVal = (hct * 10) / rbc;
-                    else if (pn === 'mch' && hb !== undefined && rbc !== undefined && rbc > 0) calcVal = (hb * 10) / rbc;
-                    else if (pn === 'mchc' && hb !== undefined && hct !== undefined && hct > 0) calcVal = (hb * 100) / hct;
-                }
-                
                 if (formula) {
                     try {
                         let evalStr = formula;
@@ -523,6 +550,8 @@
                             let ldl = cho - hdl - localVals['VLDL'];
                             localVals['LDL'] = ldl > 0 ? ldl : 0;
                         }
+                        if (localVals['RISK1'] === undefined && cho !== undefined && hdl !== undefined && hdl > 0) localVals['RISK1'] = cho / hdl;
+                        if (localVals['RISK2'] === undefined && localVals['LDL'] !== undefined && hdl !== undefined && hdl > 0) localVals['RISK2'] = localVals['LDL'] / hdl;
                     }
 
                     params.forEach(param => {
