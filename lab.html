@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - بوابة المعمل (v15.2 Final)</title>
+    <title>معامل طيبة - بوابة المعمل (v16 Final)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -79,7 +79,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v15.2)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v16)</div>
         <div class="nav-links">
             <button class="nav-btn print" onclick="openPreview()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn rec" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
@@ -153,11 +153,29 @@
         const supabaseKey = 'sb_publishable_2Q7SPvruXJar3gvOxtvl5w_p4CVDfcU';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        let visitsData = []; // كل الزيارات
+        let visitsData = []; 
         let selectedVisitId = null;
         let catalogMap = {};
 
-        // تحميل البيانات
+        // دالة مساعدة لحساب التقييم (H/L)
+        function getFlag(val, ref) {
+            if (!val || !ref || ref === '-') return 'normal';
+            const num = parseFloat(val);
+            if (isNaN(num)) return 'normal';
+            const range = ref.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
+            if (range) {
+                if (num < parseFloat(range[1])) return 'low';
+                if (num > parseFloat(range[2])) return 'high';
+            } else if (ref.includes('<')) {
+                const max = parseFloat(ref.replace('<', '').trim());
+                if (!isNaN(max) && num > max) return 'high';
+            } else if (ref.includes('>')) {
+                const min = parseFloat(ref.replace('>', '').trim());
+                if (!isNaN(min) && num < min) return 'low';
+            }
+            return 'normal';
+        }
+
         async function loadData() {
             const { data: visits, error: vErr } = await _supabase.from('visits').select('*').order('visit_id', { ascending: false });
             if (vErr) return alert('خطأ في تحميل الزيارات');
@@ -169,13 +187,17 @@
 
             catalog?.forEach(c => catalogMap[c.code] = c);
 
-            // دمج البيانات
             visitsData = visits.map(v => {
                 const p = patients?.find(x => x.id === v.patient_id || x.patient_id === v.patient_id) || {};
                 const vTests = visitTests?.filter(t => t.visit_id === v.visit_id).map(t => {
                     const c = catalogMap[t.test_code] || { name: t.test_code, parameters: [] };
                     const res = results?.find(r => r.visit_test_id === t.id) || null;
-                    return { ...t, test_name: c.name, parameters: c.parameters || [], result: res, unit: c.unit, ref: c.reference_range };
+                    
+                    // توحيد اسم الوحدة والمدى المرجعي من السحابة
+                    let unit = c.unit || c.test_unit || '-';
+                    let ref = c.reference_range || c.ref_male || '-';
+
+                    return { ...t, test_name: c.name || c.test_name, parameters: c.parameters || [], result: res, unit: unit, ref: ref };
                 }) || [];
 
                 return { ...v, patient: p, tests: vTests };
@@ -184,7 +206,6 @@
             renderPatients();
         }
 
-        // رسم قائمة المرضى
         function renderPatients() {
             const list = document.getElementById('patientsList');
             if (!visitsData.length) return list.innerHTML = '<div class="empty-state">لا توجد زيارات</div>';
@@ -206,22 +227,20 @@
             }).join('');
         }
 
-        // اختيار مريض
         function selectVisit(visitId) {
             selectedVisitId = visitId;
-            renderPatients(); // لتحديد الكارت النشط
+            renderPatients(); 
 
             const visit = visitsData.find(v => v.visit_id === visitId);
             if (!visit) return;
 
-            const singleTests = visit.tests.filter(t => (t.parameters || []).length === 0);
-            const profileTests = visit.tests.filter(t => (t.parameters || []).length > 0);
+            const singleTests = visit.tests.filter(t => !t.parameters || t.parameters.length === 0);
+            const profileTests = visit.tests.filter(t => t.parameters && t.parameters.length > 0);
 
             renderTestList('singleTestsList', singleTests, visit.patient);
             renderTestList('profileTestsList', profileTests, visit.patient);
         }
 
-        // رسم التحاليل
         function renderTestList(containerId, tests, patient) {
             const container = document.getElementById(containerId);
             if (!tests.length) return container.innerHTML = '<div class="empty-state">لا توجد تحاليل هنا</div>';
@@ -231,7 +250,6 @@
                 let inputsHtml = '';
 
                 if (t.parameters && t.parameters.length > 0) {
-                    // تحليل مركب
                     t.parameters.forEach(p => {
                         const val = savedData[p.name]?.value || '';
                         const ref = patient.gender === 'female' || patient.gender === 'أنثى' ? p.ref_female : p.ref_male;
@@ -243,13 +261,10 @@
                         `;
                     });
                 } else {
-                    // تحليل فردي
                     const val = savedData['result']?.value || '';
-                    const ref = t.ref || '-';
-                    const unit = t.unit || '-';
                     inputsHtml += `
                         <div class="param-row">
-                            <label><span>النتيجة</span> <span style="font-size:0.75rem; color:#888">(${ref} ${unit !== '-' ? unit : ''})</span></label>
+                            <label><span>النتيجة</span> <span style="font-size:0.75rem; color:#888">(${t.ref} ${t.unit !== '-' ? t.unit : ''})</span></label>
                             <input type="text" id="val_${t.id}_result" value="${val}" placeholder="النتيجة">
                         </div>
                     `;
@@ -263,15 +278,14 @@
                         </div>
                         <div class="test-inputs">
                             ${inputsHtml}
-                            <button class="btn-save-test" onclick="saveResult(${t.id})">💾 حفظ (أو اضغط Enter)</button>
+                            <button class="btn-save-test" onclick="saveResult(${t.id}, event)">💾 حفظ (أو اضغط Enter)</button>
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        // حفظ نتيجة
-        async function saveResult(visitTestId) {
+        async function saveResult(visitTestId, event) {
             const visit = visitsData.find(v => v.visit_id === selectedVisitId);
             const test = visit.tests.find(t => t.id === visitTestId);
             if (!test) return;
@@ -284,26 +298,20 @@
                     const val = document.getElementById(`val_${test.id}_${p.name}`).value.trim();
                     if (!val) return alert(`الرجاء إدخال نتيجة ${p.label || p.name}`);
                     
-                    // حساب التقييم
                     const ref = patient.gender === 'female' || patient.gender === 'أنثى' ? p.ref_female : p.ref_male;
-                    let flag = 'normal';
-                    const num = parseFloat(val);
-                    if (!isNaN(num) && ref) {
-                        const range = ref.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
-                        if (range) {
-                            if (num < parseFloat(range[1])) flag = 'low';
-                            if (num > parseFloat(range[2])) flag = 'high';
-                        }
-                    }
+                    const flag = getFlag(val, ref);
                     resultsData[p.name] = { value: val, flag: flag };
                 }
             } else {
                 const val = document.getElementById(`val_${test.id}_result`).value.trim();
                 if (!val) return alert('الرجاء إدخال النتيجة');
-                resultsData['result'] = { value: val, flag: 'normal' };
+                // حساب التقييم للتحليل الفردي
+                const flag = getFlag(val, test.ref);
+                resultsData['result'] = { value: val, flag: flag };
             }
 
             const btn = event.target;
+            const originalText = btn.innerText;
             btn.innerText = 'جاري الحفظ...';
             btn.disabled = true;
 
@@ -315,22 +323,20 @@
 
                 if (error) throw error;
                 
-                // تحديث الداتا محلياً
                 test.result = { results_data: resultsData };
                 
                 btn.innerText = '✅ تم الحفظ';
-                setTimeout(() => { btn.innerText = '💾 حفظ (أو اضغط Enter)'; btn.disabled = false; }, 2000);
+                setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
                 
-                renderPatients(); // تحديث حالة المريض (علامة الصح)
+                renderPatients(); 
 
             } catch (err) {
                 alert('خطأ: ' + err.message);
-                btn.innerText = '💾 حفظ';
+                btn.innerText = originalText;
                 btn.disabled = false;
             }
         }
 
-        // فتح المعاينة (تجميع كل التحاليل)
         function openPreview() {
             if (!selectedVisitId) return alert('الرجاء اختيار مريض أولاً من القائمة اليمنى');
 
@@ -346,19 +352,17 @@
             const tbody = document.getElementById('previewTableBody');
             let rowsHtml = '';
 
-            // لفة على كل تحاليل الزيارة (فردية ومركبة)
             visit.tests.forEach(t => {
                 const res = t.result?.results_data || {};
                 
                 if (t.parameters && t.parameters.length > 0) {
-                    // تحليل مركب (بنفصل باراميترزه)
                     t.parameters.forEach(param => {
                         const pData = res[param.name] || {};
                         const val = pData.value || '-';
                         const flag = pData.flag || 'normal';
                         const ref = p.gender === 'female' || p.gender === 'أنثى' ? param.ref_female : param.ref_male;
                         
-                        const flagText = flag === 'high' ? '<span style="color:red; font-weight:bold;">H</span>' : flag === 'low' ? '<span style="color:blue; font-weight:bold;">L</span>' : 'N';
+                        const flagText = flag === 'high' ? '<span style="color:red; font-weight:bold;">H</span>' : flag === 'low' ? '<span style="color:blue; font-weight:bold;">L</span>' : (val !== '-' ? 'N' : '-');
                         
                         rowsHtml += `
                             <tr>
@@ -371,7 +375,6 @@
                         `;
                     });
                 } else {
-                    // تحليل فردي
                     const val = res['result']?.value || '-';
                     const flag = res['result']?.flag || 'normal';
                     const flagText = flag === 'high' ? '<span style="color:red; font-weight:bold;">H</span>' : flag === 'low' ? '<span style="color:blue; font-weight:bold;">L</span>' : (val !== '-' ? 'N' : '-');
