@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل الذكي (v22)</title>
+    <title>معامل طيبة - المعمل الذكي (v23)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -72,7 +72,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v22)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v23)</div>
         <div>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
@@ -96,38 +96,37 @@
         </div>
     </div>
 
-    <!-- مودال الطباعة الجديد (LTR) -->
+    <!-- مودال الطباعة (LTR) -->
     <div class="modal" id="printModal">
         <div class="modal-content">
             <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; background: #fff; position: relative; overflow: hidden; min-height: 800px;">
                 
                 <!-- الهيدر -->
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 15px; z-index: 2; position: relative;">
-                    <div style="width: 40%;">
-                        <!-- اللوجو الأساسي -->
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1b5e20; padding-bottom: 15px; margin-bottom: 20px; z-index: 2; position: relative;">
+                    <div style="width: 40%; display: flex; align-items: center;">
                         <img src="header.png" alt="TEBA LABS" style="max-height: 90px; object-fit: contain;">
                     </div>
-                    <div style="width: 60%; text-align: right; padding-right: 10px;">
-                        <h1 style="margin: 0; color: #1b5e20; font-size: 24px;">TEBA LABS</h1>
-                        <p style="margin: 2px 0; font-size: 13px;">For Medical Analyzes</p>
-                        <p style="margin: 2px 0; font-size: 12px; color: #555;">Dr. Ahmed Taha Abonda</p>
+                    <div style="width: 60%; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; padding-right: 15px;">
+                        <h1 style="margin: 0; color: #1b5e20; font-size: 26px; font-weight: 900; letter-spacing: 1px;">TEBA LABS</h1>
+                        <p style="margin: 4px 0 0 0; font-size: 14px; font-weight: 600; color: #333;">For Medical Analyzes</p>
+                        <p style="margin: 2px 0 0 0; font-size: 13px; color: #555;">Dr. Ahmed Taha Abonda</p>
                     </div>
                 </div>
 
                 <!-- بيانات المريض -->
-                <div style="display: flex; justify-content: space-between; border: 1px solid #ccc; padding: 8px 15px; border-radius: 5px; background: #fafafa; font-size: 13px; margin-bottom: 20px; z-index: 2; position: relative;">
-                    <div style="width: 50%;">
-                        <p style="margin: 3px 0;"><strong>Patient:</strong> <span id="pNamePrint"></span></p>
-                        <p style="margin: 3px 0;"><strong>Age/Gender:</strong> <span id="pAgeGenderPrint"></span></p>
+                <div style="display: flex; justify-content: space-between; border: 1px solid #b0bec5; padding: 12px 20px; border-radius: 8px; background: #f8f9fa; font-size: 14px; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 2; position: relative;">
+                    <div style="width: 50%; display: flex; flex-direction: column; gap: 8px;">
+                        <div><strong style="color: #555; display: inline-block; width: 110px;">Patient:</strong> <span id="pNamePrint" style="font-weight: bold; color: #1b5e20;"></span></div>
+                        <div><strong style="color: #555; display: inline-block; width: 110px;">Age/Gender:</strong> <span id="pAgeGenderPrint" style="font-weight: bold;"></span></div>
                     </div>
-                    <div style="width: 50%; text-align: right;">
-                        <p style="margin: 3px 0;"><strong>Visit ID:</strong> <span id="vIdPrint"></span></p>
-                        <p style="margin: 3px 0;"><strong>Date:</strong> <span id="vDatePrint"></span></p>
+                    <div style="width: 50%; display: flex; flex-direction: column; gap: 8px; text-align: right; border-left: 1px solid #ddd; padding-left: 15px;">
+                        <div><strong style="color: #555; display: inline-block; width: 80px;">Visit ID:</strong> <span id="vIdPrint" style="font-weight: bold;"></span></div>
+                        <div><strong style="color: #555; display: inline-block; width: 80px;">Date:</strong> <span id="vDatePrint" style="font-weight: bold;"></span></div>
                     </div>
                 </div>
 
-                <!-- الخلفية المائية (اللوجو الدايرة) -->
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; opacity: 0.05; pointer-events: none; z-index: 0;">
+                <!-- الخلفية المائية -->
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; opacity: 0.04; pointer-events: none; z-index: 0;">
                     <img src="logo.png" alt="watermark" style="width: 60%; transform: rotate(-15deg);">
                 </div>
 
@@ -135,9 +134,9 @@
                 <div id="reportTableBody" style="position: relative; z-index: 2;"></div>
 
                 <!-- الفوتر -->
-                <div style="margin-top: 40px; border-top: 2px solid #333; padding-top: 10px; font-size: 12px; text-align: center; z-index: 2; position: relative;">
-                    <p style="margin: 3px 0; font-weight: bold;">Phone: 01123702062 / 01099003494</p>
-                    <p style="margin: 3px 0;">Address: Masaken Esko - Front of Al-Khattab School - Bahgatim</p>
+                <div style="margin-top: 50px; border-top: 2px solid #1b5e20; padding-top: 15px; font-size: 12px; text-align: center; z-index: 2; position: relative; color: #555;">
+                    <p style="margin: 4px 0; font-weight: bold; font-size: 13px;">Phone: 01123702062 / 01099003494</p>
+                    <p style="margin: 4px 0;">Address: Masaken Esko - Front of Al-Khattab School - Bahgatim</p>
                 </div>
 
             </div>
@@ -149,7 +148,6 @@
     </div>
 
     <script>
-        // منع الماوس من تغيير الأرقام
         document.addEventListener("wheel", function(event){
             if(document.activeElement.type === "number" || document.activeElement.type === "text"){
                 document.activeElement.blur();
@@ -200,6 +198,26 @@
             `).join('');
         }
 
+        // دالة مساعدة لضمان ظهور LDL في الدهون
+        function getSmartParams(catalogItem) {
+            let params = catalogItem.parameters ? JSON.parse(JSON.stringify(catalogItem.parameters)) : [];
+            const isLipid = (catalogItem.name && catalogItem.name.toUpperCase().includes('LIPID')) || catalogItem.code === 'TL-062';
+            
+            if (isLipid) {
+                if (!params.find(p => p.name.toLowerCase().includes('ldl'))) {
+                    params.push({ 
+                        name: 'LDL', 
+                        label: 'LDL (Calc)', 
+                        unit: 'mg/dL', 
+                        ref_male: '0 - 130', 
+                        ref_female: '0 - 130', 
+                        is_calc: true 
+                    });
+                }
+            }
+            return params;
+        }
+
         function selectPatient(visitId) {
             selectedVisitId = visitId;
             renderPatients();
@@ -217,22 +235,21 @@
             let singlesHtml = '', profilesHtml = '';
 
             vTests.forEach(vt => {
-                const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, parameters: [] };
+                const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, code: vt.test_code, parameters: [] };
                 const result = testResults.find(r => r.visit_test_id === vt.id);
                 const savedData = result ? result.results_data : {};
                 
-                const params = catalogItem.parameters || [];
-                // التفرقة الذكية: لو الباراميترز أكتر من واحد، أو واحد بس مش اسمه Result يبقى بروفايل
+                const params = getSmartParams(catalogItem);
                 const isProfile = params.length > 1 || (params.length === 1 && params[0].name !== 'Result');
 
                 let inputsHtml = '';
                 if (isProfile) {
-                    catalogItem.parameters.forEach(param => {
+                    params.forEach(param => {
                         const val = savedData[param.name]?.value || '';
                         const unit = param.unit || param.units || '';
                         const range = param.ref_male || param.reference_range || param.range || '-';
                         
-                        const isCalc = param.is_calc === true || param.is_calculated === true || (param.formula && param.formula.length > 0);
+                        const isCalc = param.is_calc === true || param.is_calculated === true || (param.formula && param.formula.length > 0) || param.name === 'LDL';
                         const readonly = isCalc ? 'readonly' : '';
                         const calcClass = isCalc ? 'input-calc' : '';
                         const placeholder = isCalc ? 'تلقائى' : '...';
@@ -311,10 +328,12 @@
 
         function triggerCalc(visitTestId, testCode) {
             const catalogItem = testsCatalog.find(c => c.code === testCode);
-            if (!catalogItem || !catalogItem.parameters) return;
+            if (!catalogItem) return;
 
+            const params = getSmartParams(catalogItem);
             let vals = {};
-            catalogItem.parameters.forEach(p => {
+            
+            params.forEach(p => {
                 const input = document.getElementById(`res_${visitTestId}_${p.name}`);
                 if (input && input.value.trim() !== '') {
                     let parsed = parseFloat(input.value);
@@ -322,7 +341,7 @@
                 }
             });
 
-            catalogItem.parameters.forEach(p => {
+            params.forEach(p => {
                 let calcVal = null;
                 let formula = p.formula;
                 let pn = p.name.toLowerCase();
@@ -333,10 +352,12 @@
                 let trig = vals['Triglycerides'] || vals['TRIG'] || vals['Trig'];
                 let cho = vals['Total Cholesterol'] || vals['CHO'] || vals['Cholesterol'];
                 let hdl = vals['HDL'] || vals['Hdl'];
+                let vldl = vals['VLDL'];
 
                 if (!formula) {
-                    if (pn.includes('ldl') && cho !== undefined && hdl !== undefined && trig !== undefined) {
-                        calcVal = cho - hdl - (trig / 5);
+                    if (pn.includes('ldl') && cho !== undefined && hdl !== undefined) {
+                        let vldlVal = vldl !== undefined ? vldl : (trig !== undefined ? trig / 5 : 0);
+                        calcVal = cho - hdl - vldlVal;
                     } else if (pn.includes('vldl') && trig !== undefined) {
                         calcVal = trig / 5;
                     } else if (pn === 'hct' && hb !== undefined) {
@@ -390,11 +411,13 @@
 
         async function saveTestResult(visitTestId, isProfile, isSilent = false) {
             const vt = visitTests.find(v => v.id === visitTestId);
-            const catalogItem = testsCatalog.find(c => c.code === vt.test_code);
+            const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { code: vt.test_code, parameters: [] };
+            const params = getSmartParams(catalogItem);
+            
             let resultsData = {};
 
             if (isProfile) {
-                catalogItem.parameters.forEach(param => {
+                params.forEach(param => {
                     const input = document.getElementById(`res_${visitTestId}_${param.name}`);
                     if (input && input.value.trim() !== '') resultsData[param.name] = { value: input.value.trim() };
                 });
@@ -453,10 +476,10 @@
             let hasResults = false;
 
             vTests.forEach(vt => {
-                const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, parameters: [] };
+                const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, code: vt.test_code, parameters: [] };
                 const result = testResults.find(r => r.visit_test_id === vt.id);
                 const savedData = result ? result.results_data : {};
-                const params = catalogItem.parameters || [];
+                const params = getSmartParams(catalogItem);
                 const isProfile = params.length > 1 || (params.length === 1 && params[0].name !== 'Result');
 
                 let hasTestData = false;
@@ -476,16 +499,16 @@
                             const match = range.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
                             if (!isNaN(num) && match) {
                                 const min = parseFloat(match[1]), max = parseFloat(match[2]);
-                                if (num < min) flagStr = '<span style="color:#0000FF;font-weight:bold;">L</span>';
-                                else if (num > max) flagStr = '<span style="color:#FF0000;font-weight:bold;">H</span>';
+                                if (num < min) flagStr = '<span style="background-color: #e3f2fd; color: #1565c0; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block;">Low</span>';
+                                else if (num > max) flagStr = '<span style="background-color: #ffebee; color: #c62828; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block;">High</span>';
                             }
                             
                             testRows += `<tr>
-                                <td style="border: 1px solid #ccc; padding: 6px;">${param.label || param.name}</td>
-                                <td style="border: 1px solid #ccc; padding: 6px; text-align:center; font-weight:bold;">${val}</td>
-                                <td style="border: 1px solid #ccc; padding: 6px; text-align:center;">${flagStr}</td>
-                                <td style="border: 1px solid #ccc; padding: 6px; text-align:center;">${unit}</td>
-                                <td style="border: 1px solid #ccc; padding: 6px; text-align:center;">${range}</td>
+                                <td style="border-bottom: 1px solid #eee; padding: 8px 6px;">${param.label || param.name}</td>
+                                <td style="border-bottom: 1px solid #eee; padding: 8px 6px; text-align:center; font-weight:bold; color: #1b5e20;">${val}</td>
+                                <td style="border-bottom: 1px solid #eee; padding: 8px 6px; text-align:center;">${flagStr}</td>
+                                <td style="border-bottom: 1px solid #eee; padding: 8px 6px; text-align:center;">${unit}</td>
+                                <td style="border-bottom: 1px solid #eee; padding: 8px 6px; text-align:center;">${range}</td>
                             </tr>`;
                         }
                     });
@@ -503,16 +526,16 @@
                         const match = range.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
                         if (!isNaN(num) && match) {
                             const min = parseFloat(match[1]), max = parseFloat(match[2]);
-                            if (num < min) flagStr = '<span style="color:#0000FF;font-weight:bold;">L</span>';
-                            else if (num > max) flagStr = '<span style="color:#FF0000;font-weight:bold;">H</span>';
+                            if (num < min) flagStr = '<span style="background-color: #e3f2fd; color: #1565c0; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block;">Low</span>';
+                            else if (num > max) flagStr = '<span style="background-color: #ffebee; color: #c62828; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block;">High</span>';
                         }
 
                         testRows += `<tr>
-                            <td style="border: 1px solid #ccc; padding: 6px;">${catalogItem.name}</td>
-                            <td style="border: 1px solid #ccc; padding: 6px; text-align:center; font-weight:bold;">${val}</td>
-                            <td style="border: 1px solid #ccc; padding: 6px; text-align:center;">${flagStr}</td>
-                            <td style="border: 1px solid #ccc; padding: 6px; text-align:center;">${unit}</td>
-                            <td style="border: 1px solid #ccc; padding: 6px; text-align:center;">${range}</td>
+                            <td style="border-bottom: 1px solid #eee; padding: 8px 6px;">${catalogItem.name}</td>
+                            <td style="border-bottom: 1px solid #eee; padding: 8px 6px; text-align:center; font-weight:bold; color: #1b5e20;">${val}</td>
+                            <td style="border-bottom: 1px solid #eee; padding: 8px 6px; text-align:center;">${flagStr}</td>
+                            <td style="border-bottom: 1px solid #eee; padding: 8px 6px; text-align:center;">${unit}</td>
+                            <td style="border-bottom: 1px solid #eee; padding: 8px 6px; text-align:center;">${range}</td>
                         </tr>`;
                     }
                 }
@@ -520,15 +543,15 @@
                 if (hasTestData) {
                     rows += `
                         <div style="margin-bottom: 25px; page-break-inside: avoid;">
-                            <h3 style="margin: 0 0 8px 0; background: #e8f5e9; padding: 6px 10px; border-left: 4px solid #1b5e20; font-size: 15px; text-transform: uppercase;">${catalogItem.name}</h3>
+                            <h3 style="margin: 0 0 10px 0; background: #e8f5e9; padding: 8px 12px; border-left: 4px solid #1b5e20; font-size: 15px; text-transform: uppercase; color: #1b5e20; border-radius: 0 4px 4px 0;">${catalogItem.name}</h3>
                             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                                 <thead>
                                     <tr style="background: #1b5e20; color: #fff;">
-                                        <th style="border: 1px solid #ccc; padding: 6px; text-align:left;">Test Name</th>
-                                        <th style="border: 1px solid #ccc; padding: 6px;">Result</th>
-                                        <th style="border: 1px solid #ccc; padding: 6px;">State</th>
-                                        <th style="border: 1px solid #ccc; padding: 6px;">Unit</th>
-                                        <th style="border: 1px solid #ccc; padding: 6px;">Ref. Range</th>
+                                        <th style="padding: 8px 6px; text-align:left; border-radius: 4px 0 0 0;">Test Name</th>
+                                        <th style="padding: 8px 6px; text-align:center;">Result</th>
+                                        <th style="padding: 8px 6px; text-align:center;">State</th>
+                                        <th style="padding: 8px 6px; text-align:center;">Unit</th>
+                                        <th style="padding: 8px 6px; text-align:center; border-radius: 0 4px 0 0;">Ref. Range</th>
                                     </tr>
                                 </thead>
                                 <tbody>${testRows}</tbody>
