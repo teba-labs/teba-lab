@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل الذكي (v20)</title>
+    <title>معامل طيبة - المعمل الذكي (v21)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -50,7 +50,6 @@
         
         .empty-msg { text-align: center; padding: 50px 20px; color: var(--text-muted); font-size: 1.1rem; }
 
-        /* Toast Notification */
         #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--success-color); color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); display: none; z-index: 1000; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
@@ -77,7 +76,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v20)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v21)</div>
         <div>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
@@ -122,7 +121,6 @@
     </div>
 
     <script>
-        // منع الماوس من تغيير الأرقام أثناء السكرول
         document.addEventListener("wheel", function(event){
             if(document.activeElement.type === "number" || document.activeElement.type === "text"){
                 document.activeElement.blur();
@@ -193,7 +191,10 @@
                 const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, parameters: [] };
                 const result = testResults.find(r => r.visit_test_id === vt.id);
                 const savedData = result ? result.results_data : {};
-                const isProfile = catalogItem.parameters && catalogItem.parameters.length > 0;
+                
+                // التفرقة الذكية: لو الباراميترز أكتر من واحد، أو واحد بس مش اسمه Result يبقى بروفايل
+                const params = catalogItem.parameters || [];
+                const isProfile = params.length > 1 || (params.length === 1 && params[0].name !== 'Result');
 
                 let inputsHtml = '';
                 if (isProfile) {
@@ -202,7 +203,6 @@
                         const unit = param.unit || param.units || '';
                         const range = param.ref_male || param.reference_range || param.range || '-';
                         
-                        // هل البارامتر ده بيتحسب تلقائي؟
                         const isCalc = param.is_calc === true || param.is_calculated === true || (param.formula && param.formula.length > 0);
                         const readonly = isCalc ? 'readonly' : '';
                         const calcClass = isCalc ? 'input-calc' : '';
@@ -221,9 +221,11 @@
                         `;
                     });
                 } else {
+                    // تحليل فردي
                     const val = savedData['result']?.value || '';
-                    const unit = catalogItem.unit || '';
-                    const range = catalogItem.reference_range || '-';
+                    const p = params[0] || {};
+                    const unit = p.unit || catalogItem.unit || '-';
+                    const range = p.ref_male || catalogItem.reference_range || '-';
                     inputsHtml += `
                         <div class="input-group">
                             <label><span>النتيجة</span><span class="range-info">${range} ${unit}</span></label>
@@ -251,20 +253,17 @@
             singleList.innerHTML = singlesHtml || '<div class="empty-msg">لا توجد تحاليل فردية</div>';
             profileList.innerHTML = profilesHtml || '<div class="empty-msg">لا توجد تحاليل مركبة</div>';
             
-            // فوكس على أول خانة
             setTimeout(() => {
                 const firstInput = document.querySelector('.test-item input:not([readonly])');
                 if(firstInput) firstInput.focus();
             }, 100);
         }
 
-        // محرك الإنتر
         function handleEnter(e, el, vtId, isProfile) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                saveTestResult(vtId, isProfile, true); // حفظ صامت
+                saveTestResult(vtId, isProfile, true);
                 
-                // الانتقال للخانة اللي بعدها
                 let form = el.closest('.test-body');
                 let inputs = Array.from(form.querySelectorAll('input:not([readonly])'));
                 let index = inputs.indexOf(el);
@@ -282,50 +281,81 @@
             }
         }
 
-        // محرك الحسابات التلقائية (LDL, VLDL, HCT, MCV, etc)
         function triggerCalc(visitTestId, testCode) {
             const catalogItem = testsCatalog.find(c => c.code === testCode);
             if (!catalogItem || !catalogItem.parameters) return;
 
             let vals = {};
-            // تجميع القيم المكتوبة
             catalogItem.parameters.forEach(p => {
                 const input = document.getElementById(`res_${visitTestId}_${p.name}`);
-                if (input) vals[p.name] = parseFloat(input.value) || 0;
+                if (input && input.value.trim() !== '') {
+                    let parsed = parseFloat(input.value);
+                    if (!isNaN(parsed)) vals[p.name] = parsed;
+                }
             });
 
-            // تنفيذ المعادلات
             catalogItem.parameters.forEach(p => {
+                let calcVal = null;
                 let formula = p.formula;
-                
-                // Hardcoded Fallbacks لو مفيش فورمولا في الـ JSON
-                if (!formula && testCode === 'TL-062') { // Lipid Profile
-                    if (p.name.includes('LDL')) formula = 'CHO - HDL - (TRIG / 5)';
-                    if (p.name.includes('VLDL')) formula = 'TRIG / 5';
-                }
-                if (!formula && testCode === 'TL-035') { // CBC
-                    if (p.name === 'HCT') formula = 'HB * 3';
-                    if (p.name === 'MCV') formula = '(HCT * 10) / RBC';
-                    if (p.name === 'MCH') formula = '(HB * 10) / RBC';
-                    if (p.name === 'MCHC') formula = '(HB * 100) / HCT';
+                let pn = p.name.toLowerCase();
+
+                // Fallbacks
+                let hb = vals['Hemoglobin'] || vals['HGB'] || vals['HB'] || vals['Hb'];
+                let rbc = vals['RBCs'] || vals['RBC'] || vals['RBCs'];
+                let hct = vals['HCT'] || vals['Hct'];
+                let trig = vals['Triglycerides'] || vals['TRIG'] || vals['Trig'];
+                let cho = vals['Total Cholesterol'] || vals['CHO'] || vals['Cholesterol'];
+                let hdl = vals['HDL'] || vals['Hdl'];
+
+                if (!formula) {
+                    if (pn.includes('ldl') && cho !== undefined && hdl !== undefined && trig !== undefined) {
+                        calcVal = cho - hdl - (trig / 5);
+                    } else if (pn.includes('vldl') && trig !== undefined) {
+                        calcVal = trig / 5;
+                    } else if (pn === 'hct' && hb !== undefined) {
+                        calcVal = hb * 3;
+                    } else if (pn === 'mcv' && hct !== undefined && rbc !== undefined && rbc > 0) {
+                        calcVal = (hct * 10) / rbc;
+                    } else if (pn === 'mch' && hb !== undefined && rbc !== undefined && rbc > 0) {
+                        calcVal = (hb * 10) / rbc;
+                    } else if (pn === 'mchc' && hb !== undefined && hct !== undefined && hct > 0) {
+                        calcVal = (hb * 100) / hct;
+                    }
                 }
 
                 if (formula) {
                     try {
                         let evalStr = formula;
-                        // لو المعادلة فيها CHO وده مش موجود، نجيب Total Cholesterol
-                        if (evalStr.includes('CHO') && !vals['CHO'] && vals['Total Cholesterol']) vals['CHO'] = vals['Total Cholesterol'];
+                        let hasAllVars = true;
+                        let vars = formula.match(/[a-zA-Z_]+/g) || [];
+                        vars = vars.filter(v => v !== 'Math' && v !== 'min' && v !== 'max');
                         
-                        for (let key in vals) {
-                            evalStr = evalStr.replace(new RegExp('\\b' + key + '\\b', 'g'), vals[key]);
+                        for (let v of vars) {
+                            let valToUse = undefined;
+                            for (let key in vals) {
+                                if (key.toLowerCase() === v.toLowerCase()) {
+                                    valToUse = vals[key];
+                                    break;
+                                }
+                            }
+                            if (valToUse === undefined) {
+                                hasAllVars = false;
+                                break;
+                            }
+                            evalStr = evalStr.replace(new RegExp('\\b' + v + '\\b', 'g'), valToUse);
                         }
-                        let result = Function('"use strict";return (' + evalStr + ')')();
                         
-                        if (isFinite(result) && result > 0) {
-                            document.getElementById(`res_${visitTestId}_${p.name}`).value = result.toFixed(1);
+                        if (hasAllVars) {
+                            calcVal = Function('"use strict";return (' + evalStr + ')')();
                         }
-                    } catch (err) {
-                        console.log('Calc error', err);
+                    } catch(e) {}
+                }
+
+                if (calcVal !== null && isFinite(calcVal) && calcVal >= 0) {
+                    const input = document.getElementById(`res_${visitTestId}_${p.name}`);
+                    if (input) {
+                        input.value = parseFloat(calcVal.toFixed(1));
+                        vals[p.name] = calcVal;
                     }
                 }
             });
@@ -372,15 +402,12 @@
             const { error } = await _supabase.from('test_results').delete().eq('visit_test_id', visitTestId);
             if(error) return alert('خطأ في الحذف: ' + error.message);
 
-            // مسح من الميموري
             const index = testResults.findIndex(r => r.visit_test_id === visitTestId);
             if(index > -1) testResults.splice(index, 1);
 
-            // تفريغ الخانات في الشاشة
             const card = document.getElementById(`card_${visitTestId}`);
-            if(card) {
-                card.querySelectorAll('input').forEach(input => input.value = '');
-            }
+            if(card) card.querySelectorAll('input').forEach(input => input.value = '');
+            
             showToast('🗑️ تم الحذف');
         }
 
@@ -415,7 +442,9 @@
                 const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, parameters: [] };
                 const result = testResults.find(r => r.visit_test_id === vt.id);
                 const savedData = result ? result.results_data : {};
-                const isProfile = catalogItem.parameters && catalogItem.parameters.length > 0;
+                
+                const params = catalogItem.parameters || [];
+                const isProfile = params.length > 1 || (params.length === 1 && params[0].name !== 'Result');
 
                 if (isProfile) {
                     catalogItem.parameters.forEach(param => {
@@ -432,8 +461,9 @@
                     const val = savedData['result']?.value;
                     if (val) {
                         hasResults = true;
-                        const range = catalogItem.reference_range || '-';
-                        const unit = catalogItem.unit || '-';
+                        const p = params[0] || {};
+                        const range = p.ref_male || catalogItem.reference_range || '-';
+                        const unit = p.unit || catalogItem.unit || '-';
                         const flag = calcFlag(val, range);
                         rows += `<tr><td>${catalogItem.name}</td><td>${val} ${flag}</td><td>${unit}</td><td>${range}</td></tr>`;
                     }
