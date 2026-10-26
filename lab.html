@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل (v20)</title>
+    <title>معامل طيبة - المعمل الذكي (v19)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -40,14 +40,13 @@
         .input-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
         .input-group label { font-size: 0.85rem; font-weight: bold; color: var(--text-muted); display: flex; justify-content: space-between;}
         .range-info { font-weight: normal; font-size: 0.75rem; color: var(--accent-color); background: #eaf4fc; padding: 2px 6px; border-radius: 4px;}
-        .input-group input { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 1rem; font-family: inherit; outline: none; text-align: center;}
-        .input-group input:focus { border-color: var(--accent-color); box-shadow: 0 0 0 2px rgba(52,152,219,0.2);}
-        .input-calc { background-color: #f9f9f9; font-weight: bold; color: #555; border: 1px dashed #ccc !important; }
+        .input-group input { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 1rem; font-family: inherit; outline: none; text-align: center; transition: 0.2s;}
+        .input-group input:focus { border-color: var(--accent-color); box-shadow: 0 0 5px rgba(52,152,219,0.3);}
         
-        .btn-row { display: flex; gap: 10px; margin-top: 5px; }
-        .btn-save-test { flex-grow: 1; padding: 10px; background: var(--success-color); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: inherit;}
-        .btn-delete-test { padding: 10px 15px; background: var(--danger-color); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: inherit;}
+        /* الخانات المحسوبة تلقائياً */
+        .input-calc { background-color: #f1f3f5; font-weight: bold; color: #495057; cursor: not-allowed; border: 1px dashed #adb5bd !important; }
         
+        .btn-save-test { width: 100%; padding: 10px; background: var(--success-color); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: inherit; margin-top: 5px;}
         .empty-msg { text-align: center; padding: 50px 20px; color: var(--text-muted); font-size: 1.1rem; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
@@ -59,8 +58,8 @@
         .btn-print { background: var(--success-color); color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; margin-top: 20px;}
         .btn-close { background: var(--danger-color); color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px;}
         
-        .flag-high { color: red; font-weight: bold; }
-        .flag-low { color: blue; font-weight: bold; }
+        .flag-high { color: red; font-weight: bold; background: #ffebee; padding: 2px 6px; border-radius: 4px;}
+        .flag-low { color: blue; font-weight: bold; background: #e3f2fd; padding: 2px 6px; border-radius: 4px;}
         .flag-normal { color: green; font-weight: bold; }
 
         @media print {
@@ -74,7 +73,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v20)</div>
+        <div class="brand-info">🔬 المعمل الذكي - معامل طيبة (v19)</div>
         <div>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
@@ -124,6 +123,28 @@
         let allVisits = [], visitTests = [], testsCatalog = [], testResults = [];
         let selectedVisitId = null;
 
+        // قيم افتراضية عشان لو السحابة ناقصة
+        const fallbackRanges = {
+            'Hemoglobin': { male: '13.5 - 17.5', female: '12.0 - 15.5' },
+            'HB': { male: '13.5 - 17.5', female: '12.0 - 15.5' },
+            'HGB': { male: '13.5 - 17.5', female: '12.0 - 15.5' },
+            'RBCs': { male: '4.5 - 5.9', female: '4.1 - 5.1' },
+            'RBC': { male: '4.5 - 5.9', female: '4.1 - 5.1' },
+            'HCT': { male: '41 - 53', female: '36 - 46' },
+            'MCV': { male: '80 - 100', female: '80 - 100' },
+            'MCH': { male: '27 - 33', female: '27 - 33' },
+            'MCHC': { male: '32 - 36', female: '32 - 36' },
+            'WBCs': { male: '4.0 - 11.0', female: '4.0 - 11.0' },
+            'WBC': { male: '4.0 - 11.0', female: '4.0 - 11.0' },
+            'Platelets': { male: '150 - 450', female: '150 - 450' },
+            'PLT': { male: '150 - 450', female: '150 - 450' }
+        };
+
+        // دالة لتنظيف الـ ID من المسافات والرموز
+        function safeId(name) {
+            return name.replace(/[^a-zA-Z0-9]/g, '_');
+        }
+
         async function loadData() {
             const { data: visits } = await _supabase.from('visits').select('*').order('visit_id', { ascending: false });
             const { data: patients } = await _supabase.from('patients').select('*');
@@ -136,25 +157,20 @@
             testResults = results || [];
 
             allVisits = (visits || []).map(v => {
-                const p = (patients || []).find(x => x.id == v.patient_id) || {};
-                const pName = p.name || p.full_name || p.patient_name || 'غير معروف';
-                return { ...v, patient: { name: pName, age: p.age || '?', gender: p.gender || 'غير محدد' } };
+                const p = (patients || []).find(x => x.id == v.patient_id) || { name: 'غير معروف', age: 0, gender: 'ذكر' };
+                return { ...v, patient: p };
             });
             renderPatients();
-            
-            // لو فيه مريض مختار قبل التحديث، نرجعه يفتح تاني
-            if (selectedVisitId) {
-                selectPatient(selectedVisitId);
-            }
         }
 
         function renderPatients() {
             const list = document.getElementById('patientList');
             if (allVisits.length === 0) return list.innerHTML = '<div class="empty-msg">لا توجد زيارات</div>';
+
             list.innerHTML = allVisits.map(v => `
                 <div class="patient-card ${v.visit_id === selectedVisitId ? 'active' : ''}" onclick="selectPatient(${v.visit_id})">
                     <div class="p-name">${v.patient.name}</div>
-                    <div class="p-meta"><span>زيارة #${v.visit_id}</span><span>${v.patient.gender} • ${v.patient.age} سنة</span></div>
+                    <div class="p-meta"><span>زيارة #${v.visit_id}</span><span>${v.patient.gender === 'female' || v.patient.gender === 'أنثى' ? 'أنثى' : 'ذكر'} • ${v.patient.age} سنة</span></div>
                 </div>
             `).join('');
         }
@@ -166,6 +182,9 @@
             const singleList = document.getElementById('singleList');
             const profileList = document.getElementById('profileList');
             const vTests = visitTests.filter(vt => vt.visit_id === visitId);
+            
+            const patient = allVisits.find(v => v.visit_id === visitId).patient;
+            const isFemale = patient.gender === 'female' || patient.gender === 'أنثى';
 
             if (vTests.length === 0) {
                 singleList.innerHTML = '<div class="empty-msg">لا توجد تحاليل</div>';
@@ -179,38 +198,53 @@
                 const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, parameters: [] };
                 const result = testResults.find(r => r.visit_test_id === vt.id);
                 const savedData = result ? result.results_data : {};
-                let isProfile = catalogItem.parameters && catalogItem.parameters.length > 0;
-                
-                let paramsList = isProfile ? catalogItem.parameters : [{ name: 'result', label: 'النتيجة', unit: catalogItem.unit, ref_male: catalogItem.reference_range }];
+                const isProfile = catalogItem.parameters && catalogItem.parameters.length > 0;
 
                 let inputsHtml = '';
-                paramsList.forEach(param => {
-                    const val = savedData[param.name]?.value || '';
-                    const unit = param.unit || param.units || catalogItem.unit || '';
-                    const range = param.ref_male || param.reference_range || param.range || catalogItem.reference_range || '';
-                    
-                    const isCalc = ['HCT', 'MCV', 'MCH', 'MCHC', 'VLDL', 'LDL'].includes(param.name);
-                    const readonly = isCalc ? 'readonly' : '';
-                    const calcClass = isCalc ? 'input-calc' : '';
-                    const placeholder = isCalc ? 'تلقائي' : '...';
 
+                if (isProfile) {
+                    catalogItem.parameters.forEach(param => {
+                        const val = savedData[param.name]?.value || '';
+                        
+                        // تحديد الـ Range
+                        let range = isFemale ? (param.ref_female || fallbackRanges[param.name]?.female) : (param.ref_male || fallbackRanges[param.name]?.male);
+                        if (!range) range = param.reference_range || '-';
+                        
+                        const unit = param.unit || param.units || '';
+                        
+                        // هل البارامتر بيتحسب تلقائي؟
+                        const isCalc = ['HCT', 'MCV', 'MCH', 'MCHC', 'INR', 'Ratio'].includes(param.name) || param.is_calc === true;
+                        const readonly = isCalc ? 'readonly' : '';
+                        const calcClass = isCalc ? 'input-calc' : '';
+                        const placeholder = isCalc ? 'تلقائي' : '...';
+                        const pId = safeId(param.name);
+
+                        // تم إضافة oninput هنا لربط الحساب اللحظي
+                        inputsHtml += `
+                            <div class="input-group">
+                                <label><span>${param.label || param.name}</span><span class="range-info">${range} ${unit}</span></label>
+                                <input type="number" step="any" class="${calcClass}" id="res_${vt.id}_${pId}" value="${val}" placeholder="${placeholder}" ${readonly} oninput="liveCalculate(${vt.id}, '${vt.test_code}')">
+                            </div>
+                        `;
+                    });
+                } else {
+                    const val = savedData['result']?.value || '';
+                    const unit = catalogItem.unit || '';
+                    const range = catalogItem.reference_range || '';
                     inputsHtml += `
                         <div class="input-group">
-                            <label><span>${param.label || param.name}</span><span class="range-info">${range ? range + ' ' + unit : ''}</span></label>
-                            <input type="text" class="res-input ${calcClass}" id="res_${vt.id}_${param.name}" value="${val}" placeholder="${placeholder}" ${readonly} oninput="triggerCalc(${vt.id}, '${catalogItem.code}')" onkeydown="handleEnter(event)">
+                            <label><span>النتيجة</span><span class="range-info">${range} ${unit}</span></label>
+                            <input type="text" id="res_${vt.id}_simple" value="${val}" placeholder="...">
                         </div>
                     `;
-                });
+                }
 
                 const cardHtml = `
                     <div class="test-item">
                         <div class="test-header"><span>${catalogItem.name}</span><span style="font-size:0.8rem; color:#666;">${vt.test_code}</span></div>
                         <div class="test-body">
                             ${inputsHtml}
-                            <div class="btn-row">
-                                <button class="btn-save-test" onclick="saveTestResult(${vt.id}, ${isProfile})">💾 حفظ</button>
-                                <button class="btn-delete-test" onclick="deleteTest(${vt.id})" title="حذف التحليل">🗑️ حذف</button>
-                            </div>
+                            <button class="btn-save-test" onclick="saveTestResult(${vt.id}, ${isProfile})">💾 حفظ</button>
                         </div>
                     </div>
                 `;
@@ -221,69 +255,56 @@
             profileList.innerHTML = profilesHtml || '<div class="empty-msg">لا توجد تحاليل مركبة</div>';
         }
 
-        // 🗑️ دالة الحذف النهائية
-        async function deleteTest(visitTestId) {
-            if (!confirm('هل أنت متأكد من حذف هذا التحليل نهائياً من هذه الزيارة؟')) return;
-            
-            try {
-                // 1. مسح النتيجة المرتبطة بالتحليل (لو موجودة)
-                const { error: resErr } = await _supabase.from('test_results').delete().eq('visit_test_id', visitTestId);
-                if (resErr) console.error("Error deleting result:", resErr);
-
-                // 2. مسح التحليل نفسه من جدول visit_tests
-                const { error: vtErr } = await _supabase.from('visit_tests').delete().eq('id', visitTestId);
-                if (vtErr) throw vtErr;
-
-                alert('✅ تم حذف التحليل بنجاح!');
-                
-                // 3. تحديث البيانات والشاشة
-                await loadData(); 
-            } catch (err) {
-                alert('❌ حدث خطأ أثناء الحذف: ' + err.message);
-            }
-        }
-
-        function handleEnter(e) {
-            if (e.key === 'Enter' || e.key === 'ArrowDown') {
-                e.preventDefault();
-                const inputs = Array.from(document.querySelectorAll('.res-input:not([readonly])'));
-                const index = inputs.indexOf(e.target);
-                if (index > -1 && index < inputs.length - 1) inputs[index + 1].focus();
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                const inputs = Array.from(document.querySelectorAll('.res-input:not([readonly])'));
-                const index = inputs.indexOf(e.target);
-                if (index > 0) inputs[index - 1].focus();
-            }
-        }
-
-        function triggerCalc(visitTestId, testCode) {
-            let vals = {};
-            const inputs = document.querySelectorAll(`[id^="res_${visitTestId}_"]`);
-            inputs.forEach(input => {
-                const pName = input.id.replace(`res_${visitTestId}_`, '');
-                vals[pName] = parseFloat(input.value) || 0;
-            });
-
-            if (testCode === 'CBC') {
-                const hgb = vals['HGB'] || vals['HB'] || vals['Hemoglobin'] || 0;
-                const rbc = vals['RBC'] || vals['RBCs'] || 0;
-                if (hgb > 0 && vals['HCT'] !== undefined) { const hct = hgb * 3; document.getElementById(`res_${visitTestId}_HCT`).value = hct.toFixed(2); vals['HCT'] = hct; }
-                if (vals['HCT'] > 0 && rbc > 0) {
-                    if (vals['MCV'] !== undefined) document.getElementById(`res_${visitTestId}_MCV`).value = ((vals['HCT'] * 10) / rbc).toFixed(2);
-                    if (vals['MCH'] !== undefined) document.getElementById(`res_${visitTestId}_MCH`).value = ((hgb * 10) / rbc).toFixed(2);
+        // محرك الحسابات اللحظي (Live Calculation Engine)
+        function liveCalculate(visitTestId, testCode) {
+            const getVal = (names) => {
+                for(let n of names) {
+                    let el = document.getElementById(`res_${visitTestId}_${safeId(n)}`);
+                    if(el && el.value) return parseFloat(el.value);
                 }
-                if (vals['HCT'] > 0 && hgb > 0 && vals['MCHC'] !== undefined) document.getElementById(`res_${visitTestId}_MCHC`).value = ((hgb * 100) / vals['HCT']).toFixed(2);
+                return 0;
             }
             
-            if (testCode === 'LIPID') {
-                const trig = vals['TRIG'] || vals['Triglycerides'] || 0;
-                const cho = vals['CHO'] || vals['Cholesterol'] || 0;
-                const hdl = vals['HDL'] || 0;
-                if (trig > 0) {
-                    const vldl = trig / 5;
-                    if (vals['VLDL'] !== undefined) document.getElementById(`res_${visitTestId}_VLDL`).value = vldl.toFixed(2);
-                    if (cho > 0 && hdl > 0 && vals['LDL'] !== undefined) document.getElementById(`res_${visitTestId}_LDL`).value = (cho - hdl - vldl).toFixed(2);
+            const setVal = (names, val) => {
+                for(let n of names) {
+                    let el = document.getElementById(`res_${visitTestId}_${safeId(n)}`);
+                    if(el) {
+                        el.value = val;
+                        break;
+                    }
+                }
+            }
+
+            // 1. حسابات صورة الدم (CBC)
+            if(testCode === 'CBC' || testCode === 'TL-035') {
+                const hb = getVal(['HB', 'Hemoglobin', 'HGB']);
+                const rbc = getVal(['RBCs', 'RBC']);
+                
+                if(hb > 0) {
+                    const hct = hb * 3;
+                    setVal(['HCT'], hct.toFixed(1));
+                    
+                    if(rbc > 0) {
+                        const mcv = (hct * 10) / rbc;
+                        const mch = (hb * 10) / rbc;
+                        const mchc = (hb * 100) / hct;
+                        
+                        setVal(['MCV'], mcv.toFixed(1));
+                        setVal(['MCH'], mch.toFixed(1));
+                        setVal(['MCHC'], mchc.toFixed(1));
+                    }
+                }
+            }
+
+            // 2. حسابات السيولة (PT / INR)
+            if(testCode === 'PT' || testCode === 'TL-068') {
+                const ptPat = getVal(['PT Patient', 'PT_PAT']);
+                const ptCon = getVal(['PT Control', 'PT_CON']) || 12.8; 
+                if(ptPat > 0) {
+                    const ratio = ptPat / ptCon;
+                    const inr = Math.pow(ratio, 1.0);
+                    setVal(['PT Ratio', 'PT_RAT'], ratio.toFixed(2));
+                    setVal(['INR', 'PT_INR'], inr.toFixed(2));
                 }
             }
         }
@@ -295,11 +316,11 @@
 
             if (isProfile) {
                 catalogItem.parameters.forEach(param => {
-                    const input = document.getElementById(`res_${visitTestId}_${param.name}`);
+                    const input = document.getElementById(`res_${visitTestId}_${safeId(param.name)}`);
                     if (input && input.value.trim() !== '') resultsData[param.name] = { value: input.value.trim() };
                 });
             } else {
-                const input = document.getElementById(`res_${visitTestId}_result`);
+                const input = document.getElementById(`res_${visitTestId}_simple`);
                 if (input && input.value.trim() !== '') resultsData['result'] = { value: input.value.trim() };
             }
 
@@ -320,7 +341,7 @@
         }
 
         function calcFlag(val, range) {
-            if (!val || !range) return '';
+            if (!val || !range || range === '-') return '';
             const num = parseFloat(val);
             if (isNaN(num)) return '';
             const match = range.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
@@ -336,9 +357,10 @@
             if (!selectedVisitId) return alert('اختر مريضاً أولاً!');
             const visit = allVisits.find(v => v.visit_id === selectedVisitId);
             const vTests = visitTests.filter(vt => vt.visit_id === selectedVisitId);
+            const isFemale = visit.patient.gender === 'female' || visit.patient.gender === 'أنثى';
 
             document.getElementById('reportPatientInfo').innerHTML = `
-                اسم المريض: ${visit.patient.name} | العمر: ${visit.patient.age} | النوع: ${visit.patient.gender}<br>
+                اسم المريض: ${visit.patient.name} | العمر: ${visit.patient.age} | النوع: ${isFemale ? 'أنثى' : 'ذكر'}<br>
                 رقم الزيارة: ${visit.visit_id} | التاريخ: ${new Date(visit.visit_date || Date.now()).toLocaleDateString('ar-EG')}
             `;
 
@@ -351,18 +373,29 @@
                 const result = testResults.find(r => r.visit_test_id === vt.id);
                 const savedData = result ? result.results_data : {};
                 const isProfile = catalogItem.parameters && catalogItem.parameters.length > 0;
-                let paramsList = isProfile ? catalogItem.parameters : [{ name: 'result', label: 'النتيجة', unit: catalogItem.unit, ref_male: catalogItem.reference_range }];
 
-                paramsList.forEach(param => {
-                    const val = savedData[param.name]?.value;
-                    if (val && val.trim() !== '') {
+                if (isProfile) {
+                    catalogItem.parameters.forEach(param => {
+                        const val = savedData[param.name]?.value;
+                        if (val) {
+                            hasResults = true;
+                            let range = isFemale ? (param.ref_female || fallbackRanges[param.name]?.female) : (param.ref_male || fallbackRanges[param.name]?.male);
+                            if (!range) range = param.reference_range || '-';
+                            const unit = param.unit || param.units || '-';
+                            const flag = calcFlag(val, range);
+                            rows += `<tr><td>${param.label || param.name}</td><td>${val} ${flag}</td><td>${unit}</td><td>${range}</td></tr>`;
+                        }
+                    });
+                } else {
+                    const val = savedData['result']?.value;
+                    if (val) {
                         hasResults = true;
-                        const range = param.ref_male || param.reference_range || param.range || catalogItem.reference_range || '-';
-                        const unit = param.unit || param.units || catalogItem.unit || '-';
+                        const range = catalogItem.reference_range || '-';
+                        const unit = catalogItem.unit || '-';
                         const flag = calcFlag(val, range);
-                        rows += `<tr><td>${param.label || param.name}</td><td>${val} ${flag}</td><td>${unit}</td><td>${range}</td></tr>`;
+                        rows += `<tr><td>${catalogItem.name}</td><td>${val} ${flag}</td><td>${unit}</td><td>${range}</td></tr>`;
                     }
-                });
+                }
             });
 
             if (!hasResults) rows = '<tr><td colspan="4" style="text-align:center;">لا توجد نتائج مسجلة</td></tr>';
