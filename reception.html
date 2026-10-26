@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - بوابة الاستقبال (v12.2)</title>
+    <title>معامل طيبة - بوابة الاستقبال (v12.3)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ... (نفس الستايل القديم) ... */
         :root {
             --primary-bg: #f4f7f6; --surface-bg: #ffffff; --primary-color: #2c3e50;
             --accent-color: #3498db; --success-color: #2ecc71; --danger-color: #e74c3c;
@@ -100,7 +99,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (v12.2)</div>
+        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (v12.3)</div>
         <div class="nav-links">
             <button class="nav-btn lab" onclick="window.location.href='lab.html'">🔬 بوابة المعمل</button>
             <button class="nav-btn" onclick="openDailyCases()">📋 حالات اليوم</button>
@@ -472,15 +471,12 @@
         async function deleteVisit(visitId) {
             if(!confirm('هل أنت متأكد من حذف هذه الزيارة نهائياً؟')) return;
             try {
-                // مسح النتايج
                 const { data: vtData } = await _supabase.from('visit_tests').select('id').eq('visit_id', visitId);
                 if (vtData && vtData.length > 0) {
                     const vtIds = vtData.map(v => v.id);
                     await _supabase.from('test_results').delete().in('visit_test_id', vtIds);
                 }
-                // مسح التحاليل
                 await _supabase.from('visit_tests').delete().eq('visit_id', visitId);
-                // مسح الزيارة
                 const { error } = await _supabase.from('visits').delete().eq('visit_id', visitId);
                 
                 if(error) throw error;
@@ -491,7 +487,6 @@
         async function searchPatient() {
             const query = document.getElementById('patientSearch').value.trim();
             if(!query) return;
-            // البحث بالاسم أو التليفون
             const { data, error } = await _supabase.from('patients').select('*').or(`phone.eq.${query},name.ilike.%${query}%`).order('id', {ascending: false});
             if(error) return console.error(error);
             

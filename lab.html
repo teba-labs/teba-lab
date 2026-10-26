@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل الذكي (v26)</title>
+    <title>معامل طيبة - المعمل الذكي (v27)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -58,73 +58,49 @@
         .btn-print { background: var(--success-color); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; }
         .btn-close { background: var(--danger-color); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; }
 
-        /* =========================================
-           تعديلات الطباعة (حل مشكلة الورق الأبيض)
-           ========================================= */
+        /* تنسيقات الطباعة */
         @media print {
-            /* إلغاء قيود الشاشة عشان الورقة تطبع كاملة */
-            body {
-                height: auto !important;
-                overflow: visible !important;
-                display: block !important;
-                background: white !important;
+            html, body { height: auto !important; overflow: visible !important; background: #fff !important; margin: 0; padding: 0; }
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            .modal { position: static !important; display: block !important; background: transparent !important; overflow: visible !important; }
+            .modal-content { position: static !important; display: block !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; border: none !important; box-shadow: none !important; max-height: none !important; overflow: visible !important; }
+            #print-area { position: static !important; width: 100% !important; min-height: auto !important; margin: 0 !important; padding: 0 !important; }
+            .btn-print, .btn-close { display: none !important; }
+            @page { size: A4; margin: 20mm 15mm 15mm 15mm; }
+            
+            .page-break { page-break-before: always; }
+            
+            /* تكرار الهيدر في كل صفحة */
+            .print-header {
+                position: fixed;
+                top: -10mm;
+                left: 0;
+                right: 0;
+                height: 40mm;
+                background: white;
+                z-index: 100;
             }
-
-            /* إخفاء الشاشات والأزرار */
-            header, .main-grid, #toast, .no-print {
-                display: none !important;
+            .print-footer {
+                position: fixed;
+                bottom: -5mm;
+                left: 0;
+                right: 0;
+                height: 20mm;
+                background: white;
+                z-index: 100;
             }
-
-            /* إظهار المودال بشكل طبيعي */
-            .modal {
-                position: absolute !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100% !important;
-                height: auto !important;
-                background: transparent !important;
-                display: block !important;
-                overflow: visible !important;
-                padding: 0 !important;
-                margin: 0 !important;
+            .print-content {
+                margin-top: 45mm;
+                margin-bottom: 20mm;
             }
-
-            .modal-content {
-                padding: 0 !important;
-                margin: 0 !important;
-                box-shadow: none !important;
-                border: none !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                max-height: none !important;
-                overflow: visible !important;
-                border-radius: 0 !important;
-            }
-
-            /* إظهار التقرير */
-            #print-area {
-                display: block !important;
-                width: 100% !important;
-                min-height: auto !important;
-            }
-
-            /* الحفاظ على الألوان */
-            * {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-
-            .page-break {
-                page-break-before: always !important;
-            }
-            @page { size: A4; margin: 10mm; }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v26)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v27)</div>
         <div>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
@@ -150,51 +126,58 @@
 
     <div class="modal" id="printModal">
         <div class="modal-content">
-            <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; background: #fff; position: relative; overflow: hidden; min-height: 800px;">
+            <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; background: #fff; position: relative; min-height: 800px;">
                 
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; z-index: 2; position: relative;">
-                    <div style="width: 50%; text-align: left;">
-                        <h1 style="margin: 0; color: #000; font-size: 28px; font-weight: 900; letter-spacing: 1px;">TEBA LABS</h1>
-                        <p style="margin: 4px 0 0 0; font-size: 15px; font-weight: 600; color: #000;">For Medical Analyzes</p>
-                        <p style="margin: 2px 0 0 0; font-size: 14px; color: #333;">Dr. Ahmed Taha Abonda</p>
+                <!-- الهيدر (هيتكرر في كل صفحة) -->
+                <div class="print-header">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px;">
+                        <div style="width: 50%; text-align: left;">
+                            <h1 style="margin: 0; color: #000; font-size: 26px; font-weight: 900; letter-spacing: 1px;">TEBA LABS</h1>
+                            <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 600; color: #000;">For Medical Analyzes</p>
+                            <p style="margin: 2px 0 0 0; font-size: 13px; color: #333;">Dr. Ahmed Taha Abonda</p>
+                        </div>
+                        <div style="width: 50%; display: flex; justify-content: flex-end;">
+                            <img src="header.png" alt="TEBA LABS" style="max-height: 80px; object-fit: contain;">
+                        </div>
                     </div>
-                    <div style="width: 50%; display: flex; justify-content: flex-end;">
-                        <img src="header.png" alt="TEBA LABS" style="max-height: 100px; object-fit: contain;">
+
+                    <div style="display: flex; justify-content: space-between; border: 1px solid #000; padding: 8px 15px; border-radius: 4px; background: #fff; font-size: 12px; margin-top: 10px;">
+                        <div style="width: 50%; display: flex; flex-direction: column; gap: 4px;">
+                            <div><strong style="color: #000; display: inline-block; width: 90px;">Patient:</strong> <span id="pNamePrint" style="font-weight: bold; color: #000;"></span></div>
+                            <div><strong style="color: #000; display: inline-block; width: 90px;">Age/Gender:</strong> <span id="pAgeGenderPrint" style="font-weight: bold;"></span></div>
+                        </div>
+                        <div style="width: 50%; display: flex; flex-direction: column; gap: 4px; text-align: right; border-left: 1px solid #000; padding-left: 15px;">
+                            <div><strong style="color: #000; display: inline-block; width: 90px;">Visit ID:</strong> <span id="vIdPrint" style="font-weight: bold;"></span></div>
+                            <div><strong style="color: #000; display: inline-block; width: 90px;">Request Date:</strong> <span id="vReqDatePrint" style="font-weight: bold;"></span></div>
+                            <div><strong style="color: #000; display: inline-block; width: 90px;">Print Date:</strong> <span id="vPrintDatePrint" style="font-weight: bold;"></span></div>
+                        </div>
                     </div>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; border: 1.5px solid #000; padding: 12px 20px; border-radius: 4px; background: #fff; font-size: 14px; margin-bottom: 25px; z-index: 2; position: relative;">
-                    <div style="width: 50%; display: flex; flex-direction: column; gap: 8px;">
-                        <div><strong style="color: #000; display: inline-block; width: 110px;">Patient:</strong> <span id="pNamePrint" style="font-weight: bold; color: #000;"></span></div>
-                        <div><strong style="color: #000; display: inline-block; width: 110px;">Age/Gender:</strong> <span id="pAgeGenderPrint" style="font-weight: bold;"></span></div>
-                    </div>
-                    <div style="width: 50%; display: flex; flex-direction: column; gap: 8px; text-align: right; border-left: 1.5px solid #000; padding-left: 15px;">
-                        <div><strong style="color: #000; display: inline-block; width: 100px;">Visit ID:</strong> <span id="vIdPrint" style="font-weight: bold;"></span></div>
-                        <div><strong style="color: #000; display: inline-block; width: 100px;">Request Date:</strong> <span id="vReqDatePrint" style="font-weight: bold;"></span></div>
-                        <div><strong style="color: #000; display: inline-block; width: 100px;">Print Date:</strong> <span id="vPrintDatePrint" style="font-weight: bold;"></span></div>
+                <!-- الفوتر -->
+                <div class="print-footer">
+                    <div style="border-top: 1px solid #000; padding-top: 10px; font-size: 11px; display: flex; justify-content: space-between;">
+                        <div style="width: 40%; text-align: left; direction: ltr;">
+                            <p style="margin: 2px 0; font-weight: bold;">Tel: 01123702062</p>
+                            <p style="margin: 2px 0; font-weight: bold;">WhatsApp: 01099003494</p>
+                        </div>
+                        <div style="width: 60%; text-align: right; direction: rtl; font-weight: bold;">
+                            <p style="margin: 2px 0;">الفرع الأول: الجعافرة - الطريق العمومي - أعلى صيدلية الصحابة</p>
+                            <p style="margin: 2px 0;">الفرع الثاني: بهتيم - مساكن اسكو - أمام مدرسة ابن الخطاب - عيادة د. محمد رمضان</p>
+                        </div>
                     </div>
                 </div>
 
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; opacity: 0.02; pointer-events: none; z-index: 0;">
+                <!-- الخلفية المائية -->
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; opacity: 0.03; pointer-events: none; z-index: -1;">
                     <img src="logo.png" alt="watermark" style="width: 60%; transform: rotate(-15deg);">
                 </div>
 
-                <div id="reportTableBody" style="position: relative; z-index: 2;"></div>
-
-                <div style="margin-top: 50px; border-top: 2px solid #000; padding-top: 15px; font-size: 12px; z-index: 2; position: relative; display: flex; justify-content: space-between;">
-                    <div style="width: 40%; text-align: left; direction: ltr;">
-                        <p style="margin: 4px 0; font-weight: bold; font-size: 14px; color: #000;">Tel: 01123702062</p>
-                        <p style="margin: 4px 0; font-weight: bold; font-size: 14px; color: #000;">WhatsApp: 01099003494</p>
-                    </div>
-                    <div style="width: 60%; text-align: right; direction: rtl; color: #000; font-weight: bold;">
-                        <p style="margin: 4px 0;">الفرع الأول: الجعافرة - الطريق العمومي - أعلى صيدلية الصحابة</p>
-                        <p style="margin: 4px 0;">الفرع الثاني: بهتيم - مساكن اسكو - أمام مدرسة ابن الخطاب - عيادة د. محمد رمضان</p>
-                    </div>
-                </div>
+                <!-- محتوى التحاليل -->
+                <div id="reportTableBody" class="print-content"></div>
 
             </div>
-            <!-- ضفنا كلاس no-print عشان نخفي الأزرار دي في الطباعة -->
-            <div class="no-print" style="display: flex; gap: 10px; margin-top: 15px;">
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
                 <button class="btn-print" onclick="window.print()">🖨️ Print Now</button>
                 <button class="btn-close" onclick="closePrintModal()">Close</button>
             </div>
@@ -259,14 +242,7 @@
             if (isLipid) {
                 if (!Array.isArray(params)) params = [];
                 params = params.filter(p => !p.name.toLowerCase().includes('ldl'));
-                params.push({ 
-                    name: 'LDL', 
-                    label: 'LDL (Calc)', 
-                    unit: 'mg/dL', 
-                    ref_male: '0 - 130', 
-                    ref_female: '0 - 130', 
-                    is_calc: true 
-                });
+                params.push({ name: 'LDL', label: 'LDL (Calc)', unit: 'mg/dL', ref_male: '0 - 130', ref_female: '0 - 130', is_calc: true });
             }
             return params;
         }
@@ -429,7 +405,6 @@
                 let calcVal = null;
                 let formula = p.formula;
                 let pn = p.name.toLowerCase();
-
                 let hb = vals['Hemoglobin'] || vals['HGB'] || vals['HB'] || vals['Hb'];
                 let rbc = vals['RBCs'] || vals['RBC'] || vals['RBCs'];
                 let hct = vals['HCT'] || vals['Hct'];
@@ -451,10 +426,7 @@
                         for (let v of vars) {
                             let valToUse = undefined;
                             for (let key in vals) {
-                                if (key.toLowerCase() === v.toLowerCase()) {
-                                    valToUse = vals[key];
-                                    break;
-                                }
+                                if (key.toLowerCase() === v.toLowerCase()) { valToUse = vals[key]; break; }
                             }
                             if (valToUse === undefined) { hasAllVars = false; break; }
                             evalStr = evalStr.replace(new RegExp('\\b' + v + '\\b', 'g'), valToUse);
@@ -466,10 +438,7 @@
 
                 if (calcVal !== null && isFinite(calcVal) && calcVal >= 0) {
                     const input = document.getElementById(`res_${visitTestId}_${p.name}`);
-                    if (input) {
-                        input.value = parseFloat(calcVal.toFixed(1));
-                        vals[p.name] = calcVal;
-                    }
+                    if (input) { input.value = parseFloat(calcVal.toFixed(1)); vals[p.name] = calcVal; }
                 }
             });
         }
@@ -478,7 +447,6 @@
             const vt = visitTests.find(v => v.id === visitTestId);
             const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { code: vt.test_code, parameters: [] };
             const params = getSmartParams(catalogItem);
-            
             let resultsData = {};
 
             if (isProfile) {
@@ -497,8 +465,7 @@
             }
 
             const { error } = await _supabase.from('test_results').upsert({
-                visit_test_id: visitTestId,
-                results_data: resultsData
+                visit_test_id: visitTestId, results_data: resultsData
             }, { onConflict: 'visit_test_id' });
 
             if (error) return alert('خطأ: ' + error.message);
@@ -513,7 +480,6 @@
 
         async function deleteTestResult(visitTestId) {
             if(!confirm('هل أنت متأكد من حذف نتيجة هذا التحليل؟')) return;
-            
             const { error } = await _supabase.from('test_results').delete().eq('visit_test_id', visitTestId);
             if(error) return alert('خطأ في الحذف: ' + error.message);
 
@@ -522,7 +488,6 @@
 
             const card = document.getElementById(`card_${visitTestId}`);
             if(card) card.querySelectorAll('input').forEach(input => input.value = '');
-            
             showToast('🗑️ تم الحذف');
         }
 
@@ -550,9 +515,21 @@
             vTests.forEach(vt => {
                 const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, code: vt.test_code, parameters: [] };
                 const result = testResults.find(r => r.visit_test_id === vt.id);
-                const savedData = result ? result.results_data : {};
+                const savedData = result ? JSON.parse(JSON.stringify(result.results_data)) : {};
                 const params = getSmartParams(catalogItem);
                 const isProfile = params.length > 1 || (params.length === 1 && params[0].name !== 'Result');
+
+                // حساب الـ LDL لو الدهون (فقط للطباعة)
+                if (isProfile && catalogItem.name.toUpperCase().includes('LIPID')) {
+                    let cho = parseFloat(savedData['Total Cholesterol']?.value || savedData['CHO']?.value || 0);
+                    let hdl = parseFloat(savedData['HDL']?.value || 0);
+                    let trig = parseFloat(savedData['Triglycerides']?.value || savedData['TRIG']?.value || 0);
+                    if (cho && hdl) {
+                        let vldl = trig ? (trig / 5) : (parseFloat(savedData['VLDL']?.value) || 0);
+                        let ldl = cho - hdl - vldl;
+                        if (ldl > 0) savedData['LDL'] = { value: ldl.toFixed(1) };
+                    }
+                }
 
                 let hasTestData = false;
                 let testRows = '';
@@ -561,8 +538,7 @@
                     params.forEach(param => {
                         const val = savedData[param.name]?.value;
                         if (val) {
-                            hasResults = true;
-                            hasTestData = true;
+                            hasResults = true; hasTestData = true;
                             const range = param.ref_male || param.reference_range || param.range || '-';
                             const unit = param.unit || param.units || '-';
                             
@@ -587,8 +563,7 @@
                 } else {
                     const val = savedData['result']?.value;
                     if (val) {
-                        hasResults = true;
-                        hasTestData = true;
+                        hasResults = true; hasTestData = true;
                         const p = params[0] || {};
                         const range = p.ref_male || catalogItem.reference_range || '-';
                         const unit = p.unit || catalogItem.unit || '-';
@@ -618,15 +593,15 @@
 
                     profilesHtml += `
                         <div style="${pageBreakStyle} margin-bottom: 25px;">
-                            <h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000; border-radius: 0 4px 4px 0;">${catalogItem.name}</h3>
+                            <h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000;">${catalogItem.name}</h3>
                             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                                 <thead>
                                     <tr style="background: #000; color: #fff;">
-                                        <th style="padding: 8px 6px; text-align:left; border-radius: 4px 0 0 0;">Test Name</th>
+                                        <th style="padding: 8px 6px; text-align:left;">Test Name</th>
                                         <th style="padding: 8px 6px; text-align:center;">Result</th>
                                         <th style="padding: 8px 6px; text-align:center;">State</th>
                                         <th style="padding: 8px 6px; text-align:center;">Unit</th>
-                                        <th style="padding: 8px 6px; text-align:center; border-radius: 0 4px 0 0;">Ref. Range</th>
+                                        <th style="padding: 8px 6px; text-align:center;">Ref. Range</th>
                                     </tr>
                                 </thead>
                                 <tbody>${testRows}</tbody>
@@ -640,15 +615,15 @@
             if (singlesRows) {
                 finalHtml += `
                     <div style="margin-bottom: 25px;">
-                        <h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000; border-radius: 0 4px 4px 0;">Single Tests</h3>
+                        <h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000;">SINGLE TESTS</h3>
                         <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                             <thead>
                                 <tr style="background: #000; color: #fff;">
-                                    <th style="padding: 8px 6px; text-align:left; border-radius: 4px 0 0 0;">Test Name</th>
+                                    <th style="padding: 8px 6px; text-align:left;">Test Name</th>
                                     <th style="padding: 8px 6px; text-align:center;">Result</th>
                                     <th style="padding: 8px 6px; text-align:center;">State</th>
                                     <th style="padding: 8px 6px; text-align:center;">Unit</th>
-                                    <th style="padding: 8px 6px; text-align:center; border-radius: 0 4px 0 0;">Ref. Range</th>
+                                    <th style="padding: 8px 6px; text-align:center;">Ref. Range</th>
                                 </tr>
                             </thead>
                             <tbody>${singlesRows}</tbody>
