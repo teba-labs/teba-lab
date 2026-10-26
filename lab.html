@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل الذكي (v24)</title>
+    <title>معامل طيبة - المعمل الذكي (v25)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -61,18 +61,21 @@
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
-            #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0;}
+            #print-area { position: static; width: 100%; padding: 0; margin: 0; }
+            .modal { position: static; background: transparent; overflow: visible; display: block !important; }
+            .modal-content { box-shadow: none; padding: 0; max-height: none; overflow: visible; border: none; width: 100%; max-width: 100%; }
             .btn-print, .btn-close { display: none !important; }
-            .modal { position: absolute; background: transparent; }
-            .modal-content { box-shadow: none; padding: 0; max-height: none; overflow: visible; }
             @page { size: A4; margin: 15mm; }
+            
+            .page-break { page-break-before: always; }
+            .no-break { page-break-inside: avoid; }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v24)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v25)</div>
         <div>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
@@ -96,26 +99,21 @@
         </div>
     </div>
 
-    <!-- مودال الطباعة (LTR) -->
     <div class="modal" id="printModal">
         <div class="modal-content">
             <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; background: #fff; position: relative; overflow: hidden; min-height: 800px;">
                 
-                <!-- الهيدر -->
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; z-index: 2; position: relative;">
-                    <!-- النص الإنجليزي على الشمال -->
                     <div style="width: 50%; text-align: left;">
                         <h1 style="margin: 0; color: #000; font-size: 28px; font-weight: 900; letter-spacing: 1px;">TEBA LABS</h1>
                         <p style="margin: 4px 0 0 0; font-size: 15px; font-weight: 600; color: #000;">For Medical Analyzes</p>
                         <p style="margin: 2px 0 0 0; font-size: 14px; color: #333;">Dr. Ahmed Taha Abonda</p>
                     </div>
-                    <!-- اللوجو العربي على اليمين -->
                     <div style="width: 50%; display: flex; justify-content: flex-end;">
                         <img src="header.png" alt="TEBA LABS" style="max-height: 100px; object-fit: contain;">
                     </div>
                 </div>
 
-                <!-- بيانات المريض -->
                 <div style="display: flex; justify-content: space-between; border: 1.5px solid #000; padding: 12px 20px; border-radius: 4px; background: #fff; font-size: 14px; margin-bottom: 25px; z-index: 2; position: relative;">
                     <div style="width: 50%; display: flex; flex-direction: column; gap: 8px;">
                         <div><strong style="color: #000; display: inline-block; width: 110px;">Patient:</strong> <span id="pNamePrint" style="font-weight: bold; color: #000;"></span></div>
@@ -128,22 +126,17 @@
                     </div>
                 </div>
 
-                <!-- الخلفية المائية -->
                 <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; opacity: 0.02; pointer-events: none; z-index: 0;">
                     <img src="logo.png" alt="watermark" style="width: 60%; transform: rotate(-15deg);">
                 </div>
 
-                <!-- منطقة التحاليل -->
                 <div id="reportTableBody" style="position: relative; z-index: 2;"></div>
 
-                <!-- الفوتر -->
                 <div style="margin-top: 50px; border-top: 2px solid #000; padding-top: 15px; font-size: 12px; z-index: 2; position: relative; display: flex; justify-content: space-between;">
-                    <!-- التليفونات على الشمال -->
                     <div style="width: 40%; text-align: left; direction: ltr;">
                         <p style="margin: 4px 0; font-weight: bold; font-size: 14px; color: #000;">Tel: 01123702062</p>
                         <p style="margin: 4px 0; font-weight: bold; font-size: 14px; color: #000;">WhatsApp: 01099003494</p>
                     </div>
-                    <!-- الفروع بالعربي على اليمين -->
                     <div style="width: 60%; text-align: right; direction: rtl; color: #000; font-weight: bold;">
                         <p style="margin: 4px 0;">الفرع الأول: الجعافرة - الطريق العمومي - أعلى صيدلية الصحابة</p>
                         <p style="margin: 4px 0;">الفرع الثاني: بهتيم - مساكن اسكو - أمام مدرسة ابن الخطاب - عيادة د. محمد رمضان</p>
@@ -209,22 +202,25 @@
             `).join('');
         }
 
-        // دالة مساعدة لضمان ظهور LDL في الدهون
         function getSmartParams(catalogItem) {
             let params = catalogItem.parameters ? JSON.parse(JSON.stringify(catalogItem.parameters)) : [];
             const isLipid = (catalogItem.name && catalogItem.name.toUpperCase().includes('LIPID')) || catalogItem.code === 'TL-062';
             
             if (isLipid) {
-                if (!params.find(p => p.name.toLowerCase().includes('ldl'))) {
-                    params.push({ 
-                        name: 'LDL', 
-                        label: 'LDL (Calc)', 
-                        unit: 'mg/dL', 
-                        ref_male: '0 - 130', 
-                        ref_female: '0 - 130', 
-                        is_calc: true 
-                    });
-                }
+                if (!Array.isArray(params)) params = [];
+                
+                // شيل أي LDL قديم عشان نضيف التلقائي
+                params = params.filter(p => !p.name.toLowerCase().includes('ldl'));
+
+                // ضيف الـ LDL التلقائي
+                params.push({ 
+                    name: 'LDL', 
+                    label: 'LDL (Calc)', 
+                    unit: 'mg/dL', 
+                    ref_male: '0 - 130', 
+                    ref_female: '0 - 130', 
+                    is_calc: true 
+                });
             }
             return params;
         }
@@ -260,7 +256,7 @@
                         const unit = param.unit || param.units || '';
                         const range = param.ref_male || param.reference_range || param.range || '-';
                         
-                        const isCalc = param.is_calc === true || param.is_calculated === true || (param.formula && param.formula.length > 0) || param.name === 'LDL';
+                        const isCalc = param.is_calc === true || param.is_calculated === true || param.name === 'LDL';
                         const readonly = isCalc ? 'readonly' : '';
                         const calcClass = isCalc ? 'input-calc' : '';
                         const placeholder = isCalc ? 'تلقائى' : '...';
@@ -316,13 +312,13 @@
         }
 
         function handleEnter(e, el, vtId, isProfile) {
-            if (e.key === 'Enter') {
+            let form = el.closest('.test-body');
+            let inputs = Array.from(form.querySelectorAll('input:not([readonly])'));
+            let index = inputs.indexOf(el);
+
+            if (e.key === 'Enter' || e.key === 'ArrowDown') {
                 e.preventDefault();
-                saveTestResult(vtId, isProfile, true);
-                
-                let form = el.closest('.test-body');
-                let inputs = Array.from(form.querySelectorAll('input:not([readonly])'));
-                let index = inputs.indexOf(el);
+                if (e.key === 'Enter') saveTestResult(vtId, isProfile, true);
                 
                 if (index > -1 && index < inputs.length - 1) {
                     inputs[index + 1].focus();
@@ -332,6 +328,18 @@
                     if (cardIndex > -1 && cardIndex < allCards.length - 1) {
                         let nextInput = allCards[cardIndex + 1].querySelector('input:not([readonly])');
                         if (nextInput) nextInput.focus();
+                    }
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (index > 0) {
+                    inputs[index - 1].focus();
+                } else {
+                    let allCards = Array.from(document.querySelectorAll('.test-item'));
+                    let cardIndex = allCards.indexOf(el.closest('.test-item'));
+                    if (cardIndex > 0) {
+                        let prevInputs = allCards[cardIndex - 1].querySelectorAll('input:not([readonly])');
+                        if (prevInputs.length > 0) prevInputs[prevInputs.length - 1].focus();
                     }
                 }
             }
@@ -352,6 +360,28 @@
                 }
             });
 
+            // حساب VLDL أولاً
+            let trig = vals['Triglycerides'] || vals['TRIG'] || vals['Trig'];
+            let vldlInput = document.getElementById(`res_${visitTestId}_VLDL`);
+            if (trig !== undefined && vldlInput) {
+                let vldlVal = trig / 5;
+                vldlInput.value = vldlVal.toFixed(1);
+                vals['VLDL'] = vldlVal;
+            }
+
+            // حساب LDL
+            let cho = vals['Total Cholesterol'] || vals['CHO'] || vals['Cholesterol'];
+            let hdl = vals['HDL'] || vals['Hdl'];
+            let vldl = vals['VLDL'];
+            let ldlInput = document.getElementById(`res_${visitTestId}_LDL`);
+            
+            if (cho !== undefined && hdl !== undefined && vldl !== undefined && ldlInput) {
+                let ldlVal = cho - hdl - vldl;
+                if (ldlVal < 0) ldlVal = 0;
+                ldlInput.value = ldlVal.toFixed(1);
+            }
+
+            // باقي الحسابات (لو موجودة)
             params.forEach(p => {
                 let calcVal = null;
                 let formula = p.formula;
@@ -360,28 +390,14 @@
                 let hb = vals['Hemoglobin'] || vals['HGB'] || vals['HB'] || vals['Hb'];
                 let rbc = vals['RBCs'] || vals['RBC'] || vals['RBCs'];
                 let hct = vals['HCT'] || vals['Hct'];
-                let trig = vals['Triglycerides'] || vals['TRIG'] || vals['Trig'];
-                let cho = vals['Total Cholesterol'] || vals['CHO'] || vals['Cholesterol'];
-                let hdl = vals['HDL'] || vals['Hdl'];
-                let vldl = vals['VLDL'];
 
                 if (!formula) {
-                    if (pn.includes('ldl') && cho !== undefined && hdl !== undefined) {
-                        let vldlVal = vldl !== undefined ? vldl : (trig !== undefined ? trig / 5 : 0);
-                        calcVal = cho - hdl - vldlVal;
-                    } else if (pn.includes('vldl') && trig !== undefined) {
-                        calcVal = trig / 5;
-                    } else if (pn === 'hct' && hb !== undefined) {
-                        calcVal = hb * 3;
-                    } else if (pn === 'mcv' && hct !== undefined && rbc !== undefined && rbc > 0) {
-                        calcVal = (hct * 10) / rbc;
-                    } else if (pn === 'mch' && hb !== undefined && rbc !== undefined && rbc > 0) {
-                        calcVal = (hb * 10) / rbc;
-                    } else if (pn === 'mchc' && hb !== undefined && hct !== undefined && hct > 0) {
-                        calcVal = (hb * 100) / hct;
-                    }
+                    if (pn === 'hct' && hb !== undefined) calcVal = hb * 3;
+                    else if (pn === 'mcv' && hct !== undefined && rbc !== undefined && rbc > 0) calcVal = (hct * 10) / rbc;
+                    else if (pn === 'mch' && hb !== undefined && rbc !== undefined && rbc > 0) calcVal = (hb * 10) / rbc;
+                    else if (pn === 'mchc' && hb !== undefined && hct !== undefined && hct > 0) calcVal = (hb * 100) / hct;
                 }
-
+                
                 if (formula) {
                     try {
                         let evalStr = formula;
@@ -397,16 +413,11 @@
                                     break;
                                 }
                             }
-                            if (valToUse === undefined) {
-                                hasAllVars = false;
-                                break;
-                            }
+                            if (valToUse === undefined) { hasAllVars = false; break; }
                             evalStr = evalStr.replace(new RegExp('\\b' + v + '\\b', 'g'), valToUse);
                         }
                         
-                        if (hasAllVars) {
-                            calcVal = Function('"use strict";return (' + evalStr + ')')();
-                        }
+                        if (hasAllVars) calcVal = Function('"use strict";return (' + evalStr + ')')();
                     } catch(e) {}
                 }
 
@@ -477,11 +488,8 @@
             const visit = allVisits.find(v => v.visit_id === selectedVisitId);
             const vTests = visitTests.filter(vt => vt.visit_id === selectedVisitId);
 
-            // تجهيز التواريخ
             const reqDate = visit.visit_date ? new Date(visit.visit_date) : new Date();
             const printDate = new Date();
-
-            // تنسيق التاريخ (DD-MMM-YYYY)
             const options = { day: '2-digit', month: 'short', year: 'numeric' };
             
             document.getElementById('pNamePrint').innerText = visit.patient.name || 'Unknown';
@@ -491,8 +499,10 @@
             document.getElementById('vPrintDatePrint').innerText = printDate.toLocaleDateString('en-GB', options);
 
             const tbody = document.getElementById('reportTableBody');
-            let rows = '';
+            let singlesRows = '';
+            let profilesHtml = '';
             let hasResults = false;
+            let isFirstProfile = true;
 
             vTests.forEach(vt => {
                 const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, code: vt.test_code, parameters: [] };
@@ -518,7 +528,6 @@
                             const match = range.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
                             if (!isNaN(num) && match) {
                                 const min = parseFloat(match[1]), max = parseFloat(match[2]);
-                                // تنسيق الأبيض والأسود (إطار أسود وخط عريض)
                                 if (num < min) flagStr = '<span style="border: 1px solid #000; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #000; display: inline-block;">Low</span>';
                                 else if (num > max) flagStr = '<span style="border: 1px solid #000; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #000; display: inline-block;">High</span>';
                             }
@@ -550,7 +559,7 @@
                             else if (num > max) flagStr = '<span style="border: 1px solid #000; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #000; display: inline-block;">High</span>';
                         }
 
-                        testRows += `<tr>
+                        singlesRows += `<tr>
                             <td style="border-bottom: 1px solid #ccc; padding: 8px 6px;">${catalogItem.name}</td>
                             <td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center; font-weight:bold; color: #000;">${val}</td>
                             <td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${flagStr}</td>
@@ -560,9 +569,13 @@
                     }
                 }
 
-                if (hasTestData) {
-                    rows += `
-                        <div style="margin-bottom: 25px; page-break-inside: avoid;">
+                if (isProfile && hasTestData) {
+                    // كل بروفايل يبدأ في صفحة جديدة (ماعدا أول واحد لو مفيش تحاليل فردية)
+                    let pageBreakStyle = (isFirstProfile && !singlesRows) ? '' : 'page-break-before: always;';
+                    isFirstProfile = false;
+
+                    profilesHtml += `
+                        <div style="${pageBreakStyle} margin-bottom: 25px;">
                             <h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000; border-radius: 0 4px 4px 0;">${catalogItem.name}</h3>
                             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                                 <thead>
@@ -581,9 +594,33 @@
                 }
             });
 
-            if (!hasResults) rows = '<p style="text-align:center; font-weight:bold; margin-top:50px;">No results recorded for this visit.</p>';
+            let finalHtml = '';
+            if (singlesRows) {
+                // التحاليل الفردية في جدول واحد (ولو كتير هتاخد صفحة أو اتنين طبيعي)
+                finalHtml += `
+                    <div style="margin-bottom: 25px;">
+                        <h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000; border-radius: 0 4px 4px 0;">Single Tests</h3>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <thead>
+                                <tr style="background: #000; color: #fff;">
+                                    <th style="padding: 8px 6px; text-align:left; border-radius: 4px 0 0 0;">Test Name</th>
+                                    <th style="padding: 8px 6px; text-align:center;">Result</th>
+                                    <th style="padding: 8px 6px; text-align:center;">State</th>
+                                    <th style="padding: 8px 6px; text-align:center;">Unit</th>
+                                    <th style="padding: 8px 6px; text-align:center; border-radius: 0 4px 0 0;">Ref. Range</th>
+                                </tr>
+                            </thead>
+                            <tbody>${singlesRows}</tbody>
+                        </table>
+                    </div>
+                `;
+            }
 
-            tbody.innerHTML = rows;
+            finalHtml += profilesHtml;
+
+            if (!hasResults) finalHtml = '<p style="text-align:center; font-weight:bold; margin-top:50px;">No results recorded for this visit.</p>';
+
+            tbody.innerHTML = finalHtml;
             document.getElementById('printModal').style.display = 'flex';
         }
 

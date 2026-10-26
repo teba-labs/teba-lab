@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - بوابة الاستقبال (V14)</title>
+    <title>معامل طيبة - بوابة الاستقبال (v12.2)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        /* ... (نفس الستايل القديم) ... */
         :root {
             --primary-bg: #f4f7f6; --surface-bg: #ffffff; --primary-color: #2c3e50;
             --accent-color: #3498db; --success-color: #2ecc71; --danger-color: #e74c3c;
@@ -64,6 +65,7 @@
 
         .catalog-actions { padding: 10px; border-bottom: 1px solid var(--border-color); display: flex; gap: 5px;}
         .ai-btn { background: var(--ai-color); color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; display: flex; justify-content: center; align-items: center; gap: 5px;}
+        .ai-btn:hover { background: #8e44ad; }
         
         .catalog-search { padding: 10px; border-bottom: 1px solid var(--border-color); }
         .catalog-search input { width: 100%; padding: 10px; border: 2px solid var(--accent-color); border-radius: 6px; font-size: 1rem; outline: none;}
@@ -77,9 +79,10 @@
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px; border-radius: 8px; width: 80%; max-width: 900px; display: flex; flex-direction: column; gap: 15px; max-height: 90vh; overflow-y: auto;}
         .close-modal { background: var(--danger-color); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; align-self: flex-end;}
+        
         .data-table { width: 100%; border-collapse: collapse; text-align: right; font-size: 0.9rem; }
         .data-table th, .data-table td { padding: 10px; border-bottom: 1px solid var(--border-color); }
-        .data-table th { background: #f8f9fa; }
+        .data-table th { background: #f8f9fa; position: sticky; top: 0; z-index: 1; }
 
         .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--success-color); color: white; padding: 15px 30px; border-radius: 8px; font-weight: bold; box-shadow: var(--shadow-md); display: none; z-index: 1000; }
         .toast.error { background: var(--danger-color); }
@@ -97,7 +100,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (V14)</div>
+        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (v12.2)</div>
         <div class="nav-links">
             <button class="nav-btn lab" onclick="window.location.href='lab.html'">🔬 بوابة المعمل</button>
             <button class="nav-btn" onclick="openDailyCases()">📋 حالات اليوم</button>
@@ -117,7 +120,7 @@
                 </div>
                 <div class="form-group">
                     <label>اسم المريض (مطلوب)</label>
-                    <input type="text" id="pName" placeholder="الاسم بالكامل" onkeydown="moveToNext(event, 'pPhone')" autofocus>
+                    <input type="text" id="pName" placeholder="الاسم بالكامل" onkeydown="moveToNext(event, 'pPhone')">
                 </div>
                 <div class="form-group">
                     <label>رقم التليفون</label>
@@ -186,7 +189,7 @@
                 <button class="ai-btn" onclick="alert('ميزة الذكاء الاصطناعي جاهزة للربط (قريباً)')">📷 مسح روشتة (AI)</button>
             </div>
             <div class="catalog-search">
-                <input type="text" id="catalogSearch" placeholder="ابحث (أو امسح الباركود)..." onkeyup="filterCatalog()" onkeydown="handleCatalogKeyDown(event)">
+                <input type="text" id="catalogSearch" placeholder="ابحث واضغط Enter..." onkeyup="filterCatalog()" onkeydown="handleCatalogKeyDown(event)">
             </div>
             <div class="catalog-grid" id="catalogGrid"></div>
         </div>
@@ -198,7 +201,9 @@
             <h3>📋 حالات اليوم</h3>
             <table class="data-table">
                 <thead>
-                    <tr><th>رقم الزيارة</th><th>المريض</th><th>التاريخ</th><th>الصافي</th><th>الباقي</th><th>الحالة</th><th>إجراء</th></tr>
+                    <tr>
+                        <th>رقم الزيارة</th><th>المريض</th><th>التاريخ</th><th>الصافي</th><th>الباقي</th><th>الحالة</th><th>إجراء</th>
+                    </tr>
                 </thead>
                 <tbody id="dailyCasesBody"></tbody>
             </table>
@@ -292,7 +297,7 @@
                     firstBtn.click();
                     document.getElementById('catalogSearch').value = '';
                     renderCatalog();
-                    document.getElementById('catalogSearch').focus(); // تظبيط المسح
+                    document.getElementById('catalogSearch').focus();
                 }
             } else if (event.key === 'Escape') {
                 document.getElementById('catalogSearch').value = '';
@@ -380,7 +385,6 @@
                     window.location.href = 'lab.html';
                 } else {
                     resetForm();
-                    document.getElementById('pName').focus(); // رجوع المؤشر لأول خانة
                 }
             } catch (error) {
                 showToast('❌ حدث خطأ: ' + error.message, true);
@@ -468,7 +472,17 @@
         async function deleteVisit(visitId) {
             if(!confirm('هل أنت متأكد من حذف هذه الزيارة نهائياً؟')) return;
             try {
+                // مسح النتايج
+                const { data: vtData } = await _supabase.from('visit_tests').select('id').eq('visit_id', visitId);
+                if (vtData && vtData.length > 0) {
+                    const vtIds = vtData.map(v => v.id);
+                    await _supabase.from('test_results').delete().in('visit_test_id', vtIds);
+                }
+                // مسح التحاليل
+                await _supabase.from('visit_tests').delete().eq('visit_id', visitId);
+                // مسح الزيارة
                 const { error } = await _supabase.from('visits').delete().eq('visit_id', visitId);
+                
                 if(error) throw error;
                 alert('تم حذف الزيارة بنجاح'); openDailyCases(); 
             } catch(err) { alert('حدث خطأ: ' + err.message); }
@@ -477,23 +491,23 @@
         async function searchPatient() {
             const query = document.getElementById('patientSearch').value.trim();
             if(!query) return;
-            const { data, error } = await _supabase.from('patients').select('*').or(`phone.eq.${query},name.ilike.%${query}%`).limit(1);
+            // البحث بالاسم أو التليفون
+            const { data, error } = await _supabase.from('patients').select('*').or(`phone.eq.${query},name.ilike.%${query}%`).order('id', {ascending: false});
             if(error) return console.error(error);
+            
             if(data && data.length > 0) {
-                document.getElementById('pName').value = data[0].name;
-                document.getElementById('pPhone').value = data[0].phone;
-                document.getElementById('pAge').value = data[0].age;
-                document.getElementById('pGender').value = data[0].gender;
-                document.getElementById('pDoctor').value = data[0].doctor_name || '';
-            } else { alert('لم يتم العثور على مريض'); }
+                const p = data[0];
+                document.getElementById('pName').value = p.name;
+                document.getElementById('pPhone').value = p.phone;
+                document.getElementById('pAge').value = p.age;
+                document.getElementById('pGender').value = p.gender;
+                document.getElementById('pDoctor').value = p.doctor_name || '';
+            } else { 
+                alert('لم يتم العثور على مريض'); 
+            }
         }
 
-        window.onload = () => { 
-            fetchCatalogFromCloud(); 
-            renderCart(); 
-            // تركيز الماوس على خانة البحث بالباركود عشان المسح
-            setTimeout(() => document.getElementById('catalogSearch').focus(), 500);
-        };
+        window.onload = () => { fetchCatalogFromCloud(); renderCart(); };
     </script>
 </body>
 </html>
