@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل (v18)</title>
+    <title>معامل طيبة - المعمل (v20)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -41,10 +41,13 @@
         .input-group label { font-size: 0.85rem; font-weight: bold; color: var(--text-muted); display: flex; justify-content: space-between;}
         .range-info { font-weight: normal; font-size: 0.75rem; color: var(--accent-color); background: #eaf4fc; padding: 2px 6px; border-radius: 4px;}
         .input-group input { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 1rem; font-family: inherit; outline: none; text-align: center;}
-        .input-group input:focus { border-color: var(--accent-color); }
+        .input-group input:focus { border-color: var(--accent-color); box-shadow: 0 0 0 2px rgba(52,152,219,0.2);}
         .input-calc { background-color: #f9f9f9; font-weight: bold; color: #555; border: 1px dashed #ccc !important; }
         
-        .btn-save-test { width: 100%; padding: 10px; background: var(--success-color); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: inherit; margin-top: 5px;}
+        .btn-row { display: flex; gap: 10px; margin-top: 5px; }
+        .btn-save-test { flex-grow: 1; padding: 10px; background: var(--success-color); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: inherit;}
+        .btn-delete-test { padding: 10px 15px; background: var(--danger-color); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: inherit;}
+        
         .empty-msg { text-align: center; padding: 50px 20px; color: var(--text-muted); font-size: 1.1rem; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
@@ -71,7 +74,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v18)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v20)</div>
         <div>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
@@ -121,20 +124,6 @@
         let allVisits = [], visitTests = [], testsCatalog = [], testResults = [];
         let selectedVisitId = null;
 
-        // 🧠 مخ المعادلات (جوه الكود ومش محتاج سحابة)
-        const formulasMap = {
-            'CBC': {
-                'HCT': 'HGB * 3', 
-                'MCV': '(HCT * 10) / RBC',
-                'MCH': '(HGB * 10) / RBC',
-                'MCHC': '(HGB * 100) / HCT'
-            },
-            'LIPID': {
-                'VLDL': 'TRIG / 5',
-                'LDL': 'CHO - HDL - (TRIG / 5)'
-            }
-        };
-
         async function loadData() {
             const { data: visits } = await _supabase.from('visits').select('*').order('visit_id', { ascending: false });
             const { data: patients } = await _supabase.from('patients').select('*');
@@ -147,10 +136,16 @@
             testResults = results || [];
 
             allVisits = (visits || []).map(v => {
-                const p = (patients || []).find(x => x.id == v.patient_id) || { name: 'غير معروف', age: 0, gender: 'ذكر' };
-                return { ...v, patient: p };
+                const p = (patients || []).find(x => x.id == v.patient_id) || {};
+                const pName = p.name || p.full_name || p.patient_name || 'غير معروف';
+                return { ...v, patient: { name: pName, age: p.age || '?', gender: p.gender || 'غير محدد' } };
             });
             renderPatients();
+            
+            // لو فيه مريض مختار قبل التحديث، نرجعه يفتح تاني
+            if (selectedVisitId) {
+                selectPatient(selectedVisitId);
+            }
         }
 
         function renderPatients() {
@@ -184,48 +179,38 @@
                 const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, parameters: [] };
                 const result = testResults.find(r => r.visit_test_id === vt.id);
                 const savedData = result ? result.results_data : {};
-                const isProfile = catalogItem.parameters && catalogItem.parameters.length > 0;
+                let isProfile = catalogItem.parameters && catalogItem.parameters.length > 0;
+                
+                let paramsList = isProfile ? catalogItem.parameters : [{ name: 'result', label: 'النتيجة', unit: catalogItem.unit, ref_male: catalogItem.reference_range }];
 
                 let inputsHtml = '';
+                paramsList.forEach(param => {
+                    const val = savedData[param.name]?.value || '';
+                    const unit = param.unit || param.units || catalogItem.unit || '';
+                    const range = param.ref_male || param.reference_range || param.range || catalogItem.reference_range || '';
+                    
+                    const isCalc = ['HCT', 'MCV', 'MCH', 'MCHC', 'VLDL', 'LDL'].includes(param.name);
+                    const readonly = isCalc ? 'readonly' : '';
+                    const calcClass = isCalc ? 'input-calc' : '';
+                    const placeholder = isCalc ? 'تلقائي' : '...';
 
-                if (isProfile) {
-                    catalogItem.parameters.forEach(param => {
-                        const val = savedData[param.name]?.value || '';
-                        const unit = param.unit || '';
-                        const range = param.ref_male || ''; 
-                        
-                        // نشوف هل البارامتر ده ليه معادلة في المخ بتاعنا؟
-                        const hasFormula = formulasMap[catalogItem.code] && formulasMap[catalogItem.code][param.name];
-                        
-                        const readonly = hasFormula ? 'readonly' : '';
-                        const calcClass = hasFormula ? 'input-calc' : '';
-                        const placeholder = hasFormula ? 'تلقائي' : 'أدخل النتيجة...';
-
-                        inputsHtml += `
-                            <div class="input-group">
-                                <label><span>${param.label || param.name}</span><span class="range-info">${range} ${unit}</span></label>
-                                <input type="text" class="${calcClass}" id="res_${vt.id}_${param.name}" value="${val}" placeholder="${placeholder}" ${readonly} oninput="triggerCalc(${vt.id}, '${catalogItem.code}')">
-                            </div>
-                        `;
-                    });
-                } else {
-                    const val = savedData['result']?.value || '';
-                    const unit = catalogItem.unit || '';
-                    const range = catalogItem.reference_range || '';
                     inputsHtml += `
                         <div class="input-group">
-                            <label><span>النتيجة</span><span class="range-info">${range} ${unit}</span></label>
-                            <input type="text" id="res_${vt.id}_simple" value="${val}" placeholder="أدخل النتيجة هنا...">
+                            <label><span>${param.label || param.name}</span><span class="range-info">${range ? range + ' ' + unit : ''}</span></label>
+                            <input type="text" class="res-input ${calcClass}" id="res_${vt.id}_${param.name}" value="${val}" placeholder="${placeholder}" ${readonly} oninput="triggerCalc(${vt.id}, '${catalogItem.code}')" onkeydown="handleEnter(event)">
                         </div>
                     `;
-                }
+                });
 
                 const cardHtml = `
                     <div class="test-item">
                         <div class="test-header"><span>${catalogItem.name}</span><span style="font-size:0.8rem; color:#666;">${vt.test_code}</span></div>
                         <div class="test-body">
                             ${inputsHtml}
-                            <button class="btn-save-test" onclick="saveTestResult(${vt.id}, ${isProfile})">💾 حفظ</button>
+                            <div class="btn-row">
+                                <button class="btn-save-test" onclick="saveTestResult(${vt.id}, ${isProfile})">💾 حفظ</button>
+                                <button class="btn-delete-test" onclick="deleteTest(${vt.id})" title="حذف التحليل">🗑️ حذف</button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -236,30 +221,69 @@
             profileList.innerHTML = profilesHtml || '<div class="empty-msg">لا توجد تحاليل مركبة</div>';
         }
 
-        function triggerCalc(visitTestId, testCode) {
-            const formulas = formulasMap[testCode];
-            if (!formulas) return; // لو التحليل ده مفيهوش معادلات، اخرج
+        // 🗑️ دالة الحذف النهائية
+        async function deleteTest(visitTestId) {
+            if (!confirm('هل أنت متأكد من حذف هذا التحليل نهائياً من هذه الزيارة؟')) return;
+            
+            try {
+                // 1. مسح النتيجة المرتبطة بالتحليل (لو موجودة)
+                const { error: resErr } = await _supabase.from('test_results').delete().eq('visit_test_id', visitTestId);
+                if (resErr) console.error("Error deleting result:", resErr);
 
+                // 2. مسح التحليل نفسه من جدول visit_tests
+                const { error: vtErr } = await _supabase.from('visit_tests').delete().eq('id', visitTestId);
+                if (vtErr) throw vtErr;
+
+                alert('✅ تم حذف التحليل بنجاح!');
+                
+                // 3. تحديث البيانات والشاشة
+                await loadData(); 
+            } catch (err) {
+                alert('❌ حدث خطأ أثناء الحذف: ' + err.message);
+            }
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                const inputs = Array.from(document.querySelectorAll('.res-input:not([readonly])'));
+                const index = inputs.indexOf(e.target);
+                if (index > -1 && index < inputs.length - 1) inputs[index + 1].focus();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const inputs = Array.from(document.querySelectorAll('.res-input:not([readonly])'));
+                const index = inputs.indexOf(e.target);
+                if (index > 0) inputs[index - 1].focus();
+            }
+        }
+
+        function triggerCalc(visitTestId, testCode) {
             let vals = {};
             const inputs = document.querySelectorAll(`[id^="res_${visitTestId}_"]`);
             inputs.forEach(input => {
-                const paramName = input.id.replace(`res_${visitTestId}_`, '');
-                vals[paramName] = parseFloat(input.value) || 0;
+                const pName = input.id.replace(`res_${visitTestId}_`, '');
+                vals[pName] = parseFloat(input.value) || 0;
             });
 
-            for (let targetParam in formulas) {
-                let formula = formulas[targetParam];
-                for (let key in vals) {
-                    formula = formula.replace(new RegExp('\\b' + key + '\\b', 'g'), vals[key]);
+            if (testCode === 'CBC') {
+                const hgb = vals['HGB'] || vals['HB'] || vals['Hemoglobin'] || 0;
+                const rbc = vals['RBC'] || vals['RBCs'] || 0;
+                if (hgb > 0 && vals['HCT'] !== undefined) { const hct = hgb * 3; document.getElementById(`res_${visitTestId}_HCT`).value = hct.toFixed(2); vals['HCT'] = hct; }
+                if (vals['HCT'] > 0 && rbc > 0) {
+                    if (vals['MCV'] !== undefined) document.getElementById(`res_${visitTestId}_MCV`).value = ((vals['HCT'] * 10) / rbc).toFixed(2);
+                    if (vals['MCH'] !== undefined) document.getElementById(`res_${visitTestId}_MCH`).value = ((hgb * 10) / rbc).toFixed(2);
                 }
-                try {
-                    let result = Function('"use strict";return (' + formula + ')')();
-                    if (isFinite(result) && result > 0) {
-                        const targetInput = document.getElementById(`res_${visitTestId}_${targetParam}`);
-                        if(targetInput) targetInput.value = result.toFixed(2);
-                    }
-                } catch (e) {
-                    console.error(e);
+                if (vals['HCT'] > 0 && hgb > 0 && vals['MCHC'] !== undefined) document.getElementById(`res_${visitTestId}_MCHC`).value = ((hgb * 100) / vals['HCT']).toFixed(2);
+            }
+            
+            if (testCode === 'LIPID') {
+                const trig = vals['TRIG'] || vals['Triglycerides'] || 0;
+                const cho = vals['CHO'] || vals['Cholesterol'] || 0;
+                const hdl = vals['HDL'] || 0;
+                if (trig > 0) {
+                    const vldl = trig / 5;
+                    if (vals['VLDL'] !== undefined) document.getElementById(`res_${visitTestId}_VLDL`).value = vldl.toFixed(2);
+                    if (cho > 0 && hdl > 0 && vals['LDL'] !== undefined) document.getElementById(`res_${visitTestId}_LDL`).value = (cho - hdl - vldl).toFixed(2);
                 }
             }
         }
@@ -275,7 +299,7 @@
                     if (input && input.value.trim() !== '') resultsData[param.name] = { value: input.value.trim() };
                 });
             } else {
-                const input = document.getElementById(`res_${visitTestId}_simple`);
+                const input = document.getElementById(`res_${visitTestId}_result`);
                 if (input && input.value.trim() !== '') resultsData['result'] = { value: input.value.trim() };
             }
 
@@ -296,7 +320,7 @@
         }
 
         function calcFlag(val, range) {
-            if (!val || !range || range === '-') return '';
+            if (!val || !range) return '';
             const num = parseFloat(val);
             if (isNaN(num)) return '';
             const match = range.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
@@ -327,28 +351,18 @@
                 const result = testResults.find(r => r.visit_test_id === vt.id);
                 const savedData = result ? result.results_data : {};
                 const isProfile = catalogItem.parameters && catalogItem.parameters.length > 0;
+                let paramsList = isProfile ? catalogItem.parameters : [{ name: 'result', label: 'النتيجة', unit: catalogItem.unit, ref_male: catalogItem.reference_range }];
 
-                if (isProfile) {
-                    catalogItem.parameters.forEach(param => {
-                        const val = savedData[param.name]?.value;
-                        if (val) {
-                            hasResults = true;
-                            const range = param.ref_male || '-';
-                            const unit = param.unit || '-';
-                            const flag = calcFlag(val, range);
-                            rows += `<tr><td>${param.label || param.name}</td><td>${val} ${flag}</td><td>${unit}</td><td>${range}</td></tr>`;
-                        }
-                    });
-                } else {
-                    const val = savedData['result']?.value;
-                    if (val) {
+                paramsList.forEach(param => {
+                    const val = savedData[param.name]?.value;
+                    if (val && val.trim() !== '') {
                         hasResults = true;
-                        const range = catalogItem.reference_range || '-';
-                        const unit = catalogItem.unit || '-';
+                        const range = param.ref_male || param.reference_range || param.range || catalogItem.reference_range || '-';
+                        const unit = param.unit || param.units || catalogItem.unit || '-';
                         const flag = calcFlag(val, range);
-                        rows += `<tr><td>${catalogItem.name}</td><td>${val} ${flag}</td><td>${unit}</td><td>${range}</td></tr>`;
+                        rows += `<tr><td>${param.label || param.name}</td><td>${val} ${flag}</td><td>${unit}</td><td>${range}</td></tr>`;
                     }
-                }
+                });
             });
 
             if (!hasResults) rows = '<tr><td colspan="4" style="text-align:center;">لا توجد نتائج مسجلة</td></tr>';
