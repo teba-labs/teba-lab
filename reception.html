@@ -1,9 +1,9 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - بوابة الاستقبال (v12.1)</title>
+    <title>معامل طيبة - بوابة الاستقبال (V14)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -64,7 +64,6 @@
 
         .catalog-actions { padding: 10px; border-bottom: 1px solid var(--border-color); display: flex; gap: 5px;}
         .ai-btn { background: var(--ai-color); color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; display: flex; justify-content: center; align-items: center; gap: 5px;}
-        .ai-btn:hover { background: #8e44ad; }
         
         .catalog-search { padding: 10px; border-bottom: 1px solid var(--border-color); }
         .catalog-search input { width: 100%; padding: 10px; border: 2px solid var(--accent-color); border-radius: 6px; font-size: 1rem; outline: none;}
@@ -78,10 +77,9 @@
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px; border-radius: 8px; width: 80%; max-width: 900px; display: flex; flex-direction: column; gap: 15px; max-height: 90vh; overflow-y: auto;}
         .close-modal { background: var(--danger-color); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; align-self: flex-end;}
-        
         .data-table { width: 100%; border-collapse: collapse; text-align: right; font-size: 0.9rem; }
         .data-table th, .data-table td { padding: 10px; border-bottom: 1px solid var(--border-color); }
-        .data-table th { background: #f8f9fa; position: sticky; top: 0; z-index: 1; }
+        .data-table th { background: #f8f9fa; }
 
         .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--success-color); color: white; padding: 15px 30px; border-radius: 8px; font-weight: bold; box-shadow: var(--shadow-md); display: none; z-index: 1000; }
         .toast.error { background: var(--danger-color); }
@@ -99,7 +97,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (v12.1)</div>
+        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (V14)</div>
         <div class="nav-links">
             <button class="nav-btn lab" onclick="window.location.href='lab.html'">🔬 بوابة المعمل</button>
             <button class="nav-btn" onclick="openDailyCases()">📋 حالات اليوم</button>
@@ -119,7 +117,7 @@
                 </div>
                 <div class="form-group">
                     <label>اسم المريض (مطلوب)</label>
-                    <input type="text" id="pName" placeholder="الاسم بالكامل" onkeydown="moveToNext(event, 'pPhone')">
+                    <input type="text" id="pName" placeholder="الاسم بالكامل" onkeydown="moveToNext(event, 'pPhone')" autofocus>
                 </div>
                 <div class="form-group">
                     <label>رقم التليفون</label>
@@ -188,7 +186,7 @@
                 <button class="ai-btn" onclick="alert('ميزة الذكاء الاصطناعي جاهزة للربط (قريباً)')">📷 مسح روشتة (AI)</button>
             </div>
             <div class="catalog-search">
-                <input type="text" id="catalogSearch" placeholder="ابحث واضغط Enter..." onkeyup="filterCatalog()" onkeydown="handleCatalogKeyDown(event)">
+                <input type="text" id="catalogSearch" placeholder="ابحث (أو امسح الباركود)..." onkeyup="filterCatalog()" onkeydown="handleCatalogKeyDown(event)">
             </div>
             <div class="catalog-grid" id="catalogGrid"></div>
         </div>
@@ -200,9 +198,7 @@
             <h3>📋 حالات اليوم</h3>
             <table class="data-table">
                 <thead>
-                    <tr>
-                        <th>رقم الزيارة</th><th>المريض</th><th>التاريخ</th><th>الصافي</th><th>الباقي</th><th>الحالة</th><th>إجراء</th>
-                    </tr>
+                    <tr><th>رقم الزيارة</th><th>المريض</th><th>التاريخ</th><th>الصافي</th><th>الباقي</th><th>الحالة</th><th>إجراء</th></tr>
                 </thead>
                 <tbody id="dailyCasesBody"></tbody>
             </table>
@@ -296,7 +292,7 @@
                     firstBtn.click();
                     document.getElementById('catalogSearch').value = '';
                     renderCatalog();
-                    document.getElementById('catalogSearch').focus();
+                    document.getElementById('catalogSearch').focus(); // تظبيط المسح
                 }
             } else if (event.key === 'Escape') {
                 document.getElementById('catalogSearch').value = '';
@@ -354,7 +350,6 @@
             btn.innerText = 'جاري الحفظ...'; btn.disabled = true;
 
             try {
-                // أ. المريض (رجعناها name)
                 const { data: pData, error: pErr } = await _supabase.from('patients').insert([{
                     name: pName, 
                     phone: document.getElementById('pPhone').value, 
@@ -364,7 +359,6 @@
                 }]).select();
                 if (pErr) throw pErr;
 
-                // ب. الزيارة
                 const netTotal = parseFloat(document.getElementById('netTotalAmount').innerText);
                 const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
                 const percent = parseFloat(document.getElementById('discountPercent').value) || 0;
@@ -377,7 +371,6 @@
                 }]).select();
                 if (vErr) throw vErr;
 
-                // ج. التحاليل
                 const tests = cart.map(i => ({ visit_id: vData[0].visit_id, test_code: i.code, price_at_time: i.price }));
                 const { error: tErr } = await _supabase.from('visit_tests').insert(tests);
                 if (tErr) throw tErr;
@@ -387,6 +380,7 @@
                     window.location.href = 'lab.html';
                 } else {
                     resetForm();
+                    document.getElementById('pName').focus(); // رجوع المؤشر لأول خانة
                 }
             } catch (error) {
                 showToast('❌ حدث خطأ: ' + error.message, true);
@@ -447,7 +441,6 @@
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">جاري التحميل...</td></tr>';
             document.getElementById('dailyCasesModal').style.display = 'flex';
 
-            // تعديل: استخدام name بدل full_name
             const { data, error } = await _supabase.from('visits')
                 .select(`visit_id, total_amount, paid_amount, status, visit_date, patients (name)`)
                 .order('visit_id', {ascending: false});
@@ -484,7 +477,6 @@
         async function searchPatient() {
             const query = document.getElementById('patientSearch').value.trim();
             if(!query) return;
-            // تعديل: استخدام name بدل full_name
             const { data, error } = await _supabase.from('patients').select('*').or(`phone.eq.${query},name.ilike.%${query}%`).limit(1);
             if(error) return console.error(error);
             if(data && data.length > 0) {
@@ -496,7 +488,12 @@
             } else { alert('لم يتم العثور على مريض'); }
         }
 
-        window.onload = () => { fetchCatalogFromCloud(); renderCart(); };
+        window.onload = () => { 
+            fetchCatalogFromCloud(); 
+            renderCart(); 
+            // تركيز الماوس على خانة البحث بالباركود عشان المسح
+            setTimeout(() => document.getElementById('catalogSearch').focus(), 500);
+        };
     </script>
 </body>
 </html>
