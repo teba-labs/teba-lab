@@ -1,0 +1,318 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة التحاليل | معامل طيبة</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-bg: #f4f7f6; --surface-bg: #ffffff; --primary-color: #2c3e50;
+            --accent-color: #3498db; --success-color: #2ecc71; --danger-color: #e74c3c;
+            --warning-color: #f39c12; --text-main: #333; --text-muted: #7f8c8d; 
+            --border-color: #dcdde1; --radius: 8px; 
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-family); background-color: var(--primary-bg); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        header { background-color: var(--primary-color); color: white; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10; }
+        .brand-info { font-weight: bold; font-size: 1.2rem; }
+        .nav-btn { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.95rem; margin-left: 10px; font-family: inherit;}
+        .nav-btn:hover { background: rgba(255,255,255,0.2); }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; width: 100%; flex-grow: 1; display: flex; flex-direction: column; }
+        
+        .toolbar { background: var(--surface-bg); border-radius: var(--radius); padding: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .search-box { flex-grow: 1; margin-left: 20px; }
+        .search-box input { width: 100%; padding: 10px 15px; border: 2px solid var(--border-color); border-radius: var(--radius); font-size: 1rem; outline: none; font-family: inherit;}
+        .search-box input:focus { border-color: var(--accent-color); }
+        
+        .btn-add { background: var(--success-color); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1rem; font-family: inherit;}
+        .btn-add:hover { opacity: 0.9; }
+
+        .table-container { background: var(--surface-bg); border-radius: var(--radius); box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow-y: auto; flex-grow: 1; }
+        table { width: 100%; border-collapse: collapse; text-align: right; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); }
+        th { background: #f8f9fa; font-weight: bold; color: var(--primary-color); position: sticky; top: 0; z-index: 1; }
+        tr:hover { background: #f0f8ff; }
+        
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+        .badge-single { background: #d1fae5; color: #065f46; }
+        .badge-profile { background: #dbeafe; color: #1e40af; }
+
+        .btn-edit { background: var(--warning-color); color: #333; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold;}
+        
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: var(--radius); width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;}
+        .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; }
+        .form-group label { font-weight: bold; font-size: 0.9rem; color: var(--text-muted); }
+        .form-group input { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 1rem; outline: none; }
+        .form-group input:focus { border-color: var(--accent-color); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn-save { background: var(--success-color); color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1rem; }
+        .btn-close { background: var(--danger-color); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;}
+
+        #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--success-color); color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); display: none; z-index: 1000; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-info">⚙️ إدارة التحاليل - معامل طيبة</div>
+        <div>
+            <button class="nav-btn" onclick="window.location.href='reception.html'">الاستقبال</button>
+            <button class="nav-btn" onclick="window.location.href='lab.html'">المعمل</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="toolbar">
+            <button class="btn-add" onclick="openModal('add')">➕ إضافة تحليل فردي جديد</button>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="ابحث بالكود أو الاسم..." onkeyup="filterTable()">
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="testsTable">
+                <thead>
+                    <tr>
+                        <th>الكود</th>
+                        <th>اسم التحليل</th>
+                        <th>النوع</th>
+                        <th>السعر (ج.م)</th>
+                        <th>الوحدة</th>
+                        <th>المرجع (ذكر)</th>
+                        <th>إجراء</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="7" style="text-align:center;">جاري التحميل...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal إضافة/تعديل -->
+    <div class="modal" id="testModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">إضافة تحليل جديد</h3>
+                <button class="btn-close" onclick="closeModal()">X</button>
+            </div>
+            <form id="testForm" onsubmit="saveTest(event)">
+                <input type="hidden" id="testId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>كود التحليل (مثال: TL-201)</label>
+                        <input type="text" id="testCode" required>
+                    </div>
+                    <div class="form-group">
+                        <label>السعر (ج.م)</label>
+                        <input type="number" id="testPrice" step="0.01" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>اسم التحليل (بالعربي أو الإنجليزي)</label>
+                    <input type="text" id="testName" required>
+                </div>
+                
+                <div id="singleFields">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>الوحدة (Unit)</label>
+                            <input type="text" id="testUnit" placeholder="مثال: mg/dL">
+                        </div>
+                        <div class="form-group">
+                            <label>المدى المرجعي للذكور</label>
+                            <input type="text" id="testRangeMale" placeholder="مثال: 70 - 100">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>المدى المرجعي للإناث</label>
+                        <input type="text" id="testRangeFemale" placeholder="مثال: 70 - 100">
+                    </div>
+                </div>
+
+                <div id="profileWarning" style="display:none; background:#fff3cd; color:#856404; padding:10px; border-radius:5px; margin-bottom:15px; font-size:0.9rem;">
+                    ⚠️ هذا تحليل مركب (Profile). يمكنك تعديل الاسم والسعر فقط من هنا. لتعديل الباراميترز الداخلية، يرجى استخدام SQL.
+                </div>
+
+                <button type="submit" class="btn-save" id="saveBtn">💾 حفظ البيانات</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast">✅ تم الحفظ بنجاح</div>
+
+    <script>
+        const supabaseUrl = 'https://khjzoleiuiipyodpkieg.supabase.co';
+        const supabaseKey = 'sb_publishable_2Q7SPvruXJar3gvOxtvl5w_p4CVDfcU';
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let allTests = [];
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 2000);
+        }
+
+        async function loadTests() {
+            const { data, error } = await _supabase.from('tests_catalog').select('*').order('code', { ascending: true });
+            if (error) return alert('خطأ في التحميل: ' + error.message);
+            allTests = data || [];
+            renderTable();
+        }
+
+        function renderTable(filterText = '') {
+            const tbody = document.getElementById('tableBody');
+            const filtered = allTests.filter(t => 
+                t.name.toLowerCase().includes(filterText.toLowerCase()) || 
+                t.code.toLowerCase().includes(filterText.toLowerCase())
+            );
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">لا توجد نتائج مطابقة</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(t => {
+                const params = t.parameters || [];
+                const isProfile = params.length > 1 || (params.length === 1 && params[0].name !== 'Result');
+                const typeBadge = isProfile ? '<span class="badge badge-profile">مركب (Profile)</span>' : '<span class="badge badge-single">فردي (Single)</span>';
+                
+                // استخراج الوحدة والمدى للتحاليل الفردية
+                let unit = '-', range = '-';
+                if (!isProfile && params.length === 1) {
+                    unit = params[0].unit || '-';
+                    range = params[0].ref_male || '-';
+                }
+
+                return `
+                    <tr>
+                        <td style="font-weight:bold;">${t.code}</td>
+                        <td>${t.name}</td>
+                        <td>${typeBadge}</td>
+                        <td style="font-weight:bold; color:var(--accent-color);">${t.price} ج.م</td>
+                        <td>${unit}</td>
+                        <td>${range}</td>
+                        <td><button class="btn-edit" onclick='openModal("edit", ${JSON.stringify(t)})'>✏️ تعديل</button></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterTable() {
+            const text = document.getElementById('searchInput').value;
+            renderTable(text);
+        }
+
+        function openModal(mode, test = null) {
+            document.getElementById('testModal').style.display = 'flex';
+            document.getElementById('testForm').reset();
+            
+            if (mode === 'add') {
+                document.getElementById('modalTitle').innerText = 'إضافة تحليل فردي جديد';
+                document.getElementById('testId').value = '';
+                document.getElementById('testCode').readOnly = false;
+                document.getElementById('singleFields').style.display = 'block';
+                document.getElementById('profileWarning').style.display = 'none';
+            } else if (mode === 'edit') {
+                document.getElementById('modalTitle').innerText = 'تعديل بيانات التحليل';
+                document.getElementById('testId').value = test.id;
+                document.getElementById('testCode').value = test.code;
+                document.getElementById('testCode').readOnly = true; 
+                document.getElementById('testName').value = test.name;
+                document.getElementById('testPrice').value = test.price;
+
+                const params = test.parameters || [];
+                const isProfile = params.length > 1 || (params.length === 1 && params[0].name !== 'Result');
+
+                if (isProfile) {
+                    document.getElementById('singleFields').style.display = 'none';
+                    document.getElementById('profileWarning').style.display = 'block';
+                } else {
+                    document.getElementById('singleFields').style.display = 'block';
+                    document.getElementById('profileWarning').style.display = 'none';
+                    
+                    if (params.length === 1) {
+                        document.getElementById('testUnit').value = params[0].unit || '';
+                        document.getElementById('testRangeMale').value = params[0].ref_male || '';
+                        document.getElementById('testRangeFemale').value = params[0].ref_female || '';
+                    }
+                }
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('testModal').style.display = 'none';
+        }
+
+        async function saveTest(e) {
+            e.preventDefault();
+            const btn = document.getElementById('saveBtn');
+            btn.innerText = 'جاري الحفظ...'; btn.disabled = true;
+
+            const id = document.getElementById('testId').value;
+            const code = document.getElementById('testCode').value.trim();
+            const name = document.getElementById('testName').value.trim();
+            const price = parseFloat(document.getElementById('testPrice').value) || 0;
+
+            let parameters = [];
+
+            // لو إحنا في وضع الإضافة، أو بنعدل تحليل فردي
+            if (!id || document.getElementById('singleFields').style.display === 'block') {
+                const unit = document.getElementById('testUnit').value.trim();
+                const refMale = document.getElementById('testRangeMale').value.trim();
+                const refFemale = document.getElementById('testRangeFemale').value.trim();
+                
+                parameters = [{
+                    name: "Result",
+                    label: name,
+                    unit: unit,
+                    ref_male: refMale,
+                    ref_female: refFemale
+                }];
+            } else {
+                // لو بنعدل بروفايل، بنحافظ على الباراميترز القديمة زي ما هي
+                const existingTest = allTests.find(t => t.id == id);
+                parameters = existingTest ? existingTest.parameters : [];
+            }
+
+            let payload = { code, name, price, parameters };
+
+            try {
+                if (id) {
+                    // تعديل
+                    const { error } = await _supabase.from('tests_catalog').update(payload).eq('id', id);
+                    if (error) throw error;
+                    showToast('✅ تم تعديل التحليل بنجاح');
+                } else {
+                    // إضافة جديدة
+                    // التأكد إن الكود مش مكرر
+                    if (allTests.find(t => t.code === code)) {
+                        throw new Error('هذا الكود مستخدم بالفعل، يرجى اختيار كود آخر');
+                    }
+                    const { error } = await _supabase.from('tests_catalog').insert([payload]);
+                    if (error) throw error;
+                    showToast('✅ تم إضافة التحليل بنجاح');
+                }
+                
+                closeModal();
+                await loadTests(); // تحديث الجدول
+            } catch (err) {
+                alert('خطأ: ' + err.message);
+            } finally {
+                btn.innerText = '💾 حفظ البيانات'; btn.disabled = false;
+            }
+        }
+
+        window.onload = loadTests;
+    </script>
+</body>
+</html>
