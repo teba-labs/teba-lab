@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - بوابة المعمل (v13)</title>
+    <title>معامل طيبة - بوابة المعمل (v14)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -46,6 +46,7 @@
         .btn { padding: 8px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; font-family: inherit;}
         .btn-primary { background: var(--accent-color); }
         .btn-success { background: var(--success-color); }
+        .btn-print { background: var(--primary-color); }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px; border-radius: var(--radius); width: 95%; max-width: 800px; max-height: 90vh; overflow-y: auto; }
@@ -63,17 +64,26 @@
         .flag-normal { color: var(--success-color); font-weight: bold; }
         
         .empty-msg { text-align: center; padding: 50px; color: var(--text-muted); }
+
+        /* إعدادات الطباعة */
+        @media print {
+            body * { visibility: hidden; }
+            #resultModal, #resultModal * { visibility: visible; }
+            #resultModal { position: absolute; left: 0; top: 0; width: 100%; background: white; display: block !important; }
+            .modal-content { box-shadow: none; max-height: none; width: 100%; max-width: 100%; }
+            .no-print { display: none !important; }
+        }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v13)</div>
-        <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v14)</div>
+        <button class="nav-btn no-print" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
     </header>
 
     <div class="container">
-        <div class="toolbar">
+        <div class="toolbar no-print">
             <div class="tabs">
                 <button class="tab active" onclick="setFilter('all')" id="tab-all">الكل</button>
                 <button class="tab" onclick="setFilter('pending')" id="tab-pending">مطلوب</button>
@@ -89,15 +99,18 @@
 
     <div class="modal" id="resultModal">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header no-print">
                 <h3 id="modalTitle">إدخال نتيجة</h3>
                 <button class="btn" style="background:#e74c3c;" onclick="closeModal()">X</button>
             </div>
-            <div id="modalPatientInfo" style="background: #f0f4f8; padding: 10px; border-radius: 6px; margin-bottom: 15px;"></div>
+            <div id="modalPatientInfo" style="background: #f0f4f8; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 1.1rem;"></div>
             
             <div id="dynamicFormArea"></div>
 
-            <button class="btn btn-success" onclick="saveResult()" id="saveResBtn" style="width: 100%; padding: 12px; font-size: 1.1rem;">💾 حفظ النتائج</button>
+            <div style="display: flex; gap: 10px; margin-top: 15px;" class="no-print">
+                <button class="btn btn-success" onclick="saveResult()" id="saveResBtn" style="flex: 1; padding: 12px; font-size: 1.1rem;">💾 حفظ النتائج</button>
+                <button class="btn btn-print" onclick="window.print()" style="flex: 1; padding: 12px; font-size: 1.1rem;">🖨️ طباعة النتيجة</button>
+            </div>
         </div>
     </div>
 
@@ -117,7 +130,6 @@
             const { data: catalog } = await _supabase.from('tests_catalog').select('*');
             const { data: results } = await _supabase.from('test_results').select('*');
 
-            // ربط البيانات بطريقة آمنة جداً (Find بدل Map)
             allData = vtData.map(vt => {
                 const visit = visits?.find(v => v.visit_id == vt.visit_id || v.id == vt.visit_id) || {};
                 const patient = patients?.find(p => p.id == visit.patient_id || p.patient_id == visit.patient_id) || {};
@@ -213,7 +225,7 @@
                     <thead><tr><th>الفحص</th><th>النتيجة</th><th>الوحدة</th><th>المدى المرجعي</th><th>الحالة</th></tr></thead>
                     <tbody>`;
                 
-                params.forEach(param => {
+                params.forEach((param, index) => {
                     const ref = p.gender === 'female' || p.gender === 'أنثى' ? param.ref_female : param.ref_male;
                     const savedVal = savedData[param.name]?.value || '';
                     const savedFlag = savedData[param.name]?.flag || 'normal';
@@ -221,7 +233,9 @@
 
                     html += `<tr>
                         <td><strong>${param.label}</strong><br><small style="color:#777">${param.name}</small></td>
-                        <td><input type="text" class="res-input" id="val_${param.name}" value="${savedVal}" oninput="updateRowFlag('${param.name}', '${ref}')"></td>
+                        <td><input type="text" class="res-input" id="val_${param.name}" value="${savedVal}" 
+                            oninput="updateRowFlag('${param.name}', '${ref}')"
+                            onkeydown="handleEnter(event, ${index}, ${params.length})"></td>
                         <td>${param.unit}</td>
                         <td>${ref}</td>
                         <td id="flag_${param.name}" class="flag-${savedFlag}">${flagText}</td>
@@ -230,14 +244,45 @@
                 html += `</tbody></table>`;
             } else {
                 const val = savedData['result']?.value || '';
-                html += `<div style="margin-bottom:15px;">
-                    <label style="font-weight:bold; display:block; margin-bottom:5px;">النتيجة:</label>
-                    <input type="text" class="res-input" id="val_simple" value="${val}" style="text-align:right; padding:10px;">
+                const flag = savedData['result']?.flag || 'normal';
+                html += `<div style="display: flex; flex-direction: column; gap: 15px;">
+                    <div>
+                        <label style="font-weight:bold; display:block; margin-bottom:5px;">النتيجة:</label>
+                        <input type="text" class="res-input" id="val_simple" value="${val}" style="text-align:right; padding:10px; font-size: 1.5rem;"
+                        onkeydown="if(event.key === 'Enter') { event.preventDefault(); saveResult(); }">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <div style="flex:1;">
+                            <label style="font-weight:bold; display:block; margin-bottom:5px;">التقييم:</label>
+                            <select id="flag_simple" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc; font-family:inherit;">
+                                <option value="normal" ${flag === 'normal' ? 'selected' : ''}>طبيعي (Normal)</option>
+                                <option value="high" ${flag === 'high' ? 'selected' : ''}>مرتفع (High)</option>
+                                <option value="low" ${flag === 'low' ? 'selected' : ''}>منخفض (Low)</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>`;
             }
 
             document.getElementById('dynamicFormArea').innerHTML = html;
             document.getElementById('resultModal').style.display = 'flex';
+            
+            setTimeout(() => {
+                const firstInput = document.querySelector('.res-input');
+                if(firstInput) firstInput.focus();
+            }, 100);
+        }
+
+        function handleEnter(event, index, total) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (index < total - 1) {
+                    const nextInput = document.querySelectorAll('.res-input')[index + 1];
+                    if (nextInput) nextInput.focus();
+                } else {
+                    saveResult();
+                }
+            }
         }
 
         window.updateRowFlag = function(paramName, refRange) {
@@ -272,20 +317,21 @@
             } else {
                 const val = document.getElementById('val_simple').value.trim();
                 if (!val) return alert('الرجاء إدخال النتيجة');
-                resultsData['result'] = { value: val, flag: 'normal' };
+                const flag = document.getElementById('flag_simple').value;
+                resultsData['result'] = { value: val, flag: flag };
             }
 
             const btn = document.getElementById('saveResBtn');
             btn.innerText = 'جاري الحفظ...'; btn.disabled = true;
 
             try {
-                // شيلنا entered_at عشان السحابة مش لاقياه
                 const { error } = await _supabase.from('test_results').upsert({
                     visit_test_id: currentRow.id,
                     results_data: resultsData
                 }, { onConflict: 'visit_test_id' });
 
                 if(error) throw error;
+                alert('تم الحفظ بنجاح!');
                 closeModal();
                 loadLabData();
             } catch(err) {
