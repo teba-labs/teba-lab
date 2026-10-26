@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل الذكي (v21)</title>
+    <title>معامل طيبة - المعمل الذكي (v22)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -53,30 +53,26 @@
         #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--success-color); color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); display: none; z-index: 1000; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 800px; max-height: 95vh; overflow-y: auto; }
-        .report-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
-        .report-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        .report-table th, .report-table td { border: 1px solid #ccc; padding: 10px; text-align: right; font-size: 0.95rem;}
-        .report-table th { background: #f8f9fa; }
-        .btn-print { background: var(--success-color); color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; margin-top: 20px;}
-        .btn-close { background: var(--danger-color); color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px;}
+        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 850px; max-height: 95vh; overflow-y: auto; }
         
-        .flag-high { color: red; font-weight: bold; }
-        .flag-low { color: blue; font-weight: bold; }
-        .flag-normal { color: green; font-weight: bold; }
+        .btn-print { background: var(--success-color); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; }
+        .btn-close { background: var(--danger-color); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; }
 
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
-            #print-area { position: absolute; left: 0; top: 0; width: 100%; }
-            .btn-print, .btn-close { display: none; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0;}
+            .btn-print, .btn-close { display: none !important; }
+            .modal { position: absolute; background: transparent; }
+            .modal-content { box-shadow: none; padding: 0; max-height: none; overflow: visible; }
+            @page { size: A4; margin: 15mm; }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v21)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v22)</div>
         <div>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
@@ -100,27 +96,60 @@
         </div>
     </div>
 
+    <!-- مودال الطباعة الجديد (LTR) -->
     <div class="modal" id="printModal">
         <div class="modal-content">
-            <div id="print-area">
-                <div class="report-header">
-                    <h2>معامل طيبة للتحاليل الطبية</h2>
-                    <p>تقرير نتائج التحاليل</p>
-                    <div id="reportPatientInfo" style="margin-top: 10px; font-weight: bold;"></div>
+            <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; background: #fff; position: relative; overflow: hidden; min-height: 800px;">
+                
+                <!-- الهيدر -->
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 15px; z-index: 2; position: relative;">
+                    <div style="width: 40%;">
+                        <!-- اللوجو الأساسي -->
+                        <img src="header.png" alt="TEBA LABS" style="max-height: 90px; object-fit: contain;">
+                    </div>
+                    <div style="width: 60%; text-align: right; padding-right: 10px;">
+                        <h1 style="margin: 0; color: #1b5e20; font-size: 24px;">TEBA LABS</h1>
+                        <p style="margin: 2px 0; font-size: 13px;">For Medical Analyzes</p>
+                        <p style="margin: 2px 0; font-size: 12px; color: #555;">Dr. Ahmed Taha Abonda</p>
+                    </div>
                 </div>
-                <table class="report-table">
-                    <thead>
-                        <tr><th>التحليل / الفحص</th><th>النتيجة</th><th>الوحدة</th><th>المدى المرجعي</th></tr>
-                    </thead>
-                    <tbody id="reportTableBody"></tbody>
-                </table>
+
+                <!-- بيانات المريض -->
+                <div style="display: flex; justify-content: space-between; border: 1px solid #ccc; padding: 8px 15px; border-radius: 5px; background: #fafafa; font-size: 13px; margin-bottom: 20px; z-index: 2; position: relative;">
+                    <div style="width: 50%;">
+                        <p style="margin: 3px 0;"><strong>Patient:</strong> <span id="pNamePrint"></span></p>
+                        <p style="margin: 3px 0;"><strong>Age/Gender:</strong> <span id="pAgeGenderPrint"></span></p>
+                    </div>
+                    <div style="width: 50%; text-align: right;">
+                        <p style="margin: 3px 0;"><strong>Visit ID:</strong> <span id="vIdPrint"></span></p>
+                        <p style="margin: 3px 0;"><strong>Date:</strong> <span id="vDatePrint"></span></p>
+                    </div>
+                </div>
+
+                <!-- الخلفية المائية (اللوجو الدايرة) -->
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; opacity: 0.05; pointer-events: none; z-index: 0;">
+                    <img src="logo.png" alt="watermark" style="width: 60%; transform: rotate(-15deg);">
+                </div>
+
+                <!-- منطقة التحاليل -->
+                <div id="reportTableBody" style="position: relative; z-index: 2;"></div>
+
+                <!-- الفوتر -->
+                <div style="margin-top: 40px; border-top: 2px solid #333; padding-top: 10px; font-size: 12px; text-align: center; z-index: 2; position: relative;">
+                    <p style="margin: 3px 0; font-weight: bold;">Phone: 01123702062 / 01099003494</p>
+                    <p style="margin: 3px 0;">Address: Masaken Esko - Front of Al-Khattab School - Bahgatim</p>
+                </div>
+
             </div>
-            <button class="btn-print" onclick="window.print()">🖨️ طباعة الآن</button>
-            <button class="btn-close" onclick="closePrintModal()">إغلاق</button>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="btn-print" onclick="window.print()">🖨️ Print Now</button>
+                <button class="btn-close" onclick="closePrintModal()">Close</button>
+            </div>
         </div>
     </div>
 
     <script>
+        // منع الماوس من تغيير الأرقام
         document.addEventListener("wheel", function(event){
             if(document.activeElement.type === "number" || document.activeElement.type === "text"){
                 document.activeElement.blur();
@@ -192,8 +221,8 @@
                 const result = testResults.find(r => r.visit_test_id === vt.id);
                 const savedData = result ? result.results_data : {};
                 
-                // التفرقة الذكية: لو الباراميترز أكتر من واحد، أو واحد بس مش اسمه Result يبقى بروفايل
                 const params = catalogItem.parameters || [];
+                // التفرقة الذكية: لو الباراميترز أكتر من واحد، أو واحد بس مش اسمه Result يبقى بروفايل
                 const isProfile = params.length > 1 || (params.length === 1 && params[0].name !== 'Result');
 
                 let inputsHtml = '';
@@ -221,7 +250,6 @@
                         `;
                     });
                 } else {
-                    // تحليل فردي
                     const val = savedData['result']?.value || '';
                     const p = params[0] || {};
                     const unit = p.unit || catalogItem.unit || '-';
@@ -299,7 +327,6 @@
                 let formula = p.formula;
                 let pn = p.name.toLowerCase();
 
-                // Fallbacks
                 let hb = vals['Hemoglobin'] || vals['HGB'] || vals['HB'] || vals['Hb'];
                 let rbc = vals['RBCs'] || vals['RBC'] || vals['RBCs'];
                 let hct = vals['HCT'] || vals['Hct'];
@@ -411,28 +438,15 @@
             showToast('🗑️ تم الحذف');
         }
 
-        function calcFlag(val, range) {
-            if (!val || !range || range === '-') return '';
-            const num = parseFloat(val);
-            if (isNaN(num)) return '';
-            const match = range.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
-            if (match) {
-                const min = parseFloat(match[1]), max = parseFloat(match[2]);
-                if (num < min) return '<span class="flag-low">L</span>';
-                if (num > max) return '<span class="flag-high">H</span>';
-            }
-            return '<span class="flag-normal">N</span>';
-        }
-
         function openPrintModal() {
             if (!selectedVisitId) return alert('اختر مريضاً أولاً!');
             const visit = allVisits.find(v => v.visit_id === selectedVisitId);
             const vTests = visitTests.filter(vt => vt.visit_id === selectedVisitId);
 
-            document.getElementById('reportPatientInfo').innerHTML = `
-                اسم المريض: ${visit.patient.name} | العمر: ${visit.patient.age} | النوع: ${visit.patient.gender}<br>
-                رقم الزيارة: ${visit.visit_id} | التاريخ: ${new Date(visit.visit_date || Date.now()).toLocaleDateString('ar-EG')}
-            `;
+            document.getElementById('pNamePrint').innerText = visit.patient.name || 'Unknown';
+            document.getElementById('pAgeGenderPrint').innerText = `${visit.patient.age} Years / ${visit.patient.gender}`;
+            document.getElementById('vIdPrint').innerText = visit.visit_id;
+            document.getElementById('vDatePrint').innerText = new Date(visit.visit_date || Date.now()).toLocaleDateString('en-GB');
 
             const tbody = document.getElementById('reportTableBody');
             let rows = '';
@@ -442,35 +456,89 @@
                 const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, parameters: [] };
                 const result = testResults.find(r => r.visit_test_id === vt.id);
                 const savedData = result ? result.results_data : {};
-                
                 const params = catalogItem.parameters || [];
                 const isProfile = params.length > 1 || (params.length === 1 && params[0].name !== 'Result');
 
+                let hasTestData = false;
+                let testRows = '';
+
                 if (isProfile) {
-                    catalogItem.parameters.forEach(param => {
+                    params.forEach(param => {
                         const val = savedData[param.name]?.value;
                         if (val) {
                             hasResults = true;
+                            hasTestData = true;
                             const range = param.ref_male || param.reference_range || param.range || '-';
                             const unit = param.unit || param.units || '-';
-                            const flag = calcFlag(val, range);
-                            rows += `<tr><td>${param.label || param.name}</td><td>${val} ${flag}</td><td>${unit}</td><td>${range}</td></tr>`;
+                            
+                            let flagStr = '';
+                            const num = parseFloat(val);
+                            const match = range.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
+                            if (!isNaN(num) && match) {
+                                const min = parseFloat(match[1]), max = parseFloat(match[2]);
+                                if (num < min) flagStr = '<span style="color:#0000FF;font-weight:bold;">L</span>';
+                                else if (num > max) flagStr = '<span style="color:#FF0000;font-weight:bold;">H</span>';
+                            }
+                            
+                            testRows += `<tr>
+                                <td style="border: 1px solid #ccc; padding: 6px;">${param.label || param.name}</td>
+                                <td style="border: 1px solid #ccc; padding: 6px; text-align:center; font-weight:bold;">${val}</td>
+                                <td style="border: 1px solid #ccc; padding: 6px; text-align:center;">${flagStr}</td>
+                                <td style="border: 1px solid #ccc; padding: 6px; text-align:center;">${unit}</td>
+                                <td style="border: 1px solid #ccc; padding: 6px; text-align:center;">${range}</td>
+                            </tr>`;
                         }
                     });
                 } else {
                     const val = savedData['result']?.value;
                     if (val) {
                         hasResults = true;
+                        hasTestData = true;
                         const p = params[0] || {};
                         const range = p.ref_male || catalogItem.reference_range || '-';
                         const unit = p.unit || catalogItem.unit || '-';
-                        const flag = calcFlag(val, range);
-                        rows += `<tr><td>${catalogItem.name}</td><td>${val} ${flag}</td><td>${unit}</td><td>${range}</td></tr>`;
+                        
+                        let flagStr = '';
+                        const num = parseFloat(val);
+                        const match = range.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
+                        if (!isNaN(num) && match) {
+                            const min = parseFloat(match[1]), max = parseFloat(match[2]);
+                            if (num < min) flagStr = '<span style="color:#0000FF;font-weight:bold;">L</span>';
+                            else if (num > max) flagStr = '<span style="color:#FF0000;font-weight:bold;">H</span>';
+                        }
+
+                        testRows += `<tr>
+                            <td style="border: 1px solid #ccc; padding: 6px;">${catalogItem.name}</td>
+                            <td style="border: 1px solid #ccc; padding: 6px; text-align:center; font-weight:bold;">${val}</td>
+                            <td style="border: 1px solid #ccc; padding: 6px; text-align:center;">${flagStr}</td>
+                            <td style="border: 1px solid #ccc; padding: 6px; text-align:center;">${unit}</td>
+                            <td style="border: 1px solid #ccc; padding: 6px; text-align:center;">${range}</td>
+                        </tr>`;
                     }
+                }
+
+                if (hasTestData) {
+                    rows += `
+                        <div style="margin-bottom: 25px; page-break-inside: avoid;">
+                            <h3 style="margin: 0 0 8px 0; background: #e8f5e9; padding: 6px 10px; border-left: 4px solid #1b5e20; font-size: 15px; text-transform: uppercase;">${catalogItem.name}</h3>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                <thead>
+                                    <tr style="background: #1b5e20; color: #fff;">
+                                        <th style="border: 1px solid #ccc; padding: 6px; text-align:left;">Test Name</th>
+                                        <th style="border: 1px solid #ccc; padding: 6px;">Result</th>
+                                        <th style="border: 1px solid #ccc; padding: 6px;">State</th>
+                                        <th style="border: 1px solid #ccc; padding: 6px;">Unit</th>
+                                        <th style="border: 1px solid #ccc; padding: 6px;">Ref. Range</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${testRows}</tbody>
+                            </table>
+                        </div>
+                    `;
                 }
             });
 
-            if (!hasResults) rows = '<tr><td colspan="4" style="text-align:center;">لا توجد نتائج مسجلة</td></tr>';
+            if (!hasResults) rows = '<p style="text-align:center; font-weight:bold; margin-top:50px;">No results recorded for this visit.</p>';
 
             tbody.innerHTML = rows;
             document.getElementById('printModal').style.display = 'flex';
