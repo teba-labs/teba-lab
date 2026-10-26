@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل الذكي (v25)</title>
+    <title>معامل طيبة - المعمل الذكي (v26)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -58,24 +58,73 @@
         .btn-print { background: var(--success-color); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; }
         .btn-close { background: var(--danger-color); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; }
 
+        /* =========================================
+           تعديلات الطباعة (حل مشكلة الورق الأبيض)
+           ========================================= */
         @media print {
-            body * { visibility: hidden; }
-            #print-area, #print-area * { visibility: visible; }
-            #print-area { position: static; width: 100%; padding: 0; margin: 0; }
-            .modal { position: static; background: transparent; overflow: visible; display: block !important; }
-            .modal-content { box-shadow: none; padding: 0; max-height: none; overflow: visible; border: none; width: 100%; max-width: 100%; }
-            .btn-print, .btn-close { display: none !important; }
-            @page { size: A4; margin: 15mm; }
-            
-            .page-break { page-break-before: always; }
-            .no-break { page-break-inside: avoid; }
+            /* إلغاء قيود الشاشة عشان الورقة تطبع كاملة */
+            body {
+                height: auto !important;
+                overflow: visible !important;
+                display: block !important;
+                background: white !important;
+            }
+
+            /* إخفاء الشاشات والأزرار */
+            header, .main-grid, #toast, .no-print {
+                display: none !important;
+            }
+
+            /* إظهار المودال بشكل طبيعي */
+            .modal {
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+                background: transparent !important;
+                display: block !important;
+                overflow: visible !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .modal-content {
+                padding: 0 !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                max-height: none !important;
+                overflow: visible !important;
+                border-radius: 0 !important;
+            }
+
+            /* إظهار التقرير */
+            #print-area {
+                display: block !important;
+                width: 100% !important;
+                min-height: auto !important;
+            }
+
+            /* الحفاظ على الألوان */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .page-break {
+                page-break-before: always !important;
+            }
+            @page { size: A4; margin: 10mm; }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v25)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v26)</div>
         <div>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
@@ -144,7 +193,8 @@
                 </div>
 
             </div>
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <!-- ضفنا كلاس no-print عشان نخفي الأزرار دي في الطباعة -->
+            <div class="no-print" style="display: flex; gap: 10px; margin-top: 15px;">
                 <button class="btn-print" onclick="window.print()">🖨️ Print Now</button>
                 <button class="btn-close" onclick="closePrintModal()">Close</button>
             </div>
@@ -208,11 +258,7 @@
             
             if (isLipid) {
                 if (!Array.isArray(params)) params = [];
-                
-                // شيل أي LDL قديم عشان نضيف التلقائي
                 params = params.filter(p => !p.name.toLowerCase().includes('ldl'));
-
-                // ضيف الـ LDL التلقائي
                 params.push({ 
                     name: 'LDL', 
                     label: 'LDL (Calc)', 
@@ -360,7 +406,6 @@
                 }
             });
 
-            // حساب VLDL أولاً
             let trig = vals['Triglycerides'] || vals['TRIG'] || vals['Trig'];
             let vldlInput = document.getElementById(`res_${visitTestId}_VLDL`);
             if (trig !== undefined && vldlInput) {
@@ -369,7 +414,6 @@
                 vals['VLDL'] = vldlVal;
             }
 
-            // حساب LDL
             let cho = vals['Total Cholesterol'] || vals['CHO'] || vals['Cholesterol'];
             let hdl = vals['HDL'] || vals['Hdl'];
             let vldl = vals['VLDL'];
@@ -381,7 +425,6 @@
                 ldlInput.value = ldlVal.toFixed(1);
             }
 
-            // باقي الحسابات (لو موجودة)
             params.forEach(p => {
                 let calcVal = null;
                 let formula = p.formula;
@@ -570,7 +613,6 @@
                 }
 
                 if (isProfile && hasTestData) {
-                    // كل بروفايل يبدأ في صفحة جديدة (ماعدا أول واحد لو مفيش تحاليل فردية)
                     let pageBreakStyle = (isFirstProfile && !singlesRows) ? '' : 'page-break-before: always;';
                     isFirstProfile = false;
 
@@ -596,7 +638,6 @@
 
             let finalHtml = '';
             if (singlesRows) {
-                // التحاليل الفردية في جدول واحد (ولو كتير هتاخد صفحة أو اتنين طبيعي)
                 finalHtml += `
                     <div style="margin-bottom: 25px;">
                         <h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000; border-radius: 0 4px 4px 0;">Single Tests</h3>
