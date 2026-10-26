@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل الذكي (v19)</title>
+    <title>معامل طيبة - المعمل الذكي (v20)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -40,14 +40,18 @@
         .input-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
         .input-group label { font-size: 0.85rem; font-weight: bold; color: var(--text-muted); display: flex; justify-content: space-between;}
         .range-info { font-weight: normal; font-size: 0.75rem; color: var(--accent-color); background: #eaf4fc; padding: 2px 6px; border-radius: 4px;}
-        .input-group input { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 1rem; font-family: inherit; outline: none; text-align: center; transition: 0.2s;}
-        .input-group input:focus { border-color: var(--accent-color); box-shadow: 0 0 5px rgba(52,152,219,0.3);}
+        .input-group input { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 1rem; font-family: inherit; outline: none; text-align: center; font-weight: bold;}
+        .input-group input:focus { border-color: var(--accent-color); box-shadow: 0 0 5px rgba(52,152,219,0.3); }
+        .input-calc { background-color: #f0f8ff; color: #0056b3; border-color: #b3d7ff;}
         
-        /* الخانات المحسوبة تلقائياً */
-        .input-calc { background-color: #f1f3f5; font-weight: bold; color: #495057; cursor: not-allowed; border: 1px dashed #adb5bd !important; }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-save-test { flex-grow: 1; padding: 10px; background: var(--success-color); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: inherit;}
+        .btn-del-test { background: var(--danger-color); color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: inherit;}
         
-        .btn-save-test { width: 100%; padding: 10px; background: var(--success-color); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: inherit; margin-top: 5px;}
         .empty-msg { text-align: center; padding: 50px 20px; color: var(--text-muted); font-size: 1.1rem; }
+
+        /* Toast Notification */
+        #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--success-color); color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); display: none; z-index: 1000; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 800px; max-height: 95vh; overflow-y: auto; }
@@ -58,8 +62,8 @@
         .btn-print { background: var(--success-color); color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; margin-top: 20px;}
         .btn-close { background: var(--danger-color); color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px;}
         
-        .flag-high { color: red; font-weight: bold; background: #ffebee; padding: 2px 6px; border-radius: 4px;}
-        .flag-low { color: blue; font-weight: bold; background: #e3f2fd; padding: 2px 6px; border-radius: 4px;}
+        .flag-high { color: red; font-weight: bold; }
+        .flag-low { color: blue; font-weight: bold; }
         .flag-normal { color: green; font-weight: bold; }
 
         @media print {
@@ -73,12 +77,14 @@
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل الذكي - معامل طيبة (v19)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v20)</div>
         <div>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
         </div>
     </header>
+
+    <div id="toast">✅ تم الحفظ</div>
 
     <div class="main-grid">
         <div class="panel">
@@ -116,6 +122,13 @@
     </div>
 
     <script>
+        // منع الماوس من تغيير الأرقام أثناء السكرول
+        document.addEventListener("wheel", function(event){
+            if(document.activeElement.type === "number" || document.activeElement.type === "text"){
+                document.activeElement.blur();
+            }
+        });
+
         const supabaseUrl = 'https://khjzoleiuiipyodpkieg.supabase.co';
         const supabaseKey = 'sb_publishable_2Q7SPvruXJar3gvOxtvl5w_p4CVDfcU';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -123,26 +136,11 @@
         let allVisits = [], visitTests = [], testsCatalog = [], testResults = [];
         let selectedVisitId = null;
 
-        // قيم افتراضية عشان لو السحابة ناقصة
-        const fallbackRanges = {
-            'Hemoglobin': { male: '13.5 - 17.5', female: '12.0 - 15.5' },
-            'HB': { male: '13.5 - 17.5', female: '12.0 - 15.5' },
-            'HGB': { male: '13.5 - 17.5', female: '12.0 - 15.5' },
-            'RBCs': { male: '4.5 - 5.9', female: '4.1 - 5.1' },
-            'RBC': { male: '4.5 - 5.9', female: '4.1 - 5.1' },
-            'HCT': { male: '41 - 53', female: '36 - 46' },
-            'MCV': { male: '80 - 100', female: '80 - 100' },
-            'MCH': { male: '27 - 33', female: '27 - 33' },
-            'MCHC': { male: '32 - 36', female: '32 - 36' },
-            'WBCs': { male: '4.0 - 11.0', female: '4.0 - 11.0' },
-            'WBC': { male: '4.0 - 11.0', female: '4.0 - 11.0' },
-            'Platelets': { male: '150 - 450', female: '150 - 450' },
-            'PLT': { male: '150 - 450', female: '150 - 450' }
-        };
-
-        // دالة لتنظيف الـ ID من المسافات والرموز
-        function safeId(name) {
-            return name.replace(/[^a-zA-Z0-9]/g, '_');
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 2000);
         }
 
         async function loadData() {
@@ -170,7 +168,7 @@
             list.innerHTML = allVisits.map(v => `
                 <div class="patient-card ${v.visit_id === selectedVisitId ? 'active' : ''}" onclick="selectPatient(${v.visit_id})">
                     <div class="p-name">${v.patient.name}</div>
-                    <div class="p-meta"><span>زيارة #${v.visit_id}</span><span>${v.patient.gender === 'female' || v.patient.gender === 'أنثى' ? 'أنثى' : 'ذكر'} • ${v.patient.age} سنة</span></div>
+                    <div class="p-meta"><span>زيارة #${v.visit_id}</span><span>${v.patient.gender} • ${v.patient.age} سنة</span></div>
                 </div>
             `).join('');
         }
@@ -182,9 +180,6 @@
             const singleList = document.getElementById('singleList');
             const profileList = document.getElementById('profileList');
             const vTests = visitTests.filter(vt => vt.visit_id === visitId);
-            
-            const patient = allVisits.find(v => v.visit_id === visitId).patient;
-            const isFemale = patient.gender === 'female' || patient.gender === 'أنثى';
 
             if (vTests.length === 0) {
                 singleList.innerHTML = '<div class="empty-msg">لا توجد تحاليل</div>';
@@ -201,50 +196,52 @@
                 const isProfile = catalogItem.parameters && catalogItem.parameters.length > 0;
 
                 let inputsHtml = '';
-
                 if (isProfile) {
                     catalogItem.parameters.forEach(param => {
                         const val = savedData[param.name]?.value || '';
-                        
-                        // تحديد الـ Range
-                        let range = isFemale ? (param.ref_female || fallbackRanges[param.name]?.female) : (param.ref_male || fallbackRanges[param.name]?.male);
-                        if (!range) range = param.reference_range || '-';
-                        
                         const unit = param.unit || param.units || '';
+                        const range = param.ref_male || param.reference_range || param.range || '-';
                         
-                        // هل البارامتر بيتحسب تلقائي؟
-                        const isCalc = ['HCT', 'MCV', 'MCH', 'MCHC', 'INR', 'Ratio'].includes(param.name) || param.is_calc === true;
+                        // هل البارامتر ده بيتحسب تلقائي؟
+                        const isCalc = param.is_calc === true || param.is_calculated === true || (param.formula && param.formula.length > 0);
                         const readonly = isCalc ? 'readonly' : '';
                         const calcClass = isCalc ? 'input-calc' : '';
-                        const placeholder = isCalc ? 'تلقائي' : '...';
-                        const pId = safeId(param.name);
+                        const placeholder = isCalc ? 'تلقائى' : '...';
 
-                        // تم إضافة oninput هنا لربط الحساب اللحظي
                         inputsHtml += `
                             <div class="input-group">
                                 <label><span>${param.label || param.name}</span><span class="range-info">${range} ${unit}</span></label>
-                                <input type="number" step="any" class="${calcClass}" id="res_${vt.id}_${pId}" value="${val}" placeholder="${placeholder}" ${readonly} oninput="liveCalculate(${vt.id}, '${vt.test_code}')">
+                                <input type="text" inputmode="decimal" class="${calcClass}" 
+                                    id="res_${vt.id}_${param.name}" 
+                                    data-name="${param.name}"
+                                    value="${val}" placeholder="${placeholder}" ${readonly} 
+                                    oninput="triggerCalc('${vt.id}', '${vt.test_code}')"
+                                    onkeydown="handleEnter(event, this, ${vt.id}, ${isProfile})">
                             </div>
                         `;
                     });
                 } else {
                     const val = savedData['result']?.value || '';
                     const unit = catalogItem.unit || '';
-                    const range = catalogItem.reference_range || '';
+                    const range = catalogItem.reference_range || '-';
                     inputsHtml += `
                         <div class="input-group">
                             <label><span>النتيجة</span><span class="range-info">${range} ${unit}</span></label>
-                            <input type="text" id="res_${vt.id}_simple" value="${val}" placeholder="...">
+                            <input type="text" id="res_${vt.id}_simple" value="${val}" placeholder="..."
+                                onkeydown="handleEnter(event, this, ${vt.id}, ${isProfile})">
                         </div>
                     `;
                 }
 
                 const cardHtml = `
-                    <div class="test-item">
+                    <div class="test-item" id="card_${vt.id}">
                         <div class="test-header"><span>${catalogItem.name}</span><span style="font-size:0.8rem; color:#666;">${vt.test_code}</span></div>
                         <div class="test-body">
                             ${inputsHtml}
-                            <button class="btn-save-test" onclick="saveTestResult(${vt.id}, ${isProfile})">💾 حفظ</button>
+                            <div class="btn-group">
+                                <button class="btn-save-test" onclick="saveTestResult(${vt.id}, ${isProfile}, false)">💾 حفظ</button>
+                                <button class="btn-del-test" onclick="deleteTestResult(${vt.id})">🗑️ حذف</button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -253,70 +250,95 @@
 
             singleList.innerHTML = singlesHtml || '<div class="empty-msg">لا توجد تحاليل فردية</div>';
             profileList.innerHTML = profilesHtml || '<div class="empty-msg">لا توجد تحاليل مركبة</div>';
-        }
-
-        // محرك الحسابات اللحظي (Live Calculation Engine)
-        function liveCalculate(visitTestId, testCode) {
-            const getVal = (names) => {
-                for(let n of names) {
-                    let el = document.getElementById(`res_${visitTestId}_${safeId(n)}`);
-                    if(el && el.value) return parseFloat(el.value);
-                }
-                return 0;
-            }
             
-            const setVal = (names, val) => {
-                for(let n of names) {
-                    let el = document.getElementById(`res_${visitTestId}_${safeId(n)}`);
-                    if(el) {
-                        el.value = val;
-                        break;
-                    }
-                }
-            }
+            // فوكس على أول خانة
+            setTimeout(() => {
+                const firstInput = document.querySelector('.test-item input:not([readonly])');
+                if(firstInput) firstInput.focus();
+            }, 100);
+        }
 
-            // 1. حسابات صورة الدم (CBC)
-            if(testCode === 'CBC' || testCode === 'TL-035') {
-                const hb = getVal(['HB', 'Hemoglobin', 'HGB']);
-                const rbc = getVal(['RBCs', 'RBC']);
+        // محرك الإنتر
+        function handleEnter(e, el, vtId, isProfile) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveTestResult(vtId, isProfile, true); // حفظ صامت
                 
-                if(hb > 0) {
-                    const hct = hb * 3;
-                    setVal(['HCT'], hct.toFixed(1));
-                    
-                    if(rbc > 0) {
-                        const mcv = (hct * 10) / rbc;
-                        const mch = (hb * 10) / rbc;
-                        const mchc = (hb * 100) / hct;
-                        
-                        setVal(['MCV'], mcv.toFixed(1));
-                        setVal(['MCH'], mch.toFixed(1));
-                        setVal(['MCHC'], mchc.toFixed(1));
+                // الانتقال للخانة اللي بعدها
+                let form = el.closest('.test-body');
+                let inputs = Array.from(form.querySelectorAll('input:not([readonly])'));
+                let index = inputs.indexOf(el);
+                
+                if (index > -1 && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                } else {
+                    let allCards = Array.from(document.querySelectorAll('.test-item'));
+                    let cardIndex = allCards.indexOf(el.closest('.test-item'));
+                    if (cardIndex > -1 && cardIndex < allCards.length - 1) {
+                        let nextInput = allCards[cardIndex + 1].querySelector('input:not([readonly])');
+                        if (nextInput) nextInput.focus();
                     }
-                }
-            }
-
-            // 2. حسابات السيولة (PT / INR)
-            if(testCode === 'PT' || testCode === 'TL-068') {
-                const ptPat = getVal(['PT Patient', 'PT_PAT']);
-                const ptCon = getVal(['PT Control', 'PT_CON']) || 12.8; 
-                if(ptPat > 0) {
-                    const ratio = ptPat / ptCon;
-                    const inr = Math.pow(ratio, 1.0);
-                    setVal(['PT Ratio', 'PT_RAT'], ratio.toFixed(2));
-                    setVal(['INR', 'PT_INR'], inr.toFixed(2));
                 }
             }
         }
 
-        async function saveTestResult(visitTestId, isProfile) {
+        // محرك الحسابات التلقائية (LDL, VLDL, HCT, MCV, etc)
+        function triggerCalc(visitTestId, testCode) {
+            const catalogItem = testsCatalog.find(c => c.code === testCode);
+            if (!catalogItem || !catalogItem.parameters) return;
+
+            let vals = {};
+            // تجميع القيم المكتوبة
+            catalogItem.parameters.forEach(p => {
+                const input = document.getElementById(`res_${visitTestId}_${p.name}`);
+                if (input) vals[p.name] = parseFloat(input.value) || 0;
+            });
+
+            // تنفيذ المعادلات
+            catalogItem.parameters.forEach(p => {
+                let formula = p.formula;
+                
+                // Hardcoded Fallbacks لو مفيش فورمولا في الـ JSON
+                if (!formula && testCode === 'TL-062') { // Lipid Profile
+                    if (p.name.includes('LDL')) formula = 'CHO - HDL - (TRIG / 5)';
+                    if (p.name.includes('VLDL')) formula = 'TRIG / 5';
+                }
+                if (!formula && testCode === 'TL-035') { // CBC
+                    if (p.name === 'HCT') formula = 'HB * 3';
+                    if (p.name === 'MCV') formula = '(HCT * 10) / RBC';
+                    if (p.name === 'MCH') formula = '(HB * 10) / RBC';
+                    if (p.name === 'MCHC') formula = '(HB * 100) / HCT';
+                }
+
+                if (formula) {
+                    try {
+                        let evalStr = formula;
+                        // لو المعادلة فيها CHO وده مش موجود، نجيب Total Cholesterol
+                        if (evalStr.includes('CHO') && !vals['CHO'] && vals['Total Cholesterol']) vals['CHO'] = vals['Total Cholesterol'];
+                        
+                        for (let key in vals) {
+                            evalStr = evalStr.replace(new RegExp('\\b' + key + '\\b', 'g'), vals[key]);
+                        }
+                        let result = Function('"use strict";return (' + evalStr + ')')();
+                        
+                        if (isFinite(result) && result > 0) {
+                            document.getElementById(`res_${visitTestId}_${p.name}`).value = result.toFixed(1);
+                        }
+                    } catch (err) {
+                        console.log('Calc error', err);
+                    }
+                }
+            });
+        }
+
+        async function saveTestResult(visitTestId, isProfile, isSilent = false) {
             const vt = visitTests.find(v => v.id === visitTestId);
             const catalogItem = testsCatalog.find(c => c.code === vt.test_code);
             let resultsData = {};
 
             if (isProfile) {
                 catalogItem.parameters.forEach(param => {
-                    const input = document.getElementById(`res_${visitTestId}_${safeId(param.name)}`);
+                    const input = document.getElementById(`res_${visitTestId}_${param.name}`);
                     if (input && input.value.trim() !== '') resultsData[param.name] = { value: input.value.trim() };
                 });
             } else {
@@ -324,7 +346,10 @@
                 if (input && input.value.trim() !== '') resultsData['result'] = { value: input.value.trim() };
             }
 
-            if (Object.keys(resultsData).length === 0) return alert('لم يتم إدخال أي نتائج!');
+            if (Object.keys(resultsData).length === 0) {
+                if (!isSilent) alert('لم يتم إدخال أي نتائج!');
+                return;
+            }
 
             const { error } = await _supabase.from('test_results').upsert({
                 visit_test_id: visitTestId,
@@ -337,7 +362,26 @@
             if (existingIndex > -1) testResults[existingIndex].results_data = resultsData;
             else testResults.push({ visit_test_id: visitTestId, results_data: resultsData });
 
-            alert('تم الحفظ بنجاح ✅');
+            if (!isSilent) showToast('✅ تم الحفظ بنجاح');
+            else showToast('💾 تم الحفظ تلقائياً');
+        }
+
+        async function deleteTestResult(visitTestId) {
+            if(!confirm('هل أنت متأكد من حذف نتيجة هذا التحليل؟')) return;
+            
+            const { error } = await _supabase.from('test_results').delete().eq('visit_test_id', visitTestId);
+            if(error) return alert('خطأ في الحذف: ' + error.message);
+
+            // مسح من الميموري
+            const index = testResults.findIndex(r => r.visit_test_id === visitTestId);
+            if(index > -1) testResults.splice(index, 1);
+
+            // تفريغ الخانات في الشاشة
+            const card = document.getElementById(`card_${visitTestId}`);
+            if(card) {
+                card.querySelectorAll('input').forEach(input => input.value = '');
+            }
+            showToast('🗑️ تم الحذف');
         }
 
         function calcFlag(val, range) {
@@ -357,10 +401,9 @@
             if (!selectedVisitId) return alert('اختر مريضاً أولاً!');
             const visit = allVisits.find(v => v.visit_id === selectedVisitId);
             const vTests = visitTests.filter(vt => vt.visit_id === selectedVisitId);
-            const isFemale = visit.patient.gender === 'female' || visit.patient.gender === 'أنثى';
 
             document.getElementById('reportPatientInfo').innerHTML = `
-                اسم المريض: ${visit.patient.name} | العمر: ${visit.patient.age} | النوع: ${isFemale ? 'أنثى' : 'ذكر'}<br>
+                اسم المريض: ${visit.patient.name} | العمر: ${visit.patient.age} | النوع: ${visit.patient.gender}<br>
                 رقم الزيارة: ${visit.visit_id} | التاريخ: ${new Date(visit.visit_date || Date.now()).toLocaleDateString('ar-EG')}
             `;
 
@@ -379,8 +422,7 @@
                         const val = savedData[param.name]?.value;
                         if (val) {
                             hasResults = true;
-                            let range = isFemale ? (param.ref_female || fallbackRanges[param.name]?.female) : (param.ref_male || fallbackRanges[param.name]?.male);
-                            if (!range) range = param.reference_range || '-';
+                            const range = param.ref_male || param.reference_range || param.range || '-';
                             const unit = param.unit || param.units || '-';
                             const flag = calcFlag(val, range);
                             rows += `<tr><td>${param.label || param.name}</td><td>${val} ${flag}</td><td>${unit}</td><td>${range}</td></tr>`;
