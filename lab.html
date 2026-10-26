@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل الذكي (v26)</title>
+    <title>معامل طيبة - المعمل الذكي (v27 - سريع)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -58,42 +58,18 @@
         .btn-print { background: var(--success-color); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; margin-top: 15px; }
         .btn-close { background: var(--danger-color); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; margin-top: 10px; }
 
-        /* ستايل صفحات الطباعة */
-        .print-page {
-            background: #fff;
-            width: 100%;
-            min-height: 297mm; /* مقاس A4 */
-            padding: 15mm;
-            margin-bottom: 20px;
-            box-sizing: border-box;
-            position: relative;
-            border: 1px solid #ccc;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        
-        .print-header {
-            display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; z-index: 2; position: relative;
-        }
-
-        .print-footer {
-            position: absolute; bottom: 15mm; left: 15mm; right: 15mm; border-top: 2px solid #000; padding-top: 10px; font-size: 12px; display: flex; justify-content: space-between;
-        }
+        .print-page { background: #fff; width: 100%; min-height: 297mm; padding: 15mm; margin-bottom: 20px; box-sizing: border-box; position: relative; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .print-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; z-index: 2; position: relative; }
+        .print-footer { position: absolute; bottom: 15mm; left: 15mm; right: 15mm; border-top: 2px solid #000; padding-top: 10px; font-size: 12px; display: flex; justify-content: space-between; }
 
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
             #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0;}
-            
             .modal { position: absolute; background: transparent; display: block !important; }
             .modal-content { box-shadow: none; padding: 0; border: none; max-height: none; overflow: visible; }
             .btn-print, .btn-close { display: none !important; }
-            
-            .print-page {
-                border: none;
-                box-shadow: none;
-                margin: 0;
-                page-break-after: always;
-            }
+            .print-page { border: none; box-shadow: none; margin: 0; page-break-after: always; }
             @page { size: A4; margin: 0; }
         }
     </style>
@@ -101,7 +77,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v26)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v27)</div>
         <div>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
@@ -112,7 +88,7 @@
 
     <div class="main-grid">
         <div class="panel">
-            <div class="panel-header">طابور المرضى</div>
+            <div class="panel-header">طابور المرضى (آخر 100 زيارة)</div>
             <div class="patient-list" id="patientList"><div class="empty-msg">جاري التحميل...</div></div>
         </div>
         <div class="panel">
@@ -125,15 +101,9 @@
         </div>
     </div>
 
-    <!-- مودال الطباعة -->
     <div class="modal" id="printModal">
         <div class="modal-content" style="background: #e0e0e0;">
-            
-            <!-- منطقة الطباعة -->
-            <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000;">
-                <!-- سيتم توليد الصفحات هنا بالجافاسكريبت -->
-            </div>
-
+            <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000;"></div>
             <button class="btn-print" onclick="window.print()">🖨️ Print Now</button>
             <button class="btn-close" onclick="closePrintModal()">Close</button>
         </div>
@@ -160,12 +130,30 @@
             setTimeout(() => t.style.display = 'none', 2000);
         }
 
+        // الدالة السحرية للسرعة: بتجيب آخر 100 زيارة بس وتربطهم ببعض
         async function loadData() {
-            const { data: visits } = await _supabase.from('visits').select('*').order('visit_id', { ascending: false });
-            const { data: patients } = await _supabase.from('patients').select('*');
-            const { data: vt } = await _supabase.from('visit_tests').select('*');
+            // 1. هات آخر 100 زيارة
+            const { data: visits } = await _supabase.from('visits').select('*').order('visit_id', { ascending: false }).limit(100);
+            if (!visits || visits.length === 0) return renderPatients();
+
+            const visitIds = visits.map(v => v.visit_id);
+            const patientIds = [...new Set(visits.map(v => v.patient_id))]; // عشان نمنع التكرار
+
+            // 2. هات المرضى بتوع الزيارات دي بس
+            const { data: patients } = await _supabase.from('patients').select('*').in('id', patientIds);
+            
+            // 3. هات التحاليل والنتايج بتاعة الزيارات دي بس
+            const { data: vt } = await _supabase.from('visit_tests').select('*').in('visit_id', visitIds);
+            const vtIds = vt ? vt.map(v => v.id) : [];
+            
+            let results = [];
+            if (vtIds.length > 0) {
+                const { data: res } = await _supabase.from('test_results').select('*').in('visit_test_id', vtIds);
+                results = res || [];
+            }
+
+            // 4. هات الكتالوج
             const { data: catalog } = await _supabase.from('tests_catalog').select('*');
-            const { data: results } = await _supabase.from('test_results').select('*');
 
             testsCatalog = catalog || [];
             visitTests = vt || [];
@@ -192,13 +180,11 @@
 
         function getSmartParams(catalogItem) {
             let params = catalogItem.parameters ? JSON.parse(JSON.stringify(catalogItem.parameters)) : [];
-            const isLipid = (catalogItem.name && catalogItem.name.toUpperCase().includes('LIPID')) || catalogItem.code === 'TL-062';
+            const isLipid = (catalogItem.name && catalogItem.name.toUpperCase().includes('LIPID')) || catalogItem.code === 'TL-109';
             
             if (isLipid) {
                 if (!Array.isArray(params)) params = [];
-                // شيل أي LDL قديم
                 params = params.filter(p => !p.name.toLowerCase().includes('ldl'));
-                // ضيف الـ LDL التلقائي
                 params.push({ name: 'LDL', label: 'LDL (Calc)', unit: 'mg/dL', ref_male: '0 - 130', ref_female: '0 - 130', is_calc: true });
             }
             return params;
@@ -459,7 +445,6 @@
             showToast('🗑️ تم الحذف');
         }
 
-        // دوال مساعدة لإنشاء الهيدر والفوتر
         function getHeaderHtml(visit, reqDate, printDate) {
             return `
                 <div class="print-header">
@@ -529,8 +514,7 @@
                     let localVals = {};
                     params.forEach(param => { if(savedData[param.name]?.value) localVals[param.name] = parseFloat(savedData[param.name].value); });
                     
-                    // حساب الـ LDL في الطباعة كاحتياط
-                    if (catalogItem.name.toUpperCase().includes('LIPID') || catalogItem.code === 'TL-062') {
+                    if (catalogItem.name.toUpperCase().includes('LIPID') || catalogItem.code === 'TL-109') {
                         let trig = localVals['Triglycerides'] || localVals['TRIG'] || localVals['Trig'];
                         let cho = localVals['Total Cholesterol'] || localVals['CHO'] || localVals['Cholesterol'];
                         let hdl = localVals['HDL'] || localVals['Hdl'];
@@ -567,9 +551,7 @@
                         }
                     });
                     
-                    if (hasTestData) {
-                        profilesData.push({ name: catalogItem.name, rows: testRows });
-                    }
+                    if (hasTestData) profilesData.push({ name: catalogItem.name, rows: testRows });
                 } else {
                     const val = savedData['result']?.value;
                     if (val) {
@@ -597,11 +579,7 @@
                 }
             });
 
-            let pageCount = 0;
-
-            // 1. الصفحة الأولى (الفردية + بيانات المريض)
             if (singlesRows !== '' || profilesData.length === 0) {
-                pageCount++;
                 let pageHtml = `<div class="print-page">`;
                 pageHtml += getHeaderHtml(visit, reqDate, printDate);
                 
@@ -632,9 +610,7 @@
                 printArea.innerHTML += pageHtml;
             }
 
-            // 2. صفحات التحاليل المركبة (كل تحليل في صفحة)
             profilesData.forEach(profile => {
-                pageCount++;
                 let pageHtml = `<div class="print-page">`;
                 pageHtml += getHeaderHtml(visit, reqDate, printDate);
                 pageHtml += `
