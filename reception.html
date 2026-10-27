@@ -561,6 +561,18 @@
         }
 
         window.onload = () => { fetchCatalogFromCloud(); renderCart(); };
+                // كود زرار Esc
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                // إغلاق أي نافذة مفتوحة
+                document.querySelectorAll('.modal').forEach(modal => modal.style.display = 'none');
+                // مسح البحث وإرجاع الكتالوج
+                document.getElementById('catalogSearch').value = '';
+                renderCatalog();
+                // مسح بحث المريض
+                document.getElementById('patientSearch').value = '';
+            }
+        });
     </script>
 </body>
 </html>
