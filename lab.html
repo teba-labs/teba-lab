@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل الذكي (v30 - شامل)</title>
+    <title>معامل طيبة - المعمل الذكي (v32)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -20,6 +20,7 @@
         .brand-info { font-weight: bold; font-size: 1.2rem; }
         .nav-btn { background: var(--accent-color); color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; font-family: inherit; font-size: 1rem;}
         .nav-btn.print { background: var(--warning-color); color: #333; margin-left: 10px;}
+        .nav-btn.add-test { background: var(--success-color); margin-left: 10px;}
 
         .main-grid { display: grid; grid-template-columns: 300px 1fr 1fr; gap: 15px; padding: 15px; flex-grow: 1; height: calc(100vh - 60px); }
         .panel { background: var(--surface-bg); border-radius: var(--radius); box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; border: 1px solid var(--border-color); overflow: hidden; }
@@ -56,7 +57,6 @@
         .modal-content { background: white; padding: 20px; border-radius: 8px; width: 95%; max-width: 900px; max-height: 95vh; overflow-y: auto; }
         
         .btn-print { background: var(--success-color); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; margin-top: 15px; }
-        .btn-close { background: var(--danger-color); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; margin-top: 10px; }
 
         .print-page { background: #fff; width: 100%; min-height: 297mm; padding: 15mm; margin-bottom: 20px; box-sizing: border-box; position: relative; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         .print-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; z-index: 2; position: relative; }
@@ -77,8 +77,9 @@
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v30)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v32)</div>
         <div>
+            <button class="nav-btn add-test" id="btnAddTest" onclick="openAddTestModal()" style="display:none;">➕ إضافة تحليل للحالة</button>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
         </div>
@@ -101,11 +102,21 @@
         </div>
     </div>
 
+    <!-- مودال إضافة تحليل -->
+    <div class="modal" id="addTestModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <h3 style="margin-bottom: 15px;">➕ إضافة تحليل جديد للحالة</h3>
+            <input type="text" id="addTestSearch" placeholder="ابحث عن التحليل بالكود أو الاسم..." onkeyup="filterAddTest()" style="width: 100%; padding: 10px; margin-bottom: 15px; border: 2px solid var(--accent-color); border-radius: 6px; outline: none;">
+            <div id="addTestResults" style="max-height: 400px; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <!-- هنا هتظهر نتايج البحث -->
+            </div>
+        </div>
+    </div>
+
     <div class="modal" id="printModal">
         <div class="modal-content" style="background: #e0e0e0;">
             <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000;"></div>
             <button class="btn-print" onclick="window.print()">🖨️ Print Now</button>
-            <button class="btn-close" onclick="closePrintModal()">Close</button>
         </div>
     </div>
 
@@ -113,6 +124,14 @@
         document.addEventListener("wheel", function(event){
             if(document.activeElement.type === "number" || document.activeElement.type === "text"){
                 document.activeElement.blur();
+            }
+        });
+
+        // زرار Esc يقفل أي شاشة
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                document.getElementById('printModal').style.display = 'none';
+                document.getElementById('addTestModal').style.display = 'none';
             }
         });
 
@@ -184,9 +203,28 @@
             return params;
         }
 
+        window.updateUrineCrystals = function(visitTestId, selectedPH) {
+            const crystalsSelect = document.getElementById(`res_${visitTestId}_Crystals`);
+            if(!crystalsSelect) return;
+            
+            let options = ['Absent'];
+            if (selectedPH.toLowerCase().includes('acidic')) {
+                options.push('Uric Acid', 'Ca. Oxalate');
+            } else if (selectedPH.toLowerCase().includes('alkaline')) {
+                options.push('Triple Phosphate', 'Amorphous');
+            } else {
+                options.push('Uric Acid', 'Ca. Oxalate', 'Triple Phosphate', 'Amorphous');
+            }
+            
+            crystalsSelect.innerHTML = '<option value="">-- اختر --</option>' + options.map(o => `<option value="${o}">${o}</option>`).join('');
+        }
+
         function selectPatient(visitId) {
             selectedVisitId = visitId;
             renderPatients();
+            
+            // إظهار زرار إضافة تحليل
+            document.getElementById('btnAddTest').style.display = 'block';
 
             const singleList = document.getElementById('singleList');
             const profileList = document.getElementById('profileList');
@@ -227,7 +265,15 @@
                                 const selected = (val === opt) ? 'selected' : '';
                                 optionsHtml += `<option value="${opt}" ${selected}>${opt}</option>`;
                             });
-                            inputElement = `<select class="${calcClass}" id="res_${vt.id}_${param.name}" onchange="triggerCalc('${vt.id}', '${vt.test_code}')" onkeydown="handleEnter(event, this, ${vt.id}, ${isProfile})">
+                            
+                            let onChangeStr = '';
+                            if (param.name === 'pH') {
+                                onChangeStr = `onchange="updateUrineCrystals('${vt.id}', this.value)"`;
+                            } else {
+                                onChangeStr = `onchange="triggerCalc('${vt.id}', '${vt.test_code}')"`;
+                            }
+
+                            inputElement = `<select class="${calcClass}" id="res_${vt.id}_${param.name}" ${onChangeStr} onkeydown="handleEnter(event, this, ${vt.id}, ${isProfile})">
                                 ${optionsHtml}
                             </select>`;
                         } else {
@@ -336,7 +382,7 @@
                 }
             });
 
-            // --- حسابات صورة الدم (CBC) ---
+            // حسابات صورة الدم (CBC)
             let hb = vals['HB'] || vals['Hemoglobin'] || vals['HGB'] || vals['Hb'];
             let rbc = vals['RBC'] || vals['RBCs'];
             let hct = vals['HCT'] || vals['Hct'];
@@ -358,10 +404,10 @@
                 if (mchcInput) mchcInput.value = ((hb * 100) / hct).toFixed(1);
             }
 
-            // --- حسابات الدهون (Lipid) ---
-            let trig = vals['Triglycerides'] || vals['TRIG'] || vals['Trig'];
-            let cho = vals['Total Cholesterol'] || vals['CHO'] || vals['Cholesterol'];
-            let hdl = vals['HDL'] || vals['Hdl'];
+            // حسابات الدهون (Lipid)
+            let trig = vals['Triglycerides'] || vals['TRIG'] || vals['Trig'] || vals['trig'];
+            let cho = vals['Total Cholesterol'] || vals['CHO'] || vals['Cholesterol'] || vals['tchol'];
+            let hdl = vals['HDL'] || vals['Hdl'] || vals['hdl'];
             
             if (trig !== undefined) {
                 let vldlInput = document.getElementById(`res_${visitTestId}_VLDL`);
@@ -381,14 +427,14 @@
                 if (r2) r2.value = (vals['LDL'] / hdl).toFixed(1);
             }
 
-            // --- حساب السكر التراكمي (HbA1c -> eAG) ---
+            // حساب السكر التراكمي (HbA1c -> eAG)
             let hba1c = vals['HbA1c'];
             if (hba1c !== undefined) {
                 let eagInput = document.getElementById(`res_${visitTestId}_eAG`);
                 if (eagInput) eagInput.value = ((28.7 * hba1c) - 46.7).toFixed(1);
             }
 
-            // --- حسابات التجلط (PT & INR) ---
+            // حسابات التجلط (PT & INR)
             let ptPat = vals['PT Patient'] || vals['PT_PAT'];
             let ptCon = vals['PT Control'] || vals['PT_CON'];
             if (ptPat !== undefined && ptCon !== undefined && ptCon > 0) {
@@ -399,7 +445,7 @@
                 if (inrInput) inrInput.value = Math.pow(ratio, 1).toFixed(2);
             }
 
-            // --- حسابات السيولة (HOMA IR) ---
+            // حسابات السيولة (HOMA IR)
             let fbs = vals['FBS'] || vals['Fasting Blood Sugar'];
             let fins = vals['FINS'] || vals['Fasting Insulin'];
             if (fbs !== undefined && fins !== undefined) {
@@ -407,7 +453,7 @@
                 if (homaInput) homaInput.value = ((fbs * fins) / 405).toFixed(2);
             }
 
-            // --- حسابات الحديد (Iron Profile) ---
+            // حسابات الحديد (Iron Profile)
             let iron = vals['Iron'];
             let tibc = vals['TIBC'];
             if (iron !== undefined && tibc !== undefined && tibc > 0) {
@@ -415,7 +461,7 @@
                 if (tsatInput) tsatInput.value = ((iron / tibc) * 100).toFixed(1);
             }
 
-            // --- حسابات الكبد (Liver Profile) ---
+            // حسابات الكبد (Liver Profile)
             let tbil = vals['TBIL'] || vals['Total Bilirubin'];
             let dbil = vals['DBIL'] || vals['Direct Bilirubin'];
             if (tbil !== undefined && dbil !== undefined) {
@@ -432,14 +478,14 @@
                 if (agInput && globVal > 0) agInput.value = (alb / globVal).toFixed(1);
             }
 
-            // --- حسابات الكلى (Kidney Profile) ---
+            // حسابات الكلى (Kidney Profile)
             let urea = vals['Urea'];
             if (urea !== undefined) {
                 let bunInput = document.getElementById(`res_${visitTestId}_BUN`);
                 if (bunInput) bunInput.value = (urea / 2.14).toFixed(1);
             }
 
-            // --- محرك المعادلات العشوائي (لو فيه فورمولا مكتوبة) ---
+            // محرك المعادلات العشوائي
             params.forEach(p => {
                 let calcVal = null;
                 let formula = p.formula;
@@ -527,6 +573,66 @@
             }
         }
 
+        // دالة إضافة تحليل جديد للزيارة
+        function openAddTestModal() {
+            if(!selectedVisitId) return alert('اختر مريضاً أولاً!');
+            document.getElementById('addTestModal').style.display = 'flex';
+            document.getElementById('addTestSearch').value = '';
+            filterAddTest(); // عرض كل التحاليل في الأول
+        }
+
+        function filterAddTest() {
+            const query = document.getElementById('addTestSearch').value.toLowerCase();
+            const container = document.getElementById('addTestResults');
+            
+            // فلترة الكتالوج
+            const filtered = testsCatalog.filter(t => 
+                (t.code && t.code.toLowerCase().includes(query)) || 
+                (t.name && t.name.toLowerCase().includes(query))
+            );
+
+            // فلترة التحاليل اللي متسجلة بالفعل في الزيارة دي (عشان منضيفهاش مرتين)
+            const currentTestCodes = visitTests.filter(vt => vt.visit_id === selectedVisitId).map(vt => vt.test_code);
+
+            const available = filtered.filter(t => !currentTestCodes.includes(t.code));
+
+            if(available.length === 0) {
+                container.innerHTML = '<div style="grid-column: 1/-1; text-align: center;">لا توجد تحاليل مطابقة أو متاحة للإضافة</div>';
+                return;
+            }
+
+            container.innerHTML = available.map(t => `
+                <button class="btn btn-primary" style="text-align: right; padding: 10px;" onclick="addTestToVisit('${t.code}', '${t.name}')">
+                    ${t.name} (${t.code})
+                </button>
+            `).join('');
+        }
+
+        async function addTestToVisit(code, name) {
+            if(!selectedVisitId) return;
+
+            try {
+                // إضافة التحليل للسحابة
+                const { error } = await _supabase.from('visit_tests').insert([{
+                    visit_id: selectedVisitId,
+                    test_code: code,
+                    price_at_time: 0 // ممكن نحط السعر الفعلي لو عايزين
+                }]);
+
+                if(error) throw error;
+
+                // تحديث البيانات محلياً
+                await loadData(); 
+                selectPatient(selectedVisitId);
+                
+                document.getElementById('addTestModal').style.display = 'none';
+                showToast(`✅ تم إضافة ${name} بنجاح`);
+
+            } catch(err) {
+                alert('خطأ في الإضافة: ' + err.message);
+            }
+        }
+
         function getHeaderHtml(visit, reqDate, printDate) {
             return `
                 <div class="print-header">
@@ -595,7 +701,13 @@
 
                 if (isProfile) {
                     let localVals = {};
-                    params.forEach(param => { if(savedData[param.name]?.value) localVals[param.name] = parseFloat(savedData[param.name].value); });
+                    params.forEach(param => { 
+                        if(savedData[param.name]?.value) {
+                            let parsed = parseFloat(savedData[param.name].value);
+                            // حل مشكلة الـ NaN: بنحول بس لو الرقم حقيقي
+                            if(!isNaN(parsed)) localVals[param.name] = parsed;
+                        }
+                    });
                     
                     if (catalogItem.name.toUpperCase().includes('LIPID') || catalogItem.code === 'TL-109') {
                         let trig = localVals['Triglycerides'] || localVals['TRIG'] || localVals['Trig'];
@@ -611,7 +723,8 @@
                     }
 
                     params.forEach(param => {
-                        const val = localVals[param.name]?.toFixed(1) || savedData[param.name]?.value;
+                        // حل مشكلة الـ NaN: بنعرض الرقم لو موجود، أو الكلمة زي ما هي
+                        const val = (localVals[param.name] !== undefined) ? localVals[param.name].toFixed(1) : savedData[param.name]?.value;
                         if (val) {
                             hasTestData = true;
                             const range = param.ref_male || param.reference_range || param.range || '-';
@@ -722,8 +835,6 @@
 
             document.getElementById('printModal').style.display = 'flex';
         }
-
-        function closePrintModal() { document.getElementById('printModal').style.display = 'none'; }
 
         window.onload = loadData;
     </script>
