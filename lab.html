@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل الذكي (v29 - شامل)</title>
+    <title>معامل طيبة - المعمل الذكي (v30 - شامل)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -40,8 +40,8 @@
         .input-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
         .input-group label { font-size: 0.85rem; font-weight: bold; color: var(--text-muted); display: flex; justify-content: space-between;}
         .range-info { font-weight: normal; font-size: 0.75rem; color: var(--accent-color); background: #eaf4fc; padding: 2px 6px; border-radius: 4px;}
-        .input-group input { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 1rem; font-family: inherit; outline: none; text-align: center; font-weight: bold;}
-        .input-group input:focus { border-color: var(--accent-color); box-shadow: 0 0 5px rgba(52,152,219,0.3); }
+        .input-group input, .input-group select { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 1rem; font-family: inherit; outline: none; text-align: center; font-weight: bold; background: white;}
+        .input-group input:focus, .input-group select:focus { border-color: var(--accent-color); box-shadow: 0 0 5px rgba(52,152,219,0.3); }
         .input-calc { background-color: #f0f8ff; color: #0056b3; border-color: #b3d7ff;}
         
         .btn-group { display: flex; gap: 10px; margin-top: 10px; }
@@ -77,7 +77,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v29)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v30)</div>
         <div>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
@@ -175,7 +175,6 @@
         function getSmartParams(catalogItem) {
             let params = catalogItem.parameters ? JSON.parse(JSON.stringify(catalogItem.parameters)) : [];
             
-            // إضافة LDL لو مش موجود في الدهون
             const isLipid = (catalogItem.name && catalogItem.name.toUpperCase().includes('LIPID')) || catalogItem.code === 'TL-109';
             if (isLipid) {
                 if (!Array.isArray(params)) params = [];
@@ -221,15 +220,29 @@
                         const calcClass = isCalc ? 'input-calc' : '';
                         const placeholder = isCalc ? 'تلقائى' : '...';
 
+                        let inputElement = '';
+                        if (param.type === 'dropdown' && param.options && Array.isArray(param.options)) {
+                            let optionsHtml = `<option value="">-- اختر --</option>`;
+                            param.options.forEach(opt => {
+                                const selected = (val === opt) ? 'selected' : '';
+                                optionsHtml += `<option value="${opt}" ${selected}>${opt}</option>`;
+                            });
+                            inputElement = `<select class="${calcClass}" id="res_${vt.id}_${param.name}" onchange="triggerCalc('${vt.id}', '${vt.test_code}')" onkeydown="handleEnter(event, this, ${vt.id}, ${isProfile})">
+                                ${optionsHtml}
+                            </select>`;
+                        } else {
+                            inputElement = `<input type="text" inputmode="decimal" class="${calcClass}" 
+                                id="res_${vt.id}_${param.name}" 
+                                data-name="${param.name}"
+                                value="${val}" placeholder="${placeholder}" ${readonly} 
+                                oninput="triggerCalc('${vt.id}', '${vt.test_code}')"
+                                onkeydown="handleEnter(event, this, ${vt.id}, ${isProfile})">`;
+                        }
+
                         inputsHtml += `
                             <div class="input-group">
                                 <label><span>${param.label || param.name}</span><span class="range-info">${range} ${unit}</span></label>
-                                <input type="text" inputmode="decimal" class="${calcClass}" 
-                                    id="res_${vt.id}_${param.name}" 
-                                    data-name="${param.name}"
-                                    value="${val}" placeholder="${placeholder}" ${readonly} 
-                                    oninput="triggerCalc('${vt.id}', '${vt.test_code}')"
-                                    onkeydown="handleEnter(event, this, ${vt.id}, ${isProfile})">
+                                ${inputElement}
                             </div>
                         `;
                     });
@@ -266,19 +279,19 @@
             profileList.innerHTML = profilesHtml || '<div class="empty-msg">لا توجد تحاليل مركبة</div>';
             
             setTimeout(() => {
-                const firstInput = document.querySelector('.test-item input:not([readonly])');
+                const firstInput = document.querySelector('.test-item input:not([readonly]), .test-item select');
                 if(firstInput) firstInput.focus();
             }, 100);
         }
 
         function handleEnter(e, el, vtId, isProfile) {
             let form = el.closest('.test-body');
-            let inputs = Array.from(form.querySelectorAll('input:not([readonly])'));
+            let inputs = Array.from(form.querySelectorAll('input:not([readonly]), select'));
             let index = inputs.indexOf(el);
 
-            if (e.key === 'Enter' || e.key === 'ArrowDown') {
+            if (e.key === 'Enter') {
                 e.preventDefault();
-                if (e.key === 'Enter') saveTestResult(vtId, isProfile, true);
+                saveTestResult(vtId, isProfile, true);
                 
                 if (index > -1 && index < inputs.length - 1) {
                     inputs[index + 1].focus();
@@ -286,10 +299,13 @@
                     let allCards = Array.from(document.querySelectorAll('.test-item'));
                     let cardIndex = allCards.indexOf(el.closest('.test-item'));
                     if (cardIndex > -1 && cardIndex < allCards.length - 1) {
-                        let nextInput = allCards[cardIndex + 1].querySelector('input:not([readonly])');
+                        let nextInput = allCards[cardIndex + 1].querySelector('input:not([readonly]), select');
                         if (nextInput) nextInput.focus();
                     }
                 }
+            } else if (e.key === 'ArrowDown' && el.tagName !== 'SELECT') {
+                e.preventDefault();
+                if (index > -1 && index < inputs.length - 1) inputs[index + 1].focus();
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 if (index > 0) {
@@ -298,7 +314,7 @@
                     let allCards = Array.from(document.querySelectorAll('.test-item'));
                     let cardIndex = allCards.indexOf(el.closest('.test-item'));
                     if (cardIndex > 0) {
-                        let prevInputs = allCards[cardIndex - 1].querySelectorAll('input:not([readonly])');
+                        let prevInputs = allCards[cardIndex - 1].querySelectorAll('input:not([readonly]), select');
                         if (prevInputs.length > 0) prevInputs[prevInputs.length - 1].focus();
                     }
                 }
