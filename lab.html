@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل الذكي (v28 - سريع)</title>
+    <title>معامل طيبة - المعمل الذكي (v29 - شامل)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -77,7 +77,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v28)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v29)</div>
         <div>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
@@ -174,8 +174,9 @@
 
         function getSmartParams(catalogItem) {
             let params = catalogItem.parameters ? JSON.parse(JSON.stringify(catalogItem.parameters)) : [];
-            const isLipid = (catalogItem.name && catalogItem.name.toUpperCase().includes('LIPID')) || catalogItem.code === 'TL-109';
             
+            // إضافة LDL لو مش موجود في الدهون
+            const isLipid = (catalogItem.name && catalogItem.name.toUpperCase().includes('LIPID')) || catalogItem.code === 'TL-109';
             if (isLipid) {
                 if (!Array.isArray(params)) params = [];
                 params = params.filter(p => !p.name.toLowerCase().includes('ldl'));
@@ -319,56 +320,14 @@
                 }
             });
 
-            let trig = vals['Triglycerides'] || vals['TRIG'] || vals['Trig'];
-            let vldlInput = document.getElementById(`res_${visitTestId}_VLDL`);
-            if (trig !== undefined && vldlInput) {
-                let vldlVal = trig / 5;
-                vldlInput.value = vldlVal.toFixed(1);
-                vals['VLDL'] = vldlVal;
-            }
-
-            let cho = vals['Total Cholesterol'] || vals['CHO'] || vals['Cholesterol'];
-            let hdl = vals['HDL'] || vals['Hdl'];
-            let vldl = vals['VLDL'];
-            let ldlInput = document.getElementById(`res_${visitTestId}_LDL`);
-            
-            if (cho !== undefined && hdl !== undefined && vldl !== undefined && ldlInput) {
-                let ldlVal = cho - hdl - vldl;
-                if (ldlVal < 0) ldlVal = 0;
-                ldlInput.value = ldlVal.toFixed(1);
-                vals['LDL'] = ldlVal;
-            }
-
-            let risk1Input = document.getElementById(`res_${visitTestId}_RISK1`);
-            let risk2Input = document.getElementById(`res_${visitTestId}_RISK2`);
-            
-            if (cho !== undefined && hdl !== undefined && hdl > 0 && risk1Input) risk1Input.value = (cho / hdl).toFixed(1);
-            if (vals['LDL'] !== undefined && hdl !== undefined && hdl > 0 && risk2Input) risk2Input.value = (vals['LDL'] / hdl).toFixed(1);
-
-            // حسابات السيولة (PT)
-            let ptPat = vals['PT Patient'] || vals['PT_PAT'] || vals['PT'];
-            let ptCon = vals['PT Control'] || vals['PT_CON'];
-            if (ptPat !== undefined && ptCon !== undefined && ptCon > 0) {
-                let ratio = ptPat / ptCon;
-                let inr = Math.pow(ratio, 1);
-                let ratInput = document.getElementById(`res_${visitTestId}_PT Ratio`) || document.getElementById(`res_${visitTestId}_PT_RAT`);
-                let inrInput = document.getElementById(`res_${visitTestId}_INR`) || document.getElementById(`res_${visitTestId}_PT_INR`);
-                if (ratInput) ratInput.value = ratio.toFixed(2);
-                if (inrInput) inrInput.value = inr.toFixed(2);
-            }
-
-            // حسابات صورة الدم (CBC)
-            let hb = vals['Hemoglobin'] || vals['HGB'] || vals['HB'] || vals['Hb'];
-            let rbc = vals['RBCs'] || vals['RBC'] || vals['RBCs'];
+            // --- حسابات صورة الدم (CBC) ---
+            let hb = vals['HB'] || vals['Hemoglobin'] || vals['HGB'] || vals['Hb'];
+            let rbc = vals['RBC'] || vals['RBCs'];
             let hct = vals['HCT'] || vals['Hct'];
 
             if (hb !== undefined) {
                 let hctInput = document.getElementById(`res_${visitTestId}_HCT`);
-                if (hctInput) {
-                    hct = hb * 3;
-                    hctInput.value = hct.toFixed(1);
-                    vals['HCT'] = hct;
-                }
+                if (hctInput) { hct = hb * 3; hctInput.value = hct.toFixed(1); vals['HCT'] = hct; }
             }
             if (hct !== undefined && rbc !== undefined && rbc > 0) {
                 let mcvInput = document.getElementById(`res_${visitTestId}_MCV`);
@@ -383,7 +342,88 @@
                 if (mchcInput) mchcInput.value = ((hb * 100) / hct).toFixed(1);
             }
 
-            // باقي الحسابات
+            // --- حسابات الدهون (Lipid) ---
+            let trig = vals['Triglycerides'] || vals['TRIG'] || vals['Trig'];
+            let cho = vals['Total Cholesterol'] || vals['CHO'] || vals['Cholesterol'];
+            let hdl = vals['HDL'] || vals['Hdl'];
+            
+            if (trig !== undefined) {
+                let vldlInput = document.getElementById(`res_${visitTestId}_VLDL`);
+                if (vldlInput) { let vldlVal = trig / 5; vldlInput.value = vldlVal.toFixed(1); vals['VLDL'] = vldlVal; }
+            }
+            let vldl = vals['VLDL'];
+            if (cho !== undefined && hdl !== undefined && vldl !== undefined) {
+                let ldlInput = document.getElementById(`res_${visitTestId}_LDL`);
+                if (ldlInput) { let ldlVal = cho - hdl - vldl; if(ldlVal<0)ldlVal=0; ldlInput.value = ldlVal.toFixed(1); vals['LDL'] = ldlVal; }
+            }
+            if (cho !== undefined && hdl !== undefined && hdl > 0) {
+                let r1 = document.getElementById(`res_${visitTestId}_RISK1`);
+                if (r1) r1.value = (cho / hdl).toFixed(1);
+            }
+            if (vals['LDL'] !== undefined && hdl !== undefined && hdl > 0) {
+                let r2 = document.getElementById(`res_${visitTestId}_RISK2`);
+                if (r2) r2.value = (vals['LDL'] / hdl).toFixed(1);
+            }
+
+            // --- حساب السكر التراكمي (HbA1c -> eAG) ---
+            let hba1c = vals['HbA1c'];
+            if (hba1c !== undefined) {
+                let eagInput = document.getElementById(`res_${visitTestId}_eAG`);
+                if (eagInput) eagInput.value = ((28.7 * hba1c) - 46.7).toFixed(1);
+            }
+
+            // --- حسابات التجلط (PT & INR) ---
+            let ptPat = vals['PT Patient'] || vals['PT_PAT'];
+            let ptCon = vals['PT Control'] || vals['PT_CON'];
+            if (ptPat !== undefined && ptCon !== undefined && ptCon > 0) {
+                let ratio = ptPat / ptCon;
+                let ratInput = document.getElementById(`res_${visitTestId}_PT Ratio`) || document.getElementById(`res_${visitTestId}_PT_RAT`);
+                let inrInput = document.getElementById(`res_${visitTestId}_INR`);
+                if (ratInput) ratInput.value = ratio.toFixed(2);
+                if (inrInput) inrInput.value = Math.pow(ratio, 1).toFixed(2);
+            }
+
+            // --- حسابات السيولة (HOMA IR) ---
+            let fbs = vals['FBS'] || vals['Fasting Blood Sugar'];
+            let fins = vals['FINS'] || vals['Fasting Insulin'];
+            if (fbs !== undefined && fins !== undefined) {
+                let homaInput = document.getElementById(`res_${visitTestId}_HOMA_IR`);
+                if (homaInput) homaInput.value = ((fbs * fins) / 405).toFixed(2);
+            }
+
+            // --- حسابات الحديد (Iron Profile) ---
+            let iron = vals['Iron'];
+            let tibc = vals['TIBC'];
+            if (iron !== undefined && tibc !== undefined && tibc > 0) {
+                let tsatInput = document.getElementById(`res_${visitTestId}_TSAT`);
+                if (tsatInput) tsatInput.value = ((iron / tibc) * 100).toFixed(1);
+            }
+
+            // --- حسابات الكبد (Liver Profile) ---
+            let tbil = vals['TBIL'] || vals['Total Bilirubin'];
+            let dbil = vals['DBIL'] || vals['Direct Bilirubin'];
+            if (tbil !== undefined && dbil !== undefined) {
+                let ibilInput = document.getElementById(`res_${visitTestId}_IBIL`);
+                if (ibilInput) ibilInput.value = (tbil - dbil).toFixed(1);
+            }
+            let tp = vals['TP'] || vals['Total Protein'];
+            let alb = vals['ALB'] || vals['Albumin'];
+            if (tp !== undefined && alb !== undefined) {
+                let globInput = document.getElementById(`res_${visitTestId}_GLOB`);
+                let agInput = document.getElementById(`res_${visitTestId}_AG_RAT`);
+                let globVal = tp - alb;
+                if (globInput) globInput.value = globVal.toFixed(1);
+                if (agInput && globVal > 0) agInput.value = (alb / globVal).toFixed(1);
+            }
+
+            // --- حسابات الكلى (Kidney Profile) ---
+            let urea = vals['Urea'];
+            if (urea !== undefined) {
+                let bunInput = document.getElementById(`res_${visitTestId}_BUN`);
+                if (bunInput) bunInput.value = (urea / 2.14).toFixed(1);
+            }
+
+            // --- محرك المعادلات العشوائي (لو فيه فورمولا مكتوبة) ---
             params.forEach(p => {
                 let calcVal = null;
                 let formula = p.formula;
@@ -397,10 +437,7 @@
                         for (let v of vars) {
                             let valToUse = undefined;
                             for (let key in vals) {
-                                if (key.toLowerCase() === v.toLowerCase()) {
-                                    valToUse = vals[key];
-                                    break;
-                                }
+                                if (key.toLowerCase() === v.toLowerCase()) { valToUse = vals[key]; break; }
                             }
                             if (valToUse === undefined) { hasAllVars = false; break; }
                             evalStr = evalStr.replace(new RegExp('\\b' + v + '\\b', 'g'), valToUse);
@@ -412,10 +449,7 @@
 
                 if (calcVal !== null && isFinite(calcVal) && calcVal >= 0) {
                     const input = document.getElementById(`res_${visitTestId}_${p.name}`);
-                    if (input) {
-                        input.value = parseFloat(calcVal.toFixed(1));
-                        vals[p.name] = calcVal;
-                    }
+                    if (input) input.value = parseFloat(calcVal.toFixed(1));
                 }
             });
         }
