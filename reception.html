@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - بوابة الاستقبال (v14)</title>
+    <title>معامل طيبة - بوابة الاستقبال (v15)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -24,6 +24,8 @@
         .nav-btn:hover { background: rgba(255,255,255,0.2); }
         .nav-btn.lab { background: var(--warning-color); color: #333; border-color: var(--warning-color); }
         .nav-btn.lab:hover { background: #e67e22; }
+        .nav-btn.manage { background: var(--ai-color); color: white; border-color: var(--ai-color); }
+        .nav-btn.manage:hover { background: #8e44ad; }
 
         .main-container { display: grid; grid-template-columns: 340px 1fr 340px; gap: 15px; padding: 15px; flex-grow: 1; height: calc(100vh - 60px); }
         .panel { background: var(--surface-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; border: 1px solid var(--border-color); overflow: hidden; }
@@ -99,8 +101,9 @@
 <body>
 
     <header>
-        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (v14)</div>
+        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (v15)</div>
         <div class="nav-links">
+            <button class="nav-btn manage" onclick="window.location.href='tests_manage.html'">⚙️ إدارة التحاليل</button>
             <button class="nav-btn lab" onclick="window.location.href='lab.html'">🔬 بوابة المعمل</button>
             <button class="nav-btn" onclick="openDailyCases()">📋 حالات اليوم</button>
             <button class="nav-btn" style="background: var(--danger-color); border-color: var(--danger-color);" onclick="alert('تم تسجيل الخروج')">🚪 خروج</button>
@@ -194,7 +197,6 @@
         </div>
     </div>
 
-    <!-- مودال حالات اليوم -->
     <div class="modal" id="dailyCasesModal">
         <div class="modal-content">
             <button class="close-modal" onclick="closeModal('dailyCasesModal')">X</button>
@@ -210,7 +212,6 @@
         </div>
     </div>
 
-    <!-- مودال تعديل المريض -->
     <div class="modal" id="editPatientModal">
         <div class="modal-content" style="max-width: 500px;">
             <button class="close-modal" onclick="closeModal('editPatientModal')">X</button>
