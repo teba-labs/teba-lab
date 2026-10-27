@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل الذكي (v33)</title>
+    <title>معامل طيبة - المعمل الذكي (v34 - ديناميك)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -77,7 +77,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v33)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v34)</div>
         <div>
             <button class="nav-btn add-test" id="btnAddTest" onclick="openAddTestModal()" style="display:none;">➕ إضافة تحليل للحالة</button>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
@@ -143,6 +143,35 @@
             t.innerText = msg;
             t.style.display = 'block';
             setTimeout(() => t.style.display = 'none', 2000);
+        }
+
+        // دالة ذكية لاختيار الرينج المناسب حسب العمر
+        function getDynamicRange(refStr, age, ageType) {
+            if (!refStr || refStr === '-') return '-';
+            if (!age || !ageType) return refStr;
+
+            let ageInYears = parseFloat(age) || 0;
+            if (ageType === 'Months') ageInYears = ageInYears / 12;
+            if (ageType === 'Days') ageInYears = ageInYears / 365;
+
+            // لو الرينج فيه كلمة Adult أو Child أو Infant
+            if (refStr.includes('Adult:') || refStr.includes('Child:') || refStr.includes('Infant:')) {
+                let parts = refStr.split('|').map(p => p.trim());
+                
+                if (ageInYears <= 1) {
+                    let match = parts.find(p => p.includes('Infant:') || p.includes('Newborn:'));
+                    if (match) return match.replace(/Infant:|Newborn:/g, '').trim();
+                } else if (ageInYears <= 12) {
+                    let match = parts.find(p => p.includes('Child:'));
+                    if (match) return match.replace(/Child:/g, '').trim();
+                } else {
+                    let match = parts.find(p => p.includes('Adult:'));
+                    if (match) return match.replace(/Adult:/g, '').trim();
+                }
+            }
+            
+            // لو الرينج بتاع هرمونات (Follicular, Luteal)، بنرجع النص كله
+            return refStr;
         }
 
         async function loadData() {
@@ -226,6 +255,7 @@
             
             document.getElementById('btnAddTest').style.display = 'block';
 
+            const visit = allVisits.find(v => v.visit_id === selectedVisitId);
             const singleList = document.getElementById('singleList');
             const profileList = document.getElementById('profileList');
             const vTests = visitTests.filter(vt => vt.visit_id === visitId);
@@ -251,7 +281,10 @@
                     params.forEach(param => {
                         const val = savedData[param.name]?.value || '';
                         const unit = param.unit || param.units || '';
-                        const range = param.ref_male || param.reference_range || param.range || '-';
+                        
+                        // استخدام الدالة الذكية للرينج
+                        const rawRange = param.ref_male || param.reference_range || param.range || '-';
+                        const range = getDynamicRange(rawRange, visit.patient.age, visit.patient.age_type);
                         
                         const isCalc = param.is_calc === true || param.is_calculated === true || param.name === 'LDL';
                         const readonly = isCalc ? 'readonly' : '';
@@ -296,7 +329,10 @@
                     const val = savedData['result']?.value || '';
                     const p = params[0] || {};
                     const unit = p.unit || catalogItem.unit || '-';
-                    const range = p.ref_male || catalogItem.reference_range || '-';
+                    
+                    const rawRange = p.ref_male || catalogItem.reference_range || '-';
+                    const range = getDynamicRange(rawRange, visit.patient.age, visit.patient.age_type);
+
                     inputsHtml += `
                         <div class="input-group">
                             <label><span>النتيجة</span><span class="range-info">${range} ${unit}</span></label>
@@ -724,7 +760,11 @@
                         const val = (localVals[param.name] !== undefined) ? localVals[param.name].toFixed(1) : savedData[param.name]?.value;
                         if (val) {
                             hasTestData = true;
-                            const range = param.ref_male || param.reference_range || param.range || '-';
+                            
+                            // استخدام الدالة الذكية للرينج هنا كمان
+                            const rawRange = param.ref_male || param.reference_range || param.range || '-';
+                            const range = getDynamicRange(rawRange, visit.patient.age, visit.patient.age_type);
+                            
                             const unit = param.unit || param.units || '-';
                             
                             let flagStr = '';
@@ -751,7 +791,9 @@
                     const val = savedData['result']?.value;
                     if (val) {
                         const p = params[0] || {};
-                        const range = p.ref_male || catalogItem.reference_range || '-';
+                        
+                        const rawRange = p.ref_male || catalogItem.reference_range || '-';
+                        const range = getDynamicRange(rawRange, visit.patient.age, visit.patient.age_type);
                         const unit = p.unit || catalogItem.unit || '-';
                         
                         let flagStr = '';
