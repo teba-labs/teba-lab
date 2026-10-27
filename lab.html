@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل الذكي (v27 - سريع)</title>
+    <title>معامل طيبة - المعمل الذكي (v28 - سريع)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -58,7 +58,6 @@
         .btn-print { background: var(--success-color); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; margin-top: 15px; }
         .btn-close { background: var(--danger-color); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; margin-top: 10px; }
 
-        /* ستايل صفحات الطباعة */
         .print-page { background: #fff; width: 100%; min-height: 297mm; padding: 15mm; margin-bottom: 20px; box-sizing: border-box; position: relative; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         .print-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; z-index: 2; position: relative; }
         .print-footer { position: absolute; bottom: 15mm; left: 15mm; right: 15mm; border-top: 2px solid #000; padding-top: 10px; font-size: 12px; display: flex; justify-content: space-between; }
@@ -78,7 +77,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v27)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v28)</div>
         <div>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
             <button class="nav-btn" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
@@ -155,7 +154,7 @@
             testResults = results || [];
 
             allVisits = (visits || []).map(v => {
-                const p = (patients || []).find(x => x.id == v.patient_id) || { name: 'غير معروف', age: 0, gender: 'ذكر' };
+                const p = (patients || []).find(x => x.id == v.patient_id) || { name: 'غير معروف', age: 0, gender: 'ذكر', doctor_name: '-' };
                 return { ...v, patient: p };
             });
             renderPatients();
@@ -254,7 +253,7 @@
                             ${inputsHtml}
                             <div class="btn-group">
                                 <button class="btn-save-test" onclick="saveTestResult(${vt.id}, ${isProfile}, false)">💾 حفظ</button>
-                                <button class="btn-del-test" onclick="deleteTestResult(${vt.id})">🗑️ حذف</button>
+                                <button class="btn-del-test" onclick="deleteVisitTest(${vt.id}, ${vt.visit_id})">🗑️ حذف</button>
                             </div>
                         </div>
                     </div>
@@ -320,7 +319,6 @@
                 }
             });
 
-            // حسابات الدهون (Lipid Profile)
             let trig = vals['Triglycerides'] || vals['TRIG'] || vals['Trig'];
             let vldlInput = document.getElementById(`res_${visitTestId}_VLDL`);
             if (trig !== undefined && vldlInput) {
@@ -344,11 +342,19 @@
             let risk1Input = document.getElementById(`res_${visitTestId}_RISK1`);
             let risk2Input = document.getElementById(`res_${visitTestId}_RISK2`);
             
-            if (cho !== undefined && hdl !== undefined && hdl > 0 && risk1Input) {
-                risk1Input.value = (cho / hdl).toFixed(1);
-            }
-            if (vals['LDL'] !== undefined && hdl !== undefined && hdl > 0 && risk2Input) {
-                risk2Input.value = (vals['LDL'] / hdl).toFixed(1);
+            if (cho !== undefined && hdl !== undefined && hdl > 0 && risk1Input) risk1Input.value = (cho / hdl).toFixed(1);
+            if (vals['LDL'] !== undefined && hdl !== undefined && hdl > 0 && risk2Input) risk2Input.value = (vals['LDL'] / hdl).toFixed(1);
+
+            // حسابات السيولة (PT)
+            let ptPat = vals['PT Patient'] || vals['PT_PAT'] || vals['PT'];
+            let ptCon = vals['PT Control'] || vals['PT_CON'];
+            if (ptPat !== undefined && ptCon !== undefined && ptCon > 0) {
+                let ratio = ptPat / ptCon;
+                let inr = Math.pow(ratio, 1);
+                let ratInput = document.getElementById(`res_${visitTestId}_PT Ratio`) || document.getElementById(`res_${visitTestId}_PT_RAT`);
+                let inrInput = document.getElementById(`res_${visitTestId}_INR`) || document.getElementById(`res_${visitTestId}_PT_INR`);
+                if (ratInput) ratInput.value = ratio.toFixed(2);
+                if (inrInput) inrInput.value = inr.toFixed(2);
             }
 
             // حسابات صورة الدم (CBC)
@@ -366,24 +372,18 @@
             }
             if (hct !== undefined && rbc !== undefined && rbc > 0) {
                 let mcvInput = document.getElementById(`res_${visitTestId}_MCV`);
-                if (mcvInput) {
-                    mcvInput.value = ((hct * 10) / rbc).toFixed(1);
-                }
+                if (mcvInput) mcvInput.value = ((hct * 10) / rbc).toFixed(1);
             }
             if (hb !== undefined && rbc !== undefined && rbc > 0) {
                 let mchInput = document.getElementById(`res_${visitTestId}_MCH`);
-                if (mchInput) {
-                    mchInput.value = ((hb * 10) / rbc).toFixed(1);
-                }
+                if (mchInput) mchInput.value = ((hb * 10) / rbc).toFixed(1);
             }
             if (hb !== undefined && hct !== undefined && hct > 0) {
                 let mchcInput = document.getElementById(`res_${visitTestId}_MCHC`);
-                if (mchcInput) {
-                    mchcInput.value = ((hb * 100) / hct).toFixed(1);
-                }
+                if (mchcInput) mchcInput.value = ((hb * 100) / hct).toFixed(1);
             }
 
-            // باقي الحسابات (زي PT, INR لو موجودة)
+            // باقي الحسابات
             params.forEach(p => {
                 let calcVal = null;
                 let formula = p.formula;
@@ -457,19 +457,24 @@
             else showToast('💾 تم الحفظ تلقائياً');
         }
 
-        async function deleteTestResult(visitTestId) {
-            if(!confirm('هل أنت متأكد من حذف نتيجة هذا التحليل؟')) return;
+        async function deleteVisitTest(visitTestId, visitId) {
+            if(!confirm('هل أنت متأكد من حذف هذا التحليل نهائياً من الطلب؟')) return;
             
-            const { error } = await _supabase.from('test_results').delete().eq('visit_test_id', visitTestId);
-            if(error) return alert('خطأ في الحذف: ' + error.message);
+            try {
+                await _supabase.from('test_results').delete().eq('visit_test_id', visitTestId);
+                await _supabase.from('visit_tests').delete().eq('id', visitTestId);
+                
+                const index = testResults.findIndex(r => r.visit_test_id === visitTestId);
+                if(index > -1) testResults.splice(index, 1);
 
-            const index = testResults.findIndex(r => r.visit_test_id === visitTestId);
-            if(index > -1) testResults.splice(index, 1);
-
-            const card = document.getElementById(`card_${visitTestId}`);
-            if(card) card.querySelectorAll('input').forEach(input => input.value = '');
-            
-            showToast('🗑️ تم الحذف');
+                const vtIndex = visitTests.findIndex(v => v.id === visitTestId);
+                if(vtIndex > -1) visitTests.splice(vtIndex, 1);
+                
+                selectPatient(visitId); // تحديث الشاشة
+                showToast('🗑️ تم حذف التحليل');
+            } catch (err) {
+                alert('خطأ: ' + err.message);
+            }
         }
 
         function getHeaderHtml(visit, reqDate, printDate) {
@@ -488,6 +493,7 @@
                     <div style="width: 50%; display: flex; flex-direction: column; gap: 5px;">
                         <div><strong style="color: #000; display: inline-block; width: 100px;">Patient:</strong> <span style="font-weight: bold;">${visit.patient.name || 'Unknown'}</span></div>
                         <div><strong style="color: #000; display: inline-block; width: 100px;">Age/Gender:</strong> <span style="font-weight: bold;">${visit.patient.age} Years / ${visit.patient.gender}</span></div>
+                        <div><strong style="color: #000; display: inline-block; width: 100px;">Referred By:</strong> <span style="font-weight: bold;">${visit.patient.doctor_name || '---'}</span></div>
                     </div>
                     <div style="width: 50%; display: flex; flex-direction: column; gap: 5px; text-align: right; border-left: 1.5px solid #000; padding-left: 15px;">
                         <div><strong style="color: #000; display: inline-block; width: 100px;">Visit ID:</strong> <span style="font-weight: bold;">${visit.visit_id}</span></div>

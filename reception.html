@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - بوابة الاستقبال (v13)</title>
+    <title>معامل طيبة - بوابة الاستقبال (v14)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -99,7 +99,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (v13)</div>
+        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (v14)</div>
         <div class="nav-links">
             <button class="nav-btn lab" onclick="window.location.href='lab.html'">🔬 بوابة المعمل</button>
             <button class="nav-btn" onclick="openDailyCases()">📋 حالات اليوم</button>
@@ -194,6 +194,7 @@
         </div>
     </div>
 
+    <!-- مودال حالات اليوم -->
     <div class="modal" id="dailyCasesModal">
         <div class="modal-content">
             <button class="close-modal" onclick="closeModal('dailyCasesModal')">X</button>
@@ -206,6 +207,28 @@
                 </thead>
                 <tbody id="dailyCasesBody"></tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- مودال تعديل المريض -->
+    <div class="modal" id="editPatientModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <button class="close-modal" onclick="closeModal('editPatientModal')">X</button>
+            <h3>✏️ تعديل بيانات المريض</h3>
+            <input type="hidden" id="editPatientId">
+            <div class="form-group" style="margin-top:15px;">
+                <label>اسم المريض</label>
+                <input type="text" id="editPName">
+            </div>
+            <div class="form-group">
+                <label>رقم التليفون</label>
+                <input type="text" id="editPPhone">
+            </div>
+            <div class="form-group">
+                <label>الطبيب المحول</label>
+                <input type="text" id="editPDoctor">
+            </div>
+            <button class="btn btn-save" onclick="savePatientEdit()" style="margin-top:10px;">💾 حفظ التعديلات</button>
         </div>
     </div>
 
@@ -445,7 +468,7 @@
             document.getElementById('dailyCasesModal').style.display = 'flex';
 
             const { data, error } = await _supabase.from('visits')
-                .select(`visit_id, total_amount, paid_amount, status, visit_date, patients (name)`)
+                .select(`visit_id, total_amount, paid_amount, status, visit_date, patient_id, patients (id, name, phone, doctor_name)`)
                 .order('visit_id', {ascending: false});
             
             if(error) {
@@ -453,17 +476,44 @@
                 return;
             }
 
-            tbody.innerHTML = data.map(v => `
+            tbody.innerHTML = data.map(v => {
+                const p = v.patients || {};
+                return `
                 <tr>
                     <td>${v.visit_id}</td>
-                    <td>${v.patients ? v.patients.name : 'غير معروف'}</td>
+                    <td>${p.name || 'غير معروف'}</td>
                     <td>${v.visit_date || '---'}</td>
-                    <td>${parseFloat(v.total_amount).toFixed(2)}</td>
-                    <td>${(parseFloat(v.total_amount) - parseFloat(v.paid_amount)).toFixed(2)}</td>
+                    <td>${parseFloat(v.total_amount || 0).toFixed(2)}</td>
+                    <td>${(parseFloat(v.total_amount || 0) - parseFloat(v.paid_amount || 0)).toFixed(2)}</td>
                     <td><span style="color: ${v.status === 'Pending' ? 'orange' : 'green'}; font-weight:bold;">${v.status}</span></td>
-                    <td><button class="btn btn-delete" style="padding: 2px 8px;" onclick="deleteVisit(${v.visit_id})">حذف</button></td>
+                    <td>
+                        <button class="btn btn-primary" style="padding: 2px 8px; margin-bottom:2px;" onclick='openEditPatientModal(${JSON.stringify(p)})'>تعديل</button>
+                        <button class="btn btn-delete" style="padding: 2px 8px;" onclick="deleteVisit(${v.visit_id})">حذف</button>
+                    </td>
                 </tr>
-            `).join('');
+            `}).join('');
+        }
+
+        function openEditPatientModal(patient) {
+            document.getElementById('editPatientId').value = patient.id;
+            document.getElementById('editPName').value = patient.name;
+            document.getElementById('editPPhone').value = patient.phone || '';
+            document.getElementById('editPDoctor').value = patient.doctor_name || '';
+            document.getElementById('editPatientModal').style.display = 'flex';
+        }
+
+        async function savePatientEdit() {
+            const id = document.getElementById('editPatientId').value;
+            const name = document.getElementById('editPName').value;
+            const phone = document.getElementById('editPPhone').value;
+            const doctor = document.getElementById('editPDoctor').value;
+
+            const { error } = await _supabase.from('patients').update({ name, phone, doctor_name: doctor }).eq('id', id);
+            if(error) return alert('خطأ: ' + error.message);
+            
+            alert('تم التعديل بنجاح');
+            closeModal('editPatientModal');
+            openDailyCases();
         }
 
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
@@ -471,15 +521,12 @@
         async function deleteVisit(visitId) {
             if(!confirm('هل أنت متأكد من حذف هذه الزيارة نهائياً؟')) return;
             try {
-                // 1. حذف النتائج المرتبطة بالتحاليل
                 const { data: vtData } = await _supabase.from('visit_tests').select('id').eq('visit_id', visitId);
                 if (vtData && vtData.length > 0) {
                     const vtIds = vtData.map(v => v.id);
                     await _supabase.from('test_results').delete().in('visit_test_id', vtIds);
                 }
-                // 2. حذف التحاليل
                 await _supabase.from('visit_tests').delete().eq('visit_id', visitId);
-                // 3. حذف الزيارة
                 const { error } = await _supabase.from('visits').delete().eq('visit_id', visitId);
                 
                 if(error) throw error;
@@ -493,7 +540,6 @@
             const query = document.getElementById('patientSearch').value.trim();
             if(!query) return;
             
-            // البحث بالاسم أو التليفون باستخدام ilike للبحث الجزئي
             const { data, error } = await _supabase.from('patients')
                 .select('*')
                 .or(`name.ilike.%${query}%,phone.ilike.%${query}%`)
@@ -502,7 +548,7 @@
             if(error) return console.error(error);
             
             if(data && data.length > 0) {
-                const p = data[0]; // نختار أول نتيجة
+                const p = data[0];
                 document.getElementById('pName').value = p.name;
                 document.getElementById('pPhone').value = p.phone || '';
                 document.getElementById('pAge').value = p.age || 30;
