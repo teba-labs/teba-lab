@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - المعمل الذكي (v32)</title>
+    <title>معامل طيبة - المعمل الذكي (v33)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -77,7 +77,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🔬 المعمل - معامل طيبة (v32)</div>
+        <div class="brand-info">🔬 المعمل - معامل طيبة (v33)</div>
         <div>
             <button class="nav-btn add-test" id="btnAddTest" onclick="openAddTestModal()" style="display:none;">➕ إضافة تحليل للحالة</button>
             <button class="nav-btn print" onclick="openPrintModal()">👁️ معاينة تقرير الزيارة</button>
@@ -102,14 +102,11 @@
         </div>
     </div>
 
-    <!-- مودال إضافة تحليل -->
     <div class="modal" id="addTestModal">
         <div class="modal-content" style="max-width: 700px;">
             <h3 style="margin-bottom: 15px;">➕ إضافة تحليل جديد للحالة</h3>
             <input type="text" id="addTestSearch" placeholder="ابحث عن التحليل بالكود أو الاسم..." onkeyup="filterAddTest()" style="width: 100%; padding: 10px; margin-bottom: 15px; border: 2px solid var(--accent-color); border-radius: 6px; outline: none;">
-            <div id="addTestResults" style="max-height: 400px; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <!-- هنا هتظهر نتايج البحث -->
-            </div>
+            <div id="addTestResults" style="max-height: 400px; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
         </div>
     </div>
 
@@ -127,7 +124,6 @@
             }
         });
 
-        // زرار Esc يقفل أي شاشة
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 document.getElementById('printModal').style.display = 'none';
@@ -173,7 +169,7 @@
             testResults = results || [];
 
             allVisits = (visits || []).map(v => {
-                const p = (patients || []).find(x => x.id == v.patient_id) || { name: 'غير معروف', age: 0, gender: 'ذكر', doctor_name: '-' };
+                const p = (patients || []).find(x => x.id == v.patient_id) || { name: 'غير معروف', age: 0, age_type: 'Years', gender: 'ذكر', doctor_name: '-' };
                 return { ...v, patient: p };
             });
             renderPatients();
@@ -183,12 +179,17 @@
             const list = document.getElementById('patientList');
             if (allVisits.length === 0) return list.innerHTML = '<div class="empty-msg">لا توجد زيارات</div>';
 
-            list.innerHTML = allVisits.map(v => `
+            list.innerHTML = allVisits.map(v => {
+                let ageStr = v.patient.age + ' سنة';
+                if(v.patient.age_type === 'Months') ageStr = v.patient.age + ' شهر';
+                if(v.patient.age_type === 'Days') ageStr = v.patient.age + ' يوم';
+                
+                return `
                 <div class="patient-card ${v.visit_id === selectedVisitId ? 'active' : ''}" onclick="selectPatient(${v.visit_id})">
                     <div class="p-name">${v.patient.name}</div>
-                    <div class="p-meta"><span>زيارة #${v.visit_id}</span><span>${v.patient.gender} • ${v.patient.age} سنة</span></div>
+                    <div class="p-meta"><span>زيارة #${v.visit_id}</span><span>${v.patient.gender} • ${ageStr}</span></div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function getSmartParams(catalogItem) {
@@ -223,7 +224,6 @@
             selectedVisitId = visitId;
             renderPatients();
             
-            // إظهار زرار إضافة تحليل
             document.getElementById('btnAddTest').style.display = 'block';
 
             const singleList = document.getElementById('singleList');
@@ -566,32 +566,29 @@
                 const vtIndex = visitTests.findIndex(v => v.id === visitTestId);
                 if(vtIndex > -1) visitTests.splice(vtIndex, 1);
                 
-                selectPatient(visitId); // تحديث الشاشة
+                selectPatient(visitId);
                 showToast('🗑️ تم حذف التحليل');
             } catch (err) {
                 alert('خطأ: ' + err.message);
             }
         }
 
-        // دالة إضافة تحليل جديد للزيارة
         function openAddTestModal() {
             if(!selectedVisitId) return alert('اختر مريضاً أولاً!');
             document.getElementById('addTestModal').style.display = 'flex';
             document.getElementById('addTestSearch').value = '';
-            filterAddTest(); // عرض كل التحاليل في الأول
+            filterAddTest();
         }
 
         function filterAddTest() {
             const query = document.getElementById('addTestSearch').value.toLowerCase();
             const container = document.getElementById('addTestResults');
             
-            // فلترة الكتالوج
             const filtered = testsCatalog.filter(t => 
                 (t.code && t.code.toLowerCase().includes(query)) || 
                 (t.name && t.name.toLowerCase().includes(query))
             );
 
-            // فلترة التحاليل اللي متسجلة بالفعل في الزيارة دي (عشان منضيفهاش مرتين)
             const currentTestCodes = visitTests.filter(vt => vt.visit_id === selectedVisitId).map(vt => vt.test_code);
 
             const available = filtered.filter(t => !currentTestCodes.includes(t.code));
@@ -612,16 +609,14 @@
             if(!selectedVisitId) return;
 
             try {
-                // إضافة التحليل للسحابة
                 const { error } = await _supabase.from('visit_tests').insert([{
                     visit_id: selectedVisitId,
                     test_code: code,
-                    price_at_time: 0 // ممكن نحط السعر الفعلي لو عايزين
+                    price_at_time: 0 
                 }]);
 
                 if(error) throw error;
 
-                // تحديث البيانات محلياً
                 await loadData(); 
                 selectPatient(selectedVisitId);
                 
@@ -634,6 +629,10 @@
         }
 
         function getHeaderHtml(visit, reqDate, printDate) {
+            let ageStr = visit.patient.age + ' Years';
+            if(visit.patient.age_type === 'Months') ageStr = visit.patient.age + ' Months';
+            if(visit.patient.age_type === 'Days') ageStr = visit.patient.age + ' Days';
+
             return `
                 <div class="print-header">
                     <div style="width: 50%; text-align: left;">
@@ -648,7 +647,7 @@
                 <div style="display: flex; justify-content: space-between; border: 1.5px solid #000; padding: 10px 15px; border-radius: 4px; background: #fff; font-size: 13px; margin-bottom: 20px; z-index: 2; position: relative;">
                     <div style="width: 50%; display: flex; flex-direction: column; gap: 5px;">
                         <div><strong style="color: #000; display: inline-block; width: 100px;">Patient:</strong> <span style="font-weight: bold;">${visit.patient.name || 'Unknown'}</span></div>
-                        <div><strong style="color: #000; display: inline-block; width: 100px;">Age/Gender:</strong> <span style="font-weight: bold;">${visit.patient.age} Years / ${visit.patient.gender}</span></div>
+                        <div><strong style="color: #000; display: inline-block; width: 100px;">Age/Gender:</strong> <span style="font-weight: bold;">${ageStr} / ${visit.patient.gender}</span></div>
                         <div><strong style="color: #000; display: inline-block; width: 100px;">Referred By:</strong> <span style="font-weight: bold;">${visit.patient.doctor_name || '---'}</span></div>
                     </div>
                     <div style="width: 50%; display: flex; flex-direction: column; gap: 5px; text-align: right; border-left: 1.5px solid #000; padding-left: 15px;">
@@ -704,7 +703,6 @@
                     params.forEach(param => { 
                         if(savedData[param.name]?.value) {
                             let parsed = parseFloat(savedData[param.name].value);
-                            // حل مشكلة الـ NaN: بنحول بس لو الرقم حقيقي
                             if(!isNaN(parsed)) localVals[param.name] = parsed;
                         }
                     });
@@ -723,7 +721,6 @@
                     }
 
                     params.forEach(param => {
-                        // حل مشكلة الـ NaN: بنعرض الرقم لو موجود، أو الكلمة زي ما هي
                         const val = (localVals[param.name] !== undefined) ? localVals[param.name].toFixed(1) : savedData[param.name]?.value;
                         if (val) {
                             hasTestData = true;

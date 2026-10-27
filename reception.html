@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معامل طيبة - بوابة الاستقبال (v15)</title>
+    <title>معامل طيبة - بوابة الاستقبال (v17)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -36,7 +36,7 @@
         .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
         .form-group input, .form-group select { padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 0.95rem; outline: none; transition: border 0.2s;}
         .form-group input:focus, .form-group select:focus { border-color: var(--accent-color); box-shadow: 0 0 0 2px rgba(52,152,219,0.2);}
-        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
         .cart-items { flex-grow: 1; overflow-y: auto; padding: 10px; }
         .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
@@ -101,7 +101,7 @@
 <body>
 
     <header>
-        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (v15)</div>
+        <div class="brand-info">🏥 معامل طيبة للتحاليل الطبية (v17)</div>
         <div class="nav-links">
             <button class="nav-btn manage" onclick="window.location.href='tests_manage.html'">⚙️ إدارة التحاليل</button>
             <button class="nav-btn lab" onclick="window.location.href='lab.html'">🔬 بوابة المعمل</button>
@@ -132,16 +132,25 @@
                     <label>الطبيب المحول</label>
                     <input type="text" id="pDoctor" placeholder="اسم الدكتور" onkeydown="moveToNext(event, 'pAge')">
                 </div>
-                <div class="row-2">
+                <div class="row-3">
                     <div class="form-group">
                         <label>النوع</label>
                         <select id="pGender"><option value="male">ذكر</option><option value="female">أنثى</option></select>
                     </div>
                     <div class="form-group">
                         <label>العمر</label>
-                        <input type="number" id="pAge" value="30" onkeydown="moveToNext(event, 'catalogSearch')">
+                        <input type="number" id="pAge" value="30" onkeydown="moveToNext(event, 'pAgeType')">
+                    </div>
+                    <div class="form-group">
+                        <label>الوحدة</label>
+                        <select id="pAgeType" onkeydown="moveToNext(event, 'catalogSearch')">
+                            <option value="Years">سنوات</option>
+                            <option value="Months">شهور</option>
+                            <option value="Days">أيام</option>
+                        </select>
                     </div>
                 </div>
+                <button class="btn btn-print" id="btnPatientHistory" style="display:none; margin-top:10px;" onclick="openPatientHistory()">👁️ عرض تاريخ المريض</button>
             </div>
         </div>
 
@@ -233,6 +242,21 @@
         </div>
     </div>
 
+    <div class="modal" id="patientHistoryModal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal('patientHistoryModal')">X</button>
+            <h3>📜 تاريخ المريض: <span id="historyPatientName"></span></h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>رقم الزيارة</th><th>التاريخ</th><th>التحاليل</th><th>الإجمالي</th><th>المدفوع</th><th>إجراء</th>
+                    </tr>
+                </thead>
+                <tbody id="patientHistoryBody"></tbody>
+            </table>
+        </div>
+    </div>
+
     <div class="modal" id="invoicePreviewModal">
         <div class="modal-content" style="max-width: 600px;">
             <button class="close-modal" onclick="closeModal('invoicePreviewModal')">X</button>
@@ -268,9 +292,19 @@
 
         let masterTests = []; 
         let cart = [];
+        let currentPatientId = null;
 
         document.addEventListener("wheel", function(event){
             if(document.activeElement.type === "number"){ document.activeElement.blur(); }
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(modal => modal.style.display = 'none');
+                document.getElementById('catalogSearch').value = '';
+                renderCatalog();
+                document.getElementById('patientSearch').value = '';
+            }
         });
 
         function moveToNext(event, nextId) {
@@ -322,9 +356,6 @@
                     renderCatalog();
                     document.getElementById('catalogSearch').focus();
                 }
-            } else if (event.key === 'Escape') {
-                document.getElementById('catalogSearch').value = '';
-                renderCatalog();
             }
         }
 
@@ -378,14 +409,20 @@
             btn.innerText = 'جاري الحفظ...'; btn.disabled = true;
 
             try {
-                const { data: pData, error: pErr } = await _supabase.from('patients').insert([{
-                    name: pName, 
-                    phone: document.getElementById('pPhone').value, 
-                    age: parseInt(document.getElementById('pAge').value), 
-                    gender: document.getElementById('pGender').value, 
-                    doctor_name: document.getElementById('pDoctor').value
-                }]).select();
-                if (pErr) throw pErr;
+                let patientId = currentPatientId;
+
+                if (!patientId) {
+                    const { data: pData, error: pErr } = await _supabase.from('patients').insert([{
+                        name: pName, 
+                        phone: document.getElementById('pPhone').value, 
+                        age: parseInt(document.getElementById('pAge').value), 
+                        age_type: document.getElementById('pAgeType').value,
+                        gender: document.getElementById('pGender').value, 
+                        doctor_name: document.getElementById('pDoctor').value
+                    }]).select();
+                    if (pErr) throw pErr;
+                    patientId = pData[0].id;
+                }
 
                 const netTotal = parseFloat(document.getElementById('netTotalAmount').innerText);
                 const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
@@ -395,7 +432,7 @@
                 const discountAmount = (subTotal * (percent / 100)) + fixed;
                 
                 const { data: vData, error: vErr } = await _supabase.from('visits').insert([{
-                    patient_id: pData[0].id, branch_id: 1, total_amount: netTotal, paid_amount: paid, discount: discountAmount, status: 'Pending'
+                    patient_id: patientId, branch_id: 1, total_amount: netTotal, paid_amount: paid, discount: discountAmount, status: 'Pending'
                 }]).select();
                 if (vErr) throw vErr;
 
@@ -425,8 +462,10 @@
 
         function resetForm() {
             cart = [];
+            currentPatientId = null;
             document.getElementById('pName').value = ''; document.getElementById('pPhone').value = ''; document.getElementById('pDoctor').value = '';
             document.getElementById('paidAmount').value = ''; document.getElementById('discountPercent').value = ''; document.getElementById('discountFixed').value = '';
+            document.getElementById('btnPatientHistory').style.display = 'none';
             renderCart();
         }
 
@@ -517,6 +556,50 @@
             openDailyCases();
         }
 
+        async function openPatientHistory() {
+            if(!currentPatientId) return;
+            
+            const pName = document.getElementById('pName').value;
+            document.getElementById('historyPatientName').innerText = pName;
+            const tbody = document.getElementById('patientHistoryBody');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">جاري التحميل...</td></tr>';
+            document.getElementById('patientHistoryModal').style.display = 'flex';
+
+            const { data: visits, error } = await _supabase.from('visits')
+                .select('visit_id, visit_date, total_amount, paid_amount')
+                .eq('patient_id', currentPatientId)
+                .order('visit_id', {ascending: false});
+
+            if(error) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">خطأ: ${error.message}</td></tr>`;
+                return;
+            }
+
+            if(visits.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">لا يوجد زيارات سابقة لهذا المريض</td></tr>`;
+                return;
+            }
+
+            const visitIds = visits.map(v => v.visit_id);
+            const { data: vt } = await _supabase.from('visit_tests').select('visit_id, test_code').in('visit_id', visitIds);
+            
+            tbody.innerHTML = visits.map(v => {
+                const testsForVisit = vt.filter(t => t.visit_id === v.visit_id).map(t => t.test_code).join(', ');
+                
+                return `
+                <tr>
+                    <td>${v.visit_id}</td>
+                    <td>${v.visit_date || '---'}</td>
+                    <td>${testsForVisit || 'لا يوجد'}</td>
+                    <td>${parseFloat(v.total_amount || 0).toFixed(2)}</td>
+                    <td>${parseFloat(v.paid_amount || 0).toFixed(2)}</td>
+                    <td>
+                        <button class="btn btn-primary" style="padding: 2px 8px;" onclick="window.location.href='lab.html?visit_id=${v.visit_id}'">فتح بالمعمل</button>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         async function deleteVisit(visitId) {
@@ -550,29 +633,25 @@
             
             if(data && data.length > 0) {
                 const p = data[0];
+                currentPatientId = p.id;
                 document.getElementById('pName').value = p.name;
                 document.getElementById('pPhone').value = p.phone || '';
                 document.getElementById('pAge').value = p.age || 30;
+                document.getElementById('pAgeType').value = p.age_type || 'Years';
                 document.getElementById('pGender').value = p.gender || 'male';
                 document.getElementById('pDoctor').value = p.doctor_name || '';
+                
+                document.getElementById('btnPatientHistory').style.display = 'block';
+                
+                showToast('✅ تم العثور على المريض');
             } else { 
                 alert('لم يتم العثور على مريض بهذا الاسم أو الرقم'); 
+                document.getElementById('btnPatientHistory').style.display = 'none';
+                currentPatientId = null;
             }
         }
 
         window.onload = () => { fetchCatalogFromCloud(); renderCart(); };
-                // كود زرار Esc
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                // إغلاق أي نافذة مفتوحة
-                document.querySelectorAll('.modal').forEach(modal => modal.style.display = 'none');
-                // مسح البحث وإرجاع الكتالوج
-                document.getElementById('catalogSearch').value = '';
-                renderCatalog();
-                // مسح بحث المريض
-                document.getElementById('patientSearch').value = '';
-            }
-        });
     </script>
 </body>
 </html>
