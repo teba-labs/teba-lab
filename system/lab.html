@@ -128,16 +128,29 @@
         .print-footer-phones { flex: 1; text-align: left; direction: ltr; font-weight: bold; line-height: 1.8; }
         .print-footer-addresses { flex: 1; text-align: right; direction: rtl; font-weight: bold; line-height: 1.8; }
         .print-footer p { margin: 0; }
-
         /* إعدادات الطباعة لمنع التكرار وضبط الهوامش */
         @media print {
             body * { visibility: hidden; }
             #printModal, #printModal * { visibility: visible; }
-            #printModal { position: absolute; left: 0; top: 0; width: 100%; background: white; display: block !important; padding: 0 !important; margin: 0 !important; }
-            .modal-content { box-shadow: none !important; max-height: none !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; background: white !important; max-width: 100% !important; border-radius: 0 !important; }
+            #printModal { 
+                position: absolute; left: 0; top: 0; width: 100%; 
+                background: white; display: block !important; 
+                padding: 0 !important; margin: 0 !important; overflow: visible !important; 
+            }
+            .modal-content { 
+                box-shadow: none !important; max-height: none !important; 
+                overflow: visible !important; padding: 0 !important; margin: 0 !important; 
+                background: white !important; max-width: 100% !important; 
+                border-radius: 0 !important; height: auto !important; 
+            }
             .btn-print-modal { display: none !important; }
             
+            /* السر هنا: إجبار الصفحة تاخد ارتفاع A4 وتوزيع العناصر */
             .print-page {
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between; /* ده اللي بينزل الفوتر لتحت */
+                min-height: 277mm; /* ارتفاع A4 (297mm) ناقص الهامش (20mm) */
                 page-break-after: always;
                 break-after: page;
                 padding: 10mm;
@@ -148,8 +161,11 @@
                 page-break-after: auto;
                 break-after: auto;
             }
+            /* منع تقطيع الجداول بشكل يبوظ الشكل */
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            thead { display: table-header-group; }
         }
-
         @media (max-width: 1000px) {
             body { overflow: auto; height: auto; }
             header { flex-direction: column; gap: 10px; }
