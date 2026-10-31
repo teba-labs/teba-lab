@@ -927,7 +927,7 @@
             if(visit.patient.age_type === 'Months') ageStr = visit.patient.age + ' Months';
             if(visit.patient.age_type === 'Days') ageStr = visit.patient.age + ' Days';
             return `
-                <div class="print-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; z-index: 2; position: relative;">
+                <div class="print-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; z-index: 2;">
                     
                     <div style="width: 50%; text-align: left;">
                         <h1 style="margin: 0; color: #000; font-size: 28px; font-weight: 900; letter-spacing: 1px;">${TEBA_CONFIG.lab.nameEn}</h1>
@@ -958,7 +958,7 @@
 
         function getFooterHtml() {
             return `
-                <div class="print-footer" style="margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; width: 100%; border-top: 2px solid #000; padding-top: 10px; font-size: 13px; color: #000;">
+                <div class="print-footer" style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%; border-top: 2px solid #000; padding-top: 10px; font-size: 13px; color: #000;">
                     
                     <div style="width: 35%; text-align: left; direction: ltr; font-weight: bold; line-height: 1.8;">
                         <p style="margin: 0;">📞 01123702062</p>
