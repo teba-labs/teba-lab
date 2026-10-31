@@ -1,8 +1,8 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v72 - Advanced Offline & Routing Fix)
+   TEBA LABS - Service Worker (v75 - Advanced Offline & Routing Fix)
    ===================================================== */
 
-const CACHE_VERSION = 'v72'; 
+const CACHE_VERSION = 'v75'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
@@ -43,7 +43,7 @@ self.addEventListener('install', event => {
   self.skipWaiting(); // إجبار المتصفح على تحديث السيرفيس وركر فوراً
   event.waitUntil((async () => {
     const sc = await caches.open(STATIC_CACHE);
-    await sc.addAll(PRECACHE_ASSETS).catch(e => console.warn('Precache assets error:', e));
+   await Promise.all(PRECACHE_ASSETS.map(url => sc.add(url).catch(e => console.warn('Failed to cache:', url))));
     const cc = await caches.open(CDN_CACHE);
     await Promise.all(PRECACHE_CDN.map(url => cc.add(url).catch(e => console.warn(e))));
   })());
