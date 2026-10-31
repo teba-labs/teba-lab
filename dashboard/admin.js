@@ -467,15 +467,14 @@
         t.trueProfitUnit = t.count > 0 ? t.trueTotalProfit / t.count : 0;
         t.trueCost = t.sell - t.trueProfitUnit;
         combinedList.push(t);
-      });
+     });
+
       _mergedCache.combined = combinedList;
       return combinedList;
     }
   }
-  
-  // ==========================================
-  // (نهاية الجزء الأول - يتبعه الجزء الثاني فوراً)
-  // ==========================================  /* ==============================================================
+
+  /* ==============================================================
      الدوال الخاصة بالمطابقة واللايف (Multi-Tenant Enabled)
      ============================================================== */
   window.renderReconciliation = async function() {
