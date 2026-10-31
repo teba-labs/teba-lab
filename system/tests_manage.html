@@ -239,10 +239,6 @@
 
     <script>
         // ==== التحقق من تسجيل الدخول ====
-        if (sessionStorage.getItem('emp_logged') !== 'yes') {
-            window.location.href = 'home.html';
-        }
-
         document.addEventListener("DOMContentLoaded", function() {
             if (typeof TEBA_CONFIG !== 'undefined') {
                 document.title = "إدارة التحاليل | " + TEBA_CONFIG.lab.name;
