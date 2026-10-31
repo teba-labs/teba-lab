@@ -1,8 +1,8 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v72 - Advanced Offline & Routing Fix)
+   TEBA LABS - Service Worker (v75 - Advanced Offline & Routing Fix)
    ===================================================== */
 
-const CACHE_VERSION = 'v72'; 
+const CACHE_VERSION = 'v75'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
