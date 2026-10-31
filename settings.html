@@ -1,0 +1,173 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعدادات الموقع | معامل طيبة</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a; --surface: #1e293b; --primary: #10b981; --danger: #ef4444;
+            --text: #f8fafc; --text-muted: #94a3b8; --border: #334155;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Almarai', sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        
+        .container { width: 100%; max-width: 800px; display: none; }
+        .login-box { background: var(--surface); border: 2px solid var(--primary); padding: 40px; border-radius: 12px; text-align: center; width: 100%; max-width: 400px; display: block; }
+        .login-box h2 { color: var(--primary); margin-bottom: 20px; }
+        .login-box input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); margin-bottom: 15px; text-align: center; font-size: 1.2rem; outline: none; }
+        .login-box button { width: 100%; padding: 12px; background: var(--primary); color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+        .header h1 { color: var(--primary); font-size: 1.8rem; }
+        .btn-back { background: transparent; color: var(--text); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; font-weight: bold; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 25px; margin-bottom: 25px; }
+        .card h2 { color: var(--primary); font-size: 1.3rem; margin-bottom: 20px; border-bottom: 1px dashed var(--border); padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: var(--text-muted); font-size: 0.9rem; font-weight: bold; }
+        .form-group input, .form-group textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; font-size: 1rem; }
+        .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn-save { background: var(--primary); color: #000; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; width: 100%; transition: 0.3s; }
+        .offer-item { background: var(--bg); border: 1px solid var(--border); padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .btn-del { background: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #000; padding: 15px 30px; border-radius: 8px; font-weight: bold; display: none; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <!-- شاشة الدخول (محمية) -->
+    <div id="loginScreen" class="login-box">
+        <h2>🔒 منطقة محظورة</h2>
+        <p style="color:var(--text-muted); margin-bottom:20px;">أدخل باسورد الطبيب للدخول</p>
+        <input type="password" id="adminPass" placeholder="******" onkeydown="if(event.key==='Enter') checkPass()">
+        <button onclick="checkPass()">دخول</button>
+    </div>
+
+    <!-- واجهة الإعدادات (مخفية) -->
+    <div id="settingsApp" class="container">
+        <div class="header">
+            <h1>⚙️ إعدادات الموقع</h1>
+            <a href="index.html" class="btn-back">عودة للموقع</a>
+        </div>
+
+        <div class="card">
+            <h2>بيانات المعمل والتواصل</h2>
+            <div class="row">
+                <div class="form-group"><label>اسم المعمل</label><input type="text" id="labName"></div>
+                <div class="form-group"><label>اسم الدكتور</label><input type="text" id="doctorName"></div>
+            </div>
+            <div class="row">
+                <div class="form-group"><label>رقم التليفون</label><input type="text" id="phone"></div>
+                <div class="form-group"><label>رقم الواتساب</label><input type="text" id="whatsapp"></div>
+            </div>
+            <div class="row">
+                <div class="form-group"><label>رابط الفيسبوك</label><input type="text" id="facebook"></div>
+                <div class="form-group"><label>العنوان</label><input type="text" id="address"></div>
+            </div>
+            <button class="btn-save" onclick="saveSettings()">💾 حفظ الإعدادات</button>
+        </div>
+
+        <div class="card">
+            <h2>العروض والخصومات</h2>
+            <div id="offersList" style="margin-bottom: 20px;"></div>
+            <h3 style="margin-bottom:15px; font-size:1rem;">إضافة عرض جديد</h3>
+            <div class="form-group"><label>عنوان العرض</label><input type="text" id="offerTitle" placeholder="مثال: خصم عيد الأم"></div>
+            <div class="form-group"><label>وصف العرض</label><input type="text" id="offerDesc" placeholder="خصم 20% على كل التحاليل"></div>
+            <div class="row">
+                <div class="form-group"><label>نسبة الخصم %</label><input type="number" id="offerDiscount" placeholder="20"></div>
+                <div class="form-group"><label>تاريخ البداية</label><input type="date" id="offerStart"></div>
+            </div>
+            <div class="form-group"><label>تاريخ النهاية</label><input type="date" id="offerEnd"></div>
+            <button class="btn-save" onclick="addOffer()" style="background:#3b82f6; color:white;">➕ إضافة العرض</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">✅ تم الحفظ بنجاح</div>
+
+    <script>
+        const supabaseUrl = TEBA_CONFIG.supabase.url;
+        const supabaseKey = TEBA_CONFIG.supabase.key;
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // دالة التحقق من الباسورد
+        function checkPass() {
+            const pass = document.getElementById('adminPass').value;
+            if (pass === TEBA_CONFIG.auth.doctorPassword) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('settingsApp').style.display = 'block';
+                loadSettings();
+                loadOffers();
+            } else {
+                alert('❌ باسورد خطأ!');
+                document.getElementById('adminPass').value = '';
+            }
+        }
+
+        function showToast() {
+            const t = document.getElementById('toast');
+            t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 3000);
+        }
+
+        async function loadSettings() {
+            const { data } = await _supabase.from('site_settings').select('*').eq('id', 1).single();
+            if (data) {
+                document.getElementById('labName').value = data.lab_name || '';
+                document.getElementById('doctorName').value = data.doctor_name || '';
+                document.getElementById('phone').value = data.phone || '';
+                document.getElementById('whatsapp').value = data.whatsapp || '';
+                document.getElementById('facebook').value = data.facebook_url || '';
+                document.getElementById('address').value = data.address || '';
+            }
+        }
+
+        async function saveSettings() {
+            const updates = {
+                lab_name: document.getElementById('labName').value,
+                doctor_name: document.getElementById('doctorName').value,
+                phone: document.getElementById('phone').value,
+                whatsapp: document.getElementById('whatsapp').value,
+                facebook_url: document.getElementById('facebook').value,
+                address: document.getElementById('address').value
+            };
+            const { error } = await _supabase.from('site_settings').update(updates).eq('id', 1);
+            if (error) alert('خطأ: ' + error.message);
+            else showToast();
+        }
+
+        async function loadOffers() {
+            const { data } = await _supabase.from('offers').select('*').order('created_at', { ascending: false });
+            const list = document.getElementById('offersList');
+            if (!data || data.length === 0) { list.innerHTML = '<p style="color:var(--text-muted);">لا توجد عروض.</p>'; return; }
+            list.innerHTML = data.map(o => `
+                <div class="offer-item">
+                    <div><h4>${o.title} (${o.discount_pct}%)</h4><p>من ${o.start_date} إلى ${o.end_date}</p></div>
+                    <button class="btn-del" onclick="deleteOffer(${o.id})">🗑️ حذف</button>
+                </div>
+            `).join('');
+        }
+
+        async function addOffer() {
+            const title = document.getElementById('offerTitle').value;
+            const desc = document.getElementById('offerDesc').value;
+            const discount = document.getElementById('offerDiscount').value;
+            const start = document.getElementById('offerStart').value;
+            const end = document.getElementById('offerEnd').value;
+            if (!title || !start || !end) return alert('يرجى ملء البيانات');
+            const { error } = await _supabase.from('offers').insert([{ title, description: desc, discount_pct: discount, start_date: start, end_date: end, is_active: true }]);
+            if (error) alert('خطأ: ' + error.message);
+            else { showToast(); loadOffers(); document.getElementById('offerTitle').value = ''; }
+        }
+
+        async function deleteOffer(id) {
+            if (!confirm('حذف هذا العرض؟')) return;
+            await _supabase.from('offers').delete().eq('id', id);
+            loadOffers();
+        }
+    </script>
+</body>
+</html>

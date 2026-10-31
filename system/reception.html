@@ -1,0 +1,867 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة الاستقبال | معامل طيبة</title>
+    
+    <!-- PWA Tags -->
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#0a6847">
+
+    <!-- الخط الموحد -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- مكتبة Dexie للأوفلاين -->
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+    <script src="../config.js"></script>
+    <style>
+        :root {
+            --bg: #f4f7f6; --surface: #ffffff; --surface-hover: #f8fafc;
+            --primary: #0a6847; --primary-hover: #085a3d; --primary-light: #10b981;
+            --accent: #3498db; --gold: #d4a843; --danger: #e74c3c; --whatsapp: #25D366;
+            --text: #1e293b; --text-muted: #64748b; --border: #e2e8f0;
+            --font: 'Almarai', sans-serif; --radius: 12px;
+            --shadow: 0 4px 20px rgba(0,0,0,0.04);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font); background-color: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* Header */
+        header { background: var(--surface); color: var(--text); display: flex; justify-content: space-between; align-items: center; padding: 10px 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); z-index: 10; border-bottom: 3px solid var(--primary); }
+        .brand { display: flex; align-items: center; gap: 15px; }
+        .brand img { height: 50px; width: auto; object-fit: contain; }
+        .brand-text h1 { font-size: 1.3rem; color: var(--primary); font-weight: 800; margin-bottom: 2px;}
+        .brand-text p { font-size: 0.8rem; color: var(--text-muted); font-weight: 600;}
+        
+        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .nav-btn { background: var(--surface-hover); color: var(--text); border: 1px solid var(--border); padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; transition: all 0.2s; font-family: inherit; display: flex; align-items: center; gap: 5px;}
+        .nav-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .nav-btn.sync { background: var(--gold); color: #fff; border-color: var(--gold); display: none; animation: pulse 2s infinite; }
+        .nav-btn.whatsapp { background: var(--whatsapp); color: white; border-color: var(--whatsapp); }
+        .nav-btn.logout { color: var(--danger); border-color: #fecaca; background: #fef2f2; }
+        .nav-btn.logout:hover { background: var(--danger); color: white; }
+
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        /* Live Ticker */
+        .live-ticker-wrap { background: #0f172a; color: #fff; padding: 6px 0; overflow: hidden; font-size: 0.85rem; white-space: nowrap; display: flex; align-items: center;}
+        .live-ticker { display: flex; animation: ticker 25s linear infinite; padding-left: 100%; }
+        .live-ticker:hover { animation-play-state: paused; }
+        .ticker-item { padding: 0 30px; border-left: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; gap: 8px; font-weight: bold;}
+        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .dot.online { background: #10b981; box-shadow: 0 0 8px #10b981; }
+        .dot.offline { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+        
+        @keyframes ticker {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* Layout */
+        .main-container { display: grid; grid-template-columns: 340px 1fr 400px; gap: 15px; padding: 15px; flex-grow: 1; height: calc(100vh - 120px); overflow: hidden; }
+        
+        .panel { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; border: 1px solid var(--border); overflow: hidden; }
+        .panel-header { background: var(--surface-hover); padding: 12px 15px; border-bottom: 1px solid var(--border); font-weight: 800; color: var(--primary); font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center;}
+
+        /* 1. Patient Form */
+        .patient-form { padding: 15px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto;}
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); }
+        .form-group input, .form-group select { padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.9rem; outline: none; transition: 0.2s; background: var(--surface-hover); color: var(--text); }
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(10, 104, 71, 0.1); }
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        /* Toast */
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 15px 30px; border-radius: 30px; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: none; z-index: 1000;}
+        .toast.error { background: var(--danger); }
+
+        /* Responsive Design (Mobile & Tablet) */
+        @media (max-width: 1024px) {
+            body { overflow-y: auto; height: auto; }
+            .main-container { grid-template-columns: 1fr; height: auto; overflow: visible; padding-bottom: 50px; }
+            .panel { min-height: 350px; max-height: 450px; }
+            header { flex-direction: column; gap: 10px; padding: 15px; text-align: center; }
+            .brand { justify-content: center; }
+            .nav-links { justify-content: center; }
+            .nav-btn { font-size: 0.75rem; padding: 6px 10px; }
+            .live-ticker-wrap { display: none; /* نخفي التيكر في الموبايل عشان المساحة */ }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <img src="../logo.png" alt="Logo" onerror="this.style.display='none'">
+            <div class="brand-text">
+                <h1 id="brandInfo">معامل طيبة</h1>
+                <p>بوابة الاستقبال الذكية</p>
+            </div>
+        </div>
+        <div class="nav-links">
+            <button class="nav-btn sync" id="syncBtn" onclick="syncOfflineData()">🔄 مزامنة</button>
+            <button class="nav-btn whatsapp" onclick="sendSmartWhatsApp()" title="إرسال رسالة للمريض">💬 واتساب</button>
+            <button class="nav-btn" onclick="window.location.href='home.html'">🏠 الرئيسية</button>
+            <!-- استبدال حالات اليوم بقائمة المرضى -->
+            <button class="nav-btn" onclick="openPatientList()">📋 قائمة المرضى</button>
+            <button class="nav-btn lab" style="background: var(--primary); color: white; border-color: var(--primary);" onclick="window.location.href='lab.html'">🔬 بوابة المعمل</button>
+            <button class="nav-btn logout" onclick="logout()">🚪 خروج</button>
+        </div>
+    </header>
+
+    <!-- شريط المعلومات اللحظي -->
+    <div class="live-ticker-wrap">
+        <div class="live-ticker" id="liveTickerContent">
+            <!-- سيتم حقن البيانات هنا -->
+            <div class="ticker-item"><span class="dot online"></span> جاري الاتصال بالسحابة...</div>
+        </div>
+    </div>
+
+    <div class="toast" id="toastMsg">تم الحفظ بنجاح!</div>
+
+    <div class="main-container">
+        <!-- 1. بيانات المريض (يمين) -->
+        <div class="panel patient-panel">
+            <div class="panel-header">👤 بيانات المريض</div>
+            <div class="patient-form">
+                <div class="form-group">
+                    <label>بحث سريع (تليفون أو اسم)</label>
+                    <input type="text" id="patientSearch" placeholder="اكتب واضغط Enter..." onkeydown="if(event.key === 'Enter') searchPatient()" style="border-color: var(--accent);">
+                </div>
+                <div class="form-group">
+                    <label>اسم المريض (مطلوب)</label>
+                    <input type="text" id="pName" placeholder="الاسم بالكامل" onkeydown="moveToNext(event, 'pPhone')">
+                </div>
+                <div class="form-group">
+                    <label>رقم التليفون</label>
+                    <input type="text" id="pPhone" placeholder="01xxxxxxxxx" onkeydown="moveToNext(event, 'pDoctor')">
+                </div>
+                <div class="form-group">
+                    <label>الطبيب المحول</label>
+                    <input type="text" id="pDoctor" placeholder="اسم الدكتور" onkeydown="moveToNext(event, 'pAge')">
+                </div>
+                <div class="row-2">
+                    <div class="form-group">
+                        <label>الفرع</label>
+                        <select id="pBranch">
+                            <option value="1">🏥 الجعافرة</option>
+                            <option value="2">🏥 بهتيم</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>النوع</label>
+                        <select id="pGender"><option value="male">ذكر</option><option value="female">أنثى</option></select>
+                    </div>
+                </div>
+                <div class="row-2">
+                    <div class="form-group">
+                        <label>العمر</label>
+                        <input type="number" id="pAge" value="30" onkeydown="moveToNext(event, 'pAgeType')">
+                    </div>
+                    <div class="form-group">
+                        <label>الوحدة</label>
+                        <select id="pAgeType" onkeydown="moveToNext(event, 'catalogSearch')">
+                            <option value="Years">سنوات</option>
+                            <option value="Months">شهور</option>
+                            <option value="Days">أيام</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="nav-btn" id="btnPatientHistory" style="display:none; margin-top:10px; background:#8e44ad; color:white; justify-content:center;" onclick="openPatientHistory()">👁️ عرض تاريخ المريض</button>
+            </div>
+        </div>
+
+        <!-- (باقي الأقسام في الجزء الثاني) -->        <!-- 2. سلة التحاليل والفاتورة (النص) -->
+        <div class="panel cart-panel">
+            <div class="panel-header">
+                <span>🛒 سلة التحاليل</span>
+                <span id="cartCount" style="background: var(--accent); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">0</span>
+            </div>
+            <div class="cart-items" id="cartList">
+                <div style="text-align: center; color: var(--text-muted); margin-top: 50px; font-weight: bold;">
+                    <div style="font-size: 3rem; margin-bottom: 10px; opacity: 0.3;">🛒</div>
+                    السلة فارغة
+                </div>
+            </div>
+            <div class="cart-summary">
+                <div class="summary-row">
+                    <span>الإجمالي:</span>
+                    <span id="totalAmount">0.00 ج.م</span>
+                </div>
+                <div class="discount-row">
+                    <input type="number" id="discountPercent" placeholder="خصم %" oninput="calculateChanges()" onkeydown="moveToNext(event, 'discountFixed')">
+                    <input type="number" id="discountFixed" placeholder="خصم ثابت" oninput="calculateChanges()" onkeydown="moveToNext(event, 'paidAmount')">
+                </div>
+                <div class="summary-row total">
+                    <span>الصافي:</span>
+                    <span id="netTotalAmount">0.00 ج.م</span>
+                </div>
+                <div class="payment-inputs">
+                    <input type="number" id="paidAmount" placeholder="المبلغ المدفوع" oninput="calculateChanges()" onkeydown="if(event.key === 'Enter') saveOrderToSupabase()">
+                </div>
+                <div class="summary-row remain">
+                    <span>الباقي:</span>
+                    <span id="remainAmount">0.00 ج.م</span>
+                </div>
+                <div class="payment-actions">
+                    <button class="nav-btn" style="background: var(--primary); color: white; width: 100%; justify-content: center; font-size: 1.1rem; grid-column: span 2; padding: 15px;" id="saveBtn" onclick="saveOrderToSupabase()">💾 حفظ الطلب</button>
+                    <button class="nav-btn" style="background: var(--accent); color: white; justify-content: center;" onclick="openInvoicePreview()">👁️ الفاتورة</button>
+                    <button class="nav-btn" style="background: #cbd5e1; color: var(--text); justify-content: center;" onclick="resetForm()">🗑️ إلغاء</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. كتالوج التحاليل (شمال) -->
+        <div class="panel catalog-panel">
+            <div class="panel-header">🔬 كتالوج التحاليل</div>
+            <div class="catalog-layout">
+                <div class="catalog-tabs" id="catalogSidebar">
+                    <button class="cat-btn active" onclick="filterByCategory('all', this)">📋 الكل</button>
+                </div>
+                <div class="catalog-search">
+                    <input type="text" id="catalogSearch" placeholder="ابحث بالكود أو الاسم..." onkeyup="filterCatalog()">
+                </div>
+                <div class="catalog-grid" id="catalogGrid" style="padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; overflow-y: auto; align-content: start;">
+                    <!-- سيتم توليد التحاليل هنا -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- 1. قائمة المرضى (بديلة حالات اليوم) -->
+    <div class="modal" id="patientListModal">
+        <div class="modal-content" style="max-width: 1000px;">
+            <button class="btn-close" style="float:left;" onclick="closeModal('patientListModal')">✕ إغلاق</button>
+            <h3 style="color:var(--primary); margin-bottom:15px;">📋 قائمة المرضى (آخر 50 زيارة)</h3>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: right; font-size: 0.9rem;">
+                    <thead><tr style="background: var(--surface-hover); color: var(--primary);">
+                        <th style="padding:10px; border-bottom:2px solid var(--border);">الزيارة</th>
+                        <th style="padding:10px; border-bottom:2px solid var(--border);">المريض</th>
+                        <th style="padding:10px; border-bottom:2px solid var(--border);">الفرع</th>
+                        <th style="padding:10px; border-bottom:2px solid var(--border);">الصافي</th>
+                        <th style="padding:10px; border-bottom:2px solid var(--border);">إجراء</th>
+                    </tr></thead>
+                    <tbody id="patientListBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. تعديل بيانات المريض -->
+    <div class="modal" id="editPatientModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <button class="btn-close" style="float:left;" onclick="closeModal('editPatientModal')">✕ إغلاق</button>
+            <h3 style="color:var(--primary); margin-bottom:15px;">✏️ تعديل بيانات المريض</h3>
+            <input type="hidden" id="editPatientId">
+            <div class="form-group" style="margin-top:15px;"><label>اسم المريض</label><input type="text" id="editPName"></div>
+            <div class="form-group"><label>رقم التليفون</label><input type="text" id="editPPhone"></div>
+            <div class="form-group"><label>الطبيب المحول</label><input type="text" id="editPDoctor"></div>
+            <button class="nav-btn" style="background: var(--primary); color: white; width: 100%; justify-content: center; margin-top:20px; padding: 15px;" onclick="savePatientEdit()">💾 حفظ التعديلات</button>
+        </div>
+    </div>
+
+    <!-- 3. تاريخ المريض -->
+    <div class="modal" id="patientHistoryModal">
+        <div class="modal-content">
+            <button class="btn-close" style="float:left;" onclick="closeModal('patientHistoryModal')">✕ إغلاق</button>
+            <h3 style="color:var(--primary); margin-bottom:10px;">📜 تاريخ المريض: <span id="historyPatientName"></span></h3>
+            <table style="width: 100%; border-collapse: collapse; text-align: right; font-size: 0.9rem;">
+                <thead><tr style="background: var(--surface-hover); color: var(--primary);"><th style="padding:10px;">رقم الزيارة</th><th style="padding:10px;">التاريخ</th><th style="padding:10px;">التحاليل</th><th style="padding:10px;">الإجمالي</th><th style="padding:10px;">إجراء</th></tr></thead>
+                <tbody id="patientHistoryBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 4. الفاتورة -->
+    <div class="modal" id="invoicePreviewModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <button class="btn-close" style="float:left;" onclick="closeModal('invoicePreviewModal')">✕ إغلاق</button>
+            <h3 style="text-align: center; color:var(--primary);">🧾 معاينة الفاتورة</h3>
+            <div id="previewContent" style="padding: 20px; border: 1px dashed #ccc; border-radius: 8px; background: #fafafa; margin-top: 15px;"></div>
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                <button class="nav-btn" style="background: var(--primary); color: white; width: 150px; justify-content: center;" onclick="executePrint()">🖨️ طباعة الآن</button>
+                <button class="nav-btn" style="background: var(--danger); color: white; width: 100px; justify-content: center;" onclick="closeModal('invoicePreviewModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="print-section" style="display: none;">
+        <div class="print-header">
+            <h2 id="printLabName">معامل طيبة للتحاليل الطبية</h2>
+            <p>فاتورة مبدئية</p>
+        </div>
+        <p><strong>اسم المريض:</strong> <span id="printName"></span></p>
+        <p><strong>التاريخ:</strong> <span id="printDate"></span></p>
+        <table class="print-table" style="width: 100%; border-collapse: collapse;">
+            <thead><tr><th style="border-bottom:1px solid #000;">كود التحليل</th><th style="border-bottom:1px solid #000;">اسم التحليل</th><th style="border-bottom:1px solid #000;">السعر</th></tr></thead>
+            <tbody id="printTableBody"></tbody>
+        </table>
+        <p><strong>الإجمالي:</strong> <span id="printTotal"></span> ج.م</p>
+        <p><strong>المدفوع:</strong> <span id="printPaid"></span> ج.م</p>
+        <p><strong>الباقي:</strong> <span id="printRemain"></span> ج.م</p>
+    </div>
+
+    <script>
+        // ==== التحقق من تسجيل الدخول (ديناميكي) ====
+        if (!localStorage.getItem('teba_tenant_id')) {
+            window.location.href = 'home.html';
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            if (typeof TEBA_CONFIG !== 'undefined') {
+                document.title = "بوابة الاستقبال | " + TEBA_CONFIG.lab.name;
+                document.getElementById('brandInfo').innerText = TEBA_CONFIG.lab.name;
+                document.getElementById('printLabName').innerText = TEBA_CONFIG.lab.name + " للتحاليل الطبية";
+            }
+        });
+
+        // ==== تهيئة السحابة ====
+        const supabaseUrl = TEBA_CONFIG.supabase.url;
+        const supabaseKey = TEBA_CONFIG.supabase.key;
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // ==== تهيئة الداتابيز المحلية (Dexie للأوفلاين) ====
+        const db = new Dexie('TebaOfflineDB');
+        db.version(2).stores({
+            offline_orders: '++id, patientName, timestamp',
+            catalog: 'code, name, price, category' // جدول جديد لحفظ الكتالوج
+        });
+
+        let masterTests = []; 
+        let cart = [];
+        let currentPatientId = null;
+        let currentCategory = 'all';
+        let tempPatientDataForList = []; 
+
+        // ==== دوال مساعدة ====
+        function logout() {
+            _supabase.auth.signOut().then(() => {
+                localStorage.removeItem('teba_tenant_id');
+                localStorage.removeItem('teba_tenant_name');
+                window.location.href = 'home.html';
+            });
+        }
+
+        document.addEventListener("wheel", function(event){
+            if(document.activeElement.type === "number"){ document.activeElement.blur(); }
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(modal => modal.style.display = 'none');
+                document.getElementById('catalogSearch').value = '';
+                renderCatalog();
+                document.getElementById('patientSearch').value = '';
+            }
+        });
+
+        function moveToNext(event, nextId) {
+            if (event.key === 'Enter') { event.preventDefault(); document.getElementById(nextId).focus(); }
+        }
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toastMsg');
+            toast.innerText = msg; toast.className = isError ? 'toast error' : 'toast';
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 4000);
+        }
+
+        // ==========================================
+        // 📢 التيكر اللحظي + مؤشر الاتصال (الهدية)
+        // ==========================================
+        async function updateLiveTicker() {
+            const ticker = document.getElementById('liveTickerContent');
+            const isOnline = navigator.onLine;
+            
+            let casesCount = 0, pendingCount = 0;
+            
+            if (isOnline) {
+                try {
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    const { count: cCount } = await _supabase.from('visits').select('*', { count: 'exact', head: true }).eq('tenant_id', TEBA_CONFIG.tenant.id).gte('visit_date', today.toISOString());
+                    casesCount = cCount || 0;
+
+                    const { data: vt } = await _supabase.from('visit_tests').select('id').eq('tenant_id', TEBA_CONFIG.tenant.id);
+                    const { data: res } = await _supabase.from('test_results').select('visit_test_id').eq('tenant_id', TEBA_CONFIG.tenant.id);
+                    const resIds = new Set((res||[]).map(r => r.visit_test_id));
+                    pendingCount = (vt||[]).filter(t => !resIds.has(t.id)).length;
+                } catch(e) { console.warn("Ticker Error", e); }
+            }
+
+            const statusHtml = isOnline 
+                ? `<span class="dot online"></span> متصل بالسحابة` 
+                : `<span class="dot offline"></span> غير متصل (وضع الأوفلاين)`;
+
+            ticker.innerHTML = `
+                <div class="ticker-item">${statusHtml}</div>
+                <div class="ticker-item">🏥 حالات اليوم: ${casesCount}</div>
+                <div class="ticker-item">⏳ تحاليل قيد التشغيل: ${pendingCount}</div>
+                <div class="ticker-item">🕒 ${new Date().toLocaleTimeString('ar-EG')}</div>
+            `;
+        }
+
+        window.addEventListener('online', updateLiveTicker);
+        window.addEventListener('offline', updateLiveTicker);
+        setInterval(updateLiveTicker, 60000); // تحديث كل دقيقة
+
+        // ==========================================
+        // 💬 زرار الواتساب الذكي
+        // ==========================================
+        function sendSmartWhatsApp() {
+            const name = document.getElementById('pName').value.trim();
+            if (!name) return showToast('⚠️ يرجى إدخال اسم المريض أولاً', true);
+            
+            // بنجيب رقم الزيارة لو موجود في الـ URL (بعد الحفظ) أو بنطلب من المستخدم
+            const urlParams = new URLSearchParams(window.location.search);
+            let visitId = urlParams.get('visit_id');
+            
+            if (!visitId) {
+                // لو مفيش زيارة محفوظة، بنبعت رسالة عامة
+                const msg = `أهلاً ${name} 👋،\nمعامل طيبة ترحب بك.\nسيتم إبلاغك عند جاهزية النتائج.`;
+                window.open(`https://wa.me/2${document.getElementById('pPhone').value.replace(/^0/, '')}?text=${encodeURIComponent(msg)}`, '_blank');
+                return;
+            }
+
+            const portalLink = TEBA_CONFIG.lab.portalUrl;
+            const msg = `أهلاً ${name} 👋،\nنتيجة تحليلك جاهزة 🧪.\nيمكنك استلامها من خلال موقعنا عبر إدخال اسمك ورقم الزيارة (${visitId}):\n${portalLink}\n\nمعامل طيبة - د/ أحمد طه أبوندا`;
+            
+            let phone = document.getElementById('pPhone').value.trim();
+            if(!phone) return showToast('⚠️ لا يوجد رقم تليفون مسجل', true);
+            phone = phone.replace(/^0/, ''); // شيل الصفر
+            
+            window.open(`https://wa.me/2${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        // ==========================================
+        // 📦 جلب وحفظ الكتالوج (Offline-First)
+        // ==========================================
+        async function fetchCatalogFromCloud() {
+            if (navigator.onLine) {
+                const { data, error } = await _supabase.from('tests_catalog').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id);
+                if (!error && data && data.length > 0) {
+                    masterTests = data.map(t => ({
+                        id: t.id, code: t.code, name: t.name, price: t.price, category: t.category || 'أخرى'
+                    }));
+                    // حفظ في Dexie
+                    await db.catalog.clear();
+                    await db.catalog.bulkPut(masterTests);
+                    renderCategories();
+                    renderCatalog();
+                    return;
+                }
+            }
+            // لو أوفلاين أو السيرفر رجع فاضي، نقرأ من Dexie
+            const localCatalog = await db.catalog.toArray();
+            if (localCatalog.length > 0) {
+                masterTests = localCatalog;
+                renderCategories();
+                renderCatalog();
+                showToast('📡 تم تحميل الكتالوج من الذاكرة المحلية (أوفلاين)');
+            } else {
+                document.getElementById('catalogGrid').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #7f8c8d; padding: 20px; font-weight:bold;">لا توجد تحاليل مسجلة. يرجى الاتصال بالإنترنت لأول مرة.</div>';
+            }
+        }
+
+        function renderCategories() {
+            const sidebar = document.getElementById('catalogSidebar');
+            const categories = [...new Set(masterTests.map(t => t.category))];
+            
+            let html = `<button class="cat-btn ${currentCategory === 'all' ? 'active' : ''}" onclick="filterByCategory('all', this)">📋 الكل</button>`;
+            categories.forEach(cat => {
+                html += `<button class="cat-btn ${currentCategory === cat ? 'active' : ''}" onclick="filterByCategory('${cat}', this)">📁 ${cat}</button>`;
+            });
+            sidebar.innerHTML = html;
+        }
+
+        function filterByCategory(category, btnElement) {
+            currentCategory = category;
+            document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
+            if(btnElement) btnElement.classList.add('active');
+            filterCatalog();
+        }
+
+        function renderCatalog() {
+            const grid = document.getElementById('catalogGrid');
+            const searchQuery = document.getElementById('catalogSearch').value.toLowerCase().trim();
+
+            let filtered = masterTests;
+            if (currentCategory !== 'all') filtered = filtered.filter(t => t.category === currentCategory);
+            if (searchQuery !== '') filtered = filtered.filter(t => t.code.toLowerCase().includes(searchQuery) || t.name.toLowerCase().includes(searchQuery));
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #7f8c8d; padding: 20px;">لا توجد تحاليل مطابقة</div>';
+                return;
+            }
+
+            grid.innerHTML = filtered.map(test => `
+                <div class="test-btn" onclick='addToCart(${JSON.stringify(test)})' style="background: var(--surface); border: 1.5px solid var(--border); border-radius: 8px; padding: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 5px;">
+                    <div style="font-weight: 800; color: var(--text-muted); font-size: 0.7rem;">${test.code}</div>
+                    <div style="font-size: 0.85rem; font-weight: bold; color: var(--text); line-height: 1.3;">${test.name}</div>
+                    <div style="font-size: 0.95rem; color: var(--primary); font-weight: 900; margin-top: auto;">${test.price} ج.م</div>
+                </div>
+            `).join('');
+        }
+
+        function filterCatalog() { renderCatalog(); }
+
+        // ==== السلة ====
+        function addToCart(test) {
+            if (!cart.find(item => item.code === test.code)) {
+                cart.push(test);
+                renderCart();
+            } else {
+                showToast('⚠️ التحليل موجود بالفعل في السلة', true);
+            }
+        }
+
+        function renderCart() {
+            const list = document.getElementById('cartList');
+            const count = document.getElementById('cartCount');
+            
+            if (cart.length === 0) {
+                list.innerHTML = `<div style="text-align: center; color: var(--text-muted); margin-top: 50px; font-weight: bold;"><div style="font-size: 3rem; margin-bottom: 10px; opacity: 0.3;">🛒</div>السلة فارغة</div>`;
+            } else {
+                list.innerHTML = cart.map((item, index) => `
+                    <div class="cart-item" style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid var(--border);">
+                        <div style="display: flex; flex-direction: column;">
+                            <span style="font-weight: bold; font-size: 0.9rem;">${item.name}</span>
+                            <span style="color: var(--primary); font-size: 0.85rem;">${item.price} ج.م</span>
+                        </div>
+                        <button style="background: #fee2e2; color: var(--danger); border: none; border-radius: 6px; padding: 5px 10px; cursor: pointer;" onclick="removeFromCart(${index})">✕</button>
+                    </div>
+                `).join('');
+            }
+            count.innerText = cart.length;
+            calculateChanges();
+        }
+
+        function removeFromCart(index) { cart.splice(index, 1); renderCart(); }
+
+        function calculateChanges() {
+            const subTotal = cart.reduce((sum, item) => sum + item.price, 0);
+            const percent = parseFloat(document.getElementById('discountPercent').value) || 0;
+            const fixed = parseFloat(document.getElementById('discountFixed').value) || 0;
+            
+            let discountAmount = (subTotal * (percent / 100)) + fixed;
+            let netTotal = subTotal - discountAmount;
+            if (netTotal < 0) netTotal = 0;
+            const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
+
+            document.getElementById('totalAmount').innerText = `${subTotal.toFixed(2)} ج.م`;
+            document.getElementById('netTotalAmount').innerText = `${netTotal.toFixed(2)} ج.م`;
+            document.getElementById('remainAmount').innerText = `${(netTotal - paid).toFixed(2)} ج.م`;
+        }
+
+        // ==== دالة الحفظ (Offline-First + إشعار صوتي للمعمل) ====
+        async function saveOrderToSupabase() {
+            const pName = document.getElementById('pName').value.trim();
+            if (!pName) return showToast('⚠️ الرجاء إدخال اسم المريض!', true);
+            if (cart.length === 0) return showToast('⚠️ السلة فارغة!', true);
+
+            const btn = document.getElementById('saveBtn');
+            btn.innerText = 'جاري الحفظ...'; btn.disabled = true;
+
+            const orderData = {
+                patientName: pName,
+                phone: document.getElementById('pPhone').value,
+                age: parseInt(document.getElementById('pAge').value) || 0,
+                age_type: document.getElementById('pAgeType').value,
+                gender: document.getElementById('pGender').value,
+                doctor_name: document.getElementById('pDoctor').value,
+                branch_id: parseInt(document.getElementById('pBranch').value),
+                netTotal: parseFloat(document.getElementById('netTotalAmount').innerText),
+                paid: parseFloat(document.getElementById('paidAmount').value) || 0,
+                discountPercent: parseFloat(document.getElementById('discountPercent').value) || 0,
+                discountFixed: parseFloat(document.getElementById('discountFixed').value) || 0,
+                cart: cart,
+                timestamp: new Date().toISOString()
+            };
+
+            // 1. لو مفيش نت -> حفظ محلي
+            if (!navigator.onLine) {
+                await db.offline_orders.add(orderData);
+                document.getElementById('syncBtn').style.display = 'flex';
+                showToast('⚠️ النت مقطوع! تم الحفظ محلياً. سيتم المزامنة لاحقاً.', true);
+                resetForm();
+                btn.innerText = '💾 حفظ الطلب'; btn.disabled = false;
+                return;
+            }
+
+            // 2. لو فيه نت -> حفظ في السحابة
+            try {
+                let patientId = currentPatientId;
+                if (!patientId) {
+                    const { data: pData, error: pErr } = await _supabase.from('patients').insert([{
+                        tenant_id: TEBA_CONFIG.tenant.id,
+                        name: orderData.patientName, phone: orderData.phone, age: orderData.age, age_type: orderData.age_type, gender: orderData.gender, doctor_name: orderData.doctor_name
+                    }]).select();
+                    if (pErr) throw pErr;
+                    patientId = pData[0].id;
+                }
+
+                const subTotal = cart.reduce((sum, item) => sum + item.price, 0);
+                const discountAmount = (subTotal * (orderData.discountPercent / 100)) + orderData.discountFixed;
+
+                const { data: vData, error: vErr } = await _supabase.from('visits').insert([{
+                    tenant_id: TEBA_CONFIG.tenant.id,
+                    patient_id: patientId, branch_id: orderData.branch_id, total_amount: orderData.netTotal, paid_amount: orderData.paid, discount: discountAmount, status: 'Pending'
+                }]).select();
+                if (vErr) throw vErr;
+
+                const tests = cart.map(i => ({ 
+                    tenant_id: TEBA_CONFIG.tenant.id,
+                    visit_id: vData[0].visit_id, test_code: i.code, price_at_time: i.price 
+                }));
+                const { error: tErr } = await _supabase.from('visit_tests').insert(tests);
+                if (tErr) throw tErr;
+
+                // 📢 إرسال إشعار صوتي للمعمل
+                const bc = new BroadcastChannel('teba_sync');
+                bc.postMessage('new_order');
+
+                showToast('✅ تم حفظ الطلب بنجاح!');
+                if(confirm('هل تريد الانتقال لبوابة المعمل الآن؟')) {
+                    window.location.href = 'lab.html?visit_id=' + vData[0].visit_id;
+                } else {
+                    resetForm();
+                }
+            } catch (error) {
+                await db.offline_orders.add(orderData);
+                document.getElementById('syncBtn').style.display = 'flex';
+                showToast('❌ مشكلة في الاتصال. تم الحفظ محلياً بأمان.', true);
+                resetForm();
+            } finally {
+                btn.innerText = '💾 حفظ الطلب'; btn.disabled = false;
+            }
+        }
+
+        // ==== دالة المزامنة ====
+        async function syncOfflineData() {
+            const orders = await db.offline_orders.toArray();
+            if (orders.length === 0) {
+                showToast('✅ لا توجد بيانات معلقة للمزامنة.');
+                document.getElementById('syncBtn').style.display = 'none';
+                return;
+            }
+            if (!navigator.onLine) return showToast('لا يوجد اتصال بالإنترنت! يرجى توصيل النت أولاً.', true);
+
+            const btn = document.getElementById('syncBtn');
+            btn.innerText = '⏳ جاري المزامنة...';
+            
+            let successCount = 0;
+            for (let order of orders) {
+                try {
+                    const { data: pData, error: pErr } = await _supabase.from('patients').insert([{
+                        tenant_id: TEBA_CONFIG.tenant.id, name: order.patientName, phone: order.phone, age: order.age, age_type: order.age_type, gender: order.gender, doctor_name: order.doctor_name
+                    }]).select();
+                    if (pErr) throw pErr;
+
+                    const subTotal = order.cart.reduce((sum, item) => sum + item.price, 0);
+                    const discountAmount = (subTotal * (order.discountPercent / 100)) + order.discountFixed;
+
+                    const { data: vData, error: vErr } = await _supabase.from('visits').insert([{
+                        tenant_id: TEBA_CONFIG.tenant.id, patient_id: pData[0].id, branch_id: order.branch_id, total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount, status: 'Pending'
+                    }]).select();
+                    if (vErr) throw vErr;
+
+                    const tests = order.cart.map(i => ({ 
+                        tenant_id: TEBA_CONFIG.tenant.id, visit_id: vData[0].visit_id, test_code: i.code, price_at_time: i.price 
+                    }));
+                    const { error: tErr } = await _supabase.from('visit_tests').insert(tests);
+                    if (tErr) throw tErr;
+
+                    await db.offline_orders.delete(order.id);
+                    successCount++;
+                } catch(e) { console.error("Sync error for order", order.id, e); }
+            }
+
+            if (successCount > 0) showToast(`✅ تم مزامنة ${successCount} طلب بنجاح!`);
+            if (await db.offline_orders.count() === 0) {
+                btn.style.display = 'none';
+            } else {
+                btn.innerText = '🔄 مزامنة البيانات';
+            }
+            updateLiveTicker();
+        }
+
+        // ==== باقي دوال العرض والطباعة ====
+        function resetForm() {
+            cart = []; currentPatientId = null;
+            document.getElementById('pName').value = ''; document.getElementById('pPhone').value = ''; document.getElementById('pDoctor').value = '';
+            document.getElementById('paidAmount').value = ''; document.getElementById('discountPercent').value = ''; document.getElementById('discountFixed').value = '';
+            document.getElementById('btnPatientHistory').style.display = 'none';
+            renderCart();
+        }
+
+        function openInvoicePreview() {
+            if(cart.length === 0) return showToast('⚠️ السلة فارغة!', true);
+            const pName = document.getElementById('pName').value || 'غير مسجل';
+            const date = new Date().toLocaleDateString('ar-EG');
+            const total = document.getElementById('totalAmount').innerText;
+            const paid = document.getElementById('paidAmount').value || '0';
+            const remain = document.getElementById('remainAmount').innerText;
+
+            let html = `
+                <div style="text-align:center; margin-bottom: 15px;"><h3>${TEBA_CONFIG.lab.name} للتحاليل</h3><p style="color:#666; font-size:0.9rem;">فاتورة مبدئية</p></div>
+                <p><strong>المريض:</strong> ${pName}</p><p><strong>التاريخ:</strong> ${date}</p>
+                <table style="width:100%; text-align:right; margin-top:10px; border-collapse: collapse;">
+                    <tr style="background:#eee;"><th style="padding:8px; border:1px solid #ddd;">التحليل</th><th style="padding:8px; border:1px solid #ddd;">السعر</th></tr>
+                    ${cart.map(i => `<tr><td style="padding:8px; border:1px solid #ddd;">${i.name}</td><td style="padding:8px; border:1px solid #ddd;">${i.price} ج.م</td></tr>`).join('')}
+                </table>
+                <div style="margin-top:15px; border-top:1px solid #ccc; padding-top:10px;">
+                    <p><strong>الإجمالي:</strong> ${total}</p><p><strong>المدفوع:</strong> ${paid} ج.م</p><p style="color:red;"><strong>الباقي:</strong> ${remain}</p>
+                </div>
+            `;
+            document.getElementById('previewContent').innerHTML = html;
+            document.getElementById('printName').innerText = pName; document.getElementById('printDate').innerText = date;
+            document.getElementById('printTotal').innerText = total; document.getElementById('printPaid').innerText = paid; document.getElementById('printRemain').innerText = remain;
+            document.getElementById('printTableBody').innerHTML = cart.map(i => `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.price}</td></tr>`).join('');
+            document.getElementById('invoicePreviewModal').style.display = 'flex';
+        }
+
+        function executePrint() {
+            closeModal('invoicePreviewModal');
+            document.getElementById('print-section').style.display = 'block';
+            window.print();
+            document.getElementById('print-section').style.display = 'none';
+        }
+
+        // ==== قائمة المرضى (بديلة حالات اليوم) ====
+        async function openPatientList() {
+            const tbody = document.getElementById('patientListBody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">جاري التحميل...</td></tr>';
+            document.getElementById('patientListModal').style.display = 'flex';
+
+            const { data, error } = await _supabase.from('visits')
+                .select(`visit_id, total_amount, paid_amount, status, visit_date, patient_id, branch_id, patients (id, name, phone, doctor_name)`)
+                .eq('tenant_id', TEBA_CONFIG.tenant.id)
+                .order('visit_id', {ascending: false})
+                .limit(50);
+            
+            if(error) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">حدث خطأ: ${error.message}</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.map(v => {
+                const p = v.patients || {};
+                const branchName = v.branch_id === 2 ? 'بهتيم' : 'الجعافرة';
+                return `
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:10px;">${v.visit_id}</td>
+                    <td style="padding:10px;">${p.name || 'غير معروف'}</td>
+                    <td style="padding:10px;">${branchName}</td>
+                    <td style="padding:10px;">${parseFloat(v.total_amount || 0).toFixed(2)}</td>
+                    <td style="padding:10px; display:flex; gap:5px;">
+                        <button style="padding: 5px 10px; background:#3498db; color:white; border:none; border-radius:5px; cursor:pointer;" onclick='openEditPatientModal(${JSON.stringify(p).replace(/'/g, "&#39;")})'>تعديل</button>
+                        <button style="padding: 5px 10px; background:var(--danger); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="deleteVisit(${v.visit_id})">حذف</button>
+                        <button style="padding: 5px 10px; background:var(--primary); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="window.location.href='lab.html?visit_id=${v.visit_id}'">فتح</button>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        function openEditPatientModal(patient) {
+            document.getElementById('editPatientId').value = patient.id;
+            document.getElementById('editPName').value = patient.name;
+            document.getElementById('editPPhone').value = patient.phone || '';
+            document.getElementById('editPDoctor').value = patient.doctor_name || '';
+            document.getElementById('editPatientModal').style.display = 'flex';
+        }
+
+        async function savePatientEdit() {
+            const id = document.getElementById('editPatientId').value;
+            const name = document.getElementById('editPName').value;
+            const phone = document.getElementById('editPPhone').value;
+            const doctor = document.getElementById('editPDoctor').value;
+
+            const { error } = await _supabase.from('patients').update({ name, phone, doctor_name: doctor }).eq('id', id).eq('tenant_id', TEBA_CONFIG.tenant.id);
+            if(error) return showToast('❌ خطأ: ' + error.message, true);
+            showToast('✅ تم التعديل بنجاح'); closeModal('editPatientModal'); openPatientList();
+        }
+
+        async function openPatientHistory() {
+            if(!currentPatientId) return;
+            const pName = document.getElementById('pName').value;
+            document.getElementById('historyPatientName').innerText = pName;
+            const tbody = document.getElementById('patientHistoryBody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">جاري التحميل...</td></tr>';
+            document.getElementById('patientHistoryModal').style.display = 'flex';
+
+            const { data: visits, error } = await _supabase.from('visits').select('visit_id, visit_date, total_amount, paid_amount').eq('patient_id', currentPatientId).eq('tenant_id', TEBA_CONFIG.tenant.id).order('visit_id', {ascending: false});
+            if(error) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">خطأ: ${error.message}</td></tr>`; return; }
+            if(visits.length === 0) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px;">لا يوجد زيارات سابقة</td></tr>`; return; }
+
+            const visitIds = visits.map(v => v.visit_id);
+            const { data: vt } = await _supabase.from('visit_tests').select('visit_id, test_code').in('visit_id', visitIds);
+            
+            tbody.innerHTML = visits.map(v => {
+                const testsForVisit = vt.filter(t => t.visit_id === v.visit_id).map(t => t.test_code).join(', ');
+                return `<tr style="border-bottom:1px solid var(--border);"><td style="padding:10px;">${v.visit_id}</td><td style="padding:10px;">${v.visit_date || '---'}</td><td style="padding:10px; font-size:0.8rem;">${testsForVisit || 'لا يوجد'}</td><td style="padding:10px;">${parseFloat(v.total_amount || 0).toFixed(2)}</td><td style="padding:10px;"><button style="padding: 5px 10px; background:var(--primary); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="window.location.href='lab.html?visit_id=${v.visit_id}'">فتح</button></td></tr>`;
+            }).join('');
+        }
+
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        async function deleteVisit(visitId) {
+            if(!confirm('هل أنت متأكد من حذف هذه الزيارة نهائياً؟')) return;
+            try {
+                const { data: vtData } = await _supabase.from('visit_tests').select('id').eq('visit_id', visitId);
+                if (vtData && vtData.length > 0) { const vtIds = vtData.map(v => v.id); await _supabase.from('test_results').delete().in('visit_test_id', vtIds); }
+                await _supabase.from('visit_tests').delete().eq('visit_id', visitId);
+                const { error } = await _supabase.from('visits').delete().eq('visit_id', visitId).eq('tenant_id', TEBA_CONFIG.tenant.id);
+                if(error) throw error;
+                showToast('🗑️ تم حذف الزيارة بنجاح'); openPatientList(); 
+            } catch(err) { showToast('❌ حدث خطأ: ' + err.message, true); }
+        }
+
+        async function searchPatient() {
+            const query = document.getElementById('patientSearch').value.trim();
+            if(!query) return;
+            const { data, error } = await _supabase.from('patients').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id).or(`name.ilike.%${query}%,phone.ilike.%${query}%`).order('id', {ascending: false});
+            if(error) return console.error(error);
+            
+            if(data && data.length > 0) {
+                const p = data[0];
+                currentPatientId = p.id;
+                document.getElementById('pName').value = p.name; document.getElementById('pPhone').value = p.phone || ''; document.getElementById('pAge').value = p.age || 30; document.getElementById('pAgeType').value = p.age_type || 'Years'; document.getElementById('pGender').value = p.gender || 'male'; document.getElementById('pDoctor').value = p.doctor_name || '';
+                document.getElementById('btnPatientHistory').style.display = 'block';
+                showToast('✅ تم العثور على المريض');
+            } else { 
+                showToast('⚠️ لم يتم العثور على مريض', true); 
+                document.getElementById('btnPatientHistory').style.display = 'none';
+                currentPatientId = null;
+            }
+        }
+
+        // ==== التشغيل عند فتح الصفحة ====
+        window.onload = async () => { 
+            await fetchCatalogFromCloud(); 
+            renderCart(); 
+            updateLiveTicker();
+            if (await db.offline_orders.count() > 0) {
+                document.getElementById('syncBtn').style.display = 'flex';
+                showToast('⚠️ يوجد طلبات محفوظة محلياً لم تتم مزامنتها بعد.', true);
+            }
+        };
+    </script>
+
+    <!-- سكريبت تفعيل الـ PWA -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('../service-worker.js')
+            .then(reg => console.log('✅ Service Worker Registered'))
+            .catch(err => console.warn('SW registration failed:', err));
+        });
+      }
+    </script>
+
+</body>
+</html>

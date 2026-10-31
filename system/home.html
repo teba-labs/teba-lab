@@ -1,0 +1,389 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة الدخول | النظام</title>
+    
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#0a6847">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../config.js"></script>
+    <style>
+        :root {
+            --bg: #f4f7f6; --surface: #ffffff; --surface-hover: #f8fafc;
+            --primary: #0a6847; --primary-hover: #085a3d; --primary-light: #10b981;
+            --accent: #3498db; --gold: #d4a843; --danger: #e74c3c;
+            --text: #1e293b; --text-muted: #64748b; --border: #e2e8f0;
+            --font: 'Almarai', sans-serif; --radius: 16px;
+            --shadow: 0 10px 40px rgba(10, 104, 71, 0.08);
+            --shadow-hover: 0 15px 50px rgba(10, 104, 71, 0.15);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: var(--font); 
+            background-color: var(--bg); 
+            background-image: radial-gradient(circle at top right, #e0f2fe 0%, transparent 40%), radial-gradient(circle at bottom left, #dcfce7 0%, transparent 40%);
+            color: var(--text); 
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow-y: auto; 
+            padding: 20px;
+        }
+
+        /* شاشة الدخول */
+        #loginScreen { 
+            background: var(--surface); padding: 40px 30px; border-radius: 24px; 
+            box-shadow: var(--shadow); 
+            text-align: center; width: 100%; max-width: 400px; 
+            border-top: 6px solid var(--primary); 
+        }
+        #loginScreen h1 { color: var(--primary); margin-bottom: 10px; font-size: 2rem; font-weight: 800;}
+        #loginScreen p { color: var(--text-muted); margin-bottom: 30px; font-weight: 600; font-size: 0.9rem;}
+        
+        .input-group { margin-bottom: 15px; position: relative; text-align: right;}
+        .input-group label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 0.85rem; color: var(--text-muted); }
+        .input-group input { 
+            width: 100%; padding: 14px; border-radius: 12px; border: 2px solid var(--border); 
+            background: var(--bg); color: var(--text); font-size: 1rem; outline: none; transition: 0.3s; font-weight: bold;
+        }
+        .input-group input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 4px rgba(10,104,71,0.1); }
+        
+        .btn-login { 
+            width: 100%; padding: 14px; background: var(--primary); 
+            color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; 
+            cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px -5px rgba(10,104,71,0.3); margin-top: 10px;
+        }
+        .btn-login:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 15px 25px -5px rgba(10,104,71,0.4); }
+        
+        .btn-install-pwa {
+            width: 100%; padding: 12px; background: #f8fafc; color: var(--primary);
+            border: 2px dashed var(--primary-light); border-radius: 12px; font-size: 1rem; font-weight: bold;
+            cursor: pointer; transition: 0.3s; margin-top: 15px; display: none; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-install-pwa:hover { background: #f0fdf4; border-color: var(--primary); }
+
+        .error-msg { color: var(--danger); margin-top: 15px; font-weight: bold; display: none; font-size: 0.85rem; background: #fef2f2; padding: 10px; border-radius: 8px; border: 1px solid #fecaca;}
+
+        /* شاشة الديسك توب */
+        #desktopScreen { display: none; width: 100%; max-width: 900px; position: relative; animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1); margin: auto; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .logout-btn { 
+            position: absolute; top: 0; left: 0; background: #fee2e2; color: var(--danger); 
+            border: 1px solid #fecaca; padding: 8px 16px; border-radius: 10px; 
+            cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 0.85rem; z-index: 10;
+            font-family: inherit;
+        }
+        .logout-btn:hover { background: var(--danger); color: white; transform: translateY(-2px); }
+
+        .install-btn-desktop {
+            position: absolute; top: 0; left: 110px; background: #e0f2fe; color: #0284c7;
+            border: 1px solid #bae6fd; padding: 8px 16px; border-radius: 10px;
+            cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 0.85rem; z-index: 10;
+            font-family: inherit; display: none;
+        }
+        .install-btn-desktop:hover { background: #0284c7; color: white; transform: translateY(-2px); }
+
+        .desktop-header { display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 25px; text-align: center; padding-top: 30px;}
+        
+        .logo-container { margin-bottom: 15px; display: flex; align-items: center; justify-content: center; height: 90px; }
+        .logo-container img { height: 90px; width: auto; object-fit: contain; display: block; filter: drop-shadow(0 5px 10px rgba(10,104,71,0.15)); }
+        .logo-fallback { display: flex; flex-direction: column; align-items: center; }
+        .logo-fallback .en { font-size: 2.5rem; font-weight: 800; color: var(--primary); letter-spacing: 2px; line-height: 1; }
+        .logo-fallback .ar { font-size: 1.3rem; font-weight: 700; color: var(--text); margin-top: 2px;}
+        
+        .desktop-header h1 { color: var(--text); font-size: 1.6rem; font-weight: 800; margin-bottom: 5px; }
+        .desktop-header p { color: var(--text-muted); font-size: 1rem; font-weight: 600; }
+
+        .apps-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 650px; margin: 0 auto; }
+        
+        .app-card { 
+            background: var(--surface); border: 2px solid transparent; border-radius: var(--radius); 
+            padding: 20px 15px; text-align: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); 
+            display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: var(--text);
+            box-shadow: var(--shadow); position: relative;
+        }
+        
+        .app-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-hover); }
+        .app-card:nth-child(1):hover { border-color: #0284c7; }
+        .app-card:nth-child(2):hover { border-color: #10b981; }
+        .app-card:nth-child(3):hover { border-color: #9333ea; }
+        .app-card:nth-child(4):hover { border-color: var(--gold); }
+
+        .app-icon-box { 
+            width: 55px; height: 55px; border-radius: 16px; display: flex; align-items: center; justify-content: center; 
+            font-size: 1.6rem; margin-bottom: 5px; transition: 0.3s; box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+        
+        .app-card:nth-child(1) .app-icon-box { color: #0284c7; background: #e0f2fe; }
+        .app-card:nth-child(2) .app-icon-box { color: #10b981; background: #dcfce7; }
+        .app-card:nth-child(3) .app-icon-box { color: #9333ea; background: #f3e8ff; }
+        .app-card:nth-child(4) .app-icon-box { color: #d97706; background: #fef3c7; }
+
+        .app-card:hover .app-icon-box { transform: scale(1.1) rotate(5deg); }
+
+        .app-name { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+        .app-desc { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; line-height: 1.4;}
+
+        /* المودال (باسورد الدكتور) */
+        #secretModal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+        .secret-box { background: var(--surface); padding: 30px 25px; border-radius: 24px; text-align: center; width: 90%; max-width: 380px; border-top: 6px solid var(--gold); box-shadow: 0 20px 50px rgba(0,0,0,0.2); animation: fadeIn 0.4s ease-out;}
+        .secret-box h2 { color: var(--gold); margin-bottom: 10px; font-size: 1.6rem; font-weight: 800;}
+        .secret-box p { color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem; font-weight: 600;}
+        .secret-box input { width: 100%; padding: 14px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg); color: var(--gold); text-align: center; font-size: 1.1rem; margin-bottom: 20px; outline: none; letter-spacing: 5px; font-weight: bold;}
+        .secret-box input:focus { border-color: var(--gold); background: white; box-shadow: 0 0 0 4px rgba(212, 168, 67, 0.1);}
+        .modal-actions { display: flex; gap: 10px; }
+        .secret-box button { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; font-size: 0.95rem; transition: 0.2s; font-family: inherit;}
+        .btn-confirm { background: var(--gold); color: white; }
+        .btn-confirm:hover { background: #b8902e; transform: translateY(-2px); }
+        .btn-cancel { background: var(--border); color: var(--text); }
+        .btn-cancel:hover { background: #cbd5e1; }
+    </style>
+</head>
+<body>
+
+    <!-- شاشة الدخول الديناميكية -->
+    <div id="loginScreen">
+        <h1 id="loginLabName">🔬 جاري التحميل...</h1>
+        <p>أدخل بيانات حسابك للدخول إلى النظام</p>
+        
+        <div class="input-group">
+            <label>البريد الإلكتروني</label>
+            <input type="email" id="loginEmail" placeholder="example@lab.com" autocomplete="username" style="direction: ltr; text-align: center;">
+        </div>
+        <div class="input-group">
+            <label>كلمة المرور</label>
+            <input type="password" id="loginPassword" placeholder="********" autocomplete="current-password" style="text-align: center; letter-spacing: 2px;">
+        </div>
+        
+        <button class="btn-login" onclick="loginUser()">دخول آمن</button>
+        
+        <!-- زرار تثبيت التطبيق في شاشة الدخول -->
+        <button class="btn-install-pwa" id="pwaInstallBtnLogin" onclick="installPWA()">
+            📲 تثبيت التطبيق على جهازك
+        </button>
+
+        <div class="error-msg" id="loginError"></div>
+    </div>
+
+    <!-- شاشة الديسك توب -->
+    <div id="desktopScreen">
+        <button class="logout-btn" onclick="logout()">🚪 خروج</button>
+        <button class="install-btn-desktop" id="pwaInstallBtnDesktop" onclick="installPWA()">📲 تثبيت التطبيق</button>
+        
+        <div class="desktop-header">
+            <div class="logo-container">
+                <img id="labLogo" src="../brand-logo.png" alt="TEBA LABS" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="logo-fallback" style="display:none;">
+                    <span class="en">TEBA LABS</span>
+                    <span class="ar">معامل طيبة</span>
+                </div>
+            </div>
+            
+            <h1 id="desktopLabName">مرحباً، معامل طيبة</h1>
+            <p>النظام الرئيسي لإدارة المعامل</p>
+        </div>
+        
+        <!-- الكروت -->
+        <div class="apps-grid">
+            <a href="reception.html" class="app-card">
+                <div class="app-icon-box">🏥</div>
+                <div class="app-name">الاستقبال</div>
+                <div class="app-desc">تسجيل المرضى وإصدار الفواتير</div>
+            </a>
+            
+            <a href="lab.html" class="app-card">
+                <div class="app-icon-box">🔬</div>
+                <div class="app-name">المعمل</div>
+                <div class="app-desc">إدخال النتائج ونشرها</div>
+            </a>
+
+            <a href="tests_manage.html" class="app-card" id="cardManageTests">
+                <div class="app-icon-box">⚙️</div>
+                <div class="app-name">إدارة التحاليل</div>
+                <div class="app-desc">الأسعار والباراميترز</div>
+            </a>
+
+            <div class="app-card" id="cardDashboard" onclick="openSecretModal()">
+                <div class="app-icon-box">📊</div>
+                <div class="app-name">لوحة التحكم</div>
+                <div class="app-desc">التقارير والإحصائيات 🔒</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة الباسورد السرية للدكتور -->
+    <div id="secretModal">
+        <div class="secret-box">
+            <h2>🔒 منطقة محظورة</h2>
+            <p>مخصصة للدكتور فقط</p>
+            <input type="password" id="docPassword" placeholder="******">
+            <div class="modal-actions">
+                <button class="btn-confirm" onclick="checkDoctorPassword()">دخول</button>
+                <button class="btn-cancel" onclick="closeSecretModal()">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const supabaseUrl = TEBA_CONFIG.supabase.url;
+        const supabaseKey = TEBA_CONFIG.supabase.key;
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // ==== الدخول الديناميكي ====
+        async function loginUser() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errorEl = document.getElementById('loginError');
+            const btn = document.querySelector('.btn-login');
+
+            if (!email || !password) {
+                errorEl.textContent = 'يرجى إدخال الإيميل والباسورد';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            btn.innerText = '⏳ جاري التحقق...'; 
+            btn.disabled = true;
+            errorEl.style.display = 'none';
+
+            try {
+                const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({ email, password });
+                if (authError) throw new Error('الإيميل أو الباسورد غير صحيح');
+
+                const { data: profile, error: profileError } = await _supabase.from('profiles').select('tenant_id, role').eq('id', authData.user.id).single();
+                if (profileError || !profile) throw new Error('لم يتم العثور على بيانات المعمل لهذا الحساب.');
+
+                const { data: tenant, error: tenantError } = await _supabase.from('tenants').select('*').eq('id', profile.tenant_id).single();
+                if (tenantError) throw new Error('لم يتم العثور على بيانات المعمل.');
+
+                localStorage.setItem('teba_tenant_id', tenant.id);
+                localStorage.setItem('teba_tenant_name', tenant.name);
+                localStorage.setItem('teba_user_role', profile.role);
+
+                showDashboard(tenant, profile.role);
+
+            } catch (err) {
+                errorEl.textContent = '❌ ' + err.message;
+                errorEl.style.display = 'block';
+                btn.innerText = 'دخول آمن';
+                btn.disabled = false;
+            }
+        }
+
+        // ==== عرض لوحة التحكم بعد الدخول ====
+        function showDashboard(tenant, role) {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('desktopScreen').style.display = 'block';
+            
+            document.getElementById('desktopLabName').innerText = "مرحباً، " + tenant.name;
+            document.getElementById('loginLabName').innerText = tenant.name;
+        }
+
+        // ==== التحقق من الجلسة عند فتح الصفحة ====
+        _supabase.auth.getSession().then(async ({ data: { session } }) => {
+            if (session) {
+                const { data: profile } = await _supabase.from('profiles').select('tenant_id, role').eq('id', session.user.id).single();
+                if (profile) {
+                    const { data: tenant } = await _supabase.from('tenants').select('*').eq('id', profile.tenant_id).single();
+                    if (tenant) {
+                        localStorage.setItem('teba_tenant_id', tenant.id);
+                        localStorage.setItem('teba_tenant_name', tenant.name);
+                        localStorage.setItem('teba_user_role', profile.role);
+                        showDashboard(tenant, profile.role);
+                    }
+                }
+            }
+        });
+
+        // ==== تسجيل الخروج ====
+        async function logout() {
+            await _supabase.auth.signOut();
+            localStorage.removeItem('teba_tenant_id');
+            localStorage.removeItem('teba_tenant_name');
+            localStorage.removeItem('teba_user_role');
+            location.reload();
+        }
+
+        // ==== لوحة التحكم (باسورد الدكتور) ====
+        function openSecretModal() {
+            document.getElementById('secretModal').style.display = 'flex';
+            document.getElementById('docPassword').focus();
+        }
+
+        function closeSecretModal() {
+            document.getElementById('secretModal').style.display = 'none';
+            document.getElementById('docPassword').value = '';
+        }
+
+        function checkDoctorPassword() {
+            const input = document.getElementById('docPassword').value;
+            const role = localStorage.getItem('teba_user_role');
+            
+            if (role === 'admin' || input === TEBA_CONFIG.auth.doctorPassword) {
+                sessionStorage.setItem('doctor_access', 'granted');
+                window.location.href = '../dashboard/admin.html';
+            } else {
+                alert('❌ باسورد الدكتور غلط!');
+                document.getElementById('docPassword').value = '';
+                document.getElementById('docPassword').focus();
+            }
+        }
+
+        document.getElementById('loginPassword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') loginUser();
+        });
+        
+        document.getElementById('docPassword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') checkDoctorPassword();
+        });
+
+        // ==========================================
+        // 💡 كود PWA Install Prompt
+        // ==========================================
+        let deferredPrompt;
+        const btnLogin = document.getElementById('pwaInstallBtnLogin');
+        const btnDesktop = document.getElementById('pwaInstallBtnDesktop');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // إظهار الزراير لو المتصفح دعم التثبيت
+            if (btnLogin) btnLogin.style.display = 'flex';
+            if (btnDesktop) btnDesktop.style.display = 'block';
+        });
+
+        window.installPWA = async function() {
+            if (!deferredPrompt) {
+                alert('التطبيق مثبت بالفعل أو متصفحك لا يدعم هذه الميزة.');
+                return;
+            }
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                if (btnLogin) btnLogin.style.display = 'none';
+                if (btnDesktop) btnDesktop.style.display = 'none';
+            }
+            deferredPrompt = null;
+        };
+
+        // تفعيل الـ PWA Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('../service-worker.js')
+                    .then(reg => console.log('✅ Service Worker Registered'))
+                    .catch(err => console.warn('SW registration failed:', err));
+            });
+        }
+    </script>
+
+</body>
+</html>
