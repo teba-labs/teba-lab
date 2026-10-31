@@ -1063,9 +1063,10 @@
     window.finChart = new Chart(ctx, { type: 'bar', data: { labels: ['الإيرادات', 'المصروفات', 'صافي الربح'], datasets: [{ data: [totalRev, totalExp, (totalRev - totalExp)], backgroundColor: ['rgba(22, 163, 74, 0.7)', 'rgba(220, 38, 38, 0.7)', 'rgba(217, 119, 6, 0.7)'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: gridColor } }, x: { ticks: { color: gridColor } } } } });
   }
 
-  // ==========================================
-  // (نهاية الجزء الثاني - يتبعه الجزء الثالث والأخير فوراً)
-  // ==========================================  window.renderAnnualReport = function() {
+  /* ==========================================
+     (نهاية الجزء الثاني - يتبعه الجزء الثالث والأخير فوراً)
+     ========================================== */
+  window.renderAnnualReport = function() {
     const selectedYear = document.getElementById('annualYearSelector').value; const selectedBranch = document.getElementById('annualBranchSelector').value;
     let finalRev = 0, finalExp = 0;
     let branchesToProcess = selectedBranch === 'combined' ? ['الجعافرة', 'بهتيم'] : [selectedBranch === 'jaafara' ? 'الجعافرة' : 'بهتيم'];
