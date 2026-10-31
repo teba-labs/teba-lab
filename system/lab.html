@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -89,7 +89,66 @@
         .btn-print-modal { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; margin-top: 15px; }
         .btn-print-modal:hover { background: var(--primary-hover); }
 
-        .print-page { background: #fff; width: 100%; margin: 0; padding: 0; }
+        /* ==========================================
+           تنسيقات الطباعة الاحترافية (تم تعديلها بالكامل)
+           ========================================== */
+        .print-page { 
+            background: #fff; 
+            width: 100%; 
+            margin: 0; 
+            padding: 0; 
+        }
+
+        .print-header {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid #000; 
+            padding-bottom: 10px; 
+            margin-bottom: 15px;
+            gap: 20px;
+        }
+        .print-header-left { flex: 1; text-align: left; }
+        .print-header-left h1 { margin: 0; color: #000; font-size: 28px; font-weight: 900; letter-spacing: 1px; }
+        .print-header-left p { margin: 2px 0 0 0; font-size: 14px; color: #333; font-weight: 600;}
+        .print-header-right { flex: 1; display: flex; justify-content: flex-end; }
+        .print-header-right img { max-height: 90px; object-fit: contain; filter: contrast(1.5) brightness(0.8); }
+
+        .print-footer {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start;
+            width: 100%; 
+            border-top: 2px solid #000; 
+            padding-top: 10px; 
+            font-size: 13px; 
+            color: #000; 
+            margin-top: 30px;
+        }
+        .print-footer-phones { flex: 1; text-align: left; direction: ltr; font-weight: bold; line-height: 1.8; }
+        .print-footer-addresses { flex: 1; text-align: right; direction: rtl; font-weight: bold; line-height: 1.8; }
+        .print-footer p { margin: 0; }
+
+        /* إعدادات الطباعة لمنع التكرار وضبط الهوامش */
+        @media print {
+            body * { visibility: hidden; }
+            #printModal, #printModal * { visibility: visible; }
+            #printModal { position: absolute; left: 0; top: 0; width: 100%; background: white; display: block !important; padding: 0 !important; margin: 0 !important; }
+            .modal-content { box-shadow: none !important; max-height: none !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; background: white !important; max-width: 100% !important; border-radius: 0 !important; }
+            .btn-print-modal { display: none !important; }
+            
+            .print-page {
+                page-break-after: always;
+                break-after: page;
+                padding: 10mm;
+                box-sizing: border-box;
+                background: white;
+            }
+            .print-page:last-child {
+                page-break-after: auto;
+                break-after: auto;
+            }
+        }
 
         @media (max-width: 1000px) {
             body { overflow: auto; height: auto; }
@@ -119,20 +178,26 @@
     <audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3" preload="auto"></audio>
 
     <div class="main-grid">
+        <!-- شاشة طابور المرضى -->
         <div class="panel">
             <div class="panel-header">طابور المرضى (آخر 100 زيارة)</div>
             <div class="patient-list" id="patientList"><div class="empty-msg">جاري التحميل...</div></div>
         </div>
+        
+        <!-- شاشة التحاليل الفردية -->
         <div class="panel">
             <div class="panel-header">التحاليل الفردية (Single)</div>
             <div class="tests-list" id="singleList"><div class="empty-msg">اختر مريضاً</div></div>
         </div>
+        
+        <!-- شاشة التحاليل المركبة (Profiles) -->
         <div class="panel">
             <div class="panel-header">التحاليل المركبة (Profiles)</div>
             <div class="tests-list" id="profileList"><div class="empty-msg">اختر مريضاً</div></div>
         </div>
     </div>
 
+    <!-- مودال إضافة تحليل جديد للزيارة -->
     <div class="modal" id="addTestModal">
         <div class="modal-content" style="max-width: 700px;">
             <h3 style="margin-bottom: 15px; color: var(--primary);">➕ إضافة تحليل جديد للحالة</h3>
@@ -141,6 +206,7 @@
         </div>
     </div>
 
+    <!-- مودال الإضافة السريعة لباراميتر -->
     <div class="modal" id="quickAddModal">
         <div class="modal-content" style="max-width: 450px;">
             <h3 style="margin-bottom: 15px; color: #8b5cf6;">➕ إضافة باراميتر سريع</h3>
@@ -165,14 +231,15 @@
         </div>
     </div>
 
+    <!-- مودال معاينة وطباعة التقرير -->
     <div class="modal" id="printModal">
         <div class="modal-content" style="background: #e0e0e0; max-width: 1000px;">
+            <!-- منطقة الطباعة الفعلية -->
             <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000;"></div>
             <button class="btn-print-modal" onclick="window.print()">🖨️ Print Now</button>
         </div>
-    </div>
-
-    <script>        // ==== التحقق من تسجيل الدخول ====
+    </div>    <script>
+        // ==== التحقق من تسجيل الدخول ====
         if (!localStorage.getItem('teba_tenant_id')) {
             window.location.href = 'home.html';
         }
@@ -223,12 +290,14 @@
             setTimeout(() => t.style.display = 'none', 4000);
         }
 
+        // منع تغيير قيم الحقول عن طريق الخطأ عند استخدام عجلة الماوس
         document.addEventListener("wheel", function(event){
             if(document.activeElement.type === "number" || document.activeElement.type === "text"){
                 document.activeElement.blur();
             }
         });
 
+        // إغلاق النوافذ المنبثقة بزر Escape
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 document.getElementById('printModal').style.display = 'none';
@@ -596,9 +665,7 @@
                     if (input) input.value = parseFloat(calcVal.toFixed(1));
                 }
             });
-        }
-
-        // ==== حفظ النتائج (Offline-First) ====
+        }        // ==== حفظ النتائج (Offline-First) ====
         async function saveTestResult(visitTestId, isProfile, isSilent = false) {
             const vt = visitTests.find(v => v.id === visitTestId);
             const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { code: vt.test_code, parameters: [] };
@@ -626,7 +693,6 @@
                 return;
             }
 
-            // 1. لو مفيش نت -> حفظ محلي
             if (!navigator.onLine) {
                 await db.offline_results.put({
                     visitTestId: visitTestId,
@@ -642,7 +708,6 @@
                 return;
             }
 
-            // 2. لو فيه نت -> حفظ في السحابة
             const { error } = await _supabase.from('test_results').upsert({
                 tenant_id: TEBA_CONFIG.tenant.id,
                 visit_test_id: visitTestId,
@@ -687,12 +752,7 @@
                 if (catalogItem) {
                     let currentParams = catalogItem.parameters || [];
                     if (!currentParams.find(p => p.name.toLowerCase() === paramName.toLowerCase())) {
-                        currentParams.push({
-                            name: paramName,
-                            label: paramName,
-                            unit: paramUnit,
-                            type: 'text'
-                        });
+                        currentParams.push({ name: paramName, label: paramName, unit: paramUnit, type: 'text' });
                         await _supabase.from('tests_catalog').update({ parameters: currentParams }).eq('id', catalogItem.id).eq('tenant_id', TEBA_CONFIG.tenant.id);
                         catalogItem.parameters = currentParams; 
                     }
@@ -755,7 +815,9 @@
             
             await loadData();
             if (selectedVisitId) selectPatient(selectedVisitId);
-        }        // ==== النشر والحذف ====
+        }
+
+        // ==== النشر والحذف ====
         async function publishVisit() {
             if (!selectedVisitId) return;
             const visitObj = allVisits.find(v => v.visit_id === selectedVisitId);
@@ -768,6 +830,7 @@
             });
             const pendingTests = vTests.length - completedTests;
             if (!confirm(`أنت على وشك نشر الزيارة للمريض.\n\nالتحاليل الجاهزة: ${completedTests}\nالتحاليل قيد التشغيل: ${pendingTests}\n\nهل أنت متأكد من النشر/التحديث؟`)) return;
+            
             try {
                 const { error } = await _supabase.from('visits').update({
                     is_published: true,
@@ -779,10 +842,8 @@
                 selectPatient(selectedVisitId); 
                 showToast(`✅ تم النشر (${completedTests} جاهز، ${pendingTests} قيد التشغيل)`);
                 
-                // 📢 إشعار صوتي للاستقبال
                 const bcNotify = new BroadcastChannel('teba_sync');
                 bcNotify.postMessage('result_published');
-                
             } catch (err) {
                 alert('خطأ أثناء النشر: ' + err.message);
             }
@@ -842,29 +903,26 @@
                 document.getElementById('addTestModal').style.display = 'none';
                 showToast(`✅ تم إضافة ${name} بنجاح`);
             } catch(err) { alert('خطأ في الإضافة: ' + err.message); }
-        }
-
-        // ==== الطباعة (التصميم الجديد) ====
+        }        // ==========================================
+        // 🖨️ دوال الطباعة الاحترافية (معدلة بالكامل)
+        // ==========================================
         function getHeaderHtml(visit, reqDate, printDate) {
             let ageStr = visit.patient.age + ' Years';
             if(visit.patient.age_type === 'Months') ageStr = visit.patient.age + ' Months';
             if(visit.patient.age_type === 'Days') ageStr = visit.patient.age + ' Days';
             return `
-                <div class="print-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; z-index: 2;">
-                    
-                    <div style="width: 50%; text-align: left;">
-                        <h1 style="margin: 0; color: #000; font-size: 28px; font-weight: 900; letter-spacing: 1px;">${TEBA_CONFIG.lab.nameEn}</h1>
-                        <p style="margin: 4px 0 0 0; font-size: 15px; font-weight: 600; color: #000;">For Medical Analyzes</p>
-                        <p style="margin: 2px 0 0 0; font-size: 14px; color: #333;">${TEBA_CONFIG.lab.doctor}</p>
+                <div class="print-header">
+                    <div class="print-header-left">
+                        <h1>${TEBA_CONFIG.lab.nameEn}</h1>
+                        <p style="font-size: 15px;">For Medical Analyzes</p>
+                        <p>${TEBA_CONFIG.lab.doctor}</p>
                     </div>
-
-                    <div style="width: 50%; display: flex; justify-content: flex-end;">
-                        <img src="../header.png" alt="Logo" style="max-height: 110px; object-fit: contain; filter: contrast(1.5) brightness(0.8);" onerror="this.style.display='none'">
+                    <div class="print-header-right">
+                        <img src="../header.png" alt="Logo" onerror="this.style.display='none'">
                     </div>
-
                 </div>
                 
-                <div style="display: flex; justify-content: space-between; border: 1.5px solid #000; padding: 10px 15px; border-radius: 4px; background: #fff; font-size: 13px; margin-bottom: 20px; z-index: 2; position: relative;">
+                <div style="display: flex; justify-content: space-between; border: 1.5px solid #000; padding: 10px 15px; border-radius: 4px; background: #fff; font-size: 13px; margin-bottom: 20px;">
                     <div style="width: 50%; display: flex; flex-direction: column; gap: 5px;">
                         <div><strong style="color: #000; display: inline-block; width: 100px;">Patient:</strong> <span style="font-weight: bold;">${visit.patient.name || 'Unknown'}</span></div>
                         <div><strong style="color: #000; display: inline-block; width: 100px;">Age/Gender:</strong> <span style="font-weight: bold;">${ageStr} / ${visit.patient.gender}</span></div>
@@ -881,18 +939,15 @@
 
         function getFooterHtml() {
             return `
-                <div class="print-footer" style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%; border-top: 2px solid #000; padding-top: 10px; font-size: 13px; color: #000; margin-top: 30px;">
-                    
-                    <div style="width: 35%; text-align: left; direction: ltr; font-weight: bold; line-height: 1.8;">
-                        <p style="margin: 0;">📞 01123702062</p>
-                        <p style="margin: 0;">📱 01099003494</p>
+                <div class="print-footer">
+                    <div class="print-footer-phones">
+                        <p>📞 01123702062</p>
+                        <p>📱 01099003494</p>
                     </div>
-                    
-                    <div style="width: 65%; text-align: right; direction: rtl; font-weight: bold; line-height: 1.8;">
-                        <p style="margin: 0;">الفرع الأول: الجعافرة - الطريق العمومي - أعلى صيدلية الصحابة</p>
-                        <p style="margin: 0;">الفرع الثاني: بهتيم - مساكن اسكو - أمام مدرسة ابن الخطاب - عيادة د. محمد رمضان</p>
+                    <div class="print-footer-addresses">
+                        <p>الفرع الأول: الجعافرة - الطريق العمومي - أعلى صيدلية الصحابة</p>
+                        <p>الفرع الثاني: بهتيم - مساكن اسكو - أمام مدرسة ابن الخطاب - عيادة د. محمد رمضان</p>
                     </div>
-
                 </div>
             `;
         }
@@ -908,6 +963,7 @@
             
             let singlesRows = '';
             let profilesData = []; 
+            
             vTests.forEach(vt => {
                 const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, code: vt.test_code, parameters: [] };
                 const result = testResults.find(r => r.visit_test_id === vt.id);
@@ -916,6 +972,7 @@
                 const isProfile = params.length > 1 || (params.length === 1 && params[0].name !== 'Result');
                 let hasTestData = false;
                 let testRows = '';
+                
                 if (isProfile) {
                     params.forEach(param => {
                         const val = savedData[param.name]?.value;
@@ -943,7 +1000,12 @@
                             </tr>`;
                         }
                     });
-                    if (hasTestData) profilesData.push({ name: catalogItem.name, rows: testRows });
+                    if (hasTestData) {
+                        profilesData.push({ name: catalogItem.name, rows: testRows });
+                    } else {
+                        testRows = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #666;">لا توجد نتائج محفوظة لهذا التحليل. تأكد من الضغط على زر "حفظ" للتحليل.</td></tr>`;
+                        profilesData.push({ name: catalogItem.name, rows: testRows });
+                    }
                 } else {
                     const val = savedData['result']?.value;
                     if (val) {
@@ -971,7 +1033,6 @@
 
             let htmlContent = '';
 
-            // 1. لو في تحاليل فردية (Singles) تاخد صفحة لوحدها
             if (singlesRows !== '') {
                 let page = `<div class="print-page">`;
                 page += getHeaderHtml(visit, reqDate, printDate);
@@ -981,7 +1042,6 @@
                 htmlContent += page;
             }
 
-            // 2. لوب على كل البروفايلات (كل بروفايل ياخد صفحة كاملة بهيدر وفوتر)
             profilesData.forEach(profile => {
                 let page = `<div class="print-page">`;
                 page += getHeaderHtml(visit, reqDate, printDate);
@@ -991,7 +1051,6 @@
                 htmlContent += page;
             });
 
-            // 3. لو مفيش أي بيانات خالص
             if (htmlContent === '') {
                 let page = `<div class="print-page">`;
                 page += getHeaderHtml(visit, reqDate, printDate);
