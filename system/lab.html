@@ -128,40 +128,50 @@
         .print-footer-phones { flex: 1; text-align: left; direction: ltr; font-weight: bold; line-height: 1.8; }
         .print-footer-addresses { flex: 1; text-align: right; direction: rtl; font-weight: bold; line-height: 1.8; }
         .print-footer p { margin: 0; }
-        /* إعدادات الطباعة لمنع التكرار وضبط الهوامش */
+               /* إعدادات الطباعة الجذرية لمنع التكرار وتثبيت الفوتر */
         @media print {
             body * { visibility: hidden; }
             #printModal, #printModal * { visibility: visible; }
             #printModal { 
                 position: absolute; left: 0; top: 0; width: 100%; 
                 background: white; display: block !important; 
-                padding: 0 !important; margin: 0 !important; overflow: visible !important; 
+                margin: 0 !important; padding: 0 !important;
             }
             .modal-content { 
                 box-shadow: none !important; max-height: none !important; 
                 overflow: visible !important; padding: 0 !important; margin: 0 !important; 
                 background: white !important; max-width: 100% !important; 
-                border-radius: 0 !important; height: auto !important; 
+                border-radius: 0 !important;
             }
             .btn-print-modal { display: none !important; }
             
-            /* السر هنا: إجبار الصفحة تاخد ارتفاع A4 وتوزيع العناصر */
+            /* السر هنا: إجبار الصفحة تاخد طول A4 بالظبط */
             .print-page {
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between; /* ده اللي بينزل الفوتر لتحت */
-                min-height: 277mm; /* ارتفاع A4 (297mm) ناقص الهامش (20mm) */
+                display: block !important; /* شيلنا الفليكس عشان بيكسر الطباعة في كروم */
+                position: relative;
+                height: 297mm; /* طول ورقة A4 بالمليمتر */
                 page-break-after: always;
                 break-after: page;
-                padding: 10mm;
                 box-sizing: border-box;
+                padding: 10mm;
                 background: white;
+                overflow: hidden; /* يمنع أي محتوى إنه يطلع برة الورقة */
             }
             .print-page:last-child {
                 page-break-after: auto;
                 break-after: auto;
             }
-            /* منع تقطيع الجداول بشكل يبوظ الشكل */
+            
+            /* تثبيت الفوتر في آخر الورقة */
+            .print-footer {
+                position: absolute;
+                bottom: 10mm; /* المسافة من تحت */
+                left: 10mm;
+                right: 10mm;
+                margin-top: 0 !important; /* إلغاء المارجن القديم */
+            }
+            
+            /* منع تقطيع الجداول */
             table { page-break-inside: auto; }
             tr { page-break-inside: avoid; page-break-after: auto; }
             thead { display: table-header-group; }
