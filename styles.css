@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Complete Stylesheet (v3.7 - PWA Updates)
+   TEBA LABS - Complete Stylesheet (v3.7)
    معامل طيبة - ورقة الأنماط الكاملة
    ===================================================== */
 
@@ -193,7 +193,7 @@ p { color: var(--text-muted); }
 .reveal {
   opacity: 0;
   transform: translateY(40px);
-  transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+  transition: all 0.8s cubic-bezier(0.5, 0, 0.5, 1);
 }
 
 .reveal.active {
@@ -247,7 +247,7 @@ body.light-mode .section-head h2 span {
   font-size: .95rem;
 }
 
-/* ============= 5. OFFERS TICKER (FIXED INFINITE LOOP) ============= */
+/* ============= 5. OFFERS TICKER ============= */
 .offers-bar {
   background: linear-gradient(90deg, #0a2e15, #15803d, #00ff7f, #15803d, #0a2e15);
   background-size: 200% 100%;
@@ -301,7 +301,7 @@ body.light-mode .section-head h2 span {
   100% { transform: translateX(0); }
 }
 
-/* ============= 6. HEADER ============= */
+/* ============= 6. HEADER & LOGO FIX ============= */
 header.top-bar {
   position: sticky;
   top: 0;
@@ -331,11 +331,12 @@ body.light-mode header.top-bar {
   gap: 14px;
 }
 
+/* التعديل هنا: خلفية بيضاء ثابتة و object-fit contain عشان اللوجو يبان في الوضع الليلي */
 .logo-box {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: radial-gradient(circle, #0f1a0f, #0a0e0a);
+  background: #ffffff; /* تم التغيير لضمان ظهور اللوجو */
   border: 2px solid var(--gold);
   box-shadow: 0 0 15px rgba(212, 175, 55, .35);
   display: grid;
@@ -353,13 +354,9 @@ body.light-mode header.top-bar {
 .logo-box img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain; /* منع تقصيص اللوجو */
+  padding: 4px; /* مسافة أمان حول اللوجو */
   border-radius: 50%;
-}
-
-body.light-mode .logo-box {
-  background: #fff;
-  border-color: var(--gold);
 }
 
 .brand-text h1 {
@@ -426,17 +423,6 @@ body.light-mode .action-btn {
   padding: 0;
   justify-content: center;
   font-size: 1.15rem;
-}
-
-/* زرار تثبيت التطبيق */
-.btn-install-pwa {
-  background: linear-gradient(135deg, #0284c7, #0369a1) !important;
-  color: #fff !important;
-  border-color: #38bdf8 !important;
-  display: none; /* هيتشغل بالـ JS */
-}
-.btn-install-pwa:hover {
-  box-shadow: 0 0 20px rgba(2, 132, 199, 0.5) !important;
 }
 
 .badge-num {
@@ -655,9 +641,7 @@ body.light-mode .action-btn {
   background: var(--bg-input);
   color: var(--text-muted);
   border: 1px solid var(--border);
-}
-
-/* ============= 10. SECTIONS & HERO SPLIT ============= */
+}/* ============= 10. SECTIONS & HERO SPLIT ============= */
 .section {
   display: none;
   animation: sectionFade .4s;
@@ -892,7 +876,7 @@ body.light-mode .stat-box .num {
 .glass-card h4 { color: var(--text-strong); margin-bottom: 10px; font-size: 1.15rem; }
 .glass-card p { color: var(--text-muted); font-size: .9rem; }
 
-/* (باقي التنسيقات في الجزء الثاني) *//* ============= 12. POPUP OFFER ============= */
+/* ============= 12. POPUP OFFER ============= */
 .popup-overlay {
   position: fixed; inset: 0;
   background: rgba(0, 0, 0, 0.85);
@@ -1271,6 +1255,12 @@ footer a { cursor: pointer; }
 
 /* ============= 31. TABLET-MOBILE SIDEBAR (< 1000px) ============= */
 @media (max-width: 1000px) {
+  /* التعديل الأهم: إجبار الـ Grid الرئيسي ياخد مساحة الشاشة كاملة عشان الفراغ يختفي */
+  .layout {
+    grid-template-columns: 1fr; 
+    gap: 15px;
+  }
+
   .sidebar-right, .sidebar-left { position: fixed; top: 0; width: 340px; max-width: 90vw; height: 100vh; max-height: 100vh; padding: 80px 20px 30px; margin: 0; border-radius: 0; z-index: 9999; overflow-y: auto; background: var(--bg-sidebar-gradient); }
   .sidebar-right { right: 0; left: auto; transform: translateX(0); transition: transform .3s ease; }
   .sidebar-right.collapsed { margin: 0; transform: translateX(100%); opacity: 1; pointer-events: none; }
@@ -1342,12 +1332,4 @@ footer a { cursor: pointer; }
   .offers-track .ticker-item { font-size: .78rem; }
   .offers-track { gap: 30px; }
   .popup-content { padding: 30px 20px; }
-}
-
-/* حل مشكلة ظهور اللوجو في الوضع الليلي */
-body:not(.light-mode) .brand img {
-  background: #ffffff;
-  padding: 6px 15px;
-  border-radius: 12px;
-  box-shadow: 0 0 15px rgba(0, 255, 127, 0.3);
 }

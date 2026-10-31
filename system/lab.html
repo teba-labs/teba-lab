@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -92,87 +92,94 @@
         /* Print Styles */
         .print-page { background: #fff; width: 100%; margin-bottom: 20px; position: relative; }
         
-@media print {
-    /* 1. أهم سطرين عشان نلغي أي قيود على طول الصفحة */
-    html, body { 
-        height: auto !important; 
-        min-height: auto !important;
-        overflow: visible !important; 
-        margin: 0 !important; 
-        padding: 0 !important;
-    }
-    
-    body * { visibility: hidden; }
-    #print-area, #print-area * { visibility: visible; }
-    #print-area { 
-        position: static !important; /* بدل absolute */
-        width: 100%; 
-        margin: 0; 
-        padding: 0;
-    }
-    
-    @page { size: A4; margin: 40mm 15mm 35mm 15mm; }
+        @media (max-width: 1000px) {
+            body { overflow: auto; height: auto; }
+            header { flex-direction: column; gap: 10px; }
+            .header-actions { justify-content: center; }
+            .main-grid { 
+                grid-template-columns: 1fr; 
+                height: auto; 
+                overflow: visible; 
+                padding-bottom: 30px;
+            }
+            .panel { max-height: 500px; margin-bottom: 15px; }
+        }
 
-    /* 2. الهيدر والفوتر - ضفنا !important عشان نلغي أي تنسيق داخلي */
-    .print-header { 
-        position: fixed !important; 
-        top: -32mm !important; 
-        left: 0; 
-        width: 100%; 
-        height: 28mm; 
-        background: #fff; 
-        border-bottom: 2px solid #000; 
-        padding-bottom: 5px; 
-        z-index: 1000; 
-    }
-    .print-footer { 
-        position: fixed !important; 
-        bottom: -28mm !important; 
-        left: 0; 
-        width: 100%; 
-        height: 22mm; 
-        background: #fff; 
-        border-top: 2px solid #000; 
-        padding-top: 8px; 
-        z-index: 1000; 
-    }
+        @media print {
+            html, body { 
+                height: auto !important; 
+                min-height: auto !important;
+                overflow: visible !important; 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                background: #fff !important;
+            }
+            
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { 
+                position: static !important; 
+                width: 100%; 
+                margin: 0; 
+                padding: 0;
+            }
+            
+            @page { size: A4; margin: 15mm; }
 
-    /* 3. المودال لازم يبقى static عشان يقبل تعدد الصفحات */
-    .modal { 
-    position: static !important; 
-    background: transparent !important; 
-    display: block !important; 
-    padding: 0 !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    filter: none !important;
-    transform: none !important;
-}
-    }
-    .modal-content { 
-        box-shadow: none !important; 
-        padding: 0 !important; 
-        border: none !important; 
-        max-height: none !important; 
-        overflow: visible !important;
-    }
-    
-    .print-page { 
-        border: none; 
-        box-shadow: none; 
-        margin: 0; 
-        padding: 0; 
-        page-break-after: always; 
-        break-after: page;
-    }
-    .print-page:last-child { page-break-after: auto; break-after: auto; }
-    
-    .btn-print-modal, .btn-close { display: none !important; }
-    .print-header img { filter: contrast(1.5) brightness(0.8); }
-}
+            .print-header { 
+                position: static !important; 
+                width: 100%; 
+                margin-bottom: 20px; 
+                border-bottom: 2px solid #000; 
+                padding-bottom: 10px; 
+            }
+            .print-footer { 
+                position: static !important; 
+                width: 100%; 
+                margin-top: 30px; 
+                border-top: 2px solid #000; 
+                padding-top: 10px; 
+                page-break-inside: avoid;
+            }
+
+            .modal { 
+                position: static !important; 
+                background: transparent !important; 
+                display: block !important; 
+                padding: 0 !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                filter: none !important;
+                transform: none !important;
+            }
+            .modal-content { 
+                box-shadow: none !important; 
+                padding: 0 !important; 
+                border: none !important; 
+                max-height: none !important; 
+                overflow: visible !important;
+                background: #fff !important;
+            }
+            
+            .print-page { 
+                border: none; 
+                box-shadow: none; 
+                margin: 0; 
+                padding: 0; 
+                page-break-before: always; 
+                break-before: page;
+            }
+            
+            .print-page.first-page {
+                page-break-before: auto;
+                break-before: auto;
+            }
+            
+            .btn-print-modal, .btn-close { display: none !important; }
+            .print-header img { filter: contrast(1.5) brightness(0.8); }
+        }
     </style>
-</head>
-<body>
+</head><body>
 
     <header>
         <div class="brand-info" id="brandInfo">🔬 المعمل - جاري التحميل...</div>
@@ -245,8 +252,7 @@
         </div>
     </div>
 
-    <!-- (باقي السكريبت في الجزء الثاني) -->    <script>
-        // ==== التحقق من تسجيل الدخول ====
+    <script>        // ==== التحقق من تسجيل الدخول ====
         if (!localStorage.getItem('teba_tenant_id')) {
             window.location.href = 'home.html';
         }
@@ -267,7 +273,7 @@
         const db = new Dexie('TebaLabOfflineDB');
         db.version(2).stores({
             offline_results: '++id, visitTestId, visitId, resultsData, timestamp',
-            catalog: 'code, name, price, category' // جدول جديد لحفظ الكتالوج محلياً
+            catalog: 'code, name, price, category' 
         });
 
         let allVisits = [], visitTests = [], testsCatalog = [], testResults = [];
@@ -394,7 +400,6 @@
                     const { data: catalog } = await _supabase.from('tests_catalog').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id);
                     if (catalog && catalog.length > 0) {
                         testsCatalog = catalog;
-                        // حفظ الكتالوج في Dexie عشان لو النت قطع
                         await db.catalog.clear();
                         await db.catalog.bulkPut(testsCatalog.map(t => ({ id: t.id, code: t.code, name: t.name, price: t.price, category: t.category || 'أخرى', parameters: t.parameters })));
                     }
@@ -422,7 +427,6 @@
                     console.warn("فشل الاتصال، جاري القراءة من الذاكرة...");
                 }
             } else {
-                // لو أوفلاين، بنقرأ الكتالوج من الذاكرة
                 const localCatalog = await db.catalog.toArray();
                 if(localCatalog.length > 0) testsCatalog = localCatalog;
             }
@@ -759,7 +763,6 @@
             btn.innerText = '⏳...'; btn.disabled = true;
 
             try {
-                // 1. تحديث الكتالوج عشان الباراميتر يظهر لكل المرضى الجايين
                 const catalogItem = testsCatalog.find(c => c.code === testCode);
                 if (catalogItem) {
                     let currentParams = catalogItem.parameters || [];
@@ -775,7 +778,6 @@
                     }
                 }
 
-                // 2. حفظ النتيجة للمريض الحالي
                 const result = testResults.find(r => r.visit_test_id == vtId);
                 let resultsData = result ? result.results_data : {};
                 resultsData[paramName] = { value: paramValue };
@@ -786,7 +788,6 @@
                     results_data: resultsData
                 }, { onConflict: 'visit_test_id' });
 
-                // 3. إعادة رسم الكروت عشان الباراميتر الجديد يظهر
                 document.getElementById('quickAddModal').style.display = 'none';
                 await loadData(); 
                 selectPatient(selectedVisitId);
@@ -834,9 +835,7 @@
             
             await loadData();
             if (selectedVisitId) selectPatient(selectedVisitId);
-        }
-
-        // ==== النشر والحذف ====
+        }        // ==== النشر والحذف ====
         async function publishVisit() {
             if (!selectedVisitId) return;
             const visitObj = allVisits.find(v => v.visit_id === selectedVisitId);
@@ -925,7 +924,7 @@
             } catch(err) { alert('خطأ في الإضافة: ' + err.message); }
         }
 
-        // ==== الطباعة ====
+        // ==== الطباعة (التصميم الجديد) ====
         function getHeaderHtml(visit, reqDate, printDate) {
             let ageStr = visit.patient.age + ' Years';
             if(visit.patient.age_type === 'Months') ageStr = visit.patient.age + ' Months';
@@ -962,7 +961,7 @@
 
         function getFooterHtml() {
             return `
-                <div class="print-footer" style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%; border-top: 2px solid #000; padding-top: 10px; font-size: 13px; color: #000;">
+                <div class="print-footer" style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%; border-top: 2px solid #000; padding-top: 10px; font-size: 13px; color: #000; margin-top: 30px;">
                     
                     <div style="width: 35%; text-align: left; direction: ltr; font-weight: bold; line-height: 1.8;">
                         <p style="margin: 0;">📞 01123702062</p>
@@ -1050,31 +1049,30 @@
                 }
             });
 
-            let htmlContent = getHeaderHtml(visit, reqDate, printDate);
+            let htmlContent = '';
 
-            if (singlesRows !== '' || profilesData.length === 0) {
-                let pageHtml = `<div class="print-page">`;
-                pageHtml += `<div>`;
-                if (singlesRows !== '') {
-                    pageHtml += `<div style="margin-bottom: 25px;"><h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000;">SINGLE TESTS</h3><table style="width: 100%; border-collapse: collapse; font-size: 13px;"><thead><tr style="background: #000; color: #fff;"><th style="padding: 8px 6px; text-align:left;">Test Name</th><th style="padding: 8px 6px; text-align:center;">Result</th><th style="padding: 8px 6px; text-align:center;">State</th><th style="padding: 8px 6px; text-align:center;">Unit</th><th style="padding: 8px 6px; text-align:center;">Ref. Range</th></tr></thead><tbody>${singlesRows}</tbody></table></div>`;
-                } else {
-                    pageHtml += `<p style="text-align:center; font-weight:bold; margin-top:50px;">No results recorded for this visit.</p>`;
-                }
-                pageHtml += `</div>`;
-                pageHtml += `</div>`;
-                htmlContent += pageHtml;
+            // بناء الصفحة الأولى
+            let page1Html = getHeaderHtml(visit, reqDate, printDate);
+
+            if (singlesRows !== '') {
+                page1Html += `<div style="margin-bottom: 25px;"><h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000;">SINGLE TESTS</h3><table style="width: 100%; border-collapse: collapse; font-size: 13px;"><thead><tr style="background: #000; color: #fff;"><th style="padding: 8px 6px; text-align:left;">Test Name</th><th style="padding: 8px 6px; text-align:center;">Result</th><th style="padding: 8px 6px; text-align:center;">State</th><th style="padding: 8px 6px; text-align:center;">Unit</th><th style="padding: 8px 6px; text-align:center;">Ref. Range</th></tr></thead><tbody>${singlesRows}</tbody></table></div>`;
+            } else if (profilesData.length > 0) {
+                let firstProfile = profilesData.shift();
+                page1Html += `<div style="margin-bottom: 25px;"><h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000;">${firstProfile.name}</h3><table style="width: 100%; border-collapse: collapse; font-size: 13px;"><thead><tr style="background: #000; color: #fff;"><th style="padding: 8px 6px; text-align:left;">Test Name</th><th style="padding: 8px 6px; text-align:center;">Result</th><th style="padding: 8px 6px; text-align:center;">State</th><th style="padding: 8px 6px; text-align:center;">Unit</th><th style="padding: 8px 6px; text-align:center;">Ref. Range</th></tr></thead><tbody>${firstProfile.rows}</tbody></table></div>`;
+            } else {
+                page1Html += `<p style="text-align:center; font-weight:bold; margin-top:50px;">No results recorded for this visit.</p>`;
             }
 
+            page1Html += getFooterHtml();
+            htmlContent += `<div class="print-page first-page">${page1Html}</div>`;
+
+            // بناء باقي صفحات البروفايلات (بدون هيدر أو فوتر)
             profilesData.forEach(profile => {
                 let pageHtml = `<div class="print-page">`;
-                pageHtml += `<div>`;
                 pageHtml += `<div style="margin-bottom: 25px;"><h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000;">${profile.name}</h3><table style="width: 100%; border-collapse: collapse; font-size: 13px;"><thead><tr style="background: #000; color: #fff;"><th style="padding: 8px 6px; text-align:left;">Test Name</th><th style="padding: 8px 6px; text-align:center;">Result</th><th style="padding: 8px 6px; text-align:center;">State</th><th style="padding: 8px 6px; text-align:center;">Unit</th><th style="padding: 8px 6px; text-align:center;">Ref. Range</th></tr></thead><tbody>${profile.rows}</tbody></table></div>`;
-                pageHtml += `</div>`;
                 pageHtml += `</div>`;
                 htmlContent += pageHtml;
             });
-
-            htmlContent += getFooterHtml();
 
             printArea.innerHTML = htmlContent;
             document.getElementById('printModal').style.display = 'flex';

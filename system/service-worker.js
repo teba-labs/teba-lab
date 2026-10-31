@@ -1,8 +1,8 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v70 - Advanced Offline)
+   TEBA LABS - Service Worker (v72 - Advanced Offline & Routing Fix)
    ===================================================== */
 
-const CACHE_VERSION = 'v70'; 
+const CACHE_VERSION = 'v72'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
@@ -40,21 +40,22 @@ function trimCache(name, max) {
 }
 
 self.addEventListener('install', event => {
+  self.skipWaiting(); // إجبار المتصفح على تحديث السيرفيس وركر فوراً
   event.waitUntil((async () => {
     const sc = await caches.open(STATIC_CACHE);
     await sc.addAll(PRECACHE_ASSETS).catch(e => console.warn('Precache assets error:', e));
     const cc = await caches.open(CDN_CACHE);
     await Promise.all(PRECACHE_CDN.map(url => cc.add(url).catch(e => console.warn(e))));
-    await self.skipWaiting();
   })());
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
+    // مسح كل الكاش القديم اللي مش تابع للنسخة الجديدة
     const valid = [STATIC_CACHE, RUNTIME_CACHE, CDN_CACHE, IMG_CACHE];
     const keys = await caches.keys();
     await Promise.all(keys.filter(k => !valid.includes(k)).map(k => caches.delete(k)));
-    await self.clients.claim();
+    await self.clients.claim(); // السيطرة على كل الصفحات المفتوحة فوراً
   })());
 });
 
@@ -64,9 +65,9 @@ self.addEventListener('fetch', event => {
   
   const url = new URL(request.url);
 
-  // 1. استراتيجية فتح الصفحات (Navigation)
+  // 1. استراتيجية فتح الصفحات (Navigation) - تم التعديل لـ Network First
   if (request.mode === 'navigate') {
-    event.respondWith(navigationStrategy(request));
+    event.respondWith(networkFirstNavigation(request));
     return;
   }
   
@@ -92,26 +93,26 @@ self.addEventListener('fetch', event => {
   event.respondWith(runtimeFallback(request));
 });
 
-// استراتيجية ذكية للصفحات: تفتح من الكاش فوراً لو النت ضعيف أو مقطوع
-async function navigationStrategy(request) {
-  const cached = await caches.match(request, { ignoreSearch: true });
-  
-  const fetchPromise = fetch(request).then(response => {
+// استراتيجية الصفحات: الشبكة أولاً (لضمان تحديث فوري)، ثم الكاش (لو النت قطع)
+async function networkFirstNavigation(request) {
+  try {
+    const response = await fetch(request);
     if (response && response.status === 200) {
       const clone = response.clone();
       caches.open(STATIC_CACHE).then(c => c.put(request, clone));
     }
     return response;
-  }).catch(() => {
-    // لو الـ fetch فشل (أوفلاين) وكان مفيش كاش، نرجع صفحة index
-    return caches.match('./index.html').then(fallback => fallback || new Response('Offline', { status: 503 }));
-  });
-
-  // لو الصفحة موجودة في الكاش، نرجعها فوراً ونحدثها في الخلفية
-  return cached || fetchPromise;
+  } catch (err) {
+    // لو النت قطع، هات الصفحة من الكاش
+    const cached = await caches.match(request, { ignoreSearch: true });
+    if (cached) return cached;
+    
+    // لو مفيش كاش للصفحة دي، ارجع لصفحة الهوم
+    return caches.match('./system/home.html').then(fallback => fallback || new Response('Offline', { status: 503 }));
+  }
 }
 
-// استراتيجية الكاش أولاً مع تحديث في الخلفية
+// استراتيجية الكاش أولاً مع تحديث في الخلفية (للملفات الثابتة زي الصور والستايلات)
 async function cacheFirstWithUpdate(request, cacheName, max) {
   const cached = await caches.match(request);
   if (cached) {

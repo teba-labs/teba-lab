@@ -1,19 +1,15 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إدارة التحاليل | معامل طيبة</title>
     
-    <!-- PWA Tags -->
     <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#0a6847">
-
-    <!-- الخط الموحد -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../config.js"></script>
     <style>
@@ -38,8 +34,8 @@
 
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; width: 100%; flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;}
         
-        .toolbar { background: var(--surface); border-radius: var(--radius); padding: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow); border: 1px solid var(--border); }
-        .search-box { flex-grow: 1; margin-left: 20px; }
+        .toolbar { background: var(--surface); border-radius: var(--radius); padding: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow); border: 1px solid var(--border); gap: 15px;}
+        .search-box { flex-grow: 1; }
         .search-box input { width: 100%; padding: 12px 15px; border: 1.5px solid var(--border); border-radius: var(--radius); font-size: 1rem; outline: none; font-family: inherit; background: var(--surface-hover); color: var(--text);}
         .search-box input:focus { border-color: var(--primary); background: #fff;}
         
@@ -89,45 +85,52 @@
         #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 15px 30px; border-radius: 30px; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: none; z-index: 1000; }
 
         /* ==========================================
-           Responsive Design (Mobile & Tablet)
+           التعديلات الخاصة بالموبايل (عشان نمنع تداخل النصوص)
            ========================================== */
         @media (max-width: 768px) {
             body { overflow-y: auto; height: auto; }
             .container { padding: 10px; overflow: visible; }
             header { flex-direction: column; gap: 10px; padding: 15px; text-align: center; }
             .brand-info { justify-content: center; }
-            
             .toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
-            .search-box { margin-left: 0; margin-top: 10px; }
+            .search-box { margin-left: 0; }
             
-            /* تحويل الجدول إلى كروت */
+            /* تحويل الجدول لكروت في الموبايل */
             .table-container { overflow-x: visible; border: none; background: transparent; box-shadow: none; }
             .table-container table, .table-container thead, .table-container tbody, .table-container th, .table-container td, .table-container tr { display: block; }
             .table-container thead tr { position: absolute; top: -9999px; left: -9999px; }
+            .table-container tr { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 15px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
             
-            .table-container tr { 
-                background: var(--surface); border: 1px solid var(--border); border-radius: 12px; 
-                margin-bottom: 15px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
-            }
+            /* التعديل الجوهري: تحويل الخلية لـ Column عشان الكلام ميركبش فوق بعضه */
             .table-container td { 
-                border: none; border-bottom: 1px solid var(--surface-hover); 
-                position: relative; padding: 10px 10px 10px 50%; 
-                text-align: left; display: flex; justify-content: space-between; align-items: center;
+                border: none; 
+                border-bottom: 1px solid var(--surface-hover); 
+                padding: 12px 0; 
+                text-align: right; 
+                display: flex; 
+                flex-direction: column; 
+                align-items: flex-start;
+                gap: 8px;
             }
-            .table-container td:last-child { border-bottom: none; padding-left: 10px; justify-content: flex-end; padding-top: 15px;}
             
-            /* إضافة العناوين للكروت */
+            .table-container td:last-child { border-bottom: none; padding-top: 15px; align-items: stretch;}
+            
+            /* اللابل بتاع الخلية (الكود، اسم التحليل، الخ) */
             .table-container td::before { 
-                content: attr(data-label); position: absolute; right: 10px; width: 45%; 
-                white-space: nowrap; text-align: right; font-weight: bold; color: var(--text-muted); 
+                content: attr(data-label); 
+                font-weight: bold; 
+                color: var(--primary); 
+                font-size: 0.85rem;
             }
-
-            /* تعديلات المودال */
-            .modal-content { padding: 15px; }
+            
+            .table-container td:last-child::before { content: none; }
+            
+            .modal-content { padding: 15px; margin: 10px; }
             .form-row, .param-grid { grid-template-columns: 1fr !important; gap: 10px; }
             .parameters-header { flex-direction: column; align-items: stretch; }
-            .parameters-header > div { flex-wrap: wrap; justify-content: center;}
+            .parameters-header > div { flex-wrap: wrap; justify-content: center; gap: 5px;}
             .parameters-header button { width: 100%; margin-top: 5px;}
+            .btn-edit { width: 100%; text-align: center; justify-content: center; padding: 12px; font-size: 1rem;}
         }
     </style>
 </head>
@@ -168,7 +171,6 @@
         </div>
     </div>
 
-    <!-- مودال إضافة/تعديل -->
     <div class="modal" id="testModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -177,59 +179,27 @@
             </div>
             <form id="testForm" onsubmit="saveTest(event)">
                 <input type="hidden" id="testId">
-                
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>كود التحليل</label>
-                        <input type="text" id="testCode" required placeholder="مثال: 120">
-                    </div>
-                    <div class="form-group">
-                        <label>اسم التحليل</label>
-                        <input type="text" id="testName" required placeholder="مثال: Vitamin D">
-                    </div>
-                    <div class="form-group">
-                        <label>النوع (Single / Profile)</label>
-                        <select id="testType" required>
-                            <option value="Single">فردي (Single)</option>
-                            <option value="Profile">مركب (Profile)</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>كود التحليل</label><input type="text" id="testCode" required placeholder="مثال: 120"></div>
+                    <div class="form-group"><label>اسم التحليل</label><input type="text" id="testName" required placeholder="مثال: Vitamin D"></div>
+                    <div class="form-group"><label>النوع (Single / Profile)</label><select id="testType" required><option value="Single">فردي (Single)</option><option value="Profile">مركب (Profile)</option></select></div>
                 </div>
-                
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>الوحدة (Unit) - للتحاليل الفردية</label>
-                        <input type="text" id="testUnit" placeholder="مثال: mg/dL">
-                    </div>
-                    <div class="form-group">
-                        <label>السعر (ج.م) - للطبيب فقط</label>
-                        <div class="price-wrapper">
-                            <input type="number" id="testPrice" step="0.01" required disabled>
-                            <button type="button" class="btn-lock" id="lockBtn" onclick="togglePriceLock()">🔒</button>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>الفئة (Category)</label>
-                        <input type="text" id="testCategory" placeholder="مثال: هرمونات">
-                    </div>
+                    <div class="form-group"><label>الوحدة (Unit) - للتحاليل الفردية</label><input type="text" id="testUnit" placeholder="مثال: mg/dL"></div>
+                    <div class="form-group"><label>السعر (ج.م) - للطبيب فقط</label><div class="price-wrapper"><input type="number" id="testPrice" step="0.01" required disabled><button type="button" class="btn-lock" id="lockBtn" onclick="togglePriceLock()">🔒</button></div></div>
+                    <div class="form-group"><label>الفئة (Category)</label><input type="text" id="testCategory" placeholder="مثال: هرمونات"></div>
                 </div>
-
-                <!-- قسم الباراميترز -->
                 <div class="parameters-section" id="parametersSection">
                     <div class="parameters-header">
                         <h4 style="color:var(--primary);">الباراميترز والرينجات (للمركبة فقط)</h4>
                         <div style="display: flex; gap: 10px;">
-                            <!-- الأزرار السحرية -->
                             <button type="button" class="btn-edit" style="background: var(--primary-light);" onclick="loadUrinePresets()">🧪 قالب البول</button>
                             <button type="button" class="btn-edit" style="background: #8b5cf6; color: white;" onclick="loadStoolPresets()">💩 قالب البراز</button>
                             <button type="button" class="btn-add" style="padding:8px 15px; font-size:0.9rem;" onclick="addParameterRow()">➕ إضافة باراميتر</button>
                         </div>
                     </div>
-                    <div id="parametersContainer">
-                        <!-- سيتم توليد الباراميترز هنا -->
-                    </div>
+                    <div id="parametersContainer"></div>
                 </div>
-
                 <button type="submit" class="btn-save" id="saveBtn">💾 حفظ البيانات</button>
             </form>
         </div>
@@ -237,9 +207,7 @@
 
     <div id="toast">✅ تم الحفظ بنجاح</div>
 
-    <script>
-        // ==== التحقق من تسجيل الدخول ====
-        document.addEventListener("DOMContentLoaded", function() {
+    <script>        document.addEventListener("DOMContentLoaded", function() {
             if (typeof TEBA_CONFIG !== 'undefined') {
                 document.title = "إدارة التحاليل | " + TEBA_CONFIG.lab.name;
                 const brandInfo = document.getElementById('brandInfo');
@@ -261,7 +229,6 @@
             setTimeout(() => t.style.display = 'none', 3000);
         }
 
-        // ==== جلب وعرض الجدول ====
         async function loadTests() {
             const { data, error } = await _supabase.from('tests_catalog').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id).order('code', { ascending: true });
             if (error) return alert('خطأ في التحميل: ' + error.message);
@@ -292,18 +259,14 @@
                         <td data-label="اسم التحليل">${t.name}</td>
                         <td data-label="النوع">${typeBadge}</td>
                         <td data-label="السعر" style="font-weight:bold; color:var(--accent);">${t.price} ج.م</td>
-                        <td data-label="إجراء"><button class="btn-edit" style="width:100%;" onclick='openModal("edit", ${JSON.stringify(t).replace(/'/g, "&#39;")})'>✏️ تعديل</button></td>
+                        <td data-label="إجراء"><button class="btn-edit" onclick='openModal("edit", ${JSON.stringify(t).replace(/'/g, "&#39;")})'>✏️ تعديل</button></td>
                     </tr>
                 `;
             }).join('');
         }
 
-        function filterTable() {
-            const text = document.getElementById('searchInput').value;
-            renderTable(text);
-        }
+        function filterTable() { renderTable(document.getElementById('searchInput').value); }
 
-        // ==== قفل الأسعار ====
         function togglePriceLock() {
             if (isDoctorMode) {
                 isDoctorMode = false;
@@ -324,7 +287,6 @@
             }
         }
 
-        // ==== إدارة الباراميترز ====
         function addParameterRow(data = null) {
             const container = document.getElementById('parametersContainer');
             const div = document.createElement('div');
@@ -381,7 +343,6 @@
             optionsDiv.style.display = select.value === 'dropdown' ? 'flex' : 'none';
         }
 
-        // ==== القوالب السحرية الجاهزة ====
         function loadUrinePresets() {
             document.getElementById('parametersContainer').innerHTML = '';
             const presets = [
@@ -426,7 +387,6 @@
             showToast('✅ تم تحميل قالب البراز');
         }
 
-        // ==== فتح المودال ====
         function openModal(mode, test = null) {
             document.getElementById('testModal').style.display = 'flex';
             document.getElementById('testForm').reset();
@@ -463,13 +423,10 @@
             }
         }
 
-        function closeModal() {
-            document.getElementById('testModal').style.display = 'none';
-        }
+        function closeModal() { document.getElementById('testModal').style.display = 'none'; }
 
-        // ==== حفظ التحليل في السحابة ====
-        async function saveTest(e) {
-            e.preventDefault();
+        async function saveTest(event) {
+            event.preventDefault();
             const btn = document.getElementById('saveBtn');
             btn.innerText = '⏳ جاري الحفظ...'; btn.disabled = true;
 
@@ -478,39 +435,25 @@
             const name = document.getElementById('testName').value.trim();
             const testType = document.getElementById('testType').value;
             const unit = document.getElementById('testUnit').value.trim();
-            const category = document.getElementById('testCategory').value.trim() || 'أخرى';
-            
-            let price = 0;
-            if (isDoctorMode) {
-                price = parseFloat(document.getElementById('testPrice').value) || 0;
-            } else {
-                if (id) {
-                    const existingTest = allTests.find(t => t.id == id);
-                    price = existingTest ? existingTest.price : 0;
-                } else {
-                    price = parseFloat(document.getElementById('testPrice').value) || 0;
-                }
-            }
+            const category = document.getElementById('testCategory').value.trim();
+            const price = parseFloat(document.getElementById('testPrice').value) || 0;
 
             let parameters = [];
-            const paramCards = document.querySelectorAll('.param-card');
-            
             if (testType === 'Profile') {
+                const paramCards = document.querySelectorAll('#parametersContainer .param-card');
                 paramCards.forEach(card => {
                     const pName = card.querySelector('.p-name').value.trim();
                     if (!pName) return; 
-
+                    const pLabel = card.querySelector('.p-label').value.trim();
+                    const pUnit = card.querySelector('.p-unit').value.trim();
                     const pType = card.querySelector('.p-type').value;
-                    let pOptions = null;
-                    if (pType === 'dropdown') {
-                        const optsStr = card.querySelector('.p-options').value;
-                        pOptions = optsStr.split(',').map(s => s.trim()).filter(s => s);
-                    }
+                    const pOptionsRaw = card.querySelector('.p-options').value.trim();
+                    const pOptions = pOptionsRaw ? pOptionsRaw.split(',').map(s => s.trim()) : [];
 
                     parameters.push({
                         name: pName,
-                        label: card.querySelector('.p-label').value.trim() || pName,
-                        unit: card.querySelector('.p-unit').value.trim(),
+                        label: pLabel,
+                        unit: pUnit,
                         ref_male: card.querySelector('.p-ref-m').value.trim(),
                         ref_female: card.querySelector('.p-ref-f').value.trim(),
                         ref_child: card.querySelector('.p-ref-c').value.trim(),
