@@ -923,6 +923,9 @@ window.renderMonthlyPlan = function() {
     // عرض شاشة التحميل
     container.innerHTML = `<div style="text-align:center; padding: 40px;"><div class="loading-spinner" style="margin: 0 auto 20px; border-top-color: var(--primary-glow);"></div><p style="color:var(--primary-glow); font-weight:bold; font-size:1.1rem;">⏳ جاري استشارة المحلل الذكي لبناء خطة ${planMonthName} ${planY}...<br><span style="font-size:0.85rem; color:var(--text-muted); font-weight:normal;">بناءً على أرقام الموسمية الحقيقية.</span></p></div>`;
     if (subtitle) subtitle.textContent = `جاري تحليل البيانات وبناء خطة ${planMonthName} ${planY}`;
+    // حساب أداء الفروع في الشهر المرجعي (عشان نعرف مين ضعيف)
+    const jMargin = refJ.rev > 0 ? (refJ.rev - refJ.exp) / refJ.rev * 100 : 0;
+    const bMargin = refB.rev > 0 ? (refB.rev - refB.exp) / refB.rev * 100 : 0;
 
     // إعداد الطلب للـ AI (Prompt)
     let prompt = `أنت الآن "مستشار مالي وتشغيلي واستراتيجي" خبير في إدارة المعامل الطبية. أنا الدكتور أحمد طه، صاحب "معامل طيبة".\n`;
@@ -933,20 +936,20 @@ window.renderMonthlyPlan = function() {
     prompt += `📉 **[2] الوضع الحالي (آخر شهر مكتمل - ${monthsAr[ref.month - 1]} ${ref.year}):**\n`;
     prompt += `- الإيراد: ${refRev} ج، الحالات: ${refCases}، صافي الربح: ${refProfit} ج.\n`;
     prompt += `- أفضل التحاليل مبيعاً: ${topSellers.map(t => t.name).join('، ')}.\n`;
-    if (losingTests.length > 0) prompt += `- تحاليل خاسرة محتاجة تعديل: ${losingTests.map(t => t.name).join('، ')}.\n`;
-    prompt += `\n🎯 **المطلوب منك كخبير (بناءً على الأرقام دي، مش من دماغك):**\n`;
-    prompt += `1. **تحليل الموسمية:** هل ${planMonthName} بيبقى شهر زحمة ولا هادي بناءً على الأرقام اللي فوق؟ وإيه التارجت المقترح للإيراد والحالات؟
-`;
-    prompt += `2. **خطة فنية:** إيه التحاليل اللي نركز عليها بناءً على الموسمية؟ وإيه العروض اللي نعملها؟
-`;
-    prompt += `3. **خطة إدارية وتشغيلية:** إزاي نجهز الفريق والاستقبال لشهر ${planMonthName}؟
-`;
-    prompt += `4. **خطة مالية:** إزاي نحافظ على هامش الربح ونقلل المصاريف؟
-`;
-    prompt += `5. **خطة أسبوعية:** قسّم الشهر لـ 4 أسابيع، واعطني إجراءات محددة لكل أسبوع.
-`;
-    prompt += `\n(اكتب الخطة باللغة العربية بأسلوب عملي ومباشر ومقسم لعناوين رئيسية بدون مقدمات).`;
+    if (losingTests.length > 0) prompt += `- تحاليل خاسرة محتاجة تعديل: ${losingTests.map(t => t.name).join('، ')}.\n\n`;
+    
+    prompt += `🏥 **[3] أداء الفروع (آخر شهر مكتمل - ${monthsAr[ref.month - 1]} ${ref.year}):**\n`;
+    prompt += `- فرع الجعافرة: إيراد ${refJ.rev} ج، حالات ${refJ.cases}، هامش ربح ${jMargin.toFixed(1)}%.\n`;
+    prompt += `- فرع بهتيم: إيراد ${refB.rev} ج، حالات ${refB.cases}، هامش ربح ${bMargin.toFixed(1)}%.\n\n`;
 
+    prompt += `\n🎯 **المطلوب منك كخبير (بناءً على الأرقام دي، مش من دماغك):**\n`;
+    prompt += `1. **تحليل الموسمية:** هل ${planMonthName} بيبقى شهر زحمة ولا هادي بناءً على الأرقام اللي فوق؟ وإيه التارجت المقترح للإيراد والحالات؟\n`;
+    prompt += `2. **خطة فنية:** إيه التحاليل اللي نركز عليها بناءً على الموسمية؟ وإيه العروض اللي نعملها؟\n`;
+    prompt += `3. **خطة إدارية وتشغيلية:** إزاي نجهز الفريق والاستقبال لشهر ${planMonthName}؟\n`;
+    prompt += `4. **خطة مالية:** إزاي نحافظ على هامش الربح ونقلل المصاريف؟\n`;
+    prompt += `5. **خطة أسبوعية:** قسّم الشهر لـ 4 أسابيع، واعطني إجراءات محددة لكل أسبوع.\n`;
+    prompt += `6. **خطة ربع سنوية (مهم جداً):** قارن بين أداء فرع "الجعافرة" وفرع "بهتيم" من حيث الإيراد، عدد الحالات، وهامش الربح. لو لقيت فرع أداؤه ضعيف (هامش ربح أقل من 35% أو إيراد أقل من الفرع التاني بفرق كبير)، اعمل له **خطة إنقاذ ربع سنوية** (3 شهور) تشرح فيها إزاي هنرفع كفاءته ونعالج ضعفه.\n`;
+    prompt += `\n(اكتب الخطة باللغة العربية بأسلوب عملي ومباشر ومقسم لعناوين رئيسية بدون مقدمات).`;
     // استدعاء الـ AI
     fetch('https://teba-ai.aabunada20.workers.dev/', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: prompt })
