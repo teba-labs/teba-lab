@@ -192,7 +192,39 @@
             th:nth-child(4) { width: 15%; }
             th:nth-child(5) { width: 28%; }
         }
-        
+                /* تنسيق المعاينة على الشاشة لتشبه ورقة A4 */
+        @media screen {
+            #print-area {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+                padding: 20px;
+                background: #525659; 
+                border-radius: 8px;
+                overflow-x: auto; 
+            }
+            .print-page {
+                background: white !important;
+                width: 210mm !important; 
+                min-height: 297mm !important; 
+                padding: 10mm 10mm 25mm 10mm !important;
+                box-shadow: 0 10px 20px rgba(0,0,0,0.4) !important; 
+                box-sizing: border-box !important;
+                position: relative !important;
+                display: block !important; 
+                margin: 0 auto !important;
+                flex-shrink: 0 !important;
+            }
+            .print-page .print-footer {
+                position: absolute !important;
+                bottom: 10mm !important;
+                left: 10mm !important;
+                right: 10mm !important;
+                margin-top: 0 !important;
+            }
+        }
+
         @media (max-width: 1000px) {
             body { overflow: auto; height: auto; }
             header { flex-direction: column; gap: 10px; }
@@ -1131,6 +1163,29 @@ async function deleteVisitTest(visitTestId, visitId) {
                 showToast('⚠️ يوجد نتائج محفوظة محلياً لم تتم مزامنتها بعد.', true);
             }
         };
+                function downloadPDF() {
+            if (!selectedVisitId) return alert('اختر مريضاً أولاً!');
+            openPrintModal(); 
+            const element = document.getElementById('print-area');
+            const opt = {
+                margin:       0,
+                filename:     `Report_Visit_${selectedVisitId}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            const btn = document.getElementById('btnDownloadPdf');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ جاري التحميل...';
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                btn.innerHTML = originalText;
+            }).catch(err => {
+                console.error(err);
+                alert('حدث خطأ أثناء التحميل، جرب الطباعة العادية واختر Save as PDF');
+                btn.innerHTML = originalText;
+            });
+        }
     </script>
 
     <!-- سكريبت تفعيل الـ PWA -->
