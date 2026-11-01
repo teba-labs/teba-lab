@@ -16,6 +16,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <script src="../config.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
             --bg: #f4f7f6; --surface: #ffffff; --surface-hover: #f8fafc;
@@ -212,6 +213,7 @@
             <button class="nav-btn btn-publish" id="btnPublishVisit" onclick="publishVisit()" style="display:none;">🌐 نشر النتائج</button>
             <button class="nav-btn btn-add" id="btnAddTest" onclick="openAddTestModal()" style="display:none;">➕ إضافة تحليل</button>
             <button class="nav-btn btn-print" onclick="openPrintModal()">👁️ معاينة التقرير</button>
+            <button class="nav-btn btn-pdf" id="btnDownloadPdf" onclick="downloadPDF()" style="display:none; background: #e74c3c;">📥 تحميل PDF</button>
         </div>
     </header>
 
@@ -514,6 +516,7 @@ function selectPatient(visitId) {
     selectedVisitId = visitId;
     renderPatients();
     document.getElementById('btnAddTest').style.display = 'block';
+    document.getElementById('btnDownloadPdf').style.display = 'block';
     const visitObj = allVisits.find(v => v.visit_id === visitId);
     const btnPub = document.getElementById('btnPublishVisit');
     btnPub.style.display = 'block';
