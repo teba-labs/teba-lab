@@ -383,8 +383,8 @@
     return testData;
   }
 
-  function getMergedData(branchFilter = 'combined') {
-    if (_mergedCache[branchFilter]) return _mergedCache[branchFilter];
+    function getMergedData(branchFilter = 'combined', monthFilter = 'latest') {
+    if (_mergedCache[branchFilter + '_' + monthFilter]) return _mergedCache[branchFilter + '_' + monthFilter];
     if (!pricesWorkbook) return [];
     
     const priceSheetName = pricesWorkbook.SheetNames.find(n => n.includes('التحاليل')) || pricesWorkbook.SheetNames[0];
@@ -402,7 +402,15 @@
       }
     }
 
-    const period = findLatestReportMonth();
+    // تحديد الشهر والسنة
+    let period = null;
+    if (monthFilter === 'latest') {
+      period = findLatestReportMonth();
+    } else {
+      const [yr, mn] = monthFilter.split('-');
+      period = { year: yr, month: mn };
+    }
+
     let dJ = { exp: 0 }, dB = { exp: 0 };
     if (period) {
       dJ = extractMonthData(period.year, period.month, 'الجعافرة');
@@ -411,11 +419,10 @@
     
     const merged = [];
 
-    function calcBranch(branchName, branchExpenses) {
+    function calcBranch(branchName) {
       const tests = getTestMovementData(branchName);
-      if (!tests || tests.length === 0) return { list: [], totalExp: 0, totalVar: 0, totalPts: 0, ptValue: 0 };
+      if (!tests || tests.length === 0) return { list: [] };
       
-      let totalVariableCost = 0;
       let totalPoints = 0;
       const branchList = [];
       
@@ -423,13 +430,24 @@
         const searchName = t.name.trim().toLowerCase();
         if (priceMap[searchName]) {
           const { type, baseCost, weight, sellPrice } = priceMap[searchName];
-          totalVariableCost += (baseCost * t.count);
           totalPoints += (weight * t.count);
           branchList.push({ name: t.name, count: t.count, type, baseCost, weight, sell: sellPrice });
         }
       });
       
-      const totalFixedCost = Math.max(0, branchExpenses - totalVariableCost);
+      // حساب المصاريف الثابتة الحقيقية من دالة extractExpenseBreakdown
+      let totalFixedCost = 0;
+      if (period) {
+          const breakdown = extractExpenseBreakdown(period.year, period.month, branchName);
+          if (breakdown) {
+              totalFixedCost = breakdown.chemicals + breakdown.salaries;
+              if (breakdown.misc) {
+                  Object.values(breakdown.misc).forEach(v => totalFixedCost += v);
+              }
+          }
+      }
+      
+      // قانون التكلفة الحقيقية (النقط)
       const pointValue = totalPoints > 0 ? (totalFixedCost / totalPoints) : 0;
       
       branchList.forEach(t => {
@@ -438,22 +456,22 @@
         t.trueTotalProfit = t.trueProfitUnit * t.count;
       });
       
-      return { list: branchList, totalExp: branchExpenses, totalVar: totalVariableCost, totalPts: totalPoints, ptValue: pointValue };
+      return { list: branchList };
     }
 
     if (branchFilter === 'jaafara') {
-      const res = calcBranch('الجعافرة', dJ.exp);
+      const res = calcBranch('الجعافرة');
       _mergedCache.jaafara = res.list;
       return res.list;
     } 
     else if (branchFilter === 'bahtim') {
-      const res = calcBranch('بهتيم', dB.exp);
+      const res = calcBranch('بهتيم');
       _mergedCache.bahtim = res.list;
       return res.list;
     } 
     else {
-      const resJ = calcBranch('الجعافرة', dJ.exp);
-      const resB = calcBranch('بهتيم', dB.exp);
+      const resJ = calcBranch('الجعافرة');
+      const resB = calcBranch('بهتيم');
       const combinedList = [];
       const map = new Map();
       [...resJ.list, ...resB.list].forEach(t => {
@@ -473,7 +491,6 @@
       return combinedList;
     }
   }
-
   /* ==============================================================
      الدوال الخاصة بالمطابقة واللايف (Multi-Tenant Enabled)
      ============================================================== */
@@ -1249,11 +1266,34 @@
     card.innerHTML = html;
   }
 
-  window.renderBCGMatrix = function() {
+   window.renderBCGMatrix = function() {
     const summaryGrid = document.getElementById('bcgSummaryGrid');
     const alertBox = document.getElementById('bcgAlert');
+    
+    // --- إضافة فلتر الشهر أوتوماتيك بالـ JS لو مش موجود في الـ HTML ---
+    let monthFilterEl = document.getElementById('bcgMonthSel');
+    if (!monthFilterEl && document.getElementById('bcgBranchSel')) {
+        const branchSel = document.getElementById('bcgBranchSel');
+        monthFilterEl = document.createElement('select');
+        monthFilterEl.id = 'bcgMonthSel';
+        monthFilterEl.className = branchSel.className; 
+        monthFilterEl.style.marginRight = '10px';
+        monthFilterEl.innerHTML = `
+            <option value="latest">آخر شهر متاح</option>
+            <option value="2026-10">أكتوبر 2026</option>
+            <option value="2026-09">سبتمبر 2026</option>
+            <option value="2025-10">أكتوبر 2025</option>
+            <option value="2025-09">سبتمبر 2025</option>
+        `;
+        monthFilterEl.onchange = window.renderBCGMatrix; 
+        branchSel.parentNode.insertBefore(monthFilterEl, branchSel.nextSibling);
+    }
+    
     const branchFilter = document.getElementById('bcgBranchSel') ? document.getElementById('bcgBranchSel').value : 'combined';
-    const merged = getMergedData(branchFilter);
+    const monthFilter = monthFilterEl ? monthFilterEl.value : 'latest';
+    
+    // بنبعت الفلترين للدالة
+    const merged = getMergedData(branchFilter, monthFilter);
     
     if (!merged || merged.length === 0) {
       if (alertBox) { alertBox.innerHTML = '⚠️ لازم ترفع ملفي المبيعات والأسعار.'; alertBox.style.display = 'block'; }
@@ -1267,7 +1307,8 @@
       { icon: '⭐', name: 'النجوم', count: seg.stars.length, color: '#16a34a', desc: 'مبيعتها عالية + ربحها الصافي عالي', action: 'ركز عليهم في التسويق', top: seg.stars.slice(0,3) },
       { icon: '🐄', name: 'الأحصنة', count: seg.cashCows.length, color: '#0284c7', desc: 'مبيعتها عالية + ربحها الصافي قليل', action: 'حسّن التكلفة', top: seg.cashCows.slice(0,3) },
       { icon: '❓', name: 'علامات استفهام', count: seg.questions.length, color: '#d97706', desc: 'مبيعتها قليلة + ربحها الصافي عالي', action: 'اعملهم عروض وباقات', top: seg.questions.slice(0,3) },
-      { icon: '🐕', name: 'الكلاب', count: seg.dogs.length, color: '#dc2626', desc: 'مبيعتها قليلة + ربحها الصافي قليل', action: 'فكر تشيلهم', top: seg.dogs.slice(0,3) }
+      // التعديل هنا: غيرنا كلاب لـ نايم
+      { icon: '😴', name: 'نايم', count: seg.dogs.length, color: '#dc2626', desc: 'مبيعتها قليلة + ربحها الصافي قليل', action: 'فكر تشيلهم', top: seg.dogs.slice(0,3) }
     ];
     if (summaryGrid) {
       summaryGrid.innerHTML = cards.map(c => `
@@ -1294,11 +1335,10 @@
       addRows(seg.stars, 'نجوم');
       addRows(seg.cashCows, 'أحصنة');
       addRows(seg.questions, 'علامات استفهام');
-      addRows(seg.dogs, 'كلاب');
+      addRows(seg.dogs, 'نايم'); // التعديل هنا
       exportBody.innerHTML = exportHtml;
     }
   };
-
   function extractExpenseBreakdown(year, month, branch) {
     const cacheKey = `${year}|${month}|${branch}`;
     if (_expenseBreakdownCache.has(cacheKey)) return _expenseBreakdownCache.get(cacheKey);
