@@ -536,8 +536,11 @@
         function generateVisitPreview() {
             const dateStr = new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
             document.getElementById('displayVisitDate').innerText = dateStr;
-            const tempId = Math.floor(1000 + Math.random() * 9000);
-            document.getElementById('displayVisitId').innerText = tempId + " (مؤقت)";
+            
+            // تم التعديل: توليد رقم تسلسلي بسيط بدل الـ Date.now() الضخم
+            let localCounter = parseInt(localStorage.getItem('teba_local_visit_counter') || '1000');
+            localCounter++;
+            document.getElementById('displayVisitId').innerText = localCounter + " (مؤقت)";
         }
 
         function startNewPatient() {
@@ -688,12 +691,22 @@
             try {
                 if (navigator.onLine) {
                     const { data, error } = await _supabase.from('tests_catalog').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id);
-                    if (!error && data && data.length > 0) {
-                        masterTests = data.map(t => ({ id: t.id, code: t.code, name: t.name, price: t.price, category: t.category || 'أخرى' }));
-                        await db.catalog.clear();
-                        await db.catalog.bulkPut(masterTests);
-                        renderCategories(); renderCatalog();
-                        return;
+                    if (!error && data) {
+                        if (data.length === 0) {
+                            // تم التعديل: لو السحابة رجعت فاضية، امسح الكاش المحلي عشان نمنع التحاليل الشبح
+                            await db.catalog.clear();
+                            masterTests = [];
+                            renderCategories(); 
+                            renderCatalog();
+                            return;
+                        } else {
+                            masterTests = data.map(t => ({ id: t.id, code: t.code, name: t.name, price: t.price, category: t.category || 'أخرى' }));
+                            await db.catalog.clear();
+                            await db.catalog.bulkPut(masterTests);
+                            renderCategories(); 
+                            renderCatalog();
+                            return;
+                        }
                     }
                 }
                 const localCatalog = await db.catalog.toArray();
@@ -806,7 +819,11 @@
                     localPatientId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
                 }
 
-                const tempVisitId = Math.floor(Date.now() / 1000);
+                // تم التعديل: رقم تسلسلي بسيط للزيارة بدل الـ Date.now() الضخم
+                let localCounter = parseInt(localStorage.getItem('teba_local_visit_counter') || '1000');
+                localCounter++;
+                localStorage.setItem('teba_local_visit_counter', localCounter.toString());
+                const tempVisitId = localCounter;
 
                 const orderData = {
                     patientId: localPatientId,

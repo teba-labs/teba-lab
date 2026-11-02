@@ -1,4 +1,4 @@
-﻿// قراءة الـ tenant_id من المتصفح (لو المعمل مسجل دخول)، أو استخدام معمل طيبة كافتراضي
+﻿// قراءة الـ tenant_id من المتصفح (لو المعمل مسجل دخول)، أو استخدام معامل طيبة كافتراضي
 const _currentTenantId = localStorage.getItem('teba_tenant_id') || "0981e62c-c33d-46c4-8919-2f9fbb0946f6";
 const _currentTenantName = localStorage.getItem('teba_tenant_name') || "معامل طيبة";
 
@@ -13,7 +13,8 @@ const TEBA_CONFIG = {
         doctor: "د/ أحمد طه أبوندا",
         phone: "01123702062",
         whatsapp: "201099003494",
-        address: "شبين القناطر، القليوبية"
+        address: "شبين القناطر، القليوبية",
+        portalUrl: "https://teba-labs.github.io/t/patient_portal.html" // تأكد إن الرابط ده صح لو مستخدم في الكود
     },
     supabase: {
         // الرابط الصح بتاع مشروعك

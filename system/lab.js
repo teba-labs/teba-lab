@@ -1,4 +1,4 @@
-﻿// ==== التحقق من تسجيل الدخول ====
+﻿﻿// ==== التحقق من تسجيل الدخول ====
 if (!localStorage.getItem('teba_tenant_id')) {
     window.location.href = 'home.html';
 }
@@ -231,9 +231,14 @@ async function loadData() {
     try {
         if (navigator.onLine) {
             const { data: catalog } = await _supabase.from('tests_catalog').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id);
-            if (catalog && catalog.length > 0) {
-                await db.catalog.clear();
-                await db.catalog.bulkPut(catalog.map(t => ({ id: t.id, code: t.code, name: t.name, price: t.price, category: t.category || 'أخرى', parameters: t.parameters, test_type: t.test_type, unit: t.unit })));
+            if (catalog) {
+                if (catalog.length === 0) {
+                    // لو السحابة رجعت فاضية، امسح الكاش عشان نمنع التحاليل الشبح
+                    await db.catalog.clear();
+                } else {
+                    await db.catalog.clear();
+                    await db.catalog.bulkPut(catalog.map(t => ({ id: t.id, code: t.code, name: t.name, price: t.price, category: t.category || 'أخرى', parameters: t.parameters, test_type: t.test_type, unit: t.unit })));
+                }
             }
 
             const { data: visits } = await _supabase.from('visits').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id).order('visit_id', { ascending: false }).limit(100);
@@ -288,7 +293,9 @@ async function checkSyncStatus() {
     const pending = await db.outbox.count();
     if(pending > 0) document.getElementById('syncBtn').style.display = 'flex';
     else document.getElementById('syncBtn').style.display = 'none';
-}// ==========================================
+}
+
+// ==========================================
 // 🖥️ واجهة المستخدم
 // ==========================================
 function renderPatients() {

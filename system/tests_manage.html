@@ -1,4 +1,4 @@
-﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -193,6 +193,17 @@
             window.location.href = 'home.html';
         }
 
+        // دالة لتوليد UUID صالح للسحابة في كل الأجهزة
+        function generateUUID() {
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                return crypto.randomUUID();
+            }
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
         document.addEventListener("DOMContentLoaded", function() {
             if (typeof TEBA_CONFIG !== 'undefined') {
                 document.title = "إدارة التحاليل | " + TEBA_CONFIG.lab.name;
@@ -298,10 +309,15 @@
                     // ثانياً: بعد ما رفعنا، بنجيب الداتا من السحابة ونحدث المحلي
                     const { data, error } = await _supabase.from('tests_catalog').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id).order('code', { ascending: true });
                     if (!error && data) {
-                        await db.catalog.clear();
-                        await db.catalog.bulkPut(data.map(t => ({
-                            id: t.id, code: t.code, name: t.name, price: t.price, category: t.category, parameters: t.parameters, test_type: t.test_type, unit: t.unit
-                        })));
+                        if (data.length === 0) {
+                            // لو السحابة رجعت فاضية، امسح الكاش عشان نمنع التحاليل الشبح
+                            await db.catalog.clear();
+                        } else {
+                            await db.catalog.clear();
+                            await db.catalog.bulkPut(data.map(t => ({
+                                id: t.id, code: t.code, name: t.name, price: t.price, category: t.category, parameters: t.parameters, test_type: t.test_type, unit: t.unit
+                            })));
+                        }
                     }
                 }
 
@@ -590,7 +606,7 @@
                 if (!id) {
                     if (allTests.find(t => t.code === code)) throw new Error('هذا الكود مستخدم بالفعل محلياً!');
                     // توليد ID سليم للسحابة
-                    payload.id = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(); 
+                    payload.id = generateUUID(); 
                 }
                 await db.catalog.put(payload);
 
