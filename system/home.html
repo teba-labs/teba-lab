@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -13,7 +13,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="../config.js"></script>
+    <!-- تصحيح مسار الـ config -->
+    <script src="config.js"></script>
+    
     <style>
         :root {
             --bg: #f4f7f6; --surface: #ffffff; --surface-hover: #f8fafc;
@@ -212,6 +214,7 @@
                 <div class="app-desc">الأسعار والباراميترز</div>
             </a>
 
+            <!-- تم إضافة ID هنا عشان نخفيه لو المستخدم مش أدمن -->
             <div class="app-card" id="cardDashboard" onclick="openSecretModal()">
                 <div class="app-icon-box">📊</div>
                 <div class="app-name">لوحة التحكم</div>
@@ -256,20 +259,23 @@
             errorEl.style.display = 'none';
 
             try {
+                // 1. التحقق من الإيميل والباسورد
                 const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({ email, password });
                 if (authError) throw new Error('الإيميل أو الباسورد غير صحيح');
 
-                const { data: profile, error: profileError } = await _supabase.from('profiles').select('tenant_id, role').eq('id', authData.user.id).single();
-                if (profileError || !profile) throw new Error('لم يتم العثور على بيانات المعمل لهذا الحساب.');
+                // 2. جلب الصلاحية من جدول users
+                const { data: userProfile, error: profileError } = await _supabase.from('users').select('role').eq('email', email).single();
+                
+                // لو المستخدم مش موجود في جدول users، هنخليه موظف عادي كإجراء احتياطي
+                const userRole = (userProfile && userProfile.role) ? userProfile.role : 'lab_tech';
 
-                const { data: tenant, error: tenantError } = await _supabase.from('tenants').select('*').eq('id', profile.tenant_id).single();
-                if (tenantError) throw new Error('لم يتم العثور على بيانات المعمل.');
+                // 3. حفظ البيانات في المتصفح
+                localStorage.setItem('teba_tenant_id', TEBA_CONFIG.tenant.id); // من ملف الـ config
+                localStorage.setItem('teba_tenant_name', TEBA_CONFIG.lab.name);
+                localStorage.setItem('teba_user_role', userRole);
 
-                localStorage.setItem('teba_tenant_id', tenant.id);
-                localStorage.setItem('teba_tenant_name', tenant.name);
-                localStorage.setItem('teba_user_role', profile.role);
-
-                showDashboard(tenant, profile.role);
+                // 4. عرض لوحة التحكم
+                showDashboard({ name: TEBA_CONFIG.lab.name }, userRole);
 
             } catch (err) {
                 errorEl.textContent = '❌ ' + err.message;
@@ -286,21 +292,28 @@
             
             document.getElementById('desktopLabName').innerText = "مرحباً، " + tenant.name;
             document.getElementById('loginLabName').innerText = tenant.name;
+
+            // إخفاء أو إظهار كارت لوحة التحكم بناءً على الصلاحية
+            const dashboardCard = document.getElementById('cardDashboard');
+            if (role === 'admin') {
+                dashboardCard.style.display = 'flex';
+            } else {
+                dashboardCard.style.display = 'none'; // إخفاء للفنيين والاستقبال
+            }
         }
 
-        // ==== التحقق من الجلسة عند فتح الصفحة ====
+        // ==== التحقق من الجلسة عند فتح الصفحة (تحديث الصفحة) ====
         _supabase.auth.getSession().then(async ({ data: { session } }) => {
             if (session) {
-                const { data: profile } = await _supabase.from('profiles').select('tenant_id, role').eq('id', session.user.id).single();
-                if (profile) {
-                    const { data: tenant } = await _supabase.from('tenants').select('*').eq('id', profile.tenant_id).single();
-                    if (tenant) {
-                        localStorage.setItem('teba_tenant_id', tenant.id);
-                        localStorage.setItem('teba_tenant_name', tenant.name);
-                        localStorage.setItem('teba_user_role', profile.role);
-                        showDashboard(tenant, profile.role);
-                    }
-                }
+                const email = session.user.email;
+                const { data: userProfile } = await _supabase.from('users').select('role').eq('email', email).single();
+                const userRole = (userProfile && userProfile.role) ? userProfile.role : 'lab_tech';
+                
+                localStorage.setItem('teba_tenant_id', TEBA_CONFIG.tenant.id);
+                localStorage.setItem('teba_tenant_name', TEBA_CONFIG.lab.name);
+                localStorage.setItem('teba_user_role', userRole);
+                
+                showDashboard({ name: TEBA_CONFIG.lab.name }, userRole);
             }
         });
 
@@ -328,11 +341,12 @@
             const input = document.getElementById('docPassword').value;
             const role = localStorage.getItem('teba_user_role');
             
+            // لو المستخدم أدمن أصلاً، أو كتب الباسورد الصح
             if (role === 'admin' || input === TEBA_CONFIG.auth.doctorPassword) {
                 sessionStorage.setItem('doctor_access', 'granted');
                 window.location.href = '../dashboard/admin.html';
             } else {
-                alert('❌ باسورد الدكتور غلط!');
+                alert('❌ باسورد الدكتور غلط! أو ليس لديك صلاحية.');
                 document.getElementById('docPassword').value = '';
                 document.getElementById('docPassword').focus();
             }
@@ -356,7 +370,6 @@
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            // إظهار الزراير لو المتصفح دعم التثبيت
             if (btnLogin) btnLogin.style.display = 'flex';
             if (btnDesktop) btnDesktop.style.display = 'block';
         });
