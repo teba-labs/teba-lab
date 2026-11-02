@@ -447,7 +447,7 @@
             `}).join('');
         }
 
-        // ==== ملء القوائم المنسدلة (والإضافة الأوتوماتيك) ====
+                // ==== ملء القوائم المنسدلة ====
         function populateSelectors() {
             const singleSelect = document.getElementById('singleTestSelect');
             const profileSelect = document.getElementById('profileTestSelect');
@@ -461,9 +461,96 @@
             profileSelect.innerHTML = `<option value="">-- اختر بروفايل لإضافته للطلب --</option>` + 
                 profiles.map(t => `<option value="${t.code}">${t.name} (${t.code})</option>`).join('');
 
-            // الإضافة الفورية بمجرد الاختيار من القائمة
             singleSelect.onchange = () => { if(singleSelect.value) addTestFromSelect('single'); };
             profileSelect.onchange = () => { if(profileSelect.value) addTestFromSelect('profile'); };
+        }
+
+        // ==== رسم التحاليل المطلوبة ====
+        function renderOrderedTests() {
+            const singleContainer = document.getElementById('singleTestsContainer');
+            const profileContainer = document.getElementById('profileTestsContainer');
+
+            if (!selectedVisitId) {
+                singleContainer.innerHTML = '<div class="empty-msg">اختر مريضاً</div>';
+                profileContainer.innerHTML = '<div class="empty-msg">اختر مريضاً</div>';
+                return;
+            }
+
+            const vTests = visitTests.filter(vt => vt.visit_id === selectedVisitId);
+            
+            if (vTests.length === 0) {
+                singleContainer.innerHTML = '<div class="empty-msg">لا توجد تحاليل مطلوبة</div>';
+                profileContainer.innerHTML = '<div class="empty-msg">لا توجد تحاليل مطلوبة</div>';
+                return;
+            }
+
+            let singlesHtml = '';
+            let profilesHtml = '';
+
+            vTests.forEach(vt => {
+                const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, code: vt.test_code, parameters: [] };
+                const isProfile = isProfileTest(catalogItem);
+                const result = testResults.find(r => r.visit_test_id === vt.id);
+                const hasResult = result && result.results_data && Object.keys(result.results_data).length > 0;
+                
+                const btnClass = hasResult ? 'btn-result done' : 'btn-result';
+                const btnText = hasResult ? '👁️ عرض/تعديل' : '▶ Result';
+
+                const rowHtml = `
+                    <div class="ordered-test-row">
+                        <div>
+                            <span class="ordered-test-name">${catalogItem.name}</span>
+                            <span class="ordered-test-code">(${catalogItem.code})</span>
+                        </div>
+                        <button class="${btnClass}" onclick="openResultModal('${vt.id}', ${isProfile}, '${vt.test_code}')">
+                            ${btnText}
+                        </button>
+                    </div>
+                `;
+
+                if (isProfile) profilesHtml += rowHtml;
+                else singlesHtml += rowHtml;
+            });
+
+            singleContainer.innerHTML = singlesHtml || '<div class="empty-msg">لا توجد تحاليل فردية مطلوبة</div>';
+            profileContainer.innerHTML = profilesHtml || '<div class="empty-msg">لا توجد بروفايلات مطلوبة</div>';
+        }
+
+        // ==== إضافة تحليل للحالة من القائمة المنسدلة ====
+        async function addTestFromSelect(type) {
+            if (!selectedVisitId) {
+                showToast('⚠️ اختر مريضاً أولاً', true);
+                document.getElementById(type === 'single' ? 'singleTestSelect' : 'profileTestSelect').value = '';
+                return;
+            }
+            
+            const selectEl = type === 'single' ? document.getElementById('singleTestSelect') : document.getElementById('profileTestSelect');
+            const testCode = selectEl.value;
+            if (!testCode) return;
+
+            const exists = visitTests.find(v => v.visit_id === selectedVisitId && v.test_code === testCode);
+            if (exists) {
+                showToast('⚠️ هذا التحليل موجود بالفعل في الطلب', true);
+                selectEl.value = '';
+                return;
+            }
+
+            try {
+                const { data, error } = await _supabase.from('visit_tests').insert([{
+                    tenant_id: TEBA_CONFIG.tenant.id, visit_id: selectedVisitId, test_code: testCode, price_at_time: 0
+                }]).select();
+                
+                if (error) throw error;
+                
+                visitTests.push(data[0]);
+                selectEl.value = '';
+                showToast('✅ تم إضافة التحليل للطلب');
+                renderOrderedTests(); 
+                
+            } catch (err) {
+                showToast('❌ خطأ في الإضافة: ' + err.message, true);
+                selectEl.value = '';
+            }
         }
 
         // ==== اختيار المريض وعرض التحاليل المطلوبة ====
