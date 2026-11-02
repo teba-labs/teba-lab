@@ -118,7 +118,8 @@
             .print-table th { background: #eee; }
         }
     </style>
-</head><body>
+</head>
+<body>
 
     <header>
         <div class="brand">
@@ -340,9 +341,7 @@
             <p><strong>المدفوع:</strong> <span id="printPaid"></span> ج.م</p>
             <p style="color: #d32f2f;"><strong>الباقي:</strong> <span id="printRemain"></span> ج.م</p>
         </div>
-    </div>
-
-    <script>
+    </div>    <script>
         // ==== التحقق من تسجيل الدخول ====
         if (!localStorage.getItem('teba_tenant_id')) {
             window.location.href = 'home.html';
@@ -361,7 +360,7 @@
         const supabaseKey = TEBA_CONFIG.supabase.key;
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // ==== تهيئة الداتابيز المحلية (النسخة الشاملة) ====
+        // ==== تهيئة الداتابيز المحلية ====
         const db = new Dexie('TebaLabOfflineDB');
         db.version(3).stores({
             patients: 'id, name, phone',
@@ -381,85 +380,88 @@
         // ⚙️ محرك المزامنة (Outbox)
         // ==========================================
         async function addToOutbox(table_name, action, payload) {
-            await db.outbox.add({ table_name, action, payload, timestamp: new Date().toISOString() });
-            document.getElementById('syncBtn').style.display = 'flex';
-            updateLiveTicker();
+            try {
+                await db.outbox.add({ table_name, action, payload, timestamp: new Date().toISOString() });
+                updateLiveTicker();
+            } catch(e) { console.error("Outbox Add Error", e); }
         }
 
         async function processOutbox() {
             if (!navigator.onLine) return showToast('لا يوجد اتصال بالإنترنت!', true);
             
-            const pending = await db.outbox.toArray();
-            if (pending.length === 0) {
-                document.getElementById('syncBtn').style.display = 'none';
-                return showToast('✅ لا توجد بيانات معلقة.');
-            }
+            try {
+                const pending = await db.outbox.toArray();
+                if (pending.length === 0) {
+                    document.getElementById('syncBtn').style.display = 'none';
+                    return;
+                }
 
-            const btn = document.getElementById('syncBtn');
-            btn.innerText = '⏳ جاري المزامنة...';
-            let successCount = 0;
+                const btn = document.getElementById('syncBtn');
+                btn.innerText = '⏳ جاري المزامنة...';
+                let successCount = 0;
 
-            for (let item of pending) {
-                try {
-                    if (item.table_name === 'orders') {
-                        // رفع طلب جديد بالكامل
-                        const order = item.payload;
-                        
-                        // 1. رفع المريض
-                        let patientId = order.patientId;
-                        if (!patientId || isNaN(patientId)) {
-                            const { data: pData, error: pErr } = await _supabase.from('patients').insert([{
-                                tenant_id: TEBA_CONFIG.tenant.id, name: order.patientName, phone: order.phone, age: order.age, age_type: order.age_type, gender: order.gender, doctor_name: order.doctor_name
+                for (let item of pending) {
+                    try {
+                        if (item.table_name === 'orders') {
+                            const order = item.payload;
+                            
+                            // إصلاح: التحقق من نوع الـ ID (لو رقم يبقى مريض جديد، لو UUID يبقى قديم)
+                            let patientId = order.patientId;
+                            if (!patientId || typeof patientId === 'number') {
+                                const { data: pData, error: pErr } = await _supabase.from('patients').insert([{
+                                    tenant_id: TEBA_CONFIG.tenant.id, name: order.patientName, phone: order.phone, age: order.age, age_type: order.age_type, gender: order.gender, doctor_name: order.doctor_name
+                                }]).select();
+                                if (pErr) throw pErr;
+                                patientId = pData[0].id;
+                            }
+
+                            const subTotal = order.cart.reduce((sum, i) => sum + i.price, 0);
+                            const discountAmount = (subTotal * (order.discountPercent / 100)) + order.discountFixed;
+                            
+                            const { data: vData, error: vErr } = await _supabase.from('visits').insert([{
+                                tenant_id: TEBA_CONFIG.tenant.id, patient_id: patientId, branch_id: order.branch_id, total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount, status: 'Pending'
                             }]).select();
-                            if (pErr) throw pErr;
-                            patientId = pData[0].id;
+                            if (vErr) throw vErr;
+
+                            const tests = order.cart.map(i => ({ 
+                                tenant_id: TEBA_CONFIG.tenant.id, visit_id: vData[0].visit_id, test_code: i.code, price_at_time: i.price 
+                            }));
+                            const { error: tErr } = await _supabase.from('visit_tests').insert(tests);
+                            if (tErr) throw tErr;
+
+                            const bc = new BroadcastChannel('teba_sync');
+                            bc.postMessage('new_order');
+                        } 
+                        else if (item.table_name === 'patients' && item.action === 'UPDATE') {
+                            await _supabase.from('patients').update(item.payload).eq('id', item.payload.id).eq('tenant_id', TEBA_CONFIG.tenant.id);
+                        }
+                        else if (item.table_name === 'visits' && item.action === 'DELETE') {
+                            const visitId = item.payload.visit_id;
+                            const { data: vt } = await _supabase.from('visit_tests').select('id').eq('visit_id', visitId);
+                            if(vt && vt.length > 0) { await _supabase.from('test_results').delete().in('visit_test_id', vt.map(x => x.id)); }
+                            await _supabase.from('visit_tests').delete().eq('visit_id', visitId);
+                            await _supabase.from('visits').delete().eq('visit_id', visitId).eq('tenant_id', TEBA_CONFIG.tenant.id);
                         }
 
-                        // 2. رفع الزيارة
-                        const subTotal = order.cart.reduce((sum, i) => sum + i.price, 0);
-                        const discountAmount = (subTotal * (order.discountPercent / 100)) + order.discountFixed;
-                        
-                        const { data: vData, error: vErr } = await _supabase.from('visits').insert([{
-                            tenant_id: TEBA_CONFIG.tenant.id, patient_id: patientId, branch_id: order.branch_id, total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount, status: 'Pending'
-                        }]).select();
-                        if (vErr) throw vErr;
-
-                        // 3. رفع التحاليل
-                        const tests = order.cart.map(i => ({ 
-                            tenant_id: TEBA_CONFIG.tenant.id, visit_id: vData[0].visit_id, test_code: i.code, price_at_time: i.price 
-                        }));
-                        const { error: tErr } = await _supabase.from('visit_tests').insert(tests);
-                        if (tErr) throw tErr;
-
-                        // إشعار المعمل
-                        const bc = new BroadcastChannel('teba_sync');
-                        bc.postMessage('new_order');
-                    } 
-                    else if (item.table_name === 'patients' && item.action === 'UPDATE') {
-                        await _supabase.from('patients').update(item.payload).eq('id', item.payload.id).eq('tenant_id', TEBA_CONFIG.tenant.id);
+                        await db.outbox.delete(item.id);
+                        successCount++;
+                    } catch (e) {
+                        console.error("Outbox item sync failed:", e);
                     }
-                    else if (item.table_name === 'visits' && item.action === 'DELETE') {
-                        const visitId = item.payload.visit_id;
-                        const { data: vt } = await _supabase.from('visit_tests').select('id').eq('visit_id', visitId);
-                        if(vt && vt.length > 0) { await _supabase.from('test_results').delete().in('visit_test_id', vt.map(x => x.id)); }
-                        await _supabase.from('visit_tests').delete().eq('visit_id', visitId);
-                        await _supabase.from('visits').delete().eq('visit_id', visitId).eq('tenant_id', TEBA_CONFIG.tenant.id);
-                    }
-
-                    await db.outbox.delete(item.id);
-                    successCount++;
-                } catch (e) {
-                    console.error("Outbox Sync Error:", e);
                 }
-            }
 
-            if (successCount > 0) showToast(`✅ تمت مزامنة ${successCount} عملية!`);
-            
-            if (await db.outbox.count() === 0) btn.style.display = 'none';
-            else btn.innerText = '🔄 مزامنة البيانات';
-            
-            updateLiveTicker(); 
-            loadRecentPatients();
+                if (successCount > 0) showToast(`✅ تمت مزامنة ${successCount} عملية!`);
+                
+                const remaining = await db.outbox.count();
+                if (remaining === 0) btn.style.display = 'none';
+                else btn.innerText = '🔄 مزامنة البيانات';
+                
+                updateLiveTicker(); 
+                loadRecentPatients();
+            } catch(e) {
+                console.error("Outbox global error:", e);
+                document.getElementById('syncBtn').innerText = '🔄 مزامنة البيانات';
+            }
         }
 
         // مراقبة حالة الاتصال
@@ -526,108 +528,113 @@
 
         async function loadRecentPatients() {
             const container = document.getElementById('recentPatientsList');
-            
-            // 1. القراءة من السحابة لو متصل
-            if(navigator.onLine) {
-                const { data, error } = await _supabase.from('visits')
-                    .select(`visit_id, visit_date, patients (id, name, phone, doctor_name, age, age_type, gender)`)
-                    .eq('tenant_id', TEBA_CONFIG.tenant.id)
-                    .order('visit_id', {ascending: false})
-                    .limit(5);
+            try {
+                if(navigator.onLine) {
+                    const { data, error } = await _supabase.from('visits')
+                        .select(`visit_id, visit_date, patients (id, name, phone, doctor_name, age, age_type, gender)`)
+                        .eq('tenant_id', TEBA_CONFIG.tenant.id)
+                        .order('visit_id', {ascending: false})
+                        .limit(5);
 
-                if(!error && data && data.length > 0) {
-                    // تحديث الداتابيز المحلية بالزيارات الجديدة
-                    for (let v of data) {
-                        if(v.patients) {
-                            await db.patients.put({ ...v.patients, id: v.patients.id });
+                    if(!error && data && data.length > 0) {
+                        for (let v of data) {
+                            if(v.patients) {
+                                await db.patients.put({ ...v.patients, id: v.patients.id });
+                            }
+                            await db.visits.put({ visit_id: v.visit_id, visit_date: v.visit_date, patient_id: v.patients ? v.patients.id : null });
                         }
-                        await db.visits.put({ visit_id: v.visit_id, visit_date: v.visit_date, patient_id: v.patients.id });
                     }
                 }
-            }
 
-            // 2. العرض من الداتابيز المحلية (سواء متصل أو أوفلاين)
-            const localVisits = await db.visits.orderBy('visit_id').reverse().limit(5).toArray();
-            
-            if(localVisits.length === 0) {
-                container.innerHTML = '<div style="text-align:center; color:#64748b;">لا توجد حالات مسجلة مؤخراً</div>';
-                return;
-            }
-
-            let html = '';
-            for (let v of localVisits) {
-                const p = await db.patients.get(v.patient_id);
-                if(p) {
-                    html += `
-                    <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #cbd5e1; align-items:center;">
-                        <div>
-                            <span style="font-weight:bold; color:var(--primary);">${v.visit_id}</span> - 
-                            <span>${p.name}</span>
-                        </div>
-                        <button onclick="loadPatientToForm(${v.visit_id})" style="background:var(--surface); border:1px solid var(--border); padding:2px 8px; border-radius:4px; cursor:pointer; font-size:0.75rem;">عرض</button>
-                    </div>`;
+                const localVisits = await db.visits.orderBy('visit_id').reverse().limit(5).toArray();
+                
+                if(localVisits.length === 0) {
+                    container.innerHTML = '<div style="text-align:center; color:#64748b;">لا توجد حالات مسجلة مؤخراً</div>';
+                    return;
                 }
+
+                let html = '';
+                for (let v of localVisits) {
+                    const p = await db.patients.get(v.patient_id);
+                    if(p) {
+                        html += `
+                        <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #cbd5e1; align-items:center;">
+                            <div>
+                                <span style="font-weight:bold; color:var(--primary);">${v.visit_id}</span> - 
+                                <span>${p.name}</span>
+                            </div>
+                            <button onclick="loadPatientToForm(${v.visit_id})" style="background:var(--surface); border:1px solid var(--border); padding:2px 8px; border-radius:4px; cursor:pointer; font-size:0.75rem;">عرض</button>
+                        </div>`;
+                    }
+                }
+                container.innerHTML = html;
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = '<div style="text-align:center; color:red;">حدث خطأ في تحميل البيانات</div>';
             }
-            container.innerHTML = html;
         }
 
         async function loadPatientToForm(visitId) {
-            // جلب الزيارة من الداتابيز المحلية الأول
-            const vData = await db.visits.get(visitId);
-            if(!vData) return showToast('الزيارة غير موجودة محلياً', true);
+            try {
+                const vData = await db.visits.get(visitId);
+                if(!vData) return showToast('الزيارة غير موجودة محلياً', true);
 
-            const p = await db.patients.get(vData.patient_id);
-            if(!p) return showToast('بيانات المريض غير موجودة', true);
+                const p = await db.patients.get(vData.patient_id);
+                if(!p) return showToast('بيانات المريض غير موجودة', true);
 
-            currentPatientId = p.id;
-            document.getElementById('pName').value = p.name || '';
-            document.getElementById('pPhone').value = p.phone || '';
-            document.getElementById('pDoctor').value = p.doctor_name || '';
-            document.getElementById('pAge').value = p.age || 30;
-            document.getElementById('pAgeType').value = p.age_type || 'Years';
-            document.getElementById('pGender').value = p.gender || 'male';
-            document.getElementById('displayVisitId').innerText = vData.visit_id;
-            document.getElementById('displayVisitDate').innerText = vData.visit_date ? new Date(vData.visit_date).toLocaleDateString('ar-EG') : new Date().toLocaleDateString('ar-EG');
-            document.getElementById('btnPatientHistory').style.display = 'block';
-            
-            // جلب التحاليل من الداتابيز المحلية
-            const tests = await db.visit_tests.where('visit_id').equals(visitId).toArray();
-            cart = []; 
-            tests.forEach(t => {
-                const catTest = masterTests.find(m => m.code === t.test_code);
-                if(catTest) cart.push(catTest);
-            });
-            
-            renderCart(); calculateChanges();
-            showToast('تم عرض بيانات الحالة');
+                currentPatientId = p.id;
+                document.getElementById('pName').value = p.name || '';
+                document.getElementById('pPhone').value = p.phone || '';
+                document.getElementById('pDoctor').value = p.doctor_name || '';
+                document.getElementById('pAge').value = p.age || 30;
+                document.getElementById('pAgeType').value = p.age_type || 'Years';
+                document.getElementById('pGender').value = p.gender || 'male';
+                document.getElementById('displayVisitId').innerText = vData.visit_id;
+                document.getElementById('displayVisitDate').innerText = vData.visit_date ? new Date(vData.visit_date).toLocaleDateString('ar-EG') : new Date().toLocaleDateString('ar-EG');
+                document.getElementById('btnPatientHistory').style.display = 'block';
+                
+                const tests = await db.visit_tests.where('visit_id').equals(visitId).toArray();
+                cart = []; 
+                tests.forEach(t => {
+                    const catTest = masterTests.find(m => m.code === t.test_code);
+                    if(catTest) cart.push(catTest);
+                });
+                
+                renderCart(); calculateChanges();
+                showToast('تم عرض بيانات الحالة');
+            } catch(e) { console.error(e); }
         }
 
         async function loadLastPatient() {
-            const localVisits = await db.visits.orderBy('visit_id').reverse().limit(1).toArray();
-            if(localVisits.length > 0) {
-                await loadPatientToForm(localVisits[0].visit_id);
-            } else {
-                startNewPatient();
-            }
+            try {
+                const localVisits = await db.visits.orderBy('visit_id').reverse().limit(1).toArray();
+                if(localVisits.length > 0) {
+                    await loadPatientToForm(localVisits[0].visit_id);
+                } else {
+                    startNewPatient();
+                }
+            } catch(e) { startNewPatient(); }
         }
 
         async function updateLiveTicker() {
-            const ticker = document.getElementById('liveTickerContent');
-            const isOnline = navigator.onLine;
-            const pendingOutbox = await db.outbox.count();
-            
-            const statusHtml = isOnline 
-                ? `<span class="dot online"></span> متصل بالسحابة` 
-                : `<span class="dot offline"></span> غير متصل (وضع الأوفلاين)`;
+            try {
+                const ticker = document.getElementById('liveTickerContent');
+                const isOnline = navigator.onLine;
+                const pendingOutbox = await db.outbox.count();
+                
+                const statusHtml = isOnline 
+                    ? `<span class="dot online"></span> متصل بالسحابة` 
+                    : `<span class="dot offline"></span> غير متصل (وضع الأوفلاين)`;
 
-            ticker.innerHTML = `
-                <div class="ticker-item">${statusHtml}</div>
-                <div class="ticker-item">⏳ عمليات معلقة للمزامنة: ${pendingOutbox}</div>
-                <div class="ticker-item">🕒 ${new Date().toLocaleTimeString('ar-EG')}</div>
-            `;
+                ticker.innerHTML = `
+                    <div class="ticker-item">${statusHtml}</div>
+                    <div class="ticker-item">⏳ عمليات معلقة للمزامنة: ${pendingOutbox}</div>
+                    <div class="ticker-item">🕒 ${new Date().toLocaleTimeString('ar-EG')}</div>
+                `;
 
-            if(pendingOutbox > 0) document.getElementById('syncBtn').style.display = 'flex';
-            else document.getElementById('syncBtn').style.display = 'none';
+                if(pendingOutbox > 0) document.getElementById('syncBtn').style.display = 'flex';
+                else document.getElementById('syncBtn').style.display = 'none';
+            } catch(e){}
         }
 
         function sendSmartWhatsApp() {
@@ -648,22 +655,23 @@
         // الكتالوج والسلة
         // ==========================================
         async function fetchCatalogFromCloud() {
-            if (navigator.onLine) {
-                const { data, error } = await _supabase.from('tests_catalog').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id);
-                if (!error && data && data.length > 0) {
-                    masterTests = data.map(t => ({ id: t.id, code: t.code, name: t.name, price: t.price, category: t.category || 'أخرى' }));
-                    await db.catalog.clear();
-                    await db.catalog.bulkPut(masterTests);
-                    renderCategories(); renderCatalog();
-                    return;
+            try {
+                if (navigator.onLine) {
+                    const { data, error } = await _supabase.from('tests_catalog').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id);
+                    if (!error && data && data.length > 0) {
+                        masterTests = data.map(t => ({ id: t.id, code: t.code, name: t.name, price: t.price, category: t.category || 'أخرى' }));
+                        await db.catalog.clear();
+                        await db.catalog.bulkPut(masterTests);
+                        renderCategories(); renderCatalog();
+                        return;
+                    }
                 }
-            }
-            const localCatalog = await db.catalog.toArray();
-            if (localCatalog.length > 0) {
-                masterTests = localCatalog;
-                renderCategories(); renderCatalog();
-                showToast('📡 تم تحميل الكتالوج من الذاكرة (أوفلاين)');
-            }
+                const localCatalog = await db.catalog.toArray();
+                if (localCatalog.length > 0) {
+                    masterTests = localCatalog;
+                    renderCategories(); renderCatalog();
+                }
+            } catch(e) { console.error("Catalog error", e); }
         }
 
         function renderCategories() {
@@ -761,56 +769,60 @@
             const btn = document.getElementById('saveBtn');
             btn.innerText = 'جاري الحفظ...'; btn.disabled = true;
 
-            const orderData = {
-                patientId: currentPatientId,
-                patientName: pName,
-                phone: document.getElementById('pPhone').value,
-                age: parseInt(document.getElementById('pAge').value) || 0,
-                age_type: document.getElementById('pAgeType').value,
-                gender: document.getElementById('pGender').value,
-                doctor_name: document.getElementById('pDoctor').value,
-                branch_id: parseInt(document.getElementById('pBranch').value),
-                netTotal: parseFloat(document.getElementById('netTotalAmount').innerText),
-                paid: parseFloat(document.getElementById('paidAmount').value) || 0,
-                discountPercent: parseFloat(document.getElementById('discountPercent').value) || 0,
-                discountFixed: parseFloat(document.getElementById('discountFixed').value) || 0,
-                cart: cart
-            };
+            try {
+                const orderData = {
+                    patientId: currentPatientId,
+                    patientName: pName,
+                    phone: document.getElementById('pPhone').value,
+                    age: parseInt(document.getElementById('pAge').value) || 0,
+                    age_type: document.getElementById('pAgeType').value,
+                    gender: document.getElementById('pGender').value,
+                    doctor_name: document.getElementById('pDoctor').value,
+                    branch_id: parseInt(document.getElementById('pBranch').value),
+                    netTotal: parseFloat(document.getElementById('netTotalAmount').innerText),
+                    paid: parseFloat(document.getElementById('paidAmount').value) || 0,
+                    discountPercent: parseFloat(document.getElementById('discountPercent').value) || 0,
+                    discountFixed: parseFloat(document.getElementById('discountFixed').value) || 0,
+                    cart: cart
+                };
 
-            // حفظ محلي فوراً (عشان لو النت قطع في نص الحفظ مفيش داتا تضيع)
-            const tempVisitId = Math.floor(Date.now() / 1000); // ID مؤقت للعرض
-            
-            let localPatientId = currentPatientId || Date.now();
-            await db.patients.put({
-                id: localPatientId, name: orderData.patientName, phone: orderData.phone, age: orderData.age, age_type: orderData.age_type, gender: orderData.gender, doctor_name: orderData.doctor_name
-            });
-            await db.visits.put({
-                visit_id: tempVisitId, patient_id: localPatientId, branch_id: orderData.branch_id, visit_date: new Date().toISOString(), is_published: false
-            });
-            
-            for (let item of cart) {
-                await db.visit_tests.put({
-                    id: Date.now() + Math.floor(Math.random() * 1000), visit_id: tempVisitId, test_code: item.code, price_at_time: item.price
+                const tempVisitId = Math.floor(Date.now() / 1000);
+                let localPatientId = currentPatientId || Date.now();
+                
+                await db.patients.put({
+                    id: localPatientId, name: orderData.patientName, phone: orderData.phone, age: orderData.age, age_type: orderData.age_type, gender: orderData.gender, doctor_name: orderData.doctor_name
                 });
+                await db.visits.put({
+                    visit_id: tempVisitId, patient_id: localPatientId, branch_id: orderData.branch_id, visit_date: new Date().toISOString(), is_published: false
+                });
+                
+                for (let item of cart) {
+                    await db.visit_tests.put({
+                        id: Date.now() + Math.floor(Math.random() * 1000), visit_id: tempVisitId, test_code: item.code, price_at_time: item.price
+                    });
+                }
+
+                await addToOutbox('orders', 'INSERT', orderData);
+
+                showToast('✅ تم حفظ الطلب محلياً!');
+                document.getElementById('displayVisitId').innerText = tempVisitId;
+                
+                startNewPatient();
+                
+                if (navigator.onLine) processOutbox();
+                loadRecentPatients();
+
+            } catch (e) {
+                console.error(e);
+                showToast('❌ حدث خطأ أثناء الحفظ', true);
+            } finally {
+                // إصلاح: الزرار بيفك في كل الأحوال
+                btn.innerText = '💾 حفظ الطلب'; btn.disabled = false;
             }
-
-            // إضافة العملية لصندوق الصادر
-            await addToOutbox('orders', 'INSERT', orderData);
-
-            showToast('✅ تم حفظ الطلب محلياً! جاري المزامنة...');
-            document.getElementById('displayVisitId').innerText = tempVisitId;
-            
-            await loadRecentPatients();
-            startNewPatient();
-            
-            btn.innerText = '💾 حفظ الطلب'; btn.disabled = false;
-            
-            // لو النت شغال، ابدأ المزامنة فوراً
-            if (navigator.onLine) processOutbox();
         }
 
         // ==========================================
-        // التعديل والحذف (معدل ليدعم الأوفلاين)
+        // التعديل والحذف وقائمة المرضى
         // ==========================================
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
@@ -819,65 +831,66 @@
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">جاري التحميل...</td></tr>';
             document.getElementById('patientListModal').style.display = 'flex';
 
-            // قراءة من المحلي (أسرع وأضمن)
-            const visits = await db.visits.toArray();
-            let html = '';
-            for (let v of visits) {
-                const p = await db.patients.get(v.patient_id);
-                const branchName = v.branch_id === 2 ? 'بهتيم' : 'الجعافرة';
-                html += `
-                <tr style="border-bottom:1px solid var(--border);">
-                    <td style="padding:10px;">${v.visit_id}</td>
-                    <td style="padding:10px;">${p ? p.name : 'غير معروف'}</td>
-                    <td style="padding:10px;">${branchName}</td>
-                    <td style="padding:10px;">---</td>
-                    <td style="padding:10px; display:flex; gap:5px;">
-                        <button style="padding: 5px 10px; background:var(--danger); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="deleteVisit(${v.visit_id})">حذف</button>
-                        <button style="padding: 5px 10px; background:var(--primary); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="loadPatientToForm(${v.visit_id}); closeModal('patientListModal');">فتح</button>
-                    </td>
-                </tr>`;
+            try {
+                const visits = await db.visits.toArray();
+                let html = '';
+                for (let v of visits) {
+                    const p = await db.patients.get(v.patient_id);
+                    const branchName = v.branch_id === 2 ? 'بهتيم' : 'الجعافرة';
+                    html += `
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:10px;">${v.visit_id}</td>
+                        <td style="padding:10px;">${p ? p.name : 'غير معروف'}</td>
+                        <td style="padding:10px;">${branchName}</td>
+                        <td style="padding:10px;">---</td>
+                        <td style="padding:10px; display:flex; gap:5px;">
+                            <button style="padding: 5px 10px; background:var(--danger); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="deleteVisit(${v.visit_id})">حذف</button>
+                            <button style="padding: 5px 10px; background:var(--primary); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="loadPatientToForm(${v.visit_id}); closeModal('patientListModal');">فتح</button>
+                        </td>
+                    </tr>`;
+                }
+                tbody.innerHTML = html || '<tr><td colspan="5" style="text-align:center;">لا توجد بيانات</td></tr>';
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">حدث خطأ في قراءة البيانات المحلية</td></tr>';
             }
-            tbody.innerHTML = html || '<tr><td colspan="5" style="text-align:center;">لا توجد بيانات</td></tr>';
         }
 
         async function deleteVisit(visitId) {
             if(!confirm('هل أنت متأكد من حذف هذه الزيارة نهائياً؟')) return;
-            
-            // حذف محلي
-            await db.visits.delete(visitId);
-            await db.visit_tests.where('visit_id').equals(visitId).delete();
-            
-            // إضافة لصندوق الصادر
-            await addToOutbox('visits', 'DELETE', { visit_id: visitId });
-            
-            showToast('🗑️ تم الحذف محلياً! جاري المزامنة...'); 
-            openPatientList(); 
-            loadRecentPatients();
-            if (navigator.onLine) processOutbox();
+            try {
+                await db.visits.delete(visitId);
+                await db.visit_tests.where('visit_id').equals(visitId).delete();
+                await addToOutbox('visits', 'DELETE', { visit_id: visitId });
+                showToast('🗑️ تم الحذف محلياً!'); 
+                openPatientList(); 
+                loadRecentPatients();
+                if (navigator.onLine) processOutbox();
+            } catch(e) { console.error(e); }
         }
 
         async function searchPatient() {
             const query = document.getElementById('patientSearch').value.trim();
             if(!query) return;
-            
-            const patients = await db.patients.filter(p => p.name.includes(query) || (p.phone && p.phone.includes(query))).toArray();
-            
-            if(patients.length > 0) {
-                const p = patients[0];
-                currentPatientId = p.id;
-                document.getElementById('pName').value = p.name; 
-                document.getElementById('pPhone').value = p.phone || ''; 
-                document.getElementById('pAge').value = p.age || 30; 
-                document.getElementById('pAgeType').value = p.age_type || 'Years'; 
-                document.getElementById('pGender').value = p.gender || 'male'; 
-                document.getElementById('pDoctor').value = p.doctor_name || '';
-                document.getElementById('btnPatientHistory').style.display = 'block';
-                showToast('✅ تم العثور على المريض');
-            } else { 
-                showToast('⚠️ لم يتم العثور على مريض', true); 
-                document.getElementById('btnPatientHistory').style.display = 'none';
-                currentPatientId = null;
-            }
+            try {
+                const patients = await db.patients.filter(p => p.name.includes(query) || (p.phone && p.phone.includes(query))).toArray();
+                if(patients.length > 0) {
+                    const p = patients[0];
+                    currentPatientId = p.id;
+                    document.getElementById('pName').value = p.name; 
+                    document.getElementById('pPhone').value = p.phone || ''; 
+                    document.getElementById('pAge').value = p.age || 30; 
+                    document.getElementById('pAgeType').value = p.age_type || 'Years'; 
+                    document.getElementById('pGender').value = p.gender || 'male'; 
+                    document.getElementById('pDoctor').value = p.doctor_name || '';
+                    document.getElementById('btnPatientHistory').style.display = 'block';
+                    showToast('✅ تم العثور على المريض');
+                } else { 
+                    showToast('⚠️ لم يتم العثور على مريض', true); 
+                    document.getElementById('btnPatientHistory').style.display = 'none';
+                    currentPatientId = null;
+                }
+            } catch(e) { console.error(e); }
         }
 
         async function openPatientHistory() {
@@ -885,20 +898,27 @@
             const pName = document.getElementById('pName').value;
             document.getElementById('historyPatientName').innerText = pName;
             const tbody = document.getElementById('patientHistoryBody');
-            
-            const visits = await db.visits.where('patient_id').equals(currentPatientId).toArray();
-            let html = '';
-            for(let v of visits) {
-                html += `<tr style="border-bottom:1px solid var(--border);"><td style="padding:10px;">${v.visit_id}</td><td style="padding:10px;">${v.visit_date || '---'}</td><td style="padding:10px;">---</td><td style="padding:10px;">---</td><td style="padding:10px;"><button style="padding: 5px 10px; background:var(--primary); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="window.location.href='lab.html?visit_id=${v.visit_id}'">فتح</button></td></tr>`;
-            }
-            tbody.innerHTML = html || '<tr><td colspan="5" style="text-align:center; padding:20px;">لا يوجد زيارات سابقة</td></tr>';
-            document.getElementById('patientHistoryModal').style.display = 'flex';
+            try {
+                const visits = await db.visits.where('patient_id').equals(currentPatientId).toArray();
+                let html = '';
+                for(let v of visits) {
+                    html += `<tr style="border-bottom:1px solid var(--border);"><td style="padding:10px;">${v.visit_id}</td><td style="padding:10px;">${v.visit_date || '---'}</td><td style="padding:10px;">---</td><td style="padding:10px;">---</td><td style="padding:10px;"><button style="padding: 5px 10px; background:var(--primary); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="window.location.href='lab.html?visit_id=${v.visit_id}'">فتح</button></td></tr>`;
+                }
+                tbody.innerHTML = html || '<tr><td colspan="5" style="text-align:center; padding:20px;">لا يوجد زيارات سابقة</td></tr>';
+                document.getElementById('patientHistoryModal').style.display = 'flex';
+            } catch(e) { console.error(e); }
         }
 
         // ==========================================
         // الفاتورة والطباعة
         // ==========================================
-        function resetForm() { startNewPatient(); document.getElementById('paidAmount').value = ''; document.getElementById('discountPercent').value = ''; document.getElementById('discountFixed').value = ''; calculateChanges(); }
+        function resetForm() { 
+            startNewPatient(); 
+            document.getElementById('paidAmount').value = ''; 
+            document.getElementById('discountPercent').value = ''; 
+            document.getElementById('discountFixed').value = ''; 
+            calculateChanges(); 
+        }
 
         function openInvoicePreview() {
             if(cart.length === 0) return showToast('⚠️ السلة فارغة!', true);
