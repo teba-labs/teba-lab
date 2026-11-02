@@ -134,8 +134,8 @@
         .print-footer-phones { flex: 1; text-align: left; direction: ltr; font-weight: bold; line-height: 1.8; }
         .print-footer-addresses { flex: 1; text-align: right; direction: rtl; font-weight: bold; line-height: 1.8; }
         .print-footer p { margin: 0; }
-        @media print {
-            /* إلغاء هوامش المتصفح تماماً عشان ميعملش ورق فاضي */
+               @media print {
+            /* إلغاء هوامش المتصفح تماماً */
             @page { size: A4; margin: 0; } 
             
             body * { visibility: hidden; }
@@ -145,14 +145,14 @@
             .modal-content { box-shadow: none !important; max-height: none !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; background: white !important; max-width: 100% !important; border-radius: 0 !important; border: none !important; }
             .btn-print-modal { display: none !important; }
             
-            /* ضبط الصفحة على مقاس A4 بالظبط وإضافة الهوامش من الداخل */
             .print-page {
                 display: block !important;
                 position: relative !important;
                 width: 210mm !important;
-                height: 297mm !important; 
+                height: 297mm !important; /* مقاس A4 بالظبط */
                 margin: 0 auto !important;
-                padding: 15mm 15mm 45mm 15mm !important; /* مساحة 15مم من كل ناحية لمنع قص الكلام، و 45مم من تحت للفوتر */
+                /* السر هنا: 15مم مساحة أمان من اليمين والشمال عشان ميتقصش، و35مم من تحت للفوتر */
+                padding: 15mm 15mm 35mm 15mm !important; 
                 box-sizing: border-box !important;
                 page-break-after: always;
                 page-break-inside: avoid;
@@ -166,10 +166,10 @@
             /* الفوتر يثبت في قاع كل صفحة */
             .print-footer {
                 position: absolute !important; 
-                bottom: 0 !important; 
+                bottom: 10mm !important; 
                 left: 15mm !important;
                 right: 15mm !important;
-                width: calc(100% - 30mm) !important;
+                width: auto !important;
                 padding: 10px 0 !important; 
                 margin-top: 0 !important;
                 background: white; 
@@ -188,9 +188,10 @@
         }
         
         @media screen {
+            /* تنسيق المعاينة على الشاشة عشان تبان مطابقة للطباعة */
             #print-area { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px; background: #525659; border-radius: 8px; overflow-x: auto; }
-            .print-page { background: white !important; width: 210mm !important; height: 297mm !important; padding: 15mm 15mm 45mm 15mm !important; box-shadow: 0 10px 20px rgba(0,0,0,0.4) !important; box-sizing: border-box !important; position: relative !important; display: block !important; margin: 0 auto !important; flex-shrink: 0 !important; overflow: hidden; }
-            .print-page .print-footer { position: absolute !important; bottom: 0 !important; left: 15mm !important; right: 15mm !important; width: calc(100% - 30mm) !important; margin-top: 0 !important; }
+            .print-page { background: white !important; width: 210mm !important; height: 297mm !important; padding: 15mm 15mm 35mm 15mm !important; box-shadow: 0 10px 20px rgba(0,0,0,0.4) !important; box-sizing: border-box !important; position: relative !important; display: block !important; margin: 0 auto !important; flex-shrink: 0 !important; overflow: hidden; }
+            .print-page .print-footer { position: absolute !important; bottom: 10mm !important; left: 15mm !important; right: 15mm !important; width: auto !important; margin-top: 0 !important; }
         }
 
         @media (max-width: 1000px) {
