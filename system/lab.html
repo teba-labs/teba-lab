@@ -532,7 +532,7 @@
 
         // ==== إضافة تحليل للحالة من القائمة المنسدلة ====
         async function addTestFromSelect(type)
-            if (!selectedVisitId) {
+            if (!selectedVisitId)
                 showToast('⚠️ اختر مريضاً أولاً', true);
                 document.getElementById(type === 'single' ? 'singleTestSelect' : 'profileTestSelect').value = '';
                 return;
