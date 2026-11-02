@@ -67,7 +67,6 @@ async function processOutbox() {
                 else if (item.table_name === 'visit_tests' && item.action === 'INSERT') {
                     const { data, error } = await _supabase.from('visit_tests').insert([item.payload]).select();
                     if (error) throw error;
-                    // تحديث الـ ID المحلي بالـ ID الحقيقي من السحابة
                     if(data && data.length > 0) {
                         await db.visit_tests.update(item.payload.id, { id: data[0].id });
                     }
@@ -98,7 +97,7 @@ async function processOutbox() {
         if (remaining === 0) btn.style.display = 'none';
         else btn.innerText = '🔄 مزامنة البيانات';
         
-        await loadData(); // تحديث الشاشة بعد المزامنة
+        await loadData(); 
     } catch(e) {
         console.error("Outbox error:", e);
         document.getElementById('syncBtn').innerText = '🔄 مزامنة البيانات';
@@ -274,9 +273,7 @@ async function checkSyncStatus() {
     const pending = await db.outbox.count();
     if(pending > 0) document.getElementById('syncBtn').style.display = 'flex';
     else document.getElementById('syncBtn').style.display = 'none';
-}
-
-// ==========================================
+}// ==========================================
 // 🖥️ واجهة المستخدم
 // ==========================================
 function renderPatients() {
@@ -405,7 +402,7 @@ async function addTestFromSelect(type) {
     }
 
     try {
-        const newTestId = crypto.randomUUID ? crypto.randomUUID() : Date.now();
+        const newTestId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
         const payload = { 
             id: newTestId, 
             tenant_id: TEBA_CONFIG.tenant.id, 
@@ -578,20 +575,18 @@ async function saveResultToCloud(visitTestId, resultsData) {
             results_data: resultsData
         };
 
-        // 1. حفظ محلي
+        // إصلاح DataError: استخدام String(Date.now()) بدل Date.now() عشان الداتابيز تقبله
         let existing = await db.test_results.where('visit_test_id').equals(parseInt(vt.id)).first();
         if(existing) {
             await db.test_results.update(existing.id, { results_data: resultsData });
         } else {
-            await db.test_results.put({ id: Date.now(), visit_test_id: parseInt(vt.id), results_data: resultsData });
+            await db.test_results.put({ id: String(Date.now()), visit_test_id: parseInt(vt.id), results_data: resultsData });
         }
 
-        // 2. إضافة لصندوق المزامنة
         await addToOutbox('test_results', 'UPSERT', payload);
         
         showToast('✅ تم الحفظ محلياً!');
         
-        // تحديث الواجهة
         const existingIndex = testResults.findIndex(r => r.visit_test_id == visitTestId);
         if (existingIndex > -1) testResults[existingIndex].results_data = resultsData;
         else testResults.push({ visit_test_id: parseInt(visitTestId), results_data: resultsData });
