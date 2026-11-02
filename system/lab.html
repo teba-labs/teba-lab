@@ -297,6 +297,51 @@
             <button class="btn-print-modal" onclick="window.print()">🖨️ Print Now</button>
         </div>
     </div>    <script>
+                function getSmartRange(param, patient, selectedPhase = null) {
+            let ageInYears = parseFloat(patient.age) || 0;
+            if (patient.age_type === 'Months') ageInYears = ageInYears / 12;
+            if (patient.age_type === 'Days') ageInYears = ageInYears / 365;
+            
+            if (ageInYears <= 12 && param.ref_child) {
+                let childRange = (typeof param.ref_child === 'object' && param.ref_child !== null) ? param.ref_child.range : param.ref_child;
+                if (childRange && childRange !== '-' && childRange !== 'N/A') return childRange;
+            }
+
+            let rawRange = patient.gender === 'female' ? param.ref_female : param.ref_male;
+            if (typeof rawRange === 'object' && rawRange !== null) { rawRange = rawRange.range; }
+            
+            if (!rawRange || rawRange === '-' || rawRange === 'N/A') rawRange = param.reference_range || '-';
+            
+            if (selectedPhase && typeof rawRange === 'string' && rawRange.includes(selectedPhase)) {
+                let parts = rawRange.split('|').map(p => p.trim());
+                let match = parts.find(p => p.toLowerCase().startsWith(selectedPhase.toLowerCase()));
+                if (match) { return match.substring(match.indexOf(':') + 1).trim(); }
+            }
+            return rawRange;
+        }
+
+        function renderPhaseSelector(vtId, param, patient, savedData) {
+            if (patient.gender !== 'female') return '';
+            let rawRange = param.ref_female || '';
+            const phases = ['Follicular', 'Midcycle', 'Ovulatory', 'Luteal', 'Pregnant', 'Postmenopausal', 'Prostate'];
+            let availablePhases = phases.filter(p => rawRange.toLowerCase().includes(p.toLowerCase()));
+            if (availablePhases.length > 0) {
+                const savedPhase = savedData[param.name]?.phase || availablePhases[0];
+                let opts = availablePhases.map(p => `<option value="${p}" ${savedPhase === p ? 'selected' : ''}>${p}</option>`).join('');
+                return `<select class="phase-selector" id="phase_${vtId}_${param.name}" onchange="updateRangeUI('${vtId}', '${param.name}', '${param.ref_male}', '${param.ref_female}', ${patient.age}, '${patient.age_type}', '${patient.gender}')">${opts}</select>`;
+            }
+            return '';
+        }
+
+        window.updateRangeUI = function(vtId, paramName, refMale, refFemale, age, ageType, gender) {
+            const phaseSelect = document.getElementById(`phase_${vtId}_${paramName}`);
+            const selectedPhase = phaseSelect ? phaseSelect.value : null;
+            const patient = { age: age, age_type: ageType, gender: gender };
+            const param = { name: paramName, ref_male: refMale, ref_female: refFemale };
+            const newRange = getSmartRange(param, patient, selectedPhase);
+            const rangeLabel = document.getElementById(`range_${vtId}_${paramName}`);
+            if (rangeLabel) rangeLabel.innerText = newRange;
+        };
         // ==== التحقق من تسجيل الدخول ====
         if (!localStorage.getItem('teba_tenant_id')) {
             window.location.href = 'home.html';
