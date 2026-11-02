@@ -567,7 +567,7 @@
         }
 
                 // ==== رسم التحاليل المطلوبة ====
-        function renderOrderedTests() {
+                function renderOrderedTests() {
             const singleContainer = document.getElementById('singleTestsContainer');
             const profileContainer = document.getElementById('profileTestsContainer');
 
@@ -617,7 +617,6 @@
             profileContainer.innerHTML = profilesHtml || '<div class="empty-msg">لا توجد بروفايلات مطلوبة</div>';
         }
 
-        // ==== إضافة تحليل للحالة من القائمة المنسدلة ====
         async function addTestFromSelect(type) {
             if (!selectedVisitId) {
                 showToast('⚠️ اختر مريضاً أولاً', true);
