@@ -57,7 +57,6 @@
         .p-meta { font-size: 0.8rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 8px;}
         .badge-published { background: var(--primary-light); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; position: absolute; top: 10px; left: 10px;}
         
-        /* أزرار التعديل والحذف */
         .card-actions { display: flex; gap: 8px; margin-top: 8px; border-top: 1px dashed var(--border); padding-top: 8px; }
         .btn-card-action { flex: 1; padding: 6px; border: none; border-radius: 6px; font-family: inherit; font-weight: bold; cursor: pointer; font-size: 0.75rem; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 4px;}
         .btn-card-edit { background: rgba(52, 152, 219, 0.1); color: var(--accent); }
@@ -65,28 +64,29 @@
         .btn-card-del { background: rgba(231, 76, 60, 0.1); color: var(--danger); }
         .btn-card-del:hover { background: var(--danger); color: white; }
 
-        /* تصميم أعمدة إدخال النتائج (القوائم والكروت) */
-        .selector-area { padding: 15px; background: #f8fafc; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px;}
-        .custom-select { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.95rem; font-weight: bold; outline: none; background: white; cursor: pointer;}
+        /* تصميم القوائم المنسدلة (إضافة تحليل) */
+        .selector-area { padding: 15px; background: #f8fafc; border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: center;}
+        .custom-select { flex-grow: 1; padding: 10px; border: 2px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.9rem; font-weight: bold; outline: none; background: white; cursor: pointer;}
         .custom-select:focus { border-color: var(--primary); }
+        .btn-add-select { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-family: inherit; font-weight: bold; cursor: pointer;}
         
-        .quick-grid { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; overflow-y: auto; align-content: start;}
-        .quick-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 8px; padding: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 5px; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
-        .quick-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
-        .quick-card .code { font-weight: 800; color: var(--text-muted); font-size: 0.7rem; }
-        .quick-card .name { font-size: 0.85rem; font-weight: bold; color: var(--text); line-height: 1.3; }
-        .quick-card .status { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-top: 5px; font-weight: bold; }
-        .status-pending { background: #fef3c7; color: #b45309; }
-        .status-done { background: #dcfce7; color: #15803d; }
+        /* تصميم لستة التحاليل المطلوبة (زي البرنامج القديم) */
+        .ordered-tests-list { flex-grow: 1; overflow-y: auto; padding: 10px; background: var(--bg); }
+        .ordered-test-row { display: flex; justify-content: space-between; align-items: center; background: var(--surface); padding: 12px 15px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);}
+        .ordered-test-row:hover { border-color: var(--primary); }
+        .ordered-test-name { font-weight: bold; font-size: 0.95rem; color: var(--text); }
+        .ordered-test-code { font-size: 0.8rem; color: var(--text-muted); margin-left: 5px;}
+        .btn-result { padding: 8px 20px; background: var(--warning); color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: inherit; transition: 0.2s;}
+        .btn-result:hover { background: #d68910; transform: scale(1.05); }
+        .btn-result.done { background: var(--primary-light); }
 
         /* تصميم المودال (شاشة تسجيل النتائج) */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(3px); padding: 10px;}
-        .modal-content { background: var(--surface); padding: 0; border-radius: 12px; width: 100%; max-width: 900px; max-height: 95vh; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.3); border-top: 5px solid var(--primary);}
+        .modal-content { background: var(--surface); padding: 0; border-radius: 12px; width: 100%; max-width: 800px; max-height: 95vh; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.3); border-top: 5px solid var(--primary);}
         .modal-header { padding: 15px 20px; border-bottom: 2px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc;}
         .modal-header h3 { margin: 0; color: var(--primary); font-size: 1.2rem;}
-        .modal-body { padding: 20px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 15px; background: var(--bg);}
+        .modal-body { padding: 20px; overflow-y: auto; flex-grow: 1; background: var(--bg);}
         
-        /* تصميم كارت التحليل داخل المودال */
         .test-item { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,0.03);}
         .test-header { background: #f8fafc; padding: 12px 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: var(--primary); font-size: 1.05rem;}
         .test-body { padding: 15px; }
@@ -112,7 +112,7 @@
         #toast.error { background: var(--danger); }
 
         /* ==========================================
-           تنسيقات الطباعة الاحترافية
+           تنسيقات الطباعة
            ========================================== */
         .print-page { background: #fff; width: 100%; margin: 0; padding: 0; }
         .print-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; gap: 20px; }
@@ -133,16 +133,13 @@
             #printModal { position: absolute; left: 0; top: 0; width: 100%; background: white; display: block !important; margin: 0 !important; padding: 0 !important; }
             .modal-content { box-shadow: none !important; max-height: none !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; background: white !important; max-width: 100% !important; border-radius: 0 !important; }
             .btn-print-modal { display: none !important; }
-            
             .print-page { display: flex !important; flex-direction: column; position: relative; min-height: 296mm; page-break-after: always; break-after: page; box-sizing: border-box; padding: 10mm; background: white; }
             .print-page:last-child { page-break-after: auto; break-after: auto; }
             .print-header { page-break-inside: avoid; }
             .print-footer { margin-top: auto; page-break-inside: avoid; position: static; }
-            
             table { page-break-inside: auto; table-layout: fixed; width: 100%; word-wrap: break-word; }
             tr { page-break-inside: avoid; page-break-after: auto; }
             thead { display: table-header-group; }
-            
             th:nth-child(1) { width: 30%; }
             th:nth-child(2) { width: 15%; }
             th:nth-child(3) { width: 12%; }
@@ -173,7 +170,6 @@
             <button class="nav-btn btn-whatsapp" onclick="sendLabWhatsApp()" title="إرسال رسالة للمريض">💬 واتساب</button>
             <button class="nav-btn btn-home" onclick="window.location.href='home.html'">🏠 الرئيسية</button>
             <button class="nav-btn btn-publish" id="btnPublishVisit" onclick="publishVisit()" style="display:none;">🌐 نشر النتائج</button>
-            <button class="nav-btn btn-add" id="btnAddTest" onclick="openAddTestModal()" style="display:none;">➕ إضافة تحليل</button>
             <button class="nav-btn btn-print" onclick="openPrintModal()">👁️ معاينة التقرير</button>
             <button class="nav-btn btn-pdf" id="btnDownloadPdf" onclick="downloadPDF()" style="display:none; background: #e74c3c;">📥 تحميل PDF</button>
         </div>
@@ -194,12 +190,13 @@
             <div class="panel-header">التحاليل الفردية (Single)</div>
             <div class="selector-area">
                 <select class="custom-select" id="singleTestSelect">
-                    <option value="">-- اختر تحليلاً فردياً --</option>
+                    <option value="">-- إضافة تحليل فردي جديد --</option>
                 </select>
-                <button class="btn-save-test" onclick="openSingleResultsModal()" id="btnOpenSingleResults" disabled>فتح سجل النتائج الفردية</button>
+                <button class="btn-add-select" onclick="addTestFromSelect('single')">➕ إضافة</button>
             </div>
-            <div class="quick-grid" id="singleQuickGrid">
-                <div class="empty-msg">اختر مريضاً لعرض التحاليل</div>
+            <!-- قائمة التحاليل المسجلة للحالة -->
+            <div class="ordered-tests-list" id="singleTestsContainer">
+                <div class="empty-msg">اختر مريضاً لعرض التحاليل المطلوبة</div>
             </div>
         </div>
         
@@ -208,33 +205,34 @@
             <div class="panel-header">التحاليل المركبة (Profiles)</div>
             <div class="selector-area">
                 <select class="custom-select" id="profileTestSelect">
-                    <option value="">-- اختر بروفايل --</option>
+                    <option value="">-- إضافة بروفايل جديد --</option>
                 </select>
-                <button class="btn-save-test" onclick="openProfileResultModal()" id="btnOpenProfileResults" disabled>فتح سجل نتائج البروفايل</button>
+                <button class="btn-add-select" onclick="addTestFromSelect('profile')">➕ إضافة</button>
             </div>
-            <div class="quick-grid" id="profileQuickGrid">
-                <div class="empty-msg">اختر مريضاً لعرض التحاليل</div>
+            <!-- قائمة البروفايلات المسجلة للحالة -->
+            <div class="ordered-tests-list" id="profileTestsContainer">
+                <div class="empty-msg">اختر مريضاً لعرض التحاليل المطلوبة</div>
             </div>
         </div>
     </div>
 
-    <!-- 🌟 مودال (1): تسجيل نتائج التحاليل الفردية 🌟 -->
-    <div class="modal" id="singleResultsModal">
-        <div class="modal-content">
+    <!-- 🌟 مودال (1): تسجيل نتيجة تحليل فردي 🌟 -->
+    <div class="modal" id="singleResultModal">
+        <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
-                <h3>🧪 تسجيل نتائج التحاليل الفردية</h3>
-                <button class="btn-del-test" style="padding:5px 15px;" onclick="document.getElementById('singleResultsModal').style.display='none'">✕ إغلاق</button>
+                <h3 id="singleModalTitle">🧪 تسجيل نتيجة</h3>
+                <button class="btn-del-test" style="padding:5px 15px;" onclick="document.getElementById('singleResultModal').style.display='none'">✕ إغلاق</button>
             </div>
-            <div class="modal-body" id="singleResultsArea">
-                <!-- سيتم توليد حقول الإدخال هنا بواسطة الجافاسكريبت -->
+            <div class="modal-body" id="singleResultArea">
+                <!-- سيتم توليد حقول الإدخال هنا -->
             </div>
             <div style="padding: 15px; border-top: 1px solid var(--border); background: #f8fafc; text-align: center;">
-                <button class="btn-save-test" style="max-width: 300px; margin: 0 auto; display: block;" onclick="saveAllSingleResults()">💾 حفظ كل النتائج الفردية</button>
+                <button class="btn-save-test" style="max-width: 300px; margin: 0 auto; display: block;" id="btnSaveSingleResult">💾 حفظ النتيجة</button>
             </div>
         </div>
     </div>
 
-    <!-- 🌟 مودال (2): تسجيل نتائج البروفايل 🌟 -->
+    <!-- 🌟 مودال (2): تسجيل نتائج بروفايل 🌟 -->
     <div class="modal" id="profileResultModal">
         <div class="modal-content" style="max-width: 700px;">
             <div class="modal-header">
@@ -242,10 +240,10 @@
                 <button class="btn-del-test" style="padding:5px 15px;" onclick="document.getElementById('profileResultModal').style.display='none'">✕ إغلاق</button>
             </div>
             <div class="modal-body" id="profileResultsArea">
-                <!-- سيتم توليد حقول الإدخال هنا بواسطة الجافاسكريبت -->
+                <!-- سيتم توليد حقول الإدخال هنا -->
             </div>
             <div style="padding: 15px; border-top: 1px solid var(--border); background: #f8fafc; text-align: center;">
-                <button class="btn-save-test" style="max-width: 300px; margin: 0 auto; display: block;" onclick="saveProfileResults()">💾 حفظ نتائج البروفايل</button>
+                <button class="btn-save-test" style="max-width: 300px; margin: 0 auto; display: block;" id="btnSaveProfileResult">💾 حفظ نتائج البروفايل</button>
             </div>
         </div>
     </div>
@@ -273,20 +271,6 @@
                     <div class="form-group-modal"><label>الفرع</label><select id="editPBranch"><option value="1">الجعافرة</option><option value="2">بهتيم</option></select></div>
                 </div>
                 <button class="btn-save-test" style="width: 100%; margin-top: 15px; padding: 15px;" onclick="savePatientEdit()">💾 حفظ التعديلات</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 🌟 مودال (4): إضافة تحليل جديد 🌟 -->
-    <div class="modal" id="addTestModal">
-        <div class="modal-content" style="max-width: 700px;">
-            <div class="modal-header">
-                <h3>➕ إضافة تحليل جديد للحالة</h3>
-                <button class="btn-del-test" style="padding:5px 15px;" onclick="document.getElementById('addTestModal').style.display='none'">✕ إغلاق</button>
-            </div>
-            <div class="modal-body">
-                <input type="text" id="addTestSearch" placeholder="ابحث عن التحليل بالكود أو الاسم..." onkeyup="filterAddTest()" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid var(--primary); border-radius: 8px; outline: none; font-family: inherit;">
-                <div id="addTestResults" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
             </div>
         </div>
     </div>
@@ -326,7 +310,7 @@
         let selectedVisitId = null;
 
         // ==========================================
-        // 🔔 نظام التنبيهات الصوتية
+        // 🔔 التنبيهات الصوتية
         // ==========================================
         const bc = new BroadcastChannel('teba_sync');
         bc.onmessage = (event) => {
@@ -354,9 +338,8 @@
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 document.getElementById('printModal').style.display = 'none';
-                document.getElementById('addTestModal').style.display = 'none';
                 document.getElementById('editPatientModal').style.display = 'none';
-                document.getElementById('singleResultsModal').style.display = 'none';
+                document.getElementById('singleResultModal').style.display = 'none';
                 document.getElementById('profileResultModal').style.display = 'none';
             }
         });
@@ -418,7 +401,7 @@
             }
 
             renderPatients();
-            populateSelectors(); // ملء القوائم المنسدلة
+            populateSelectors(); 
             
             const urlParams = new URLSearchParams(window.location.search);
             const urlVisitId = urlParams.get('visit_id');
@@ -449,7 +432,7 @@
             `}).join('');
         }
 
-        // ==== ملء القوائم المنسدلة (Dropdowns) ====
+        // ==== ملء القوائم المنسدلة (لإضافة تحاليل) ====
         function populateSelectors() {
             const singleSelect = document.getElementById('singleTestSelect');
             const profileSelect = document.getElementById('profileTestSelect');
@@ -457,146 +440,173 @@
             const singles = testsCatalog.filter(t => !isProfileTest(t)).sort((a,b) => a.name.localeCompare(b.name));
             const profiles = testsCatalog.filter(t => isProfileTest(t)).sort((a,b) => a.name.localeCompare(b.name));
 
-            singleSelect.innerHTML = `<option value="">-- اختر تحليلاً فردياً (${singles.length}) --</option>` + 
+            singleSelect.innerHTML = `<option value="">-- إضافة تحليل فردي جديد --</option>` + 
                 singles.map(t => `<option value="${t.code}">${t.name} (${t.code})</option>`).join('');
                 
-            profileSelect.innerHTML = `<option value="">-- اختر بروفايل (${profiles.length}) --</option>` + 
+            profileSelect.innerHTML = `<option value="">-- إضافة بروفايل جديد --</option>` + 
                 profiles.map(t => `<option value="${t.code}">${t.name} (${t.code})</option>`).join('');
-
-            // تفعيل زرا الفتح عند الاختيار
-            singleSelect.onchange = () => document.getElementById('btnOpenSingleResults').disabled = !singleSelect.value;
-            profileSelect.onchange = () => document.getElementById('btnOpenProfileResults').disabled = !profileSelect.value;
         }
 
-        // ==== عرض الكروت السريعة (أشهر التحاليل) ====
-        function renderQuickCards() {
-            const singleGrid = document.getElementById('singleQuickGrid');
-            const profileGrid = document.getElementById('profileQuickGrid');
-            
-            // حساب تكرار التحاليل في كل الزيارات عشان نعرف الأشهر
-            const testCounts = {};
-            visitTests.forEach(vt => { testCounts[vt.test_code] = (testCounts[vt.test_code] || 0) + 1; });
-
-            const singles = testsCatalog.filter(t => !isProfileTest(t)).sort((a,b) => (testCounts[b.code] || 0) - (testCounts[a.code] || 0)).slice(0, 10);
-            const profiles = testsCatalog.filter(t => isProfileTest(t)).sort((a,b) => (testCounts[b.code] || 0) - (testCounts[a.code] || 0)).slice(0, 10);
-
-            const getStatusHtml = (code) => {
-                if (!selectedVisitId) return '';
-                const vt = visitTests.find(v => v.visit_id === selectedVisitId && v.test_code === code);
-                if (!vt) return '';
-                const res = testResults.find(r => r.visit_test_id === vt.id);
-                if (res && res.results_data && Object.keys(res.results_data).length > 0) {
-                    return `<span class="status status-done">تم ✅</span>`;
-                }
-                return `<span class="status status-pending">مطلوب ⏳</span>`;
-            };
-
-            singleGrid.innerHTML = singles.map(t => `
-                <div class="quick-card" onclick="openSingleResultsModal('${t.code}')">
-                    <div class="code">${t.code}</div>
-                    <div class="name">${t.name}</div>
-                    ${getStatusHtml(t.code)}
-                </div>
-            `).join('');
-
-            profileGrid.innerHTML = profiles.map(t => `
-                <div class="quick-card" onclick="openProfileResultModal('${t.code}')">
-                    <div class="code">${t.code}</div>
-                    <div class="name">${t.name}</div>
-                    ${getStatusHtml(t.code)}
-                </div>
-            `).join('');
-        }
-
-        // ==== اختيار المريض ====
+        // ==== اختيار المريض وعرض التحاليل المطلوبة ====
         function selectPatient(visitId) {
             selectedVisitId = visitId;
             renderPatients();
-            renderQuickCards(); // تحديث حالة الكروت السريعة
+            renderOrderedTests(); 
             
-            document.getElementById('btnAddTest').style.display = 'block';
             document.getElementById('btnDownloadPdf').style.display = 'block';
-            
             const visitObj = allVisits.find(v => v.visit_id === visitId);
             const btnPub = document.getElementById('btnPublishVisit');
             btnPub.style.display = 'block';
             btnPub.innerHTML = visitObj.is_published ? '🔄 تحديث النشر' : '🌐 نشر الزيارة';
         }
 
-        // ==== فتح مودال التحاليل الفردية ====
-        function openSingleResultsModal(preselectedCode = null) {
-            if (!selectedVisitId) return showToast('⚠️ اختر مريضاً أولاً', true);
-            
+        // ==== رسم التحاليل المطلوبة (زي البرنامج القديم) ====
+        function renderOrderedTests() {
+            const singleContainer = document.getElementById('singleTestsContainer');
+            const profileContainer = document.getElementById('profileTestsContainer');
+
+            if (!selectedVisitId) {
+                singleContainer.innerHTML = '<div class="empty-msg">اختر مريضاً</div>';
+                profileContainer.innerHTML = '<div class="empty-msg">اختر مريضاً</div>';
+                return;
+            }
+
             const vTests = visitTests.filter(vt => vt.visit_id === selectedVisitId);
-            const singles = vTests.filter(vt => {
-                const cat = testsCatalog.find(c => c.code === vt.test_code);
-                return cat && !isProfileTest(cat);
-            });
+            
+            if (vTests.length === 0) {
+                singleContainer.innerHTML = '<div class="empty-msg">لا توجد تحاليل مطلوبة</div>';
+                profileContainer.innerHTML = '<div class="empty-msg">لا توجد تحاليل مطلوبة</div>';
+                return;
+            }
 
-            if (singles.length === 0) return showToast('⚠️ لا توجد تحاليل فردية مطلوبة لهذا المريض', true);
+            let singlesHtml = '';
+            let profilesHtml = '';
 
-            const area = document.getElementById('singleResultsArea');
-            area.innerHTML = singles.map(vt => {
-                const cat = testsCatalog.find(c => c.code === vt.test_code);
-                const res = testResults.find(r => r.visit_test_id === vt.id);
-                const savedData = res ? res.results_data : {};
-                const val = savedData['result']?.value || '';
-                const p = getSmartParams(cat)[0] || {};
-                const unit = p.unit || cat.unit || '-';
+            vTests.forEach(vt => {
+                const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, code: vt.test_code, parameters: [] };
+                const isProfile = isProfileTest(catalogItem);
+                const result = testResults.find(r => r.visit_test_id === vt.id);
+                const hasResult = result && result.results_data && Object.keys(result.results_data).length > 0;
                 
-                return `
-                    <div class="test-item" id="card_${vt.id}">
-                        <div class="test-header"><span>${cat.name} (${cat.code})</span></div>
-                        <div class="test-body">
-                            <div class="input-group">
-                                <label><span>النتيجة</span><span class="range-info">${p.ref_male || p.ref_female || '-'} ${unit}</span></label>
-                                <input type="text" id="res_${vt.id}_simple" data-vtid="${vt.id}" value="${val}" placeholder="أدخل النتيجة...">
-                            </div>
+                const btnClass = hasResult ? 'btn-result done' : 'btn-result';
+                const btnText = hasResult ? '👁️ عرض/تعديل' : '▶ Result';
+
+                const rowHtml = `
+                    <div class="ordered-test-row">
+                        <div>
+                            <span class="ordered-test-name">${catalogItem.name}</span>
+                            <span class="ordered-test-code">(${catalogItem.code})</span>
                         </div>
+                        <button class="${btnClass}" onclick="openResultModal('${vt.id}', ${isProfile}, '${vt.test_code}')">
+                            ${btnText}
+                        </button>
                     </div>
                 `;
-            }).join('');
 
-            document.getElementById('singleResultsModal').style.display = 'flex';
+                if (isProfile) profilesHtml += rowHtml;
+                else singlesHtml += rowHtml;
+            });
+
+            singleContainer.innerHTML = singlesHtml || '<div class="empty-msg">لا توجد تحاليل فردية مطلوبة</div>';
+            profileContainer.innerHTML = profilesHtml || '<div class="empty-msg">لا توجد بروفايلات مطلوبة</div>';
+        }
+
+        // ==== إضافة تحليل للحالة من القائمة المنسدلة ====
+        async function addTestFromSelect(type) {
+            if (!selectedVisitId) return showToast('⚠️ اختر مريضاً أولاً', true);
+            
+            const selectEl = type === 'single' ? document.getElementById('singleTestSelect') : document.getElementById('profileTestSelect');
+            const testCode = selectEl.value;
+            if (!testCode) return showToast('⚠️ اختر تحليلاً من القائمة أولاً', true);
+
+            const exists = visitTests.find(v => v.visit_id === selectedVisitId && v.test_code === testCode);
+            if (exists) return showToast('⚠️ هذا التحليل موجود بالفعل في الطلب', true);
+
+            try {
+                const { data, error } = await _supabase.from('visit_tests').insert([{
+                    tenant_id: TEBA_CONFIG.tenant.id, visit_id: selectedVisitId, test_code: testCode, price_at_time: 0
+                }]).select();
+                
+                if (error) throw error;
+                
+                visitTests.push(data[0]);
+                selectEl.value = '';
+                showToast('✅ تم إضافة التحليل للطلب');
+                renderOrderedTests(); 
+                
+            } catch (err) {
+                showToast('❌ خطأ في الإضافة: ' + err.message, true);
+            }
+        }
+    </script>    <script>
+        // ==== دوال فتح شاشات تسجيل النتائج ====
+        
+        // فتح شاشة نتيجة فردية
+        function openSingleResultModal(vtId, testCode) {
+            const vt = visitTests.find(v => v.id == vtId);
+            const catalogItem = testsCatalog.find(c => c.code === testCode);
+            const result = testResults.find(r => r.visit_test_id == vtId);
+            const savedData = result ? result.results_data : {};
+            
+            const val = savedData['result']?.value || '';
+            const p = getSmartParams(catalogItem)[0] || {};
+            const unit = p.unit || catalogItem.unit || '-';
+            const range = getSmartRange(p, allVisits.find(v => v.visit_id === selectedVisitId).patient, null);
+
+            document.getElementById('singleModalTitle').innerText = `🧪 تسجيل نتيجة: ${catalogItem.name}`;
+            const area = document.getElementById('singleResultArea');
+            
+            area.innerHTML = `
+                <div class="test-item">
+                    <div class="test-body">
+                        <div class="input-group">
+                            <label><span>النتيجة</span><span class="range-info">${range} ${unit}</span></label>
+                            <input type="text" id="res_${vtId}_simple" value="${val}" placeholder="أدخل النتيجة هنا..." style="font-size: 1.5rem; padding: 15px;">
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const btn = document.getElementById('btnSaveSingleResult');
+            btn.onclick = () => saveSingleResult(vtId);
+            
+            document.getElementById('singleResultModal').style.display = 'flex';
             setTimeout(() => { const i = area.querySelector('input'); if(i) i.focus(); }, 100);
         }
 
-        // ==== فتح مودال البروفايل ====
-        function openProfileResultModal(preselectedCode = null) {
-            if (!selectedVisitId) return showToast('⚠️ اختر مريضاً أولاً', true);
-            
-            const code = preselectedCode || document.getElementById('profileTestSelect').value;
-            if (!code) return showToast('⚠️ اختر بروفايل أولاً', true);
+        // فتح شاشة نتيجة بروفايل
+        function openProfileResultModal(vtId, testCode) {
+            const vt = visitTests.find(v => v.id == vtId);
+            const catalogItem = testsCatalog.find(c => c.code === testCode);
+            const params = getSmartParams(catalogItem);
+            const result = testResults.find(r => r.visit_test_id == vtId);
+            const savedData = result ? result.results_data : {};
+            const patient = allVisits.find(v => v.visit_id === selectedVisitId).patient;
 
-            const vt = visitTests.find(v => v.visit_id === selectedVisitId && v.test_code === code);
-            if (!vt) return showToast('⚠️ هذا البروفايل غير مطلوب لهذا المريض. أضفه أولاً.', true);
-
-            const cat = testsCatalog.find(c => c.code === code);
-            const params = getSmartParams(cat);
-            const res = testResults.find(r => r.visit_test_id === vt.id);
-            const savedData = res ? res.results_data : {};
-
-            document.getElementById('profileModalTitle').innerText = `🧬 تسجيل نتائج: ${cat.name}`;
+            document.getElementById('profileModalTitle').innerText = `🧬 تسجيل نتائج: ${catalogItem.name}`;
             const area = document.getElementById('profileResultsArea');
             
             let inputsHtml = '';
             params.forEach(param => {
                 const val = savedData[param.name]?.value || '';
                 const unit = param.unit || param.units || '';
+                const range = getSmartRange(param, patient, savedData[param.name]?.phase || null);
                 const isCalc = param.is_calc === true || param.is_calculated === true;
                 const readonly = isCalc ? 'readonly' : '';
                 const calcClass = isCalc ? 'input-calc' : '';
+                const phaseSelectorHtml = renderPhaseSelector(vtId, param, patient, savedData);
                 
-                let inputElement = `<input type="text" inputmode="decimal" class="${calcClass}" id="res_${vt.id}_${param.name}" data-vtid="${vt.id}" value="${val}" placeholder="..." ${readonly} oninput="triggerCalc('${vt.id}', '${vt.test_code}')" onkeydown="handleEnter(event, this, ${vt.id}, true)">`;
+                let inputElement = `<input type="text" inputmode="decimal" class="${calcClass}" id="res_${vtId}_${param.name}" value="${val}" placeholder="..." ${readonly} oninput="triggerCalc('${vtId}', '${testCode}')" onkeydown="handleEnter(event, this, ${vtId}, true)">`;
                 
                 if (param.type === 'dropdown' && param.options && Array.isArray(param.options)) {
                     let opts = `<option value="">-- اختر --</option>` + param.options.map(o => `<option value="${o}" ${val === o ? 'selected' : ''}>${o}</option>`).join('');
-                    inputElement = `<select class="${calcClass}" id="res_${vt.id}_${param.name}" data-vtid="${vt.id}" onchange="triggerCalc('${vt.id}', '${vt.test_code}')">${opts}</select>`;
+                    inputElement = `<select class="${calcClass}" id="res_${vtId}_${param.name}" onchange="triggerCalc('${vtId}', '${testCode}')">${opts}</select>`;
                 }
 
                 inputsHtml += `
                     <div class="input-group">
-                        <label><span>${param.label || param.name}</span><span class="range-info">${param.ref_male || '-'} ${unit}</span></label>
+                        ${phaseSelectorHtml}
+                        <label><span>${param.label || param.name}</span><span class="range-info">${range} ${unit}</span></label>
                         ${inputElement}
                     </div>
                 `;
@@ -604,14 +614,74 @@
 
             area.innerHTML = `<div class="test-item"><div class="test-body">${inputsHtml}</div></div>`;
             
-            // إخفاء/إظهار زر الحفظ وتحديث الـ vtId
-            const saveBtn = document.querySelector('#profileResultModal .btn-save-test');
-            saveBtn.setAttribute('onclick', `saveProfileResults(${vt.id}, true)`);
-            saveBtn.style.display = 'block';
-
+            const btn = document.getElementById('btnSaveProfileResult');
+            btn.onclick = () => saveProfileResult(vtId, testCode);
+            
             document.getElementById('profileResultModal').style.display = 'flex';
             setTimeout(() => { const i = area.querySelector('input:not([readonly]), select'); if(i) i.focus(); }, 100);
-        }        // ==== الحسابات التلقائية والتنقل بالكيبورد ====
+        }
+
+        // الموجّه (بيحدد يفتح فردي ولا بروفايل)
+        function openResultModal(vtId, isProfile, testCode) {
+            if (isProfile) openProfileResultModal(vtId, testCode);
+            else openSingleResultModal(vtId, testCode);
+        }
+
+        // ==== دوال الحفظ (أونلاين وأوفلاين) ====
+        async function saveSingleResult(vtId) {
+            const input = document.getElementById(`res_${vtId}_simple`);
+            if (!input || input.value.trim() === '') return showToast('⚠️ أدخل النتيجة أولاً', true);
+            
+            const resultsData = { 'result': { value: input.value.trim() } };
+            await saveResultToCloud(vtId, resultsData);
+            document.getElementById('singleResultModal').style.display = 'none';
+            renderOrderedTests();
+        }
+
+        async function saveProfileResult(vtId, testCode) {
+            const catalogItem = testsCatalog.find(c => c.code === testCode);
+            const params = getSmartParams(catalogItem);
+            
+            triggerCalc(vtId, testCode);
+
+            let resultsData = {};
+            params.forEach(param => {
+                const input = document.getElementById(`res_${vtId}_${param.name}`);
+                const phaseSelect = document.getElementById(`phase_${vtId}_${param.name}`);
+                if (input && input.value.trim() !== '') {
+                    resultsData[param.name] = { value: input.value.trim() };
+                    if (phaseSelect) resultsData[param.name].phase = phaseSelect.value;
+                }
+            });
+
+            if (Object.keys(resultsData).length === 0) return showToast('⚠️ لم يتم إدخال أي نتائج', true);
+
+            await saveResultToCloud(vtId, resultsData);
+            document.getElementById('profileResultModal').style.display = 'none';
+            renderOrderedTests();
+        }
+
+        // حفظ النتيجة في السحابة أو الذاكرة
+        async function saveResultToCloud(visitTestId, resultsData) {
+            const vt = visitTests.find(v => v.id == visitTestId);
+            if (!navigator.onLine) {
+                await db.offline_results.put({ visitTestId: parseInt(visitTestId), visitId: vt.visit_id, resultsData: resultsData, tenant_id: TEBA_CONFIG.tenant.id });
+                document.getElementById('syncBtn').style.display = 'flex';
+                showToast('⚠️ تم الحفظ محلياً (أوفلاين)');
+            } else {
+                const { error } = await _supabase.from('test_results').upsert({
+                    tenant_id: TEBA_CONFIG.tenant.id, visit_test_id: parseInt(visitTestId), results_data: resultsData
+                }, { onConflict: 'visit_test_id' });
+                if (error) return showToast('❌ خطأ في الحفظ: ' + error.message, true);
+                showToast('✅ تم الحفظ بنجاح');
+            }
+            
+            const existingIndex = testResults.findIndex(r => r.visit_test_id == visitTestId);
+            if (existingIndex > -1) testResults[existingIndex].results_data = resultsData;
+            else testResults.push({ visit_test_id: parseInt(visitTestId), results_data: resultsData });
+        }
+
+        // ==== الحسابات والتنقل بالكيبورد ====
         function triggerCalc(visitTestId, testCode) {
             const catalogItem = testsCatalog.find(c => c.code === testCode);
             if (!catalogItem) return;
@@ -624,32 +694,22 @@
                     if (!isNaN(parsed)) vals[p.name] = parsed;
                 }
             });
-
             let hba1c = vals['HbA1c'] || vals['HbA1C'] || vals['HBA1C'];
             if (hba1c !== undefined) {
                 let eagInput = document.getElementById(`res_${visitTestId}_eAG`);
-                if (eagInput) {
-                    let eagVal = (28.7 * hba1c) - 46.7;
-                    eagInput.value = eagVal.toFixed(1);
-                    vals['eAG'] = eagVal;
-                }
+                if (eagInput) { let eagVal = (28.7 * hba1c) - 46.7; eagInput.value = eagVal.toFixed(1); vals['eAG'] = eagVal; }
             }
-
             params.forEach(p => {
                 if (p.name.toLowerCase() === 'eag') return;
-                let calcVal = null;
-                let formula = p.formula;
+                let calcVal = null; let formula = p.formula;
                 if (formula) {
                     try {
-                        let evalStr = formula;
-                        let hasAllVars = true;
+                        let evalStr = formula; let hasAllVars = true;
                         let vars = formula.match(/[a-zA-Z_]+/g) || [];
                         vars = vars.filter(v => v !== 'Math' && v !== 'min' && v !== 'max');
                         for (let v of vars) {
                             let valToUse = undefined;
-                            for (let key in vals) {
-                                if (key.toLowerCase() === v.toLowerCase()) { valToUse = vals[key]; break; }
-                            }
+                            for (let key in vals) { if (key.toLowerCase() === v.toLowerCase()) { valToUse = vals[key]; break; } }
                             if (valToUse === undefined) { hasAllVars = false; break; }
                             evalStr = evalStr.replace(new RegExp('\\b' + v + '\\b', 'g'), valToUse);
                         }
@@ -670,97 +730,12 @@
             let index = inputs.indexOf(el);
             if (e.key === 'Enter') {
                 e.preventDefault();
-                if (index > -1 && index < inputs.length - 1) {
-                    inputs[index + 1].focus();
-                } else {
-                    // لو آخر حقل، نروح لزرار الحفظ
-                    const saveBtn = form.parentElement.querySelector('.btn-save-test');
-                    if (saveBtn) saveBtn.focus();
-                }
+                if (index > -1 && index < inputs.length - 1) { inputs[index + 1].focus(); }
+                else { const saveBtn = form.parentElement.querySelector('.btn-save-test'); if (saveBtn) saveBtn.focus(); }
             }
         }
 
-        // ==== حفظ النتائج (الفردية) ====
-        async function saveAllSingleResults() {
-            if (!selectedVisitId) return;
-            const inputs = document.querySelectorAll('#singleResultsArea input');
-            let savedCount = 0;
-
-            for (let input of inputs) {
-                if (input.value.trim() !== '') {
-                    const vtId = input.getAttribute('data-vtid');
-                    const resultsData = { 'result': { value: input.value.trim() } };
-                    
-                    if (!navigator.onLine) {
-                        await db.offline_results.put({ visitTestId: parseInt(vtId), visitId: selectedVisitId, resultsData: resultsData, tenant_id: TEBA_CONFIG.tenant.id });
-                        const existingIndex = testResults.findIndex(r => r.visit_test_id == vtId);
-                        if (existingIndex > -1) testResults[existingIndex].results_data = resultsData;
-                        else testResults.push({ visit_test_id: parseInt(vtId), results_data: resultsData });
-                        savedCount++;
-                    } else {
-                        const { error } = await _supabase.from('test_results').upsert({
-                            tenant_id: TEBA_CONFIG.tenant.id, visit_test_id: parseInt(vtId), results_data: resultsData
-                        }, { onConflict: 'visit_test_id' });
-                        if (!error) {
-                            const existingIndex = testResults.findIndex(r => r.visit_test_id == vtId);
-                            if (existingIndex > -1) testResults[existingIndex].results_data = resultsData;
-                            else testResults.push({ visit_test_id: parseInt(vtId), results_data: resultsData });
-                            savedCount++;
-                        }
-                    }
-                }
-            }
-            
-            if (savedCount > 0) {
-                if (!navigator.onLine) document.getElementById('syncBtn').style.display = 'flex';
-                showToast(`✅ تم حفظ ${savedCount} نتيجة بنجاح`);
-                document.getElementById('singleResultsModal').style.display = 'none';
-                renderQuickCards();
-            } else {
-                showToast('⚠️ لم يتم إدخال أي نتائج', true);
-            }
-        }
-
-        // ==== حفظ النتائج (البروفايل) ====
-        async function saveProfileResults(vtId) {
-            if (!vtId) return;
-            const vt = visitTests.find(v => v.id === vtId);
-            const catalogItem = testsCatalog.find(c => c.code === vt.test_code);
-            const params = getSmartParams(catalogItem);
-            
-            triggerCalc(vtId, vt.test_code);
-
-            let resultsData = {};
-            params.forEach(param => {
-                const input = document.getElementById(`res_${vtId}_${param.name}`);
-                if (input && input.value.trim() !== '') {
-                    resultsData[param.name] = { value: input.value.trim() };
-                }
-            });
-
-            if (Object.keys(resultsData).length === 0) return showToast('⚠️ لم يتم إدخال أي نتائج', true);
-
-            if (!navigator.onLine) {
-                await db.offline_results.put({ visitTestId: vtId, visitId: vt.visit_id, resultsData: resultsData, tenant_id: TEBA_CONFIG.tenant.id });
-                document.getElementById('syncBtn').style.display = 'flex';
-                showToast('⚠️ تم الحفظ محلياً (أوفلاين)');
-            } else {
-                const { error } = await _supabase.from('test_results').upsert({
-                    tenant_id: TEBA_CONFIG.tenant.id, visit_test_id: vtId, results_data: resultsData
-                }, { onConflict: 'visit_test_id' });
-                if (error) return alert('خطأ: ' + error.message);
-                showToast('✅ تم الحفظ بنجاح');
-            }
-            
-            const existingIndex = testResults.findIndex(r => r.visit_test_id === vtId);
-            if (existingIndex > -1) testResults[existingIndex].results_data = resultsData;
-            else testResults.push({ visit_test_id: vtId, results_data: resultsData });
-            
-            document.getElementById('profileResultModal').style.display = 'none';
-            renderQuickCards();
-        }
-
-        // ==== تعديل بيانات المريض ====
+        // ==== تعديل وحذف الحالة ====
         function openEditPatientModal(visitId) {
             const v = allVisits.find(x => x.visit_id === visitId);
             if(!v || !v.patient) return;
@@ -808,7 +783,6 @@
             }
         }
 
-        // ==== حذف الحالة بالكامل ====
         async function deleteFullVisit(visitId) {
             if(!confirm('هل أنت متأكد من حذف هذه الحالة (الزيارة) بالكامل؟ سيتم حذف كل التحاليل والنتائج المرتبطة بها.')) return;
             try {
@@ -818,47 +792,12 @@
                 const { error } = await _supabase.from('visits').delete().eq('visit_id', visitId).eq('tenant_id', TEBA_CONFIG.tenant.id);
                 if(error) throw error;
                 showToast('🗑️ تم حذف الحالة بالكامل');
-                if (selectedVisitId === visitId) { selectedVisitId = null; document.getElementById('singleQuickGrid').innerHTML = ''; document.getElementById('profileQuickGrid').innerHTML = ''; }
+                if (selectedVisitId === visitId) { selectedVisitId = null; renderOrderedTests(); }
                 await loadData();
             } catch(e) { alert('خطأ أثناء الحذف: ' + e.message); }
         }
 
-        // ==== إضافة تحليل جديد ====
-        function openAddTestModal() {
-            if(!selectedVisitId) return alert('اختر مريضاً أولاً!');
-            document.getElementById('addTestModal').style.display = 'flex';
-            document.getElementById('addTestSearch').value = '';
-            filterAddTest();
-        }
-
-        function filterAddTest() {
-            const query = document.getElementById('addTestSearch').value.toLowerCase();
-            const container = document.getElementById('addTestResults');
-            const filtered = testsCatalog.filter(t => (t.code && t.code.toLowerCase().includes(query)) || (t.name && t.name.toLowerCase().includes(query)));
-            const currentTestCodes = visitTests.filter(vt => vt.visit_id === selectedVisitId).map(vt => vt.test_code);
-            const available = filtered.filter(t => !currentTestCodes.includes(t.code));
-            if(available.length === 0) { container.innerHTML = '<div style="grid-column: 1/-1; text-align: center;">لا توجد تحاليل متاحة</div>'; return; }
-            
-            container.innerHTML = available.map(t => `
-                <button class="btn btn-primary" style="text-align: right; padding: 10px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer;" onclick="addTestToVisit('${t.code}', '${t.name}')">
-                    ${t.name} (${t.code})
-                </button>
-            `).join('');
-        }
-
-        async function addTestToVisit(code, name) {
-            if(!selectedVisitId) return;
-            try {
-                const { error } = await _supabase.from('visit_tests').insert([{ tenant_id: TEBA_CONFIG.tenant.id, visit_id: selectedVisitId, test_code: code, price_at_time: 0 }]);
-                if(error) throw error;
-                await loadData(); 
-                selectPatient(selectedVisitId);
-                document.getElementById('addTestModal').style.display = 'none';
-                showToast(`✅ تم إضافة ${name} بنجاح`);
-            } catch(err) { alert('خطأ في الإضافة: ' + err.message); }
-        }
-
-        // ==== النشر والطباعة والمزامنة ====
+        // ==== النشر والمزامنة ====
         async function publishVisit() {
             if (!selectedVisitId) return;
             const visitObj = allVisits.find(v => v.visit_id === selectedVisitId);
@@ -1005,6 +944,7 @@
             html2pdf().set(opt).from(element).save().then(() => { btn.innerHTML = originalText; }).catch(err => { console.error(err); alert('حدث خطأ أثناء التحميل'); btn.innerHTML = originalText; });
         }
 
+        // ==== التشغيل ====
         window.onload = async () => { 
             await loadData(); 
             if (await db.offline_results.count() > 0) {
