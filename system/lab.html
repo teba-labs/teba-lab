@@ -154,27 +154,24 @@
             .btn-print-modal { display: none !important; }
             
             /* التعديل هنا: قللنا الطول عشان نمنع تكرار الصفحات */
-            .print-page { 
-                display: flex !important; 
-                flex-direction: column; 
-                position: relative; 
-                min-height: 285mm; /* الرقم ده هو السر */
-                page-break-after: always; 
-                break-after: page; 
-                box-sizing: border-box; 
-                padding: 10mm; 
-                background: white; 
+            .print-page {
+                display: block !important; /* شيلنا الفليكس عشان ميعملش كراش */
+                position: relative !important;
+                min-height: 285mm !important; /* قللنا الطول شوية */
+                page-break-after: always;
+                break-after: page;
+                box-sizing: border-box;
+                padding: 10mm 10mm 25mm 10mm !important; /* مساحة تحت للفوتر */
+                background: white;
+                overflow: hidden; 
             }
-            .print-page:last-child { page-break-after: auto; break-after: auto; }
-            .print-header { page-break-inside: avoid; }
             
-            /* التعديل هنا: تثبيت الفوتر في مكانه */
-            .print-footer { 
-                position: absolute; 
-                bottom: 5mm; 
-                left: 10mm; 
-                right: 10mm; 
-                margin-top: 0 !important; 
+            .print-footer {
+                position: absolute !important; /* تثبيت مطلق */
+                bottom: 5mm !important; /* قريب من تحت */
+                left: 10mm !important;
+                right: 10mm !important;
+                margin-top: 0 !important;
                 page-break-inside: avoid;
             }
             
