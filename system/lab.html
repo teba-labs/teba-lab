@@ -70,15 +70,35 @@
         .custom-select { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.95rem; font-weight: bold; outline: none; background: white; cursor: pointer;}
         .custom-select:focus { border-color: var(--primary); }
         
-        /* تصميم لستة التحاليل المطلوبة */
-        .ordered-tests-list { flex-grow: 1; overflow-y: auto; padding: 10px; background: var(--bg); }
-        .ordered-test-row { display: flex; justify-content: space-between; align-items: center; background: var(--surface); padding: 12px 15px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);}
-        .ordered-test-row:hover { border-color: var(--primary); }
-        .ordered-test-name { font-weight: bold; font-size: 0.95rem; color: var(--text); }
+        /* تصميم لستة التحاليل المطلوبة (عصري) */
+        .ordered-tests-list { flex-grow: 1; overflow-y: auto; padding: 15px; background: var(--bg); }
+        .ordered-test-row { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: var(--surface); padding: 15px 20px; 
+            border: 1px solid var(--border); border-left: 4px solid var(--primary);
+            border-radius: 8px; margin-bottom: 10px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            transition: 0.2s;
+        }
+        .ordered-test-row:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
+        .ordered-test-name { font-weight: 800; font-size: 1.05rem; color: var(--text); }
         .ordered-test-code { font-size: 0.8rem; color: var(--text-muted); margin-left: 5px;}
-        .btn-result { padding: 8px 20px; background: var(--warning); color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: inherit; transition: 0.2s;}
-        .btn-result:hover { background: #d68910; transform: scale(1.05); }
-        .btn-result.done { background: var(--primary-light); }
+        
+        /* زرار النتيجة الجديد */
+        .btn-result { 
+            padding: 8px 24px; 
+            background: transparent; 
+            color: var(--primary); 
+            border: 2px solid var(--primary); 
+            border-radius: 20px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-family: inherit; 
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        .btn-result:hover { background: var(--primary); color: white; }
+        .btn-result.done { background: #dcfce7; color: #16a34a; border-color: #16a34a; }
 
         /* تصميم المودال */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(3px); padding: 10px;}
