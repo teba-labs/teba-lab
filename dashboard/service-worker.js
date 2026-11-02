@@ -1,8 +1,8 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v81 - Offline Fix)
+   TEBA LABS - Service Worker (v82 - Offline Fix)
    ===================================================== */
 
-const CACHE_VERSION = 'v81'; 
+const CACHE_VERSION = 'v82'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
