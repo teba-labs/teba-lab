@@ -152,10 +152,32 @@
             #printModal { position: absolute; left: 0; top: 0; width: 100%; background: white; display: block !important; margin: 0 !important; padding: 0 !important; }
             .modal-content { box-shadow: none !important; max-height: none !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; background: white !important; max-width: 100% !important; border-radius: 0 !important; }
             .btn-print-modal { display: none !important; }
-            .print-page { display: flex !important; flex-direction: column; position: relative; min-height: 296mm; page-break-after: always; break-after: page; box-sizing: border-box; padding: 10mm; background: white; }
+            
+            /* التعديل هنا: قللنا الطول عشان نمنع تكرار الصفحات */
+            .print-page { 
+                display: flex !important; 
+                flex-direction: column; 
+                position: relative; 
+                min-height: 285mm; /* الرقم ده هو السر */
+                page-break-after: always; 
+                break-after: page; 
+                box-sizing: border-box; 
+                padding: 10mm; 
+                background: white; 
+            }
             .print-page:last-child { page-break-after: auto; break-after: auto; }
             .print-header { page-break-inside: avoid; }
-            .print-footer { margin-top: auto; page-break-inside: avoid; position: static; }
+            
+            /* التعديل هنا: تثبيت الفوتر في مكانه */
+            .print-footer { 
+                position: absolute; 
+                bottom: 5mm; 
+                left: 10mm; 
+                right: 10mm; 
+                margin-top: 0 !important; 
+                page-break-inside: avoid;
+            }
+            
             table { page-break-inside: auto; table-layout: fixed; width: 100%; word-wrap: break-word; }
             tr { page-break-inside: avoid; page-break-after: auto; }
             thead { display: table-header-group; }
