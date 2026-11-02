@@ -16,13 +16,14 @@ const TEBA_CONFIG = {
         address: "شبين القناطر، القليوبية"
     },
     supabase: {
-        // الروابط الصح بتاعة مشروعك
+        // الرابط الصح بتاع مشروعك
         url: "https://khjzoleiuiipyodpkieg.supabase.co",
+        // المفتاح الصح اللي إنت جبته
         key: "sb_publishable_2Q7SPvruXJar3gvOxtvl5w_p4CVDfcU"
     },
     auth: {
         employeePassword: "123", 
-        doctorPassword: "999", // الباسورد اللي بيفتح السعر في إدارة التحاليل
+        doctorPassword: "999", 
         sessionTimeout: 2 * 60 * 60 * 1000
     }
 };
