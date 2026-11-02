@@ -16,7 +16,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <script src="../config.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>    <style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
         :root {
             --bg: #f4f7f6; --surface: #ffffff; --surface-hover: #f8fafc;
             --primary: #0a6847; --primary-hover: #085a3d; --primary-light: #10b981;
@@ -64,13 +65,12 @@
         .btn-card-del { background: rgba(231, 76, 60, 0.1); color: var(--danger); }
         .btn-card-del:hover { background: var(--danger); color: white; }
 
-        /* تصميم القوائم المنسدلة (إضافة تحليل) */
-        .selector-area { padding: 15px; background: #f8fafc; border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: center;}
-        .custom-select { flex-grow: 1; padding: 10px; border: 2px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.9rem; font-weight: bold; outline: none; background: white; cursor: pointer;}
+        /* تصميم القوائم المنسدلة */
+        .selector-area { padding: 15px; background: #f8fafc; border-bottom: 1px solid var(--border); }
+        .custom-select { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.95rem; font-weight: bold; outline: none; background: white; cursor: pointer;}
         .custom-select:focus { border-color: var(--primary); }
-        .btn-add-select { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-family: inherit; font-weight: bold; cursor: pointer;}
         
-        /* تصميم لستة التحاليل المطلوبة (زي البرنامج القديم) */
+        /* تصميم لستة التحاليل المطلوبة */
         .ordered-tests-list { flex-grow: 1; overflow-y: auto; padding: 10px; background: var(--bg); }
         .ordered-test-row { display: flex; justify-content: space-between; align-items: center; background: var(--surface); padding: 12px 15px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);}
         .ordered-test-row:hover { border-color: var(--primary); }
@@ -80,7 +80,7 @@
         .btn-result:hover { background: #d68910; transform: scale(1.05); }
         .btn-result.done { background: var(--primary-light); }
 
-        /* تصميم المودال (شاشة تسجيل النتائج) */
+        /* تصميم المودال */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(3px); padding: 10px;}
         .modal-content { background: var(--surface); padding: 0; border-radius: 12px; width: 100%; max-width: 800px; max-height: 95vh; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.3); border-top: 5px solid var(--primary);}
         .modal-header { padding: 15px 20px; border-bottom: 2px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc;}
@@ -88,7 +88,6 @@
         .modal-body { padding: 20px; overflow-y: auto; flex-grow: 1; background: var(--bg);}
         
         .test-item { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,0.03);}
-        .test-header { background: #f8fafc; padding: 12px 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: var(--primary); font-size: 1.05rem;}
         .test-body { padding: 15px; }
         
         .input-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 15px; }
@@ -160,8 +159,8 @@
             .main-grid { grid-template-columns: 1fr; height: auto; overflow: visible; padding-bottom: 30px; }
             .panel { max-height: 500px; margin-bottom: 15px; }
         }
-    </style></head>
-<body>
+    </style>
+</head><body>
 
     <header>
         <div class="brand-info" id="brandInfo">🔬 المعمل - جاري التحميل...</div>
@@ -190,11 +189,9 @@
             <div class="panel-header">التحاليل الفردية (Single)</div>
             <div class="selector-area">
                 <select class="custom-select" id="singleTestSelect">
-                    <option value="">-- إضافة تحليل فردي جديد --</option>
+                    <option value="">-- اختر تحليلاً لإضافته للطلب --</option>
                 </select>
-                <button class="btn-add-select" onclick="addTestFromSelect('single')">➕ إضافة</button>
             </div>
-            <!-- قائمة التحاليل المسجلة للحالة -->
             <div class="ordered-tests-list" id="singleTestsContainer">
                 <div class="empty-msg">اختر مريضاً لعرض التحاليل المطلوبة</div>
             </div>
@@ -205,11 +202,9 @@
             <div class="panel-header">التحاليل المركبة (Profiles)</div>
             <div class="selector-area">
                 <select class="custom-select" id="profileTestSelect">
-                    <option value="">-- إضافة بروفايل جديد --</option>
+                    <option value="">-- اختر بروفايل لإضافته للطلب --</option>
                 </select>
-                <button class="btn-add-select" onclick="addTestFromSelect('profile')">➕ إضافة</button>
             </div>
-            <!-- قائمة البروفايلات المسجلة للحالة -->
             <div class="ordered-tests-list" id="profileTestsContainer">
                 <div class="empty-msg">اختر مريضاً لعرض التحاليل المطلوبة</div>
             </div>
@@ -275,7 +270,7 @@
         </div>
     </div>
 
-    <!-- 🌟 مودال (5): الطباعة 🌟 -->
+    <!-- 🌟 مودال (4): الطباعة 🌟 -->
     <div class="modal" id="printModal">
         <div class="modal-content" style="background: #e0e0e0; max-width: 1000px; padding: 20px;">
             <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; width: 100%;"></div>
@@ -432,7 +427,7 @@
             `}).join('');
         }
 
-        // ==== ملء القوائم المنسدلة (لإضافة تحاليل) ====
+        // ==== ملء القوائم المنسدلة (والإضافة الأوتوماتيك) ====
         function populateSelectors() {
             const singleSelect = document.getElementById('singleTestSelect');
             const profileSelect = document.getElementById('profileTestSelect');
@@ -440,11 +435,15 @@
             const singles = testsCatalog.filter(t => !isProfileTest(t)).sort((a,b) => a.name.localeCompare(b.name));
             const profiles = testsCatalog.filter(t => isProfileTest(t)).sort((a,b) => a.name.localeCompare(b.name));
 
-            singleSelect.innerHTML = `<option value="">-- إضافة تحليل فردي جديد --</option>` + 
+            singleSelect.innerHTML = `<option value="">-- اختر تحليلاً لإضافته للطلب --</option>` + 
                 singles.map(t => `<option value="${t.code}">${t.name} (${t.code})</option>`).join('');
                 
-            profileSelect.innerHTML = `<option value="">-- إضافة بروفايل جديد --</option>` + 
+            profileSelect.innerHTML = `<option value="">-- اختر بروفايل لإضافته للطلب --</option>` + 
                 profiles.map(t => `<option value="${t.code}">${t.name} (${t.code})</option>`).join('');
+
+            // الإضافة الفورية بمجرد الاختيار من القائمة
+            singleSelect.onchange = () => { if(singleSelect.value) addTestFromSelect('single'); };
+            profileSelect.onchange = () => { if(profileSelect.value) addTestFromSelect('profile'); };
         }
 
         // ==== اختيار المريض وعرض التحاليل المطلوبة ====
@@ -460,7 +459,7 @@
             btnPub.innerHTML = visitObj.is_published ? '🔄 تحديث النشر' : '🌐 نشر الزيارة';
         }
 
-        // ==== رسم التحاليل المطلوبة (زي البرنامج القديم) ====
+        // ==== رسم التحاليل المطلوبة ====
         function renderOrderedTests() {
             const singleContainer = document.getElementById('singleTestsContainer');
             const profileContainer = document.getElementById('profileTestsContainer');
@@ -513,14 +512,22 @@
 
         // ==== إضافة تحليل للحالة من القائمة المنسدلة ====
         async function addTestFromSelect(type) {
-            if (!selectedVisitId) return showToast('⚠️ اختر مريضاً أولاً', true);
+            if (!selectedVisitId) {
+                showToast('⚠️ اختر مريضاً أولاً', true);
+                document.getElementById(type === 'single' ? 'singleTestSelect' : 'profileTestSelect').value = '';
+                return;
+            }
             
             const selectEl = type === 'single' ? document.getElementById('singleTestSelect') : document.getElementById('profileTestSelect');
             const testCode = selectEl.value;
-            if (!testCode) return showToast('⚠️ اختر تحليلاً من القائمة أولاً', true);
+            if (!testCode) return;
 
             const exists = visitTests.find(v => v.visit_id === selectedVisitId && v.test_code === testCode);
-            if (exists) return showToast('⚠️ هذا التحليل موجود بالفعل في الطلب', true);
+            if (exists) {
+                showToast('⚠️ هذا التحليل موجود بالفعل في الطلب', true);
+                selectEl.value = '';
+                return;
+            }
 
             try {
                 const { data, error } = await _supabase.from('visit_tests').insert([{
@@ -536,22 +543,26 @@
                 
             } catch (err) {
                 showToast('❌ خطأ في الإضافة: ' + err.message, true);
+                selectEl.value = '';
             }
-        }
-    </script>    <script>
+        }    <script>
         // ==== دوال فتح شاشات تسجيل النتائج ====
         
         // فتح شاشة نتيجة فردية
         function openSingleResultModal(vtId, testCode) {
             const vt = visitTests.find(v => v.id == vtId);
-            const catalogItem = testsCatalog.find(c => c.code === testCode);
+            const catalogItem = testsCatalog.find(c => c.code === testCode) || { name: testCode, code: testCode, parameters: [] };
             const result = testResults.find(r => r.visit_test_id == vtId);
             const savedData = result ? result.results_data : {};
             
             const val = savedData['result']?.value || '';
             const p = getSmartParams(catalogItem)[0] || {};
             const unit = p.unit || catalogItem.unit || '-';
-            const range = getSmartRange(p, allVisits.find(v => v.visit_id === selectedVisitId).patient, null);
+            
+            // تأمين عشان لو المريض مش موجود
+            const visit = allVisits.find(v => v.visit_id === selectedVisitId);
+            const patient = visit ? visit.patient : { age: 0, age_type: 'Years', gender: 'male' };
+            const range = getSmartRange(p, patient, null);
 
             document.getElementById('singleModalTitle').innerText = `🧪 تسجيل نتيجة: ${catalogItem.name}`;
             const area = document.getElementById('singleResultArea');
@@ -577,11 +588,13 @@
         // فتح شاشة نتيجة بروفايل
         function openProfileResultModal(vtId, testCode) {
             const vt = visitTests.find(v => v.id == vtId);
-            const catalogItem = testsCatalog.find(c => c.code === testCode);
+            const catalogItem = testsCatalog.find(c => c.code === testCode) || { name: testCode, code: testCode, parameters: [] };
             const params = getSmartParams(catalogItem);
             const result = testResults.find(r => r.visit_test_id == vtId);
             const savedData = result ? result.results_data : {};
-            const patient = allVisits.find(v => v.visit_id === selectedVisitId).patient;
+            
+            const visit = allVisits.find(v => v.visit_id === selectedVisitId);
+            const patient = visit ? visit.patient : { age: 0, age_type: 'Years', gender: 'male' };
 
             document.getElementById('profileModalTitle').innerText = `🧬 تسجيل نتائج: ${catalogItem.name}`;
             const area = document.getElementById('profileResultsArea');
