@@ -154,21 +154,19 @@
             .btn-print-modal { display: none !important; }
             
             /* التعديل هنا: قللنا الطول عشان نمنع تكرار الصفحات */
-            .print-page {
-                display: block !important; /* شيلنا الفليكس عشان ميعملش كراش */
+                        .print-page {
+                display: block !important;
                 position: relative !important;
-                min-height: 285mm !important; /* قللنا الطول شوية */
+                height: 297mm !important; /* طول ورقة A4 بالظبط */
                 page-break-after: always;
-                break-after: page;
                 box-sizing: border-box;
-                padding: 10mm 10mm 25mm 10mm !important; /* مساحة تحت للفوتر */
+                padding: 10mm 10mm 30mm 10mm !important; /* مساحة 30مم تحت للفوتر */
                 background: white;
-                overflow: hidden; 
             }
             
             .print-footer {
-                position: absolute !important; /* تثبيت مطلق */
-                bottom: 5mm !important; /* قريب من تحت */
+                position: fixed !important; /* السر هنا: position fixed بيخلي الفوتر ثابت في كل صفحة */
+                bottom: 5mm !important;
                 left: 10mm !important;
                 right: 10mm !important;
                 margin-top: 0 !important;
