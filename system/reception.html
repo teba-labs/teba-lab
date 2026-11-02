@@ -54,7 +54,6 @@
             100% { transform: translateX(-100%); }
         }
 
-        /* إصلاح: التنسيق الصحيح للكمبيوتر (3 أعمدة) والموبايل (عمود واحد) */
         .main-container { display: grid; grid-template-columns: 340px 1fr 380px; gap: 15px; padding: 15px; flex-grow: 1; height: calc(100vh - 120px); overflow: hidden; min-width: 0; }
         
         .panel { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; border: 1px solid var(--border); overflow: hidden; min-width: 0; }
@@ -92,7 +91,6 @@
         .modal-content { background: var(--surface); padding: 25px; border-radius: var(--radius); width: 100%; max-width: 600px; max-height: 95vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.2); border-top: 5px solid var(--primary); position: relative;}
         .btn-close { background: #fee2e2; color: var(--danger); border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: inherit;}
 
-        /* إصلاح: الموبايل والتابلت (أقل من 1024) بيبقى عمود واحد */
         @media (max-width: 1024px) {
             body { overflow-y: auto; height: auto; }
             .main-container { display: flex; flex-direction: column; height: auto; overflow: visible; padding-bottom: 50px; gap: 20px; }
@@ -110,21 +108,11 @@
             .nav-btn { width: 100%; justify-content: center; }
         }
 
-        /* تنسيقات الطباعة (الفاتورة) - النسخة النهائية */
         @media print {
             @page { size: A4; margin: 0; }
             body * { visibility: hidden; }
             #print-section, #print-section * { visibility: visible; }
-            #print-section { 
-                position: absolute; 
-                left: 0; 
-                top: 0; 
-                width: 100%; 
-                display: block !important; 
-                background: white; 
-                padding: 15mm 15mm 15mm 15mm; 
-                color: #000;
-            }
+            #print-section { position: absolute; left: 0; top: 0; width: 100%; display: block !important; background: white; padding: 15mm; color: #000; }
             .print-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
             .print-table th, .print-table td { border: 1px solid #000; padding: 8px; text-align: right; }
             .print-table th { background: #eee; }
@@ -141,7 +129,7 @@
             </div>
         </div>
         <div class="nav-links">
-            <button class="nav-btn sync" id="syncBtn" onclick="syncOfflineData()">🔄 مزامنة</button>
+            <button class="nav-btn sync" id="syncBtn" onclick="processOutbox()">🔄 مزامنة</button>
             <button class="nav-btn whatsapp" onclick="sendSmartWhatsApp()" title="إرسال رسالة للمريض">💬 واتساب</button>
             <button class="nav-btn" onclick="window.location.href='home.html'">🏠 الرئيسية</button>
             <button class="nav-btn" onclick="openPatientList()">📋 قائمة المرضى</button>
@@ -248,14 +236,14 @@
                     <span id="netTotalAmount">0.00 ج.م</span>
                 </div>
                 <div class="payment-inputs">
-                    <input type="number" id="paidAmount" placeholder="المبلغ المدفوع" oninput="calculateChanges()" onkeydown="if(event.key === 'Enter') saveOrderToSupabase()">
+                    <input type="number" id="paidAmount" placeholder="المبلغ المدفوع" oninput="calculateChanges()" onkeydown="if(event.key === 'Enter') saveOrder()">
                 </div>
                 <div class="summary-row remain">
                     <span>الباقي:</span>
                     <span id="remainAmount">0.00 ج.م</span>
                 </div>
                 <div class="payment-actions">
-                    <button class="nav-btn" style="background: var(--primary); color: white; justify-content: center; font-size: 1.1rem; padding: 15px; grid-column: span 2;" id="saveBtn" onclick="saveOrderToSupabase()">💾 حفظ الطلب</button>
+                    <button class="nav-btn" style="background: var(--primary); color: white; justify-content: center; font-size: 1.1rem; padding: 15px; grid-column: span 2;" id="saveBtn" onclick="saveOrder()">💾 حفظ الطلب</button>
                     <button class="nav-btn" style="background: var(--accent); color: white; justify-content: center;" onclick="openInvoicePreview()">👁️ الفاتورة</button>
                     <button class="nav-btn" style="background: #cbd5e1; color: var(--text); justify-content: center;" onclick="resetForm()">🗑️ إلغاء</button>
                 </div>
@@ -334,7 +322,6 @@
         </div>
     </div>
 
-    <!-- قسم الطباعة (مخفي في الشاشة العادية) -->
     <div id="print-section" style="display: none;">
         <div class="print-header" style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
             <h2 id="printLabName" style="margin: 0;">معامل طيبة للتحاليل الطبية</h2>
@@ -374,7 +361,7 @@
         const supabaseKey = TEBA_CONFIG.supabase.key;
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-                // ==== تهيئة الداتابيز المحلية (النسخة الشاملة) ====
+        // ==== تهيئة الداتابيز المحلية (النسخة الشاملة) ====
         const db = new Dexie('TebaLabOfflineDB');
         db.version(3).stores({
             patients: 'id, name, phone',
@@ -382,7 +369,7 @@
             visit_tests: 'id, visit_id, test_code',
             test_results: 'id, visit_test_id',
             catalog: 'code, name, price, category',
-            outbox: '++id, table_name, action, payload, timestamp' // صندوق الصادر للمزامنة
+            outbox: '++id, table_name, action, payload, timestamp'
         });
 
         let masterTests = []; 
@@ -390,7 +377,98 @@
         let currentPatientId = null;
         let currentCategory = 'all';
 
-        // ==== دوال مساعدة ====
+        // ==========================================
+        // ⚙️ محرك المزامنة (Outbox)
+        // ==========================================
+        async function addToOutbox(table_name, action, payload) {
+            await db.outbox.add({ table_name, action, payload, timestamp: new Date().toISOString() });
+            document.getElementById('syncBtn').style.display = 'flex';
+            updateLiveTicker();
+        }
+
+        async function processOutbox() {
+            if (!navigator.onLine) return showToast('لا يوجد اتصال بالإنترنت!', true);
+            
+            const pending = await db.outbox.toArray();
+            if (pending.length === 0) {
+                document.getElementById('syncBtn').style.display = 'none';
+                return showToast('✅ لا توجد بيانات معلقة.');
+            }
+
+            const btn = document.getElementById('syncBtn');
+            btn.innerText = '⏳ جاري المزامنة...';
+            let successCount = 0;
+
+            for (let item of pending) {
+                try {
+                    if (item.table_name === 'orders') {
+                        // رفع طلب جديد بالكامل
+                        const order = item.payload;
+                        
+                        // 1. رفع المريض
+                        let patientId = order.patientId;
+                        if (!patientId || isNaN(patientId)) {
+                            const { data: pData, error: pErr } = await _supabase.from('patients').insert([{
+                                tenant_id: TEBA_CONFIG.tenant.id, name: order.patientName, phone: order.phone, age: order.age, age_type: order.age_type, gender: order.gender, doctor_name: order.doctor_name
+                            }]).select();
+                            if (pErr) throw pErr;
+                            patientId = pData[0].id;
+                        }
+
+                        // 2. رفع الزيارة
+                        const subTotal = order.cart.reduce((sum, i) => sum + i.price, 0);
+                        const discountAmount = (subTotal * (order.discountPercent / 100)) + order.discountFixed;
+                        
+                        const { data: vData, error: vErr } = await _supabase.from('visits').insert([{
+                            tenant_id: TEBA_CONFIG.tenant.id, patient_id: patientId, branch_id: order.branch_id, total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount, status: 'Pending'
+                        }]).select();
+                        if (vErr) throw vErr;
+
+                        // 3. رفع التحاليل
+                        const tests = order.cart.map(i => ({ 
+                            tenant_id: TEBA_CONFIG.tenant.id, visit_id: vData[0].visit_id, test_code: i.code, price_at_time: i.price 
+                        }));
+                        const { error: tErr } = await _supabase.from('visit_tests').insert(tests);
+                        if (tErr) throw tErr;
+
+                        // إشعار المعمل
+                        const bc = new BroadcastChannel('teba_sync');
+                        bc.postMessage('new_order');
+                    } 
+                    else if (item.table_name === 'patients' && item.action === 'UPDATE') {
+                        await _supabase.from('patients').update(item.payload).eq('id', item.payload.id).eq('tenant_id', TEBA_CONFIG.tenant.id);
+                    }
+                    else if (item.table_name === 'visits' && item.action === 'DELETE') {
+                        const visitId = item.payload.visit_id;
+                        const { data: vt } = await _supabase.from('visit_tests').select('id').eq('visit_id', visitId);
+                        if(vt && vt.length > 0) { await _supabase.from('test_results').delete().in('visit_test_id', vt.map(x => x.id)); }
+                        await _supabase.from('visit_tests').delete().eq('visit_id', visitId);
+                        await _supabase.from('visits').delete().eq('visit_id', visitId).eq('tenant_id', TEBA_CONFIG.tenant.id);
+                    }
+
+                    await db.outbox.delete(item.id);
+                    successCount++;
+                } catch (e) {
+                    console.error("Outbox Sync Error:", e);
+                }
+            }
+
+            if (successCount > 0) showToast(`✅ تمت مزامنة ${successCount} عملية!`);
+            
+            if (await db.outbox.count() === 0) btn.style.display = 'none';
+            else btn.innerText = '🔄 مزامنة البيانات';
+            
+            updateLiveTicker(); 
+            loadRecentPatients();
+        }
+
+        // مراقبة حالة الاتصال
+        window.addEventListener('online', () => { processOutbox(); updateLiveTicker(); });
+        window.addEventListener('offline', updateLiveTicker);
+
+        // ==========================================
+        // دوال مساعدة
+        // ==========================================
         function logout() {
             _supabase.auth.signOut().then(() => {
                 localStorage.removeItem('teba_tenant_id');
@@ -424,9 +502,6 @@
             setTimeout(() => { toast.style.display = 'none'; }, 4000);
         }
 
-        // ==========================================
-        // 🆔 توليد رقم زيارة وتاريخ
-        // ==========================================
         function generateVisitPreview() {
             const dateStr = new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
             document.getElementById('displayVisitDate').innerText = dateStr;
@@ -449,45 +524,61 @@
             showToast('تم تجهيز استمارة مريض جديد');
         }
 
-        // ==========================================
-        // 📋 آخر 5 حالات وآخر حالة مسجلة
-        // ==========================================
         async function loadRecentPatients() {
             const container = document.getElementById('recentPatientsList');
-            if(!navigator.onLine) { container.innerHTML = '<div style="color:red; text-align:center;">وضع أوفلاين: لا يمكن جلب الحالات</div>'; return; }
             
-            const { data, error } = await _supabase.from('visits')
-                .select(`visit_id, visit_date, patients (name)`)
-                .eq('tenant_id', TEBA_CONFIG.tenant.id)
-                .order('visit_id', {ascending: false})
-                .limit(5);
+            // 1. القراءة من السحابة لو متصل
+            if(navigator.onLine) {
+                const { data, error } = await _supabase.from('visits')
+                    .select(`visit_id, visit_date, patients (id, name, phone, doctor_name, age, age_type, gender)`)
+                    .eq('tenant_id', TEBA_CONFIG.tenant.id)
+                    .order('visit_id', {ascending: false})
+                    .limit(5);
 
-            if(error || !data || data.length === 0) {
+                if(!error && data && data.length > 0) {
+                    // تحديث الداتابيز المحلية بالزيارات الجديدة
+                    for (let v of data) {
+                        if(v.patients) {
+                            await db.patients.put({ ...v.patients, id: v.patients.id });
+                        }
+                        await db.visits.put({ visit_id: v.visit_id, visit_date: v.visit_date, patient_id: v.patients.id });
+                    }
+                }
+            }
+
+            // 2. العرض من الداتابيز المحلية (سواء متصل أو أوفلاين)
+            const localVisits = await db.visits.orderBy('visit_id').reverse().limit(5).toArray();
+            
+            if(localVisits.length === 0) {
                 container.innerHTML = '<div style="text-align:center; color:#64748b;">لا توجد حالات مسجلة مؤخراً</div>';
                 return;
             }
 
-            container.innerHTML = data.map(v => `
-                <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #cbd5e1; align-items:center;">
-                    <div>
-                        <span style="font-weight:bold; color:var(--primary);">${v.visit_id}</span> - 
-                        <span>${v.patients ? v.patients.name : 'غير معروف'}</span>
-                    </div>
-                    <button onclick="loadPatientToForm(${v.visit_id})" style="background:var(--surface); border:1px solid var(--border); padding:2px 8px; border-radius:4px; cursor:pointer; font-size:0.75rem;">عرض</button>
-                </div>
-            `).join('');
+            let html = '';
+            for (let v of localVisits) {
+                const p = await db.patients.get(v.patient_id);
+                if(p) {
+                    html += `
+                    <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #cbd5e1; align-items:center;">
+                        <div>
+                            <span style="font-weight:bold; color:var(--primary);">${v.visit_id}</span> - 
+                            <span>${p.name}</span>
+                        </div>
+                        <button onclick="loadPatientToForm(${v.visit_id})" style="background:var(--surface); border:1px solid var(--border); padding:2px 8px; border-radius:4px; cursor:pointer; font-size:0.75rem;">عرض</button>
+                    </div>`;
+                }
+            }
+            container.innerHTML = html;
         }
 
         async function loadPatientToForm(visitId) {
-            const { data: vData, error } = await _supabase.from('visits')
-                .select(`visit_id, patient_id, patients (*)`)
-                .eq('visit_id', visitId)
-                .eq('tenant_id', TEBA_CONFIG.tenant.id)
-                .single();
+            // جلب الزيارة من الداتابيز المحلية الأول
+            const vData = await db.visits.get(visitId);
+            if(!vData) return showToast('الزيارة غير موجودة محلياً', true);
 
-            if (error || !vData) return showToast('خطأ في تحميل بيانات المريض', true);
+            const p = await db.patients.get(vData.patient_id);
+            if(!p) return showToast('بيانات المريض غير موجودة', true);
 
-            const p = vData.patients;
             currentPatientId = p.id;
             document.getElementById('pName').value = p.name || '';
             document.getElementById('pPhone').value = p.phone || '';
@@ -496,77 +587,49 @@
             document.getElementById('pAgeType').value = p.age_type || 'Years';
             document.getElementById('pGender').value = p.gender || 'male';
             document.getElementById('displayVisitId').innerText = vData.visit_id;
-            document.getElementById('displayVisitDate').innerText = new Date().toLocaleDateString('ar-EG');
+            document.getElementById('displayVisitDate').innerText = vData.visit_date ? new Date(vData.visit_date).toLocaleDateString('ar-EG') : new Date().toLocaleDateString('ar-EG');
             document.getElementById('btnPatientHistory').style.display = 'block';
             
-            const { data: tests } = await _supabase.from('visit_tests').select('*').eq('visit_id', visitId);
+            // جلب التحاليل من الداتابيز المحلية
+            const tests = await db.visit_tests.where('visit_id').equals(visitId).toArray();
             cart = []; 
-            if(tests) {
-                tests.forEach(t => {
-                    const catTest = masterTests.find(m => m.code === t.test_code);
-                    if(catTest) cart.push(catTest);
-                });
-            }
+            tests.forEach(t => {
+                const catTest = masterTests.find(m => m.code === t.test_code);
+                if(catTest) cart.push(catTest);
+            });
+            
             renderCart(); calculateChanges();
             showToast('تم عرض بيانات الحالة');
         }
 
         async function loadLastPatient() {
-            if(!navigator.onLine) return;
-            const { data, error } = await _supabase.from('visits')
-                .select('visit_id')
-                .eq('tenant_id', TEBA_CONFIG.tenant.id)
-                .order('visit_id', {ascending: false})
-                .limit(1);
-
-            if(data && data.length > 0) {
-                await loadPatientToForm(data[0].visit_id);
+            const localVisits = await db.visits.orderBy('visit_id').reverse().limit(1).toArray();
+            if(localVisits.length > 0) {
+                await loadPatientToForm(localVisits[0].visit_id);
             } else {
                 startNewPatient();
             }
         }
 
-        // ==========================================
-        // 📢 التيكر اللحظي
-        // ==========================================
         async function updateLiveTicker() {
             const ticker = document.getElementById('liveTickerContent');
             const isOnline = navigator.onLine;
+            const pendingOutbox = await db.outbox.count();
             
-            let casesCount = 0, pendingCount = 0;
-            
-            if (isOnline) {
-                try {
-                    const today = new Date(); today.setHours(0,0,0,0);
-                    const { count: cCount } = await _supabase.from('visits').select('*', { count: 'exact', head: true }).eq('tenant_id', TEBA_CONFIG.tenant.id).gte('visit_date', today.toISOString());
-                    casesCount = cCount || 0;
-
-                    const { data: vt } = await _supabase.from('visit_tests').select('id').eq('tenant_id', TEBA_CONFIG.tenant.id);
-                    const { data: res } = await _supabase.from('test_results').select('visit_test_id').eq('tenant_id', TEBA_CONFIG.tenant.id);
-                    const resIds = new Set((res||[]).map(r => r.visit_test_id));
-                    pendingCount = (vt||[]).filter(t => !resIds.has(t.id)).length;
-                } catch(e) { console.warn("Ticker Error", e); }
-            }
-
             const statusHtml = isOnline 
                 ? `<span class="dot online"></span> متصل بالسحابة` 
                 : `<span class="dot offline"></span> غير متصل (وضع الأوفلاين)`;
 
             ticker.innerHTML = `
                 <div class="ticker-item">${statusHtml}</div>
-                <div class="ticker-item">🏥 حالات اليوم: ${casesCount}</div>
-                <div class="ticker-item">⏳ تحاليل قيد التشغيل: ${pendingCount}</div>
+                <div class="ticker-item">⏳ عمليات معلقة للمزامنة: ${pendingOutbox}</div>
                 <div class="ticker-item">🕒 ${new Date().toLocaleTimeString('ar-EG')}</div>
             `;
+
+            if(pendingOutbox > 0) document.getElementById('syncBtn').style.display = 'flex';
+            else document.getElementById('syncBtn').style.display = 'none';
         }
 
-        window.addEventListener('online', updateLiveTicker);
-        window.addEventListener('offline', updateLiveTicker);
-        setInterval(updateLiveTicker, 60000);
-
-        // ==========================================
-        // 💬 الواتساب
-        // ==========================================
         function sendSmartWhatsApp() {
             const name = document.getElementById('pName').value.trim();
             if (!name) return showToast('⚠️ يرجى إدخال اسم المريض أولاً', true);
@@ -582,15 +645,13 @@
         }
 
         // ==========================================
-        // 📦 الكتالوج والسلة
+        // الكتالوج والسلة
         // ==========================================
         async function fetchCatalogFromCloud() {
             if (navigator.onLine) {
                 const { data, error } = await _supabase.from('tests_catalog').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id);
                 if (!error && data && data.length > 0) {
-                    masterTests = data.map(t => ({
-                        id: t.id, code: t.code, name: t.name, price: t.price, category: t.category || 'أخرى'
-                    }));
+                    masterTests = data.map(t => ({ id: t.id, code: t.code, name: t.name, price: t.price, category: t.category || 'أخرى' }));
                     await db.catalog.clear();
                     await db.catalog.bulkPut(masterTests);
                     renderCategories(); renderCatalog();
@@ -690,9 +751,9 @@
         }
 
         // ==========================================
-        // 💾 الحفظ 
+        // الحفظ (معدل ليدعم الأوفلاين والمزامنة)
         // ==========================================
-        async function saveOrderToSupabase() {
+        async function saveOrder() {
             const pName = document.getElementById('pName').value.trim();
             if (!pName) return showToast('⚠️ الرجاء إدخال اسم المريض!', true);
             if (cart.length === 0) return showToast('⚠️ السلة فارغة!', true);
@@ -701,6 +762,7 @@
             btn.innerText = 'جاري الحفظ...'; btn.disabled = true;
 
             const orderData = {
+                patientId: currentPatientId,
                 patientName: pName,
                 phone: document.getElementById('pPhone').value,
                 age: parseInt(document.getElementById('pAge').value) || 0,
@@ -712,112 +774,131 @@
                 paid: parseFloat(document.getElementById('paidAmount').value) || 0,
                 discountPercent: parseFloat(document.getElementById('discountPercent').value) || 0,
                 discountFixed: parseFloat(document.getElementById('discountFixed').value) || 0,
-                cart: cart,
-                timestamp: new Date().toISOString()
+                cart: cart
             };
 
-            if (!navigator.onLine) {
-                await db.offline_orders.add(orderData);
-                document.getElementById('syncBtn').style.display = 'flex';
-                showToast('⚠️ النت مقطوع! تم الحفظ محلياً.', true);
-                startNewPatient();
-                btn.innerText = '💾 حفظ الطلب'; btn.disabled = false;
-                return;
+            // حفظ محلي فوراً (عشان لو النت قطع في نص الحفظ مفيش داتا تضيع)
+            const tempVisitId = Math.floor(Date.now() / 1000); // ID مؤقت للعرض
+            
+            let localPatientId = currentPatientId || Date.now();
+            await db.patients.put({
+                id: localPatientId, name: orderData.patientName, phone: orderData.phone, age: orderData.age, age_type: orderData.age_type, gender: orderData.gender, doctor_name: orderData.doctor_name
+            });
+            await db.visits.put({
+                visit_id: tempVisitId, patient_id: localPatientId, branch_id: orderData.branch_id, visit_date: new Date().toISOString(), is_published: false
+            });
+            
+            for (let item of cart) {
+                await db.visit_tests.put({
+                    id: Date.now() + Math.floor(Math.random() * 1000), visit_id: tempVisitId, test_code: item.code, price_at_time: item.price
+                });
             }
 
-            try {
-                let patientId = currentPatientId;
-                if (!patientId) {
-                    const { data: pData, error: pErr } = await _supabase.from('patients').insert([{
-                        tenant_id: TEBA_CONFIG.tenant.id,
-                        name: orderData.patientName, phone: orderData.phone, age: orderData.age, age_type: orderData.age_type, gender: orderData.gender, doctor_name: orderData.doctor_name
-                    }]).select();
-                    if (pErr) throw pErr;
-                    patientId = pData[0].id;
-                }
+            // إضافة العملية لصندوق الصادر
+            await addToOutbox('orders', 'INSERT', orderData);
 
-                const subTotal = cart.reduce((sum, item) => sum + item.price, 0);
-                const discountAmount = (subTotal * (orderData.discountPercent / 100)) + orderData.discountFixed;
-
-                const { data: vData, error: vErr } = await _supabase.from('visits').insert([{
-                    tenant_id: TEBA_CONFIG.tenant.id,
-                    patient_id: patientId, branch_id: orderData.branch_id, total_amount: orderData.netTotal, paid_amount: orderData.paid, discount: discountAmount, status: 'Pending'
-                }]).select();
-                if (vErr) throw vErr;
-
-                const tests = cart.map(i => ({ 
-                    tenant_id: TEBA_CONFIG.tenant.id, visit_id: vData[0].visit_id, test_code: i.code, price_at_time: i.price 
-                }));
-                const { error: tErr } = await _supabase.from('visit_tests').insert(tests);
-                if (tErr) throw tErr;
-
-                const bc = new BroadcastChannel('teba_sync');
-                bc.postMessage('new_order');
-
-                showToast('✅ تم حفظ الطلب بنجاح!');
-                
-                document.getElementById('displayVisitId').innerText = vData[0].visit_id;
-                await loadRecentPatients();
-                startNewPatient();
-
-            } catch (error) {
-                await db.offline_orders.add(orderData);
-                document.getElementById('syncBtn').style.display = 'flex';
-                showToast('❌ مشكلة في الاتصال. تم الحفظ محلياً بأمان.', true);
-                startNewPatient();
-            } finally {
-                btn.innerText = '💾 حفظ الطلب'; btn.disabled = false;
-            }
-        }
-
-        // ==== المزامنة ====
-        async function syncOfflineData() {
-            const orders = await db.offline_orders.toArray();
-            if (orders.length === 0) return showToast('✅ لا توجد بيانات معلقة.');
-            if (!navigator.onLine) return showToast('لا يوجد اتصال بالإنترنت!', true);
-
-            const btn = document.getElementById('syncBtn');
-            btn.innerText = '⏳ جاري المزامنة...';
-            let successCount = 0;
-            for (let order of orders) {
-                try {
-                    const { data: pData, error: pErr } = await _supabase.from('patients').insert([{
-                        tenant_id: TEBA_CONFIG.tenant.id, name: order.patientName, phone: order.phone, age: order.age, age_type: order.age_type, gender: order.gender, doctor_name: order.doctor_name
-                    }]).select();
-                    if (pErr) throw pErr;
-
-                    const subTotal = order.cart.reduce((sum, item) => sum + item.price, 0);
-                    const discountAmount = (subTotal * (order.discountPercent / 100)) + order.discountFixed;
-
-                    const { data: vData, error: vErr } = await _supabase.from('visits').insert([{
-                        tenant_id: TEBA_CONFIG.tenant.id, patient_id: pData[0].id, branch_id: order.branch_id, total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount, status: 'Pending'
-                    }]).select();
-                    if (vErr) throw vErr;
-
-                    const tests = order.cart.map(i => ({ 
-                        tenant_id: TEBA_CONFIG.tenant.id, visit_id: vData[0].visit_id, test_code: i.code, price_at_time: i.price 
-                    }));
-                    const { error: tErr } = await _supabase.from('visit_tests').insert(tests);
-                    if (tErr) throw tErr;
-
-                    await db.offline_orders.delete(order.id);
-                    successCount++;
-                } catch(e) { console.error("Sync error for order", order.id, e); }
-            }
-            if (successCount > 0) showToast(`✅ تم مزامنة ${successCount} طلب!`);
-            if (await db.offline_orders.count() === 0) btn.style.display = 'none';
-            else btn.innerText = '🔄 مزامنة البيانات';
-            updateLiveTicker(); loadRecentPatients();
-        }
-
-        // ==== النوافذ والطباعة ====
-        function resetForm() {
+            showToast('✅ تم حفظ الطلب محلياً! جاري المزامنة...');
+            document.getElementById('displayVisitId').innerText = tempVisitId;
+            
+            await loadRecentPatients();
             startNewPatient();
-            document.getElementById('paidAmount').value = '';
-            document.getElementById('discountPercent').value = '';
-            document.getElementById('discountFixed').value = '';
-            calculateChanges();
+            
+            btn.innerText = '💾 حفظ الطلب'; btn.disabled = false;
+            
+            // لو النت شغال، ابدأ المزامنة فوراً
+            if (navigator.onLine) processOutbox();
         }
+
+        // ==========================================
+        // التعديل والحذف (معدل ليدعم الأوفلاين)
+        // ==========================================
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        async function openPatientList() {
+            const tbody = document.getElementById('patientListBody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">جاري التحميل...</td></tr>';
+            document.getElementById('patientListModal').style.display = 'flex';
+
+            // قراءة من المحلي (أسرع وأضمن)
+            const visits = await db.visits.toArray();
+            let html = '';
+            for (let v of visits) {
+                const p = await db.patients.get(v.patient_id);
+                const branchName = v.branch_id === 2 ? 'بهتيم' : 'الجعافرة';
+                html += `
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:10px;">${v.visit_id}</td>
+                    <td style="padding:10px;">${p ? p.name : 'غير معروف'}</td>
+                    <td style="padding:10px;">${branchName}</td>
+                    <td style="padding:10px;">---</td>
+                    <td style="padding:10px; display:flex; gap:5px;">
+                        <button style="padding: 5px 10px; background:var(--danger); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="deleteVisit(${v.visit_id})">حذف</button>
+                        <button style="padding: 5px 10px; background:var(--primary); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="loadPatientToForm(${v.visit_id}); closeModal('patientListModal');">فتح</button>
+                    </td>
+                </tr>`;
+            }
+            tbody.innerHTML = html || '<tr><td colspan="5" style="text-align:center;">لا توجد بيانات</td></tr>';
+        }
+
+        async function deleteVisit(visitId) {
+            if(!confirm('هل أنت متأكد من حذف هذه الزيارة نهائياً؟')) return;
+            
+            // حذف محلي
+            await db.visits.delete(visitId);
+            await db.visit_tests.where('visit_id').equals(visitId).delete();
+            
+            // إضافة لصندوق الصادر
+            await addToOutbox('visits', 'DELETE', { visit_id: visitId });
+            
+            showToast('🗑️ تم الحذف محلياً! جاري المزامنة...'); 
+            openPatientList(); 
+            loadRecentPatients();
+            if (navigator.onLine) processOutbox();
+        }
+
+        async function searchPatient() {
+            const query = document.getElementById('patientSearch').value.trim();
+            if(!query) return;
+            
+            const patients = await db.patients.filter(p => p.name.includes(query) || (p.phone && p.phone.includes(query))).toArray();
+            
+            if(patients.length > 0) {
+                const p = patients[0];
+                currentPatientId = p.id;
+                document.getElementById('pName').value = p.name; 
+                document.getElementById('pPhone').value = p.phone || ''; 
+                document.getElementById('pAge').value = p.age || 30; 
+                document.getElementById('pAgeType').value = p.age_type || 'Years'; 
+                document.getElementById('pGender').value = p.gender || 'male'; 
+                document.getElementById('pDoctor').value = p.doctor_name || '';
+                document.getElementById('btnPatientHistory').style.display = 'block';
+                showToast('✅ تم العثور على المريض');
+            } else { 
+                showToast('⚠️ لم يتم العثور على مريض', true); 
+                document.getElementById('btnPatientHistory').style.display = 'none';
+                currentPatientId = null;
+            }
+        }
+
+        async function openPatientHistory() {
+            if(!currentPatientId) return;
+            const pName = document.getElementById('pName').value;
+            document.getElementById('historyPatientName').innerText = pName;
+            const tbody = document.getElementById('patientHistoryBody');
+            
+            const visits = await db.visits.where('patient_id').equals(currentPatientId).toArray();
+            let html = '';
+            for(let v of visits) {
+                html += `<tr style="border-bottom:1px solid var(--border);"><td style="padding:10px;">${v.visit_id}</td><td style="padding:10px;">${v.visit_date || '---'}</td><td style="padding:10px;">---</td><td style="padding:10px;">---</td><td style="padding:10px;"><button style="padding: 5px 10px; background:var(--primary); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="window.location.href='lab.html?visit_id=${v.visit_id}'">فتح</button></td></tr>`;
+            }
+            tbody.innerHTML = html || '<tr><td colspan="5" style="text-align:center; padding:20px;">لا يوجد زيارات سابقة</td></tr>';
+            document.getElementById('patientHistoryModal').style.display = 'flex';
+        }
+
+        // ==========================================
+        // الفاتورة والطباعة
+        // ==========================================
+        function resetForm() { startNewPatient(); document.getElementById('paidAmount').value = ''; document.getElementById('discountPercent').value = ''; document.getElementById('discountFixed').value = ''; calculateChanges(); }
 
         function openInvoicePreview() {
             if(cart.length === 0) return showToast('⚠️ السلة فارغة!', true);
@@ -854,94 +935,9 @@
             }, 100);
         }
 
-        // ==== قائمة المرضى ====
-        async function openPatientList() {
-            const tbody = document.getElementById('patientListBody');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">جاري التحميل...</td></tr>';
-            document.getElementById('patientListModal').style.display = 'flex';
-
-            const { data, error } = await _supabase.from('visits')
-                .select(`visit_id, total_amount, paid_amount, status, visit_date, patient_id, branch_id, patients (id, name, phone, doctor_name)`)
-                .eq('tenant_id', TEBA_CONFIG.tenant.id)
-                .order('visit_id', {ascending: false});
-            
-            if(error) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">حدث خطأ: ${error.message}</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = data.map(v => {
-                const p = v.patients || {};
-                const branchName = v.branch_id === 2 ? 'بهتيم' : 'الجعافرة';
-                return `
-                <tr style="border-bottom:1px solid var(--border);">
-                    <td style="padding:10px;">${v.visit_id}</td>
-                    <td style="padding:10px;">${p.name || 'غير معروف'}</td>
-                    <td style="padding:10px;">${branchName}</td>
-                    <td style="padding:10px;">${parseFloat(v.total_amount || 0).toFixed(2)}</td>
-                    <td style="padding:10px; display:flex; gap:5px;">
-                        <button style="padding: 5px 10px; background:var(--danger); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="deleteVisit(${v.visit_id})">حذف</button>
-                        <button style="padding: 5px 10px; background:var(--primary); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="loadPatientToForm(${v.visit_id}); closeModal('patientListModal');">فتح</button>
-                    </td>
-                </tr>
-            `}).join('');
-        }
-
-        async function openPatientHistory() {
-            if(!currentPatientId) return;
-            const pName = document.getElementById('pName').value;
-            document.getElementById('historyPatientName').innerText = pName;
-            const tbody = document.getElementById('patientHistoryBody');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">جاري التحميل...</td></tr>';
-            document.getElementById('patientHistoryModal').style.display = 'flex';
-
-            const { data: visits, error } = await _supabase.from('visits').select('visit_id, visit_date, total_amount, paid_amount').eq('patient_id', currentPatientId).eq('tenant_id', TEBA_CONFIG.tenant.id).order('visit_id', {ascending: false});
-            if(error) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">خطأ: ${error.message}</td></tr>`; return; }
-            if(visits.length === 0) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px;">لا يوجد زيارات سابقة</td></tr>`; return; }
-
-            const visitIds = visits.map(v => v.visit_id);
-            const { data: vt } = await _supabase.from('visit_tests').select('visit_id, test_code').in('visit_id', visitIds);
-            
-            tbody.innerHTML = visits.map(v => {
-                const testsForVisit = vt.filter(t => t.visit_id === v.visit_id).map(t => t.test_code).join(', ');
-                return `<tr style="border-bottom:1px solid var(--border);"><td style="padding:10px;">${v.visit_id}</td><td style="padding:10px;">${v.visit_date || '---'}</td><td style="padding:10px; font-size:0.8rem;">${testsForVisit || 'لا يوجد'}</td><td style="padding:10px;">${parseFloat(v.total_amount || 0).toFixed(2)}</td><td style="padding:10px;"><button style="padding: 5px 10px; background:var(--primary); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="window.location.href='lab.html?visit_id=${v.visit_id}'">فتح</button></td></tr>`;
-            }).join('');
-        }
-
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-        async function deleteVisit(visitId) {
-            if(!confirm('هل أنت متأكد من حذف هذه الزيارة نهائياً؟')) return;
-            try {
-                const { data: vtData } = await _supabase.from('visit_tests').select('id').eq('visit_id', visitId);
-                if (vtData && vtData.length > 0) { const vtIds = vtData.map(v => v.id); await _supabase.from('test_results').delete().in('visit_test_id', vtIds); }
-                await _supabase.from('visit_tests').delete().eq('visit_id', visitId);
-                const { error } = await _supabase.from('visits').delete().eq('visit_id', visitId).eq('tenant_id', TEBA_CONFIG.tenant.id);
-                if(error) throw error;
-                showToast('🗑️ تم حذف الزيارة بنجاح'); openPatientList(); loadRecentPatients();
-            } catch(err) { showToast('❌ حدث خطأ: ' + err.message, true); }
-        }
-
-        async function searchPatient() {
-            const query = document.getElementById('patientSearch').value.trim();
-            if(!query) return;
-            const { data, error } = await _supabase.from('patients').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id).or(`name.ilike.%${query}%,phone.ilike.%${query}%`).order('id', {ascending: false});
-            if(error) return console.error(error);
-            
-            if(data && data.length > 0) {
-                const p = data[0];
-                currentPatientId = p.id;
-                document.getElementById('pName').value = p.name; document.getElementById('pPhone').value = p.phone || ''; document.getElementById('pAge').value = p.age || 30; document.getElementById('pAgeType').value = p.age_type || 'Years'; document.getElementById('pGender').value = p.gender || 'male'; document.getElementById('pDoctor').value = p.doctor_name || '';
-                document.getElementById('btnPatientHistory').style.display = 'block';
-                showToast('✅ تم العثور على المريض');
-            } else { 
-                showToast('⚠️ لم يتم العثور على مريض', true); 
-                document.getElementById('btnPatientHistory').style.display = 'none';
-                currentPatientId = null;
-            }
-        }
-
-        // ==== التشغيل عند فتح الصفحة ====
+        // ==========================================
+        // التشغيل عند فتح الصفحة
+        // ==========================================
         window.onload = async () => { 
             await fetchCatalogFromCloud(); 
             renderCart(); 
@@ -950,10 +946,7 @@
             await loadLastPatient();
             await loadRecentPatients();
 
-            if (await db.offline_orders.count() > 0) {
-                document.getElementById('syncBtn').style.display = 'flex';
-                showToast('⚠️ يوجد طلبات محفوظة محلياً لم تتم مزامنتها بعد.', true);
-            }
+            if (navigator.onLine) processOutbox();
         };
     </script>
 
