@@ -1,8 +1,8 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v75 - Advanced Offline & Routing Fix)
+   TEBA LABS - Service Worker (v80 - Advanced Offline & Routing Fix)
    ===================================================== */
 
-const CACHE_VERSION = 'v75'; 
+const CACHE_VERSION = 'v80'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
@@ -10,7 +10,8 @@ const IMG_CACHE     = `teba-img-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
   './', './index.html', 
-  './system/home.html', './system/reception.html', './system/lab.html', './system/tests_manage.html',
+  './system/home.html', './system/reception.html', './system/lab.html', './system/tests_manage.html', 
+  './system/lab.css', './system/lab.js',
   './dashboard/admin.html', 
   './styles.css', './admin.css', 
   './data.js', './app.js', './admin.js', 
@@ -40,10 +41,10 @@ function trimCache(name, max) {
 }
 
 self.addEventListener('install', event => {
-  self.skipWaiting(); // إجبار المتصفح على تحديث السيرفيس وركر فوراً
+  self.skipWaiting();
   event.waitUntil((async () => {
     const sc = await caches.open(STATIC_CACHE);
-   await Promise.all(PRECACHE_ASSETS.map(url => sc.add(url).catch(e => console.warn('Failed to cache:', url))));
+    await Promise.all(PRECACHE_ASSETS.map(url => sc.add(url).catch(e => console.warn('Failed to cache:', url))));
     const cc = await caches.open(CDN_CACHE);
     await Promise.all(PRECACHE_CDN.map(url => cc.add(url).catch(e => console.warn(e))));
   })());
@@ -51,49 +52,42 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
-    // مسح كل الكاش القديم اللي مش تابع للنسخة الجديدة
     const valid = [STATIC_CACHE, RUNTIME_CACHE, CDN_CACHE, IMG_CACHE];
     const keys = await caches.keys();
     await Promise.all(keys.filter(k => !valid.includes(k)).map(k => caches.delete(k)));
-    await self.clients.claim(); // السيطرة على كل الصفحات المفتوحة فوراً
+    await self.clients.claim();
   })());
 });
 
 self.addEventListener('fetch', event => {
   const { request } = event;
-  if (request.method !== 'GET') return; // لا تخزن طلبات الـ POST
+  if (request.method !== 'GET') return;
   
   const url = new URL(request.url);
 
-  // 1. استراتيجية فتح الصفحات (Navigation) - تم التعديل لـ Network First
   if (request.mode === 'navigate') {
     event.respondWith(networkFirstNavigation(request));
     return;
   }
   
-  // 2. ملفات الـ CDN الخارجية
   if (CDN_ORIGINS.some(o => url.origin === o)) {
     event.respondWith(cacheFirstWithUpdate(request, CDN_CACHE, MAX_CDN));
     return;
   }
   
-  // 3. الصور الخارجية
   if (IMG_ORIGINS.some(o => url.origin === o)) {
     event.respondWith(cacheFirstWithUpdate(request, IMG_CACHE, MAX_IMG));
     return;
   }
   
-  // 4. الملفات المحلية (JS, CSS, Images)
   if (url.origin === self.location.origin) {
     event.respondWith(cacheFirstWithUpdate(request, STATIC_CACHE, MAX_RUNTIME));
     return;
   }
   
-  // 5. أي طلبات تانية
   event.respondWith(runtimeFallback(request));
 });
 
-// استراتيجية الصفحات: الشبكة أولاً (لضمان تحديث فوري)، ثم الكاش (لو النت قطع)
 async function networkFirstNavigation(request) {
   try {
     const response = await fetch(request);
@@ -103,16 +97,12 @@ async function networkFirstNavigation(request) {
     }
     return response;
   } catch (err) {
-    // لو النت قطع، هات الصفحة من الكاش
     const cached = await caches.match(request, { ignoreSearch: true });
     if (cached) return cached;
-    
-    // لو مفيش كاش للصفحة دي، ارجع لصفحة الهوم
     return caches.match('./system/home.html').then(fallback => fallback || new Response('Offline', { status: 503 }));
   }
 }
 
-// استراتيجية الكاش أولاً مع تحديث في الخلفية (للملفات الثابتة زي الصور والستايلات)
 async function cacheFirstWithUpdate(request, cacheName, max) {
   const cached = await caches.match(request);
   if (cached) {

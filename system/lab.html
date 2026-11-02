@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>المعمل الذكي | معامل طيبة</title>
     
-    <!-- PWA Tags -->
     <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#0a6847">
 
@@ -18,8 +17,7 @@
     <script src="config.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
-    <!-- ربط ملف التصميم -->
-    <link rel="stylesheet" href="lab.css">
+    <link rel="stylesheet" href="lab.css?v=80">
 </head>
 <body>
 
@@ -39,13 +37,11 @@
     <audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3" preload="auto"></audio>
 
     <div class="main-grid">
-        <!-- 1. شاشة طابور المرضى (اليمين) -->
         <div class="panel">
             <div class="panel-header">طابور المرضى (آخر 100 زيارة)</div>
             <div class="patient-list" id="patientList"><div class="empty-msg">جاري التحميل...</div></div>
         </div>
         
-        <!-- 2. شاشة التحاليل الفردية (الوسط) -->
         <div class="panel">
             <div class="panel-header">التحاليل الفردية (Single)</div>
             <div class="selector-area">
@@ -58,7 +54,6 @@
             </div>
         </div>
         
-        <!-- 3. شاشة التحاليل المركبة (الشمال) -->
         <div class="panel">
             <div class="panel-header">التحاليل المركبة (Profiles)</div>
             <div class="selector-area">
@@ -72,39 +67,32 @@
         </div>
     </div>
 
-    <!-- 🌟 مودال (1): تسجيل نتيجة تحليل فردي 🌟 -->
     <div class="modal" id="singleResultModal">
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
                 <h3 id="singleModalTitle">🧪 تسجيل نتيجة</h3>
                 <button class="btn-del-test" style="padding:5px 15px;" onclick="document.getElementById('singleResultModal').style.display='none'">✕ إغلاق</button>
             </div>
-            <div class="modal-body" id="singleResultArea">
-                <!-- سيتم توليد حقول الإدخال هنا -->
-            </div>
+            <div class="modal-body" id="singleResultArea"></div>
             <div style="padding: 15px; border-top: 1px solid var(--border); background: #f8fafc; text-align: center;">
                 <button class="btn-save-test" style="max-width: 300px; margin: 0 auto; display: block;" id="btnSaveSingleResult">💾 حفظ النتيجة</button>
             </div>
         </div>
     </div>
 
-    <!-- 🌟 مودال (2): تسجيل نتائج بروفايل 🌟 -->
     <div class="modal" id="profileResultModal">
         <div class="modal-content" style="max-width: 700px;">
             <div class="modal-header">
                 <h3 id="profileModalTitle">🧬 تسجيل نتائج البروفايل</h3>
                 <button class="btn-del-test" style="padding:5px 15px;" onclick="document.getElementById('profileResultModal').style.display='none'">✕ إغلاق</button>
             </div>
-            <div class="modal-body" id="profileResultsArea">
-                <!-- سيتم توليد حقول الإدخال هنا -->
-            </div>
+            <div class="modal-body" id="profileResultsArea"></div>
             <div style="padding: 15px; border-top: 1px solid var(--border); background: #f8fafc; text-align: center;">
                 <button class="btn-save-test" style="max-width: 300px; margin: 0 auto; display: block;" id="btnSaveProfileResult">💾 حفظ نتائج البروفايل</button>
             </div>
         </div>
     </div>
 
-    <!-- 🌟 مودال (3): تعديل بيانات المريض 🌟 -->
     <div class="modal" id="editPatientModal">
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
@@ -131,7 +119,6 @@
         </div>
     </div>
 
-    <!-- 🌟 مودال (4): الطباعة 🌟 -->
     <div class="modal" id="printModal">
         <div class="modal-content" style="background: #e0e0e0; max-width: 1000px; padding: 20px;">
             <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; width: 100%;"></div>
@@ -139,10 +126,7 @@
         </div>
     </div>
 
-    <!-- ربط ملف الجافاسكريبت -->
-    <script src="lab.js"></script>
-
-    <!-- سكريبت تفعيل الـ PWA -->
+    <script src="lab.js?v=80"></script>
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
@@ -152,6 +136,5 @@
         });
       }
     </script>
-
 </body>
 </html>

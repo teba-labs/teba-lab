@@ -118,8 +118,7 @@
             .print-table th { background: #eee; }
         }
     </style>
-</head>
-<body>
+</head><body>
 
     <header>
         <div class="brand">
@@ -360,7 +359,7 @@
         const supabaseKey = TEBA_CONFIG.supabase.key;
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // ==== تهيئة الداتابيز المحلية ====
+        // ==== تهيئة الداتابيز المحلية (النسخة الشاملة) ====
         const db = new Dexie('TebaLabOfflineDB');
         db.version(3).stores({
             patients: 'id, name, phone',
@@ -405,27 +404,42 @@
                         if (item.table_name === 'orders') {
                             const order = item.payload;
                             
-                            // إصلاح: التحقق من نوع الـ ID (لو رقم يبقى مريض جديد، لو UUID يبقى قديم)
+                            // إصلاح DataError: بنستخدم Upsert للمريض عشان نمنع التكرار أو الخطأ
                             let patientId = order.patientId;
-                            if (!patientId || typeof patientId === 'number') {
-                                const { data: pData, error: pErr } = await _supabase.from('patients').insert([{
-                                    tenant_id: TEBA_CONFIG.tenant.id, name: order.patientName, phone: order.phone, age: order.age, age_type: order.age_type, gender: order.gender, doctor_name: order.doctor_name
-                                }]).select();
-                                if (pErr) throw pErr;
-                                patientId = pData[0].id;
-                            }
+                            const { error: pErr } = await _supabase.from('patients').upsert([{
+                                id: patientId, 
+                                tenant_id: TEBA_CONFIG.tenant.id, 
+                                name: order.patientName, 
+                                phone: order.phone, 
+                                age: order.age, 
+                                age_type: order.age_type, 
+                                gender: order.gender, 
+                                doctor_name: order.doctor_name
+                            }]);
+                            if (pErr) throw pErr;
 
                             const subTotal = order.cart.reduce((sum, i) => sum + i.price, 0);
                             const discountAmount = (subTotal * (order.discountPercent / 100)) + order.discountFixed;
                             
                             const { data: vData, error: vErr } = await _supabase.from('visits').insert([{
-                                tenant_id: TEBA_CONFIG.tenant.id, patient_id: patientId, branch_id: order.branch_id, total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount, status: 'Pending'
+                                tenant_id: TEBA_CONFIG.tenant.id, 
+                                patient_id: patientId, 
+                                branch_id: order.branch_id, 
+                                total_amount: order.netTotal, 
+                                paid_amount: order.paid, 
+                                discount: discountAmount, 
+                                status: 'Pending'
                             }]).select();
                             if (vErr) throw vErr;
 
                             const tests = order.cart.map(i => ({ 
-                                tenant_id: TEBA_CONFIG.tenant.id, visit_id: vData[0].visit_id, test_code: i.code, price_at_time: i.price 
+                                id: i.id, // بنمرر الـ UUID عشان ميعملش مشكلة
+                                tenant_id: TEBA_CONFIG.tenant.id, 
+                                visit_id: vData[0].visit_id, 
+                                test_code: i.code, 
+                                price_at_time: i.price 
                             }));
+                            
                             const { error: tErr } = await _supabase.from('visit_tests').insert(tests);
                             if (tErr) throw tErr;
 
@@ -459,12 +473,11 @@
                 updateLiveTicker(); 
                 loadRecentPatients();
             } catch(e) {
-                console.error("Outbox global error:", e);
+                console.error("Outbox error:", e);
                 document.getElementById('syncBtn').innerText = '🔄 مزامنة البيانات';
             }
         }
 
-        // مراقبة حالة الاتصال
         window.addEventListener('online', () => { processOutbox(); updateLiveTicker(); });
         window.addEventListener('offline', updateLiveTicker);
 
@@ -528,6 +541,7 @@
 
         async function loadRecentPatients() {
             const container = document.getElementById('recentPatientsList');
+            
             try {
                 if(navigator.onLine) {
                     const { data, error } = await _supabase.from('visits')
@@ -597,7 +611,7 @@
                 cart = []; 
                 tests.forEach(t => {
                     const catTest = masterTests.find(m => m.code === t.test_code);
-                    if(catTest) cart.push(catTest);
+                    if(catTest) cart.push({ ...catTest, id: t.id });
                 });
                 
                 renderCart(); calculateChanges();
@@ -770,8 +784,14 @@
             btn.innerText = 'جاري الحفظ...'; btn.disabled = true;
 
             try {
+                // إصلاح DataError: توليد UUID سليم للمريض لو مش موجود
+                let localPatientId = currentPatientId;
+                if (!localPatientId) {
+                    localPatientId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
+                }
+
                 const orderData = {
-                    patientId: currentPatientId,
+                    patientId: localPatientId,
                     patientName: pName,
                     phone: document.getElementById('pPhone').value,
                     age: parseInt(document.getElementById('pAge').value) || 0,
@@ -783,11 +803,10 @@
                     paid: parseFloat(document.getElementById('paidAmount').value) || 0,
                     discountPercent: parseFloat(document.getElementById('discountPercent').value) || 0,
                     discountFixed: parseFloat(document.getElementById('discountFixed').value) || 0,
-                    cart: cart
+                    cart: cart.map(i => ({ ...i, id: i.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.floor(Math.random()*1000))) }))
                 };
 
                 const tempVisitId = Math.floor(Date.now() / 1000);
-                let localPatientId = currentPatientId || Date.now();
                 
                 await db.patients.put({
                     id: localPatientId, name: orderData.patientName, phone: orderData.phone, age: orderData.age, age_type: orderData.age_type, gender: orderData.gender, doctor_name: orderData.doctor_name
@@ -796,9 +815,9 @@
                     visit_id: tempVisitId, patient_id: localPatientId, branch_id: orderData.branch_id, visit_date: new Date().toISOString(), is_published: false
                 });
                 
-                for (let item of cart) {
+                for (let item of orderData.cart) {
                     await db.visit_tests.put({
-                        id: Date.now() + Math.floor(Math.random() * 1000), visit_id: tempVisitId, test_code: item.code, price_at_time: item.price
+                        id: item.id, visit_id: tempVisitId, test_code: item.code, price_at_time: item.price
                     });
                 }
 
@@ -816,7 +835,6 @@
                 console.error(e);
                 showToast('❌ حدث خطأ أثناء الحفظ', true);
             } finally {
-                // إصلاح: الزرار بيفك في كل الأحوال
                 btn.innerText = '💾 حفظ الطلب'; btn.disabled = false;
             }
         }

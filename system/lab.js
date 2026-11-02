@@ -59,7 +59,7 @@ async function processOutbox() {
                 if (item.table_name === 'test_results') {
                     const { error } = await _supabase.from('test_results').upsert({
                         tenant_id: TEBA_CONFIG.tenant.id,
-                        visit_test_id: parseInt(item.payload.visit_test_id),
+                        visit_test_id: item.payload.visit_test_id, // إصلاح: شيلنا parseInt عشان الـ UUID
                         results_data: item.payload.results_data
                     }, { onConflict: 'visit_test_id' });
                     if (error) throw error;
@@ -236,10 +236,10 @@ async function loadData() {
                     results = res || [];
                 }
                 
-                if (patients) await db.patients.bulkPut(patients);
-                if (visits) await db.visits.bulkPut(visits);
-                if (vt) await db.visit_tests.bulkPut(vt);
-                if (results) await db.test_results.bulkPut(results);
+                try { if (patients) await db.patients.bulkPut(patients); } catch(e) {}
+                try { if (visits) await db.visits.bulkPut(visits); } catch(e) {}
+                try { if (vt) await db.visit_tests.bulkPut(vt); } catch(e) {}
+                try { if (results) await db.test_results.bulkPut(results); } catch(e) {}
             }
         }
 
@@ -265,7 +265,6 @@ async function loadData() {
 
     } catch(e) {
         console.error("Load Data Error:", e);
-        showToast('حدث خطأ في تحميل البيانات', true);
     }
 }
 
@@ -575,12 +574,12 @@ async function saveResultToCloud(visitTestId, resultsData) {
             results_data: resultsData
         };
 
-        // إصلاح DataError: استخدام String(Date.now()) بدل Date.now() عشان الداتابيز تقبله
-        let existing = await db.test_results.where('visit_test_id').equals(parseInt(vt.id)).first();
+        // إصلاح DataError: استخدام vt.id كـ String مباشرة بدون parseInt
+        let existing = await db.test_results.where('visit_test_id').equals(vt.id).first();
         if(existing) {
             await db.test_results.update(existing.id, { results_data: resultsData });
         } else {
-            await db.test_results.put({ id: String(Date.now()), visit_test_id: parseInt(vt.id), results_data: resultsData });
+            await db.test_results.put({ id: String(Date.now()), visit_test_id: vt.id, results_data: resultsData });
         }
 
         await addToOutbox('test_results', 'UPSERT', payload);
@@ -589,7 +588,7 @@ async function saveResultToCloud(visitTestId, resultsData) {
         
         const existingIndex = testResults.findIndex(r => r.visit_test_id == visitTestId);
         if (existingIndex > -1) testResults[existingIndex].results_data = resultsData;
-        else testResults.push({ visit_test_id: parseInt(visitTestId), results_data: resultsData });
+        else testResults.push({ visit_test_id: visitTestId, results_data: resultsData });
         
         if (navigator.onLine) processOutbox();
 
