@@ -1397,14 +1397,36 @@
     }
   };
 
-  window.renderTopSellers = function() {
+   window.renderTopSellers = function() {
     const tbody = document.getElementById('topSellersTableBody'); if (!tbody) return;
-    const branchFilter = document.getElementById('topSellersBranchSel') ? document.getElementById('topSellersBranchSel').value : 'combined';
+    const branchSel = document.getElementById('topSellersBranchSel');
+    if (!branchSel) return;
+    const branchFilter = branchSel.value;
+
+    let monthFilterEl = document.getElementById('topSellersMonthSel');
+    if (!monthFilterEl) {
+        monthFilterEl = document.createElement('select');
+        monthFilterEl.id = 'topSellersMonthSel';
+        monthFilterEl.className = branchSel.className;
+        monthFilterEl.style.marginRight = '10px';
+        monthFilterEl.innerHTML = `<option value="latest">آخر شهر متاح</option><option value="2026-10">أكتوبر 2026</option><option value="2026-09">سبتمبر 2026</option><option value="2025-10">أكتوبر 2025</option><option value="2025-09">سبتمبر 2025</option>`;
+        monthFilterEl.onchange = window.renderTopSellers;
+        branchSel.parentNode.insertBefore(monthFilterEl, branchSel.nextSibling);
+    }
+    const monthFilter = monthFilterEl.value;
     
+    let targetMonth = null;
+    if (monthFilter === 'latest') {
+        const period = findLatestReportMonth();
+        targetMonth = period ? period.month : null;
+    } else {
+        targetMonth = monthFilter.split('-')[1];
+    }
+
     let tests = [];
     if (branchFilter === 'combined') {
-      const dataJ = getTestMovementData('الجعافرة');
-      const dataB = getTestMovementData('بهتيم');
+      const dataJ = getTestMovementData('الجعافرة', targetMonth);
+      const dataB = getTestMovementData('بهتيم', targetMonth);
       const combinedTests = {};
       const originalNames = {};
       const processTest = (t) => {
@@ -1417,7 +1439,7 @@
       tests = Object.keys(combinedTests).map(k => ({ name: originalNames[k], count: combinedTests[k] }));
     } else {
       const branchName = branchFilter === 'jaafara' ? 'الجعافرة' : 'بهتيم';
-      tests = getTestMovementData(branchName);
+      tests = getTestMovementData(branchName, targetMonth);
     }
 
     tests = tests.filter(t => t.count > 0);
@@ -1430,8 +1452,23 @@
 
   window.renderMostProfitable = function() {
     const tbody = document.getElementById('mostProfitableTableBody'); if (!tbody) return;
-    const branchFilter = document.getElementById('mostProfBranchSel') ? document.getElementById('mostProfBranchSel').value : 'combined';
-    let data = getMergedData(branchFilter);
+    const branchSel = document.getElementById('mostProfBranchSel');
+    if (!branchSel) return;
+    const branchFilter = branchSel.value;
+
+    let monthFilterEl = document.getElementById('mostProfMonthSel');
+    if (!monthFilterEl) {
+        monthFilterEl = document.createElement('select');
+        monthFilterEl.id = 'mostProfMonthSel';
+        monthFilterEl.className = branchSel.className;
+        monthFilterEl.style.marginRight = '10px';
+        monthFilterEl.innerHTML = `<option value="latest">آخر شهر متاح</option><option value="2026-10">أكتوبر 2026</option><option value="2026-09">سبتمبر 2026</option><option value="2025-10">أكتوبر 2025</option><option value="2025-09">سبتمبر 2025</option>`;
+        monthFilterEl.onchange = window.renderMostProfitable;
+        branchSel.parentNode.insertBefore(monthFilterEl, branchSel.nextSibling);
+    }
+    const monthFilter = monthFilterEl.value;
+
+    let data = getMergedData(branchFilter, monthFilter);
     if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">لا توجد تطابق</td></tr>'; return; }
     data.sort((a, b) => b.trueTotalProfit - a.trueTotalProfit);
     let html = '';
@@ -1441,8 +1478,23 @@
 
   window.renderLeastProfitable = function() {
     const tbody = document.getElementById('leastProfitableTableBody'); if (!tbody) return;
-    const branchFilter = document.getElementById('leastProfBranchSel') ? document.getElementById('leastProfBranchSel').value : 'combined';
-    let data = getMergedData(branchFilter);
+    const branchSel = document.getElementById('leastProfBranchSel');
+    if (!branchSel) return;
+    const branchFilter = branchSel.value;
+
+    let monthFilterEl = document.getElementById('leastProfMonthSel');
+    if (!monthFilterEl) {
+        monthFilterEl = document.createElement('select');
+        monthFilterEl.id = 'leastProfMonthSel';
+        monthFilterEl.className = branchSel.className;
+        monthFilterEl.style.marginRight = '10px';
+        monthFilterEl.innerHTML = `<option value="latest">آخر شهر متاح</option><option value="2026-10">أكتوبر 2026</option><option value="2026-09">سبتمبر 2026</option><option value="2025-10">أكتوبر 2025</option><option value="2025-09">سبتمبر 2025</option>`;
+        monthFilterEl.onchange = window.renderLeastProfitable;
+        branchSel.parentNode.insertBefore(monthFilterEl, branchSel.nextSibling);
+    }
+    const monthFilter = monthFilterEl.value;
+
+    let data = getMergedData(branchFilter, monthFilter);
     if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">لا توجد تطابق</td></tr>'; return; }
     let profitableOnly = data.filter(t => t.trueProfitUnit > 0);
     profitableOnly.sort((a, b) => a.trueTotalProfit - b.trueTotalProfit);
@@ -1453,8 +1505,23 @@
 
   window.renderNeedOffers = function() {
     const tbody = document.getElementById('needOffersTableBody'); if (!tbody) return;
-    const branchFilter = document.getElementById('needOffersBranchSel') ? document.getElementById('needOffersBranchSel').value : 'combined';
-    let data = getMergedData(branchFilter);
+    const branchSel = document.getElementById('needOffersBranchSel');
+    if (!branchSel) return;
+    const branchFilter = branchSel.value;
+
+    let monthFilterEl = document.getElementById('needOffersMonthSel');
+    if (!monthFilterEl) {
+        monthFilterEl = document.createElement('select');
+        monthFilterEl.id = 'needOffersMonthSel';
+        monthFilterEl.className = branchSel.className;
+        monthFilterEl.style.marginRight = '10px';
+        monthFilterEl.innerHTML = `<option value="latest">آخر شهر متاح</option><option value="2026-10">أكتوبر 2026</option><option value="2026-09">سبتمبر 2026</option><option value="2025-10">أكتوبر 2025</option><option value="2025-09">سبتمبر 2025</option>`;
+        monthFilterEl.onchange = window.renderNeedOffers;
+        branchSel.parentNode.insertBefore(monthFilterEl, branchSel.nextSibling);
+    }
+    const monthFilter = monthFilterEl.value;
+
+    let data = getMergedData(branchFilter, monthFilter);
     if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">لا توجد تطابق</td></tr>'; return; }
     let needs = data.filter(t => t.count < 5 && t.sell > 0);
     needs.sort((a, b) => a.count - b.count);
@@ -1465,8 +1532,23 @@
 
   window.renderLossMakers = function() {
     const tbody = document.getElementById('lossMakersTableBody'); if (!tbody) return;
-    const branchFilter = document.getElementById('lossMakersBranchSel') ? document.getElementById('lossMakersBranchSel').value : 'combined';
-    let data = getMergedData(branchFilter);
+    const branchSel = document.getElementById('lossMakersBranchSel');
+    if (!branchSel) return;
+    const branchFilter = branchSel.value;
+
+    let monthFilterEl = document.getElementById('lossMakersMonthSel');
+    if (!monthFilterEl) {
+        monthFilterEl = document.createElement('select');
+        monthFilterEl.id = 'lossMakersMonthSel';
+        monthFilterEl.className = branchSel.className;
+        monthFilterEl.style.marginRight = '10px';
+        monthFilterEl.innerHTML = `<option value="latest">آخر شهر متاح</option><option value="2026-10">أكتوبر 2026</option><option value="2026-09">سبتمبر 2026</option><option value="2025-10">أكتوبر 2025</option><option value="2025-09">سبتمبر 2025</option>`;
+        monthFilterEl.onchange = window.renderLossMakers;
+        branchSel.parentNode.insertBefore(monthFilterEl, branchSel.nextSibling);
+    }
+    const monthFilter = monthFilterEl.value;
+
+    let data = getMergedData(branchFilter, monthFilter);
     if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">لا توجد تطابق</td></tr>'; return; }
     let losers = data.filter(t => t.trueCost > t.sell);
     losers.sort((a, b) => a.trueProfitUnit - b.trueProfitUnit);
@@ -1474,7 +1556,6 @@
     losers.forEach((test) => { html += `<tr><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #16a34a;">${test.sell} ج</td><td style="color: #dc2626;">${test.trueCost.toFixed(1)} ج</td><td style="color: #dc2626; font-weight:bold;">${test.trueProfitUnit.toFixed(1)} ج</td></tr>`; });
     tbody.innerHTML = html;
   };
-
   window.openAIAssistant = function() {
     const modal = document.getElementById('aiModal');
     const body = document.getElementById('aiModalBody');
