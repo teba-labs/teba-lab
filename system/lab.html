@@ -655,7 +655,7 @@
         // ==== دوال فتح شاشات تسجيل النتائج ====
         
         // فتح شاشة نتيجة فردية
-        function openSingleResultModal(vtId, testCode)
+        function openSingleResultModal(vtId, testCode){
             const vt = visitTests.find(v => v.id == vtId);
             const catalogItem = testsCatalog.find(c => c.code === testCode) || { name: testCode, code: testCode, parameters: [] };
             const result = testResults.find(r => r.visit_test_id == vtId);
@@ -664,7 +664,6 @@
             const val = savedData['result']?.value || '';
             const p = getSmartParams(catalogItem)[0] || {};
             const unit = p.unit || catalogItem.unit || '-';
-            
             // تأمين عشان لو المريض مش موجود
             const visit = allVisits.find(v => v.visit_id === selectedVisitId);
             const patient = visit ? visit.patient : { age: 0, age_type: 'Years', gender: 'male' };
