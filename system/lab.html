@@ -531,8 +531,8 @@
         }
 
         // ==== إضافة تحليل للحالة من القائمة المنسدلة ====
-        async function addTestFromSelect(type)
-            if (!selectedVisitId)
+        async function addTestFromSelect(type) {
+            if (!selectedVisitId) {
                 showToast('⚠️ اختر مريضاً أولاً', true);
                 document.getElementById(type === 'single' ? 'singleTestSelect' : 'profileTestSelect').value = '';
                 return;
@@ -565,7 +565,7 @@
                 showToast('❌ خطأ في الإضافة: ' + err.message, true);
                 selectEl.value = '';
             }
-            }
+        }
         // ==== دوال فتح شاشات تسجيل النتائج ====
         
         // فتح شاشة نتيجة فردية
