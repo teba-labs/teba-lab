@@ -374,11 +374,15 @@
         const supabaseKey = TEBA_CONFIG.supabase.key;
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // ==== تهيئة الداتابيز المحلية ====
+                // ==== تهيئة الداتابيز المحلية (النسخة الشاملة) ====
         const db = new Dexie('TebaLabOfflineDB');
-        db.version(2).stores({
-            offline_orders: '++id, patientName, timestamp',
-            catalog: 'code, name, price, category' 
+        db.version(3).stores({
+            patients: 'id, name, phone',
+            visits: 'visit_id, patient_id, branch_id, is_published',
+            visit_tests: 'id, visit_id, test_code',
+            test_results: 'id, visit_test_id',
+            catalog: 'code, name, price, category',
+            outbox: '++id, table_name, action, payload, timestamp' // صندوق الصادر للمزامنة
         });
 
         let masterTests = []; 
