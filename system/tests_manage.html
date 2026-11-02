@@ -239,15 +239,17 @@
                 for (let item of pending) {
                     try {
                         if (item.table_name === 'tests_catalog') {
-                            if (item.action === 'INSERT' || item.action === 'UPDATE') {
-                                // بنستخدم upsert عشان يشتغل في الحالتين (إضافة أو تعديل)
-                                const { error } = await _supabase.from('tests_catalog').upsert([item.payload]);
-                                if (error) throw error;
-                            }
+                            // Upsert يشتغل في حالة الإضافة والتعديل
+                            const { error } = await _supabase.from('tests_catalog').upsert([item.payload]);
+                            if (error) throw error;
                         }
                         await db.outbox.delete(item.id);
                         successCount++;
-                    } catch (e) { console.error("Outbox item sync failed:", e); }
+                    } catch (e) { 
+                        console.error("Outbox item sync failed:", e); 
+                        // لو فيه خطأ (زي الـ RLS)، هنوقف المزامنة عشان مانضيعش داتا
+                        throw new Error("فشل رفع البيانات للسحابة، تأكد من الصلاحيات."); 
+                    }
                 }
 
                 if (successCount > 0) showToast(`✅ تمت مزامنة ${successCount} عملية!`);
@@ -257,8 +259,11 @@
                 else btn.innerText = '🔄 مزامنة البيانات';
                 
                 checkSyncStatus();
-                await loadTests(); // تحديث الشاشة بعد المزامنة
-            } catch(e) { console.error(e); }
+            } catch(e) { 
+                console.error("Outbox error:", e); 
+                document.getElementById('syncBtn').innerText = '🔄 مزامنة البيانات';
+                showToast(e.message || 'حدث خطأ في المزامنة', true);
+            }
         }
 
         async function checkSyncStatus() {
@@ -284,23 +289,34 @@
         }
 
         async function loadTests() {
-            // 1. لو متصل، هات من السحابة وحدث المحلي (من غير ما نمسح المحلي)
-            if (navigator.onLine) {
-                const { data, error } = await _supabase.from('tests_catalog').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id).order('code', { ascending: true });
-                if (!error && data) {
-                    // بنستخدم bulkPut عشان يحدث الموجود ويضيف الجديد، من غير ما يمسح حاجة متزامنتش
-                    await db.catalog.bulkPut(data.map(t => ({
-                        id: t.id, code: t.code, name: t.name, price: t.price, category: t.category, parameters: t.parameters, test_type: t.test_type, unit: t.unit
-                    })));
+            try {
+                // 1. لو متصل، هنعمل حاجتين بالترتيب:
+                if (navigator.onLine) {
+                    // أولاً: نرفع أي تعديلات معلقة في الـ Outbox الأول
+                    await processOutbox(); 
+                    
+                    // ثانياً: بعد ما رفعنا، بنجيب الداتا من السحابة ونحدث المحلي
+                    const { data, error } = await _supabase.from('tests_catalog').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id).order('code', { ascending: true });
+                    if (!error && data) {
+                        await db.catalog.clear();
+                        await db.catalog.bulkPut(data.map(t => ({
+                            id: t.id, code: t.code, name: t.name, price: t.price, category: t.category, parameters: t.parameters, test_type: t.test_type, unit: t.unit
+                        })));
+                    }
                 }
-            }
 
-            // 2. اقرأ من المحلي (سواء متصل أو أوفلاين) عشان نعرض
-            const localTests = await db.catalog.toArray();
-            allTests = localTests;
-            
-            renderTable();
-            checkSyncStatus();
+                // 2. نقرأ من المحلي (سواء متصل أو أوفلاين) عشان نعرض
+                const localTests = await db.catalog.toArray();
+                allTests = localTests;
+                
+                renderTable();
+                checkSyncStatus();
+            } catch (e) {
+                console.error("Load error", e);
+                const localTests = await db.catalog.toArray();
+                allTests = localTests;
+                renderTable();
+            }
         }
 
         function renderTable(filterText = '') {
