@@ -421,6 +421,7 @@
                             const subTotal = order.cart.reduce((sum, i) => sum + i.price, 0);
                             const discountAmount = (subTotal * (order.discountPercent / 100)) + order.discountFixed;
                             
+                            // إدخال الزيارة
                             const { data: vData, error: vErr } = await _supabase.from('visits').insert([{
                                 tenant_id: TEBA_CONFIG.tenant.id, 
                                 patient_id: patientId, 
@@ -431,17 +432,32 @@
                                 status: 'Pending'
                             }]).select();
                             if (vErr) throw vErr;
+                            
+                            const realVisitId = vData[0].visit_id;
 
+                            // إدخال التحاليل
                             const tests = order.cart.map(i => ({ 
                                 id: i.id, // بنمرر الـ UUID عشان ميعملش مشكلة
                                 tenant_id: TEBA_CONFIG.tenant.id, 
-                                visit_id: vData[0].visit_id, 
+                                visit_id: realVisitId, 
                                 test_code: i.code, 
                                 price_at_time: i.price 
                             }));
                             
                             const { error: tErr } = await _supabase.from('visit_tests').insert(tests);
                             if (tErr) throw tErr;
+
+                            // إصلاح: تحديث الـ ID المؤقت في الداتابيز المحلية بالـ ID الحقيقي
+                            // عشان لو الفني دخل صفحة المعمل بعد المزامنة يلاقي كل حاجة متطابقة
+                            const oldTempVisitId = order.tempVisitId; 
+                            if(oldTempVisitId) {
+                                // حذف القديم وإضافة الجديد بنفس الـ visit_id
+                                await db.visits.update(oldTempVisitId, { visit_id: realVisitId });
+                                const localTests = await db.visit_tests.where('visit_id').equals(oldTempVisitId).toArray();
+                                for(let lt of localTests) {
+                                    await db.visit_tests.update(lt.id, { visit_id: realVisitId });
+                                }
+                            }
 
                             const bc = new BroadcastChannel('teba_sync');
                             bc.postMessage('new_order');
@@ -790,8 +806,11 @@
                     localPatientId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
                 }
 
+                const tempVisitId = Math.floor(Date.now() / 1000);
+
                 const orderData = {
                     patientId: localPatientId,
+                    tempVisitId: tempVisitId, // بنحتفظ بالرقم المؤقت عشان نحدثه بعدين
                     patientName: pName,
                     phone: document.getElementById('pPhone').value,
                     age: parseInt(document.getElementById('pAge').value) || 0,
@@ -806,8 +825,6 @@
                     cart: cart.map(i => ({ ...i, id: i.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.floor(Math.random()*1000))) }))
                 };
 
-                const tempVisitId = Math.floor(Date.now() / 1000);
-                
                 await db.patients.put({
                     id: localPatientId, name: orderData.patientName, phone: orderData.phone, age: orderData.age, age_type: orderData.age_type, gender: orderData.gender, doctor_name: orderData.doctor_name
                 });

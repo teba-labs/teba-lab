@@ -59,7 +59,7 @@ async function processOutbox() {
                 if (item.table_name === 'test_results') {
                     const { error } = await _supabase.from('test_results').upsert({
                         tenant_id: TEBA_CONFIG.tenant.id,
-                        visit_test_id: item.payload.visit_test_id, // إصلاح: شيلنا parseInt عشان الـ UUID
+                        visit_test_id: item.payload.visit_test_id, 
                         results_data: item.payload.results_data
                     }, { onConflict: 'visit_test_id' });
                     if (error) throw error;
@@ -68,7 +68,23 @@ async function processOutbox() {
                     const { data, error } = await _supabase.from('visit_tests').insert([item.payload]).select();
                     if (error) throw error;
                     if(data && data.length > 0) {
-                        await db.visit_tests.update(item.payload.id, { id: data[0].id });
+                        const oldId = item.payload.id;
+                        const newId = data[0].id;
+                        await db.visit_tests.update(oldId, { id: newId });
+                        
+                        // تحديث النتائج المرتبطة بالتحليل ده
+                        const localResult = await db.test_results.where('visit_test_id').equals(oldId).first();
+                        if(localResult) {
+                            await db.test_results.update(localResult.id, { visit_test_id: newId });
+                        }
+                        // تحديث صندوق المزامنة
+                        const pendingResults = await db.outbox.where('table_name', 'test_results').toArray();
+                        for(let res of pendingResults) {
+                            if(res.payload.visit_test_id == oldId) {
+                                res.payload.visit_test_id = newId;
+                                await db.outbox.put(res);
+                            }
+                        }
                     }
                 }
                 else if (item.table_name === 'patients' && item.action === 'UPDATE') {
@@ -356,7 +372,7 @@ function renderOrderedTests() {
     vTests.forEach(vt => {
         const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, code: vt.test_code, parameters: [] };
         const isProfile = isProfileTest(catalogItem);
-        const result = testResults.find(r => r.visit_test_id === vt.id);
+        const result = testResults.find(r => r.visit_test_id == vt.id); // إصلاح المقارنة
         const hasResult = result && result.results_data && Object.keys(result.results_data).length > 0;
         
         const btnClass = hasResult ? 'btn-result done' : 'btn-result';
@@ -445,7 +461,7 @@ function selectPatient(visitId) {
 function openSingleResultModal(vtId, testCode){
     const vt = visitTests.find(v => v.id == vtId);
     const catalogItem = testsCatalog.find(c => c.code === testCode) || { name: testCode, code: testCode, parameters: [] };
-    const result = testResults.find(r => r.visit_test_id == vtId);
+    const result = testResults.find(r => r.visit_test_id == vtId); // إصلاح المقارنة
     const savedData = result ? result.results_data : {};
     
     const val = savedData['result']?.value || '';
@@ -480,7 +496,7 @@ function openProfileResultModal(vtId, testCode) {
     const vt = visitTests.find(v => v.id == vtId);
     const catalogItem = testsCatalog.find(c => c.code === testCode) || { name: testCode, code: testCode, parameters: [] };
     const params = getSmartParams(catalogItem);
-    const result = testResults.find(r => r.visit_test_id == vtId);
+    const result = testResults.find(r => r.visit_test_id == vtId); // إصلاح المقارنة
     const savedData = result ? result.results_data : {};
     
     const visit = allVisits.find(v => v.visit_id === selectedVisitId);
@@ -574,7 +590,7 @@ async function saveResultToCloud(visitTestId, resultsData) {
             results_data: resultsData
         };
 
-        // إصلاح DataError: استخدام vt.id كـ String مباشرة بدون parseInt
+        // الحفظ في الداتابيز المحلية
         let existing = await db.test_results.where('visit_test_id').equals(vt.id).first();
         if(existing) {
             await db.test_results.update(existing.id, { results_data: resultsData });
@@ -586,6 +602,7 @@ async function saveResultToCloud(visitTestId, resultsData) {
         
         showToast('✅ تم الحفظ محلياً!');
         
+        // تحديث الذاكرة (عشان الطباعة تشوف النتيجة فوراً)
         const existingIndex = testResults.findIndex(r => r.visit_test_id == visitTestId);
         if (existingIndex > -1) testResults[existingIndex].results_data = resultsData;
         else testResults.push({ visit_test_id: visitTestId, results_data: resultsData });
@@ -805,7 +822,7 @@ function openPrintModal() {
     
     vTests.forEach(vt => {
         const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, code: vt.test_code, parameters: [] };
-        const result = testResults.find(r => r.visit_test_id === vt.id);
+        const result = testResults.find(r => r.visit_test_id == vt.id); // إصلاح المقارنة
         const savedData = result ? result.results_data : {};
         const params = getSmartParams(catalogItem);
         const isProfile = params.length > 1 || (params.length === 1 && params[0].name !== 'Result');
