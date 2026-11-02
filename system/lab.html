@@ -48,7 +48,7 @@
         .panel { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; border: 1px solid var(--border); overflow: hidden; }
         .panel-header { background: var(--surface-hover); padding: 15px; border-bottom: 1px solid var(--border); font-weight: bold; color: var(--primary); text-align: center; font-size: 1.1rem;}
 
-        /* تصميم كارت المريض الجديد */
+        /* تصميم كارت المريض */
         .patient-list { flex-grow: 1; overflow-y: auto; padding: 10px; }
         .patient-card { padding: 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; background: var(--surface); position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.02);}
         .patient-card:hover { border-color: var(--primary); background: var(--surface-hover); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.05);}
@@ -65,10 +65,29 @@
         .btn-card-del { background: rgba(231, 76, 60, 0.1); color: var(--danger); }
         .btn-card-del:hover { background: var(--danger); color: white; }
 
-        .tests-list { flex-grow: 1; overflow-y: auto; padding: 15px; }
+        /* تصميم أعمدة إدخال النتائج (القوائم والكروت) */
+        .selector-area { padding: 15px; background: #f8fafc; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px;}
+        .custom-select { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.95rem; font-weight: bold; outline: none; background: white; cursor: pointer;}
+        .custom-select:focus { border-color: var(--primary); }
         
-        /* تصميم كارت التحليل الجديد */
-        .test-item { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 15px; overflow: hidden; background: var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,0.03);}
+        .quick-grid { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; overflow-y: auto; align-content: start;}
+        .quick-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 8px; padding: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 5px; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
+        .quick-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+        .quick-card .code { font-weight: 800; color: var(--text-muted); font-size: 0.7rem; }
+        .quick-card .name { font-size: 0.85rem; font-weight: bold; color: var(--text); line-height: 1.3; }
+        .quick-card .status { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-top: 5px; font-weight: bold; }
+        .status-pending { background: #fef3c7; color: #b45309; }
+        .status-done { background: #dcfce7; color: #15803d; }
+
+        /* تصميم المودال (شاشة تسجيل النتائج) */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(3px); padding: 10px;}
+        .modal-content { background: var(--surface); padding: 0; border-radius: 12px; width: 100%; max-width: 900px; max-height: 95vh; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.3); border-top: 5px solid var(--primary);}
+        .modal-header { padding: 15px 20px; border-bottom: 2px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc;}
+        .modal-header h3 { margin: 0; color: var(--primary); font-size: 1.2rem;}
+        .modal-body { padding: 20px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 15px; background: var(--bg);}
+        
+        /* تصميم كارت التحليل داخل المودال */
+        .test-item { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,0.03);}
         .test-header { background: #f8fafc; padding: 12px 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: var(--primary); font-size: 1.05rem;}
         .test-body { padding: 15px; }
         
@@ -84,8 +103,6 @@
         .btn-group { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
         .btn-save-test { flex-grow: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-family: inherit; transition: 0.2s;}
         .btn-save-test:hover { background: var(--primary-hover); box-shadow: 0 4px 10px rgba(10, 104, 71, 0.2);}
-        .btn-quick-add { padding: 12px; background: #8b5cf6; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-family: inherit; transition: 0.2s;}
-        .btn-quick-add:hover { background: #7c3aed; box-shadow: 0 4px 10px rgba(139, 92, 246, 0.2);}
         .btn-del-test { background: rgba(220, 38, 38, 0.1); color: var(--danger); border: 1px solid #fecaca; padding: 12px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-family: inherit; transition: 0.2s;}
         .btn-del-test:hover { background: var(--danger); color: white;}
         
@@ -93,19 +110,6 @@
 
         #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 15px 30px; border-radius: 30px; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: none; z-index: 1000; }
         #toast.error { background: var(--danger); }
-
-        /* تصميم النوافذ المنبثقة (المودال) */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(3px); padding: 10px;}
-        .modal-content { background: var(--surface); padding: 25px; border-radius: 12px; width: 100%; max-width: 900px; max-height: 95vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.2); border-top: 5px solid var(--primary);}
-        
-        .form-group-modal { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
-        .form-group-modal label { font-size: 0.85rem; font-weight: bold; color: var(--text-muted); }
-        .form-group-modal input, .form-group-modal select { padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.9rem; outline: none; }
-        .form-group-modal input:focus, .form-group-modal select:focus { border-color: var(--primary); }
-        .form-group-modal input:disabled { background: #e2e8f0; color: #64748b; cursor: not-allowed; }
-        
-        .btn-print-modal { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; margin-top: 15px; }
-        .btn-print-modal:hover { background: var(--primary-hover); }
 
         /* ==========================================
            تنسيقات الطباعة الاحترافية
@@ -122,7 +126,6 @@
         .print-footer-addresses { flex: 1; text-align: right; direction: rtl; font-weight: bold; line-height: 1.8; }
         .print-footer p { margin: 0; }
 
-        /* إعدادات الطباعة الجذرية */
         @media print {
             @page { size: A4; margin: 0; }
             body * { visibility: hidden; }
@@ -147,7 +150,6 @@
             th:nth-child(5) { width: 28%; }
         }
         
-        /* تنسيق المعاينة على الشاشة لتشبه ورقة A4 */
         @media screen {
             #print-area { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px; background: #525659; border-radius: 8px; overflow-x: auto; }
             .print-page { background: white !important; width: 210mm !important; min-height: 297mm !important; padding: 10mm 10mm 25mm 10mm !important; box-shadow: 0 10px 20px rgba(0,0,0,0.4) !important; box-sizing: border-box !important; position: relative !important; display: block !important; margin: 0 auto !important; flex-shrink: 0 !important; }
@@ -181,121 +183,118 @@
     <audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3" preload="auto"></audio>
 
     <div class="main-grid">
-        <!-- شاشة طابور المرضى -->
+        <!-- 1. شاشة طابور المرضى (اليمين) -->
         <div class="panel">
             <div class="panel-header">طابور المرضى (آخر 100 زيارة)</div>
             <div class="patient-list" id="patientList"><div class="empty-msg">جاري التحميل...</div></div>
         </div>
         
-        <!-- شاشة التحاليل الفردية -->
+        <!-- 2. شاشة التحاليل الفردية (الوسط) -->
         <div class="panel">
             <div class="panel-header">التحاليل الفردية (Single)</div>
-            <div class="tests-list" id="singleList"><div class="empty-msg">اختر مريضاً</div></div>
+            <div class="selector-area">
+                <select class="custom-select" id="singleTestSelect">
+                    <option value="">-- اختر تحليلاً فردياً --</option>
+                </select>
+                <button class="btn-save-test" onclick="openSingleResultsModal()" id="btnOpenSingleResults" disabled>فتح سجل النتائج الفردية</button>
+            </div>
+            <div class="quick-grid" id="singleQuickGrid">
+                <div class="empty-msg">اختر مريضاً لعرض التحاليل</div>
+            </div>
         </div>
         
-        <!-- شاشة التحاليل المركبة (Profiles) -->
+        <!-- 3. شاشة التحاليل المركبة (الشمال) -->
         <div class="panel">
             <div class="panel-header">التحاليل المركبة (Profiles)</div>
-            <div class="tests-list" id="profileList"><div class="empty-msg">اختر مريضاً</div></div>
+            <div class="selector-area">
+                <select class="custom-select" id="profileTestSelect">
+                    <option value="">-- اختر بروفايل --</option>
+                </select>
+                <button class="btn-save-test" onclick="openProfileResultModal()" id="btnOpenProfileResults" disabled>فتح سجل نتائج البروفايل</button>
+            </div>
+            <div class="quick-grid" id="profileQuickGrid">
+                <div class="empty-msg">اختر مريضاً لعرض التحاليل</div>
+            </div>
         </div>
     </div>
 
-    <!-- مودال إضافة تحليل جديد للزيارة -->
-    <div class="modal" id="addTestModal">
+    <!-- 🌟 مودال (1): تسجيل نتائج التحاليل الفردية 🌟 -->
+    <div class="modal" id="singleResultsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🧪 تسجيل نتائج التحاليل الفردية</h3>
+                <button class="btn-del-test" style="padding:5px 15px;" onclick="document.getElementById('singleResultsModal').style.display='none'">✕ إغلاق</button>
+            </div>
+            <div class="modal-body" id="singleResultsArea">
+                <!-- سيتم توليد حقول الإدخال هنا بواسطة الجافاسكريبت -->
+            </div>
+            <div style="padding: 15px; border-top: 1px solid var(--border); background: #f8fafc; text-align: center;">
+                <button class="btn-save-test" style="max-width: 300px; margin: 0 auto; display: block;" onclick="saveAllSingleResults()">💾 حفظ كل النتائج الفردية</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌟 مودال (2): تسجيل نتائج البروفايل 🌟 -->
+    <div class="modal" id="profileResultModal">
         <div class="modal-content" style="max-width: 700px;">
-            <h3 style="margin-bottom: 15px; color: var(--primary);">➕ إضافة تحليل جديد للحالة</h3>
-            <input type="text" id="addTestSearch" placeholder="ابحث عن التحليل بالكود أو الاسم..." onkeyup="filterAddTest()" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid var(--primary); border-radius: 8px; outline: none; font-family: inherit;">
-            <div id="addTestResults" style="max-height: 400px; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
-        </div>
-    </div>
-
-    <!-- مودال الإضافة السريعة لباراميتر -->
-    <div class="modal" id="quickAddModal">
-        <div class="modal-content" style="max-width: 450px;">
-            <h3 style="margin-bottom: 15px; color: #8b5cf6;">➕ إضافة باراميتر سريع</h3>
-            <input type="hidden" id="qaVisitTestId">
-            <input type="hidden" id="qaTestCode">
-            <div style="margin-bottom: 15px;">
-                <label style="font-weight:bold; font-size:0.9rem; color:var(--text-muted);">اسم الباراميتر</label>
-                <input type="text" id="qaParamName" placeholder="مثال: Crystals" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-top:5px; font-family: inherit;">
+            <div class="modal-header">
+                <h3 id="profileModalTitle">🧬 تسجيل نتائج البروفايل</h3>
+                <button class="btn-del-test" style="padding:5px 15px;" onclick="document.getElementById('profileResultModal').style.display='none'">✕ إغلاق</button>
             </div>
-            <div style="margin-bottom: 15px;">
-                <label style="font-weight:bold; font-size:0.9rem; color:var(--text-muted);">النتيجة</label>
-                <input type="text" id="qaParamValue" placeholder="مثال: Uric Acid" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-top:5px; font-family: inherit;">
+            <div class="modal-body" id="profileResultsArea">
+                <!-- سيتم توليد حقول الإدخال هنا بواسطة الجافاسكريبت -->
             </div>
-            <div style="margin-bottom: 20px;">
-                <label style="font-weight:bold; font-size:0.9rem; color:var(--text-muted);">الوحدة (Unit) - اختياري</label>
-                <input type="text" id="qaParamUnit" placeholder="مثال: mg/dL" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-top:5px; font-family: inherit;">
-            </div>
-            <div style="display:flex; gap:10px;">
-                <button class="btn-save-test" style="background:#8b5cf6;" onclick="saveQuickAddParam()">💾 حفظ وإضافة</button>
-                <button class="btn-del-test" onclick="document.getElementById('quickAddModal').style.display='none'">إلغاء</button>
+            <div style="padding: 15px; border-top: 1px solid var(--border); background: #f8fafc; text-align: center;">
+                <button class="btn-save-test" style="max-width: 300px; margin: 0 auto; display: block;" onclick="saveProfileResults()">💾 حفظ نتائج البروفايل</button>
             </div>
         </div>
     </div>
 
-    <!-- 🌟 مودال تعديل بيانات المريض الجديد 🌟 -->
+    <!-- 🌟 مودال (3): تعديل بيانات المريض 🌟 -->
     <div class="modal" id="editPatientModal">
         <div class="modal-content" style="max-width: 500px;">
-            <button class="btn-del-test" style="float:left; padding:5px 10px;" onclick="document.getElementById('editPatientModal').style.display='none'">✕ إغلاق</button>
-            <h3 style="margin-bottom: 15px; color: var(--primary);">✏️ تعديل بيانات المريض</h3>
-            <input type="hidden" id="editPatientId">
-            <input type="hidden" id="editVisitId">
-            
-            <div class="form-group-modal">
-                <label>رقم الزيارة (لا يمكن تعديله)</label>
-                <input type="text" id="editVisitIdDisplay" disabled>
+            <div class="modal-header">
+                <h3>✏️ تعديل بيانات المريض</h3>
+                <button class="btn-del-test" style="padding:5px 15px;" onclick="document.getElementById('editPatientModal').style.display='none'">✕ إغلاق</button>
             </div>
-            <div class="form-group-modal">
-                <label>اسم المريض</label>
-                <input type="text" id="editPName">
-            </div>
-            <div class="form-group-modal">
-                <label>رقم التليفون</label>
-                <input type="text" id="editPPhone">
-            </div>
-            <div class="form-group-modal">
-                <label>الطبيب المحول</label>
-                <input type="text" id="editPDoctor">
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <div class="form-group-modal">
-                    <label>العمر</label>
-                    <input type="number" id="editPAge">
+            <div class="modal-body">
+                <input type="hidden" id="editPatientId">
+                <input type="hidden" id="editVisitId">
+                <div class="form-group-modal"><label>رقم الزيارة (لا يمكن تعديله)</label><input type="text" id="editVisitIdDisplay" disabled style="background:#e2e8f0; cursor:not-allowed;"></div>
+                <div class="form-group-modal"><label>اسم المريض</label><input type="text" id="editPName"></div>
+                <div class="form-group-modal"><label>رقم التليفون</label><input type="text" id="editPPhone"></div>
+                <div class="form-group-modal"><label>الطبيب المحول</label><input type="text" id="editPDoctor"></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div class="form-group-modal"><label>العمر</label><input type="number" id="editPAge"></div>
+                    <div class="form-group-modal"><label>الوحدة</label><select id="editPAgeType"><option value="Years">سنوات</option><option value="Months">شهور</option><option value="Days">أيام</option></select></div>
                 </div>
-                <div class="form-group-modal">
-                    <label>الوحدة</label>
-                    <select id="editPAgeType">
-                        <option value="Years">سنوات</option>
-                        <option value="Months">شهور</option>
-                        <option value="Days">أيام</option>
-                    </select>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div class="form-group-modal"><label>النوع</label><select id="editPGender"><option value="male">ذكر</option><option value="female">أنثى</option></select></div>
+                    <div class="form-group-modal"><label>الفرع</label><select id="editPBranch"><option value="1">الجعافرة</option><option value="2">بهتيم</option></select></div>
                 </div>
+                <button class="btn-save-test" style="width: 100%; margin-top: 15px; padding: 15px;" onclick="savePatientEdit()">💾 حفظ التعديلات</button>
             </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <div class="form-group-modal">
-                    <label>النوع</label>
-                    <select id="editPGender">
-                        <option value="male">ذكر</option>
-                        <option value="female">أنثى</option>
-                    </select>
-                </div>
-                <div class="form-group-modal">
-                    <label>الفرع</label>
-                    <select id="editPBranch">
-                        <option value="1">الجعافرة</option>
-                        <option value="2">بهتيم</option>
-                    </select>
-                </div>
-            </div>
-            <button class="btn-save-test" style="width: 100%; margin-top: 15px; padding: 15px;" onclick="savePatientEdit()">💾 حفظ التعديلات</button>
         </div>
     </div>
 
-    <!-- مودال معاينة وطباعة التقرير -->
+    <!-- 🌟 مودال (4): إضافة تحليل جديد 🌟 -->
+    <div class="modal" id="addTestModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3>➕ إضافة تحليل جديد للحالة</h3>
+                <button class="btn-del-test" style="padding:5px 15px;" onclick="document.getElementById('addTestModal').style.display='none'">✕ إغلاق</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="addTestSearch" placeholder="ابحث عن التحليل بالكود أو الاسم..." onkeyup="filterAddTest()" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid var(--primary); border-radius: 8px; outline: none; font-family: inherit;">
+                <div id="addTestResults" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌟 مودال (5): الطباعة 🌟 -->
     <div class="modal" id="printModal">
-        <div class="modal-content" style="background: #e0e0e0; max-width: 1000px;">
-            <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000;"></div>
+        <div class="modal-content" style="background: #e0e0e0; max-width: 1000px; padding: 20px;">
+            <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; width: 100%;"></div>
             <button class="btn-print-modal" onclick="window.print()">🖨️ Print Now</button>
         </div>
     </div>    <script>
@@ -345,7 +344,7 @@
             t.innerText = msg; 
             t.className = isError ? 'error' : '';
             t.style.display = 'block';
-            setTimeout(() => t.style.display = 'none', 4000);
+            setTimeout(() => { t.style.display = 'none'; }, 4000);
         }
 
         document.addEventListener("wheel", function(event){
@@ -356,76 +355,29 @@
             if (event.key === 'Escape') {
                 document.getElementById('printModal').style.display = 'none';
                 document.getElementById('addTestModal').style.display = 'none';
-                document.getElementById('quickAddModal').style.display = 'none';
                 document.getElementById('editPatientModal').style.display = 'none';
+                document.getElementById('singleResultsModal').style.display = 'none';
+                document.getElementById('profileResultModal').style.display = 'none';
             }
         });
 
-        // ==========================================
-        // 💬 زرار الواتساب الذكي
-        // ==========================================
-        function sendLabWhatsApp() {
-            if (!selectedVisitId) return showToast('⚠️ اختر مريضاً أولاً', true);
-            const visit = allVisits.find(v => v.visit_id === selectedVisitId);
-            if (!visit) return;
-
-            const name = visit.patient.name;
-            const phone = visit.patient.phone;
-            if (!phone) return showToast('⚠️ لا يوجد رقم تليفون مسجل', true);
-
-            const portalLink = TEBA_CONFIG.lab.portalUrl;
-            const msg = `أهلاً ${name} 👋،\nنتيجة تحليلك جاهزة 🧪.\nيمكنك استلامها من خلال موقعنا عبر إدخال اسمك ورقم الزيارة (${selectedVisitId}):\n${portalLink}\n\nمعامل طيبة - د/ أحمد طه أبوندا`;
-            
-            let cleanPhone = phone.replace(/^0/, '');
-            window.open(`https://wa.me/2${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+        // ==== تحديد نوع التحليل (فردي ولا بروفايل) ====
+        function isProfileTest(catalogItem) {
+            if (!catalogItem) return false;
+            let params = catalogItem.parameters ? JSON.parse(JSON.stringify(catalogItem.parameters)) : [];
+            return params.length > 1 || (params.length === 1 && params[0].name !== 'Result');
         }
 
-        // ==== دالة الرينجات الديناميكية الذكية ====
-        function getSmartRange(param, patient, selectedPhase = null) {
-            let ageInYears = parseFloat(patient.age) || 0;
-            if (patient.age_type === 'Months') ageInYears = ageInYears / 12;
-            if (patient.age_type === 'Days') ageInYears = ageInYears / 365;
-            
-            if (ageInYears <= 12 && param.ref_child) {
-                let childRange = (typeof param.ref_child === 'object' && param.ref_child !== null) ? param.ref_child.range : param.ref_child;
-                if (childRange && childRange !== '-' && childRange !== 'N/A') return childRange;
+        function getSmartParams(catalogItem) {
+            let params = catalogItem.parameters ? JSON.parse(JSON.stringify(catalogItem.parameters)) : [];
+            const isLipid = (catalogItem.name && catalogItem.name.toUpperCase().includes('LIPID')) || catalogItem.code === '109';
+            if (isLipid) {
+                if (!Array.isArray(params)) params = [];
+                params = params.filter(p => !p.name.toLowerCase().includes('ldl'));
+                params.push({ name: 'LDL', label: 'LDL (Calc)', unit: 'mg/dL', ref_male: '< 130', ref_female: '< 130', is_calc: true, formula: "CHO - HDL - (TRIG / 5)" });
             }
-
-            let rawRange = patient.gender === 'female' ? param.ref_female : param.ref_male;
-            if (typeof rawRange === 'object' && rawRange !== null) { rawRange = rawRange.range; }
-            
-            if (!rawRange || rawRange === '-' || rawRange === 'N/A') rawRange = param.reference_range || '-';
-            
-            if (selectedPhase && typeof rawRange === 'string' && rawRange.includes(selectedPhase)) {
-                let parts = rawRange.split('|').map(p => p.trim());
-                let match = parts.find(p => p.toLowerCase().startsWith(selectedPhase.toLowerCase()));
-                if (match) { return match.substring(match.indexOf(':') + 1).trim(); }
-            }
-            return rawRange;
+            return params;
         }
-
-        function renderPhaseSelector(vtId, param, patient, savedData) {
-            if (patient.gender !== 'female') return '';
-            let rawRange = param.ref_female || '';
-            const phases = ['Follicular', 'Midcycle', 'Ovulatory', 'Luteal', 'Pregnant', 'Postmenopausal', 'Prostate'];
-            let availablePhases = phases.filter(p => rawRange.toLowerCase().includes(p.toLowerCase()));
-            if (availablePhases.length > 0) {
-                const savedPhase = savedData[param.name]?.phase || availablePhases[0];
-                let opts = availablePhases.map(p => `<option value="${p}" ${savedPhase === p ? 'selected' : ''}>${p}</option>`).join('');
-                return `<select class="phase-selector" id="phase_${vtId}_${param.name}" onchange="updateRangeUI('${vtId}', '${param.name}', '${param.ref_male}', '${param.ref_female}', ${patient.age}, '${patient.age_type}', '${patient.gender}')">${opts}</select>`;
-            }
-            return '';
-        }
-
-        window.updateRangeUI = function(vtId, paramName, refMale, refFemale, age, ageType, gender) {
-            const phaseSelect = document.getElementById(`phase_${vtId}_${paramName}`);
-            const selectedPhase = phaseSelect ? phaseSelect.value : null;
-            const patient = { age: age, age_type: ageType, gender: gender };
-            const param = { name: paramName, ref_male: refMale, ref_female: refFemale };
-            const newRange = getSmartRange(param, patient, selectedPhase);
-            const rangeLabel = document.getElementById(`range_${vtId}_${paramName}`);
-            if (rangeLabel) rangeLabel.innerText = newRange;
-        };
 
         // ==== جلب البيانات ====
         async function loadData() {
@@ -466,12 +418,14 @@
             }
 
             renderPatients();
+            populateSelectors(); // ملء القوائم المنسدلة
+            
             const urlParams = new URLSearchParams(window.location.search);
             const urlVisitId = urlParams.get('visit_id');
             if (urlVisitId && allVisits.find(v => v.visit_id == urlVisitId)) { selectPatient(parseInt(urlVisitId)); }
         }
 
-        // 🌟 عرض المرضى مع أزرار التعديل والحذف 🌟
+        // ==== عرض المرضى ====
         function renderPatients() {
             const list = document.getElementById('patientList');
             if (allVisits.length === 0) return list.innerHTML = '<div class="empty-msg">لا توجد زيارات</div>';
@@ -495,273 +449,169 @@
             `}).join('');
         }
 
-        // 🌟 فتح مودال التعديل وتعبئة البيانات 🌟
-        function openEditPatientModal(visitId) {
-            const v = allVisits.find(x => x.visit_id === visitId);
-            if(!v || !v.patient) return;
-
-            document.getElementById('editVisitId').value = v.visit_id;
-            document.getElementById('editVisitIdDisplay').value = v.visit_id;
-            document.getElementById('editPatientId').value = v.patient.id;
-            document.getElementById('editPName').value = v.patient.name;
-            document.getElementById('editPPhone').value = v.patient.phone || '';
-            document.getElementById('editPDoctor').value = v.patient.doctor_name || '';
-            document.getElementById('editPAge').value = v.patient.age || 30;
-            document.getElementById('editPAgeType').value = v.patient.age_type || 'Years';
-            document.getElementById('editPGender').value = v.patient.gender || 'male';
-            document.getElementById('editPBranch').value = v.branch_id || 1;
-
-            document.getElementById('editPatientModal').style.display = 'flex';
-        }
-
-        // 🌟 حفظ التعديلات في السحابة 🌟
-        async function savePatientEdit() {
-            const pId = document.getElementById('editPatientId').value;
-            const vId = document.getElementById('editVisitId').value;
-            const name = document.getElementById('editPName').value.trim();
-            const phone = document.getElementById('editPPhone').value.trim();
-            const doctor = document.getElementById('editPDoctor').value.trim();
-            const age = parseInt(document.getElementById('editPAge').value) || 0;
-            const ageType = document.getElementById('editPAgeType').value;
-            const gender = document.getElementById('editPGender').value;
-            const branchId = parseInt(document.getElementById('editPBranch').value);
-
-            if(!name) return showToast('⚠️ اسم المريض مطلوب', true);
-
-            const btn = document.querySelector('#editPatientModal .btn-save-test');
-            btn.innerText = '⏳ جاري الحفظ...'; btn.disabled = true;
-
-            try {
-                // تحديث جدول المرضى
-                const { error: pErr } = await _supabase.from('patients').update({
-                    name, phone, doctor_name: doctor, age, age_type: ageType, gender
-                }).eq('id', pId).eq('tenant_id', TEBA_CONFIG.tenant.id);
-                if (pErr) throw pErr;
-
-                // تحديث جدول الزيارات (الفرع)
-                const { error: vErr } = await _supabase.from('visits').update({
-                    branch_id: branchId
-                }).eq('visit_id', vId).eq('tenant_id', TEBA_CONFIG.tenant.id);
-                if (vErr) throw vErr;
-
-                showToast('✅ تم تعديل البيانات بنجاح');
-                document.getElementById('editPatientModal').style.display = 'none';
-                
-                await loadData(); // إعادة تحميل البيانات لتحديث الشاشة
-                
-                // لو المريض ده هو المفتوح حالياً، نحدث الشاشة
-                if (selectedVisitId == vId) {
-                    selectPatient(vId);
-                }
-            } catch(e) {
-                showToast('❌ حدث خطأ: ' + e.message, true);
-            } finally {
-                btn.innerText = '💾 حفظ التعديلات'; btn.disabled = false;
-            }
-        }
-
-        // 🌟 حذف الزيارة بالكامل 🌟
-        async function deleteFullVisit(visitId) {
-            if(!confirm('هل أنت متأكد من حذف هذه الحالة (الزيارة) بالكامل؟ سيتم حذف كل التحاليل والنتائج المرتبطة بها ولا يمكن التراجع.')) return;
+        // ==== ملء القوائم المنسدلة (Dropdowns) ====
+        function populateSelectors() {
+            const singleSelect = document.getElementById('singleTestSelect');
+            const profileSelect = document.getElementById('profileTestSelect');
             
-            try {
-                // 1. حذف النتائج
-                const { data: vt } = await _supabase.from('visit_tests').select('id').eq('visit_id', visitId);
-                if(vt && vt.length > 0) {
-                    const vtIds = vt.map(x => x.id);
-                    await _supabase.from('test_results').delete().in('visit_test_id', vtIds);
-                }
-                // 2. حذف التحاليل
-                await _supabase.from('visit_tests').delete().eq('visit_id', visitId);
-                // 3. حذف الزيارة
-                const { error } = await _supabase.from('visits').delete().eq('visit_id', visitId).eq('tenant_id', TEBA_CONFIG.tenant.id);
-                if(error) throw error;
+            const singles = testsCatalog.filter(t => !isProfileTest(t)).sort((a,b) => a.name.localeCompare(b.name));
+            const profiles = testsCatalog.filter(t => isProfileTest(t)).sort((a,b) => a.name.localeCompare(b.name));
 
-                showToast('🗑️ تم حذف الحالة بالكامل');
+            singleSelect.innerHTML = `<option value="">-- اختر تحليلاً فردياً (${singles.length}) --</option>` + 
+                singles.map(t => `<option value="${t.code}">${t.name} (${t.code})</option>`).join('');
                 
-                // لو المريض المحذوف هو المفتوح حالياً، نرجع الشاشة فاضية
-                if (selectedVisitId === visitId) {
-                    selectedVisitId = null;
-                    document.getElementById('singleList').innerHTML = '<div class="empty-msg">اختر مريضاً</div>';
-                    document.getElementById('profileList').innerHTML = '<div class="empty-msg">اختر مريضاً</div>';
-                    document.getElementById('btnAddTest').style.display = 'none';
-                    document.getElementById('btnPublishVisit').style.display = 'none';
-                    document.getElementById('btnDownloadPdf').style.display = 'none';
+            profileSelect.innerHTML = `<option value="">-- اختر بروفايل (${profiles.length}) --</option>` + 
+                profiles.map(t => `<option value="${t.code}">${t.name} (${t.code})</option>`).join('');
+
+            // تفعيل زرا الفتح عند الاختيار
+            singleSelect.onchange = () => document.getElementById('btnOpenSingleResults').disabled = !singleSelect.value;
+            profileSelect.onchange = () => document.getElementById('btnOpenProfileResults').disabled = !profileSelect.value;
+        }
+
+        // ==== عرض الكروت السريعة (أشهر التحاليل) ====
+        function renderQuickCards() {
+            const singleGrid = document.getElementById('singleQuickGrid');
+            const profileGrid = document.getElementById('profileQuickGrid');
+            
+            // حساب تكرار التحاليل في كل الزيارات عشان نعرف الأشهر
+            const testCounts = {};
+            visitTests.forEach(vt => { testCounts[vt.test_code] = (testCounts[vt.test_code] || 0) + 1; });
+
+            const singles = testsCatalog.filter(t => !isProfileTest(t)).sort((a,b) => (testCounts[b.code] || 0) - (testCounts[a.code] || 0)).slice(0, 10);
+            const profiles = testsCatalog.filter(t => isProfileTest(t)).sort((a,b) => (testCounts[b.code] || 0) - (testCounts[a.code] || 0)).slice(0, 10);
+
+            const getStatusHtml = (code) => {
+                if (!selectedVisitId) return '';
+                const vt = visitTests.find(v => v.visit_id === selectedVisitId && v.test_code === code);
+                if (!vt) return '';
+                const res = testResults.find(r => r.visit_test_id === vt.id);
+                if (res && res.results_data && Object.keys(res.results_data).length > 0) {
+                    return `<span class="status status-done">تم ✅</span>`;
                 }
-                await loadData();
-            } catch(e) { alert('خطأ أثناء الحذف: ' + e.message); }
-        }        // ==== عرض بيانات المريض والتحاليل ====
+                return `<span class="status status-pending">مطلوب ⏳</span>`;
+            };
+
+            singleGrid.innerHTML = singles.map(t => `
+                <div class="quick-card" onclick="openSingleResultsModal('${t.code}')">
+                    <div class="code">${t.code}</div>
+                    <div class="name">${t.name}</div>
+                    ${getStatusHtml(t.code)}
+                </div>
+            `).join('');
+
+            profileGrid.innerHTML = profiles.map(t => `
+                <div class="quick-card" onclick="openProfileResultModal('${t.code}')">
+                    <div class="code">${t.code}</div>
+                    <div class="name">${t.name}</div>
+                    ${getStatusHtml(t.code)}
+                </div>
+            `).join('');
+        }
+
+        // ==== اختيار المريض ====
         function selectPatient(visitId) {
             selectedVisitId = visitId;
             renderPatients();
+            renderQuickCards(); // تحديث حالة الكروت السريعة
+            
             document.getElementById('btnAddTest').style.display = 'block';
             document.getElementById('btnDownloadPdf').style.display = 'block';
+            
             const visitObj = allVisits.find(v => v.visit_id === visitId);
             const btnPub = document.getElementById('btnPublishVisit');
             btnPub.style.display = 'block';
             btnPub.innerHTML = visitObj.is_published ? '🔄 تحديث النشر' : '🌐 نشر الزيارة';
+        }
+
+        // ==== فتح مودال التحاليل الفردية ====
+        function openSingleResultsModal(preselectedCode = null) {
+            if (!selectedVisitId) return showToast('⚠️ اختر مريضاً أولاً', true);
             
-            const singleList = document.getElementById('singleList');
-            const profileList = document.getElementById('profileList');
-            const vTests = visitTests.filter(vt => vt.visit_id === visitId);
-            
-            if (vTests.length === 0) {
-                singleList.innerHTML = '<div class="empty-msg">لا توجد تحاليل</div>';
-                profileList.innerHTML = '<div class="empty-msg">لا توجد تحاليل</div>';
-                return;
-            }
-            
-            let singlesHtml = '', profilesHtml = '';
-            vTests.forEach(vt => {
-                const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, code: vt.test_code, parameters: [] };
-                const result = testResults.find(r => r.visit_test_id === vt.id);
-                const savedData = result ? result.results_data : {};
+            const vTests = visitTests.filter(vt => vt.visit_id === selectedVisitId);
+            const singles = vTests.filter(vt => {
+                const cat = testsCatalog.find(c => c.code === vt.test_code);
+                return cat && !isProfileTest(cat);
+            });
+
+            if (singles.length === 0) return showToast('⚠️ لا توجد تحاليل فردية مطلوبة لهذا المريض', true);
+
+            const area = document.getElementById('singleResultsArea');
+            area.innerHTML = singles.map(vt => {
+                const cat = testsCatalog.find(c => c.code === vt.test_code);
+                const res = testResults.find(r => r.visit_test_id === vt.id);
+                const savedData = res ? res.results_data : {};
+                const val = savedData['result']?.value || '';
+                const p = getSmartParams(cat)[0] || {};
+                const unit = p.unit || cat.unit || '-';
                 
-                const params = getSmartParams(catalogItem);
-                const isProfile = params.length > 1 || (params.length === 1 && params[0].name !== 'Result');
-                let inputsHtml = '';
-                
-                if (isProfile) {
-                    params.forEach(param => {
-                        const val = savedData[param.name]?.value || '';
-                        const unit = param.unit || param.units || '';
-                        const selectedPhase = savedData[param.name]?.phase || null;
-                        const range = getSmartRange(param, visitObj.patient, selectedPhase);
-                        const isCalc = param.is_calc === true || param.is_calculated === true;
-                        const readonly = isCalc ? 'readonly' : '';
-                        const calcClass = isCalc ? 'input-calc' : '';
-                        const placeholder = isCalc ? 'تلقائى' : '...';
-                        const phaseSelectorHtml = renderPhaseSelector(vt.id, param, visitObj.patient, savedData);
-                        
-                        let inputElement = '';
-                        if (param.type === 'dropdown' && param.options && Array.isArray(param.options)) {
-                            let optionsHtml = `<option value="">-- اختر --</option>`;
-                            param.options.forEach(opt => {
-                                const selected = (val === opt) ? 'selected' : '';
-                                optionsHtml += `<option value="${opt}" ${selected}>${opt}</option>`;
-                            });
-                            let onChangeStr = param.name === 'pH' ? `onchange="updateUrineCrystals('${vt.id}', this.value)"` : `onchange="triggerCalc('${vt.id}', '${vt.test_code}')"`;
-                            inputElement = `<select class="${calcClass}" id="res_${vt.id}_${param.name}" ${onChangeStr} onkeydown="handleEnter(event, this, ${vt.id}, ${isProfile})">${optionsHtml}</select>`;
-                        } else {
-                            inputElement = `<input type="text" inputmode="decimal" class="${calcClass}" 
-                                id="res_${vt.id}_${param.name}" 
-                                data-name="${param.name}"
-                                value="${val}" placeholder="${placeholder}" ${readonly} 
-                                oninput="triggerCalc('${vt.id}', '${vt.test_code}')"
-                                onkeydown="handleEnter(event, this, ${vt.id}, ${isProfile})">`;
-                        }
-                        
-                        inputsHtml += `
-                            <div class="input-group">
-                                ${phaseSelectorHtml}
-                                <label>
-                                    <span>${param.label || param.name}</span>
-                                    <span class="range-info" id="range_${vt.id}_${param.name}">${range} ${unit}</span>
-                                </label>
-                                ${inputElement}
-                            </div>
-                        `;
-                    });
-                } else {
-                    const val = savedData['result']?.value || '';
-                    const p = params[0] || {};
-                    const unit = p.unit || catalogItem.unit || '-';
-                    const range = getSmartRange(p, visitObj.patient, null);
-                    inputsHtml += `
-                        <div class="input-group">
-                            <label><span>النتيجة</span><span class="range-info">${range} ${unit}</span></label>
-                            <input type="text" id="res_${vt.id}_simple" value="${val}" placeholder="..."
-                                onkeydown="handleEnter(event, this, ${vt.id}, ${isProfile})">
-                        </div>
-                    `;
-                }
-                
-                const cardHtml = `
+                return `
                     <div class="test-item" id="card_${vt.id}">
-                        <div class="test-header">
-                            <span>${catalogItem.name}</span>
-                            <span style="font-size:0.8rem; color:#666;">${vt.test_code}</span>
-                        </div>
+                        <div class="test-header"><span>${cat.name} (${cat.code})</span></div>
                         <div class="test-body">
-                            ${inputsHtml}
-                            <div class="btn-group">
-                                <button class="btn-save-test" onclick="saveTestResult(${vt.id}, ${isProfile}, false)">💾 حفظ</button>
-                                <button class="btn-quick-add" onclick="openQuickAddModal(${vt.id}, '${vt.test_code}')">➕ إضافة باراميتر</button>
-                                <button class="btn-del-test" onclick="deleteVisitTest(${vt.id}, ${vt.visit_id})">🗑️ حذف التحليل</button>
+                            <div class="input-group">
+                                <label><span>النتيجة</span><span class="range-info">${p.ref_male || p.ref_female || '-'} ${unit}</span></label>
+                                <input type="text" id="res_${vt.id}_simple" data-vtid="${vt.id}" value="${val}" placeholder="أدخل النتيجة...">
                             </div>
                         </div>
                     </div>
                 `;
-                if (isProfile) profilesHtml += cardHtml; else singlesHtml += cardHtml;
+            }).join('');
+
+            document.getElementById('singleResultsModal').style.display = 'flex';
+            setTimeout(() => { const i = area.querySelector('input'); if(i) i.focus(); }, 100);
+        }
+
+        // ==== فتح مودال البروفايل ====
+        function openProfileResultModal(preselectedCode = null) {
+            if (!selectedVisitId) return showToast('⚠️ اختر مريضاً أولاً', true);
+            
+            const code = preselectedCode || document.getElementById('profileTestSelect').value;
+            if (!code) return showToast('⚠️ اختر بروفايل أولاً', true);
+
+            const vt = visitTests.find(v => v.visit_id === selectedVisitId && v.test_code === code);
+            if (!vt) return showToast('⚠️ هذا البروفايل غير مطلوب لهذا المريض. أضفه أولاً.', true);
+
+            const cat = testsCatalog.find(c => c.code === code);
+            const params = getSmartParams(cat);
+            const res = testResults.find(r => r.visit_test_id === vt.id);
+            const savedData = res ? res.results_data : {};
+
+            document.getElementById('profileModalTitle').innerText = `🧬 تسجيل نتائج: ${cat.name}`;
+            const area = document.getElementById('profileResultsArea');
+            
+            let inputsHtml = '';
+            params.forEach(param => {
+                const val = savedData[param.name]?.value || '';
+                const unit = param.unit || param.units || '';
+                const isCalc = param.is_calc === true || param.is_calculated === true;
+                const readonly = isCalc ? 'readonly' : '';
+                const calcClass = isCalc ? 'input-calc' : '';
+                
+                let inputElement = `<input type="text" inputmode="decimal" class="${calcClass}" id="res_${vt.id}_${param.name}" data-vtid="${vt.id}" value="${val}" placeholder="..." ${readonly} oninput="triggerCalc('${vt.id}', '${vt.test_code}')" onkeydown="handleEnter(event, this, ${vt.id}, true)">`;
+                
+                if (param.type === 'dropdown' && param.options && Array.isArray(param.options)) {
+                    let opts = `<option value="">-- اختر --</option>` + param.options.map(o => `<option value="${o}" ${val === o ? 'selected' : ''}>${o}</option>`).join('');
+                    inputElement = `<select class="${calcClass}" id="res_${vt.id}_${param.name}" data-vtid="${vt.id}" onchange="triggerCalc('${vt.id}', '${vt.test_code}')">${opts}</select>`;
+                }
+
+                inputsHtml += `
+                    <div class="input-group">
+                        <label><span>${param.label || param.name}</span><span class="range-info">${param.ref_male || '-'} ${unit}</span></label>
+                        ${inputElement}
+                    </div>
+                `;
             });
+
+            area.innerHTML = `<div class="test-item"><div class="test-body">${inputsHtml}</div></div>`;
             
-            singleList.innerHTML = singlesHtml || '<div class="empty-msg">لا توجد تحاليل فردية</div>';
-            profileList.innerHTML = profilesHtml || '<div class="empty-msg">لا توجد تحاليل مركبة</div>';
-            
-            setTimeout(() => {
-                const firstInput = document.querySelector('.test-item input:not([readonly]), .test-item select');
-                if(firstInput) firstInput.focus();
-            }, 100);
-        }
+            // إخفاء/إظهار زر الحفظ وتحديث الـ vtId
+            const saveBtn = document.querySelector('#profileResultModal .btn-save-test');
+            saveBtn.setAttribute('onclick', `saveProfileResults(${vt.id}, true)`);
+            saveBtn.style.display = 'block';
 
-        function getSmartParams(catalogItem) {
-            let params = catalogItem.parameters ? JSON.parse(JSON.stringify(catalogItem.parameters)) : [];
-            const isLipid = (catalogItem.name && catalogItem.name.toUpperCase().includes('LIPID')) || catalogItem.code === '109';
-            if (isLipid) {
-                if (!Array.isArray(params)) params = [];
-                params = params.filter(p => !p.name.toLowerCase().includes('ldl'));
-                params.push({ name: 'LDL', label: 'LDL (Calc)', unit: 'mg/dL', ref_male: '< 130', ref_female: '< 130', is_calc: true, formula: "CHO - HDL - (TRIG / 5)" });
-            }
-            return params;
-        }
-
-        window.updateUrineCrystals = function(visitTestId, selectedPH) {
-            const crystalsSelect = document.getElementById(`res_${visitTestId}_Crystals`);
-            if(!crystalsSelect) return;
-            let options = ['Absent'];
-            if (selectedPH.toLowerCase().includes('acidic')) options.push('Uric Acid', 'Ca. Oxalate');
-            else if (selectedPH.toLowerCase().includes('alkaline')) options.push('Triple Phosphate', 'Amorphous');
-            else options.push('Uric Acid', 'Ca. Oxalate', 'Triple Phosphate', 'Amorphous');
-            crystalsSelect.innerHTML = '<option value="">-- اختر --</option>' + options.map(o => `<option value="${o}">${o}</option>`).join('');
-        }
-
-        // ==== التنقل بالكيبورد ====
-        function handleEnter(e, el, vtId, isProfile) {
-            let form = el.closest('.test-body');
-            let inputs = Array.from(form.querySelectorAll('input:not([readonly]), select'));
-            let index = inputs.indexOf(el);
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                saveTestResult(vtId, isProfile, true);
-                if (index > -1 && index < inputs.length - 1) {
-                    inputs[index + 1].focus();
-                } else {
-                    let allCards = Array.from(document.querySelectorAll('.test-item'));
-                    let cardIndex = allCards.indexOf(el.closest('.test-item'));
-                    if (cardIndex > -1 && cardIndex < allCards.length - 1) {
-                        let nextInput = allCards[cardIndex + 1].querySelector('input:not([readonly]), select');
-                        if (nextInput) nextInput.focus();
-                    }
-                }
-            } else if (e.key === 'ArrowDown' && el.tagName !== 'SELECT') {
-                e.preventDefault();
-                if (index > -1 && index < inputs.length - 1) inputs[index + 1].focus();
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                if (index > 0) {
-                    inputs[index - 1].focus();
-                } else {
-                    let allCards = Array.from(document.querySelectorAll('.test-item'));
-                    let cardIndex = allCards.indexOf(el.closest('.test-item'));
-                    if (cardIndex > 0) {
-                        let prevInputs = allCards[cardIndex - 1].querySelectorAll('input:not([readonly]), select');
-                        if (prevInputs.length > 0) prevInputs[prevInputs.length - 1].focus();
-                    }
-                }
-            }
-        }
-
-        // ==== الحسابات التلقائية ====
+            document.getElementById('profileResultModal').style.display = 'flex';
+            setTimeout(() => { const i = area.querySelector('input:not([readonly]), select'); if(i) i.focus(); }, 100);
+        }        // ==== الحسابات التلقائية والتنقل بالكيبورد ====
         function triggerCalc(visitTestId, testCode) {
             const catalogItem = testsCatalog.find(c => c.code === testCode);
             if (!catalogItem) return;
@@ -813,203 +663,167 @@
             });
         }
 
-        // ==== حفظ النتائج (Offline-First) ====
-        async function saveTestResult(visitTestId, isProfile, isSilent = false) {
-            const vt = visitTests.find(v => v.id === visitTestId);
-            const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { code: vt.test_code, parameters: [] };
-            const params = getSmartParams(catalogItem);
-            
-            triggerCalc(visitTestId, vt.test_code);
-
-            let resultsData = {};
-            if (isProfile) {
-                params.forEach(param => {
-                    const input = document.getElementById(`res_${visitTestId}_${param.name}`);
-                    const phaseSelect = document.getElementById(`phase_${visitTestId}_${param.name}`);
-                    if (input && input.value.trim() !== '') {
-                        resultsData[param.name] = { value: input.value.trim() };
-                        if (phaseSelect) resultsData[param.name].phase = phaseSelect.value;
-                    }
-                });
-            } else {
-                const input = document.getElementById(`res_${visitTestId}_simple`);
-                if (input && input.value.trim() !== '') resultsData['result'] = { value: input.value.trim() };
+        function handleEnter(e, el, vtId, isProfile) {
+            let form = el.closest('.modal-body');
+            if (!form) return;
+            let inputs = Array.from(form.querySelectorAll('input:not([readonly]), select'));
+            let index = inputs.indexOf(el);
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (index > -1 && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                } else {
+                    // لو آخر حقل، نروح لزرار الحفظ
+                    const saveBtn = form.parentElement.querySelector('.btn-save-test');
+                    if (saveBtn) saveBtn.focus();
+                }
             }
-
-            if (Object.keys(resultsData).length === 0) {
-                if (!isSilent) alert('لم يتم إدخال أي نتائج!');
-                return;
-            }
-
-            if (!navigator.onLine) {
-                await db.offline_results.put({
-                    visitTestId: visitTestId,
-                    visitId: vt.visit_id,
-                    resultsData: resultsData,
-                    tenant_id: TEBA_CONFIG.tenant.id
-                });
-                document.getElementById('syncBtn').style.display = 'flex';
-                if (!isSilent) showToast('⚠️ النت مقطوع! تم الحفظ محلياً. سيتم المزامنة لاحقاً.', true);
-                const existingIndex = testResults.findIndex(r => r.visit_test_id === visitTestId);
-                if (existingIndex > -1) testResults[existingIndex].results_data = resultsData;
-                else testResults.push({ visit_test_id: visitTestId, results_data: resultsData });
-                return;
-            }
-
-            const { error } = await _supabase.from('test_results').upsert({
-                tenant_id: TEBA_CONFIG.tenant.id,
-                visit_test_id: visitTestId,
-                results_data: resultsData
-            }, { onConflict: 'visit_test_id' });
-
-            if (error) return alert('خطأ: ' + error.message);
-            
-            const existingIndex = testResults.findIndex(r => r.visit_test_id === visitTestId);
-            if (existingIndex > -1) testResults[existingIndex].results_data = resultsData;
-            else testResults.push({ visit_test_id: visitTestId, results_data: resultsData });
-            
-            if (!isSilent) showToast('✅ تم الحفظ بنجاح');
-            else showToast('💾 تم الحفظ تلقائياً');
         }
 
-        // ==== الإضافة السريعة للباراميتر ====
-        function openQuickAddModal(vtId, testCode) {
-            document.getElementById('qaVisitTestId').value = vtId;
-            document.getElementById('qaTestCode').value = testCode;
-            document.getElementById('qaParamName').value = '';
-            document.getElementById('qaParamValue').value = '';
-            document.getElementById('qaParamUnit').value = '';
-            document.getElementById('quickAddModal').style.display = 'flex';
-            document.getElementById('qaParamName').focus();
-        }
+        // ==== حفظ النتائج (الفردية) ====
+        async function saveAllSingleResults() {
+            if (!selectedVisitId) return;
+            const inputs = document.querySelectorAll('#singleResultsArea input');
+            let savedCount = 0;
 
-        async function saveQuickAddParam() {
-            const vtId = document.getElementById('qaVisitTestId').value;
-            const testCode = document.getElementById('qaTestCode').value;
-            const paramName = document.getElementById('qaParamName').value.trim();
-            const paramValue = document.getElementById('qaParamValue').value.trim();
-            const paramUnit = document.getElementById('qaParamUnit').value.trim();
-
-            if (!paramName || !paramValue) return alert('يرجى إدخال اسم الباراميتر والنتيجة!');
-
-            const btn = document.querySelector('#quickAddModal .btn-save-test');
-            btn.innerText = '⏳...'; btn.disabled = true;
-
-            try {
-                const catalogItem = testsCatalog.find(c => c.code === testCode);
-                if (catalogItem) {
-                    let currentParams = catalogItem.parameters || [];
-                    if (!currentParams.find(p => p.name.toLowerCase() === paramName.toLowerCase())) {
-                        currentParams.push({ name: paramName, label: paramName, unit: paramUnit, type: 'text' });
-                        await _supabase.from('tests_catalog').update({ parameters: currentParams }).eq('id', catalogItem.id).eq('tenant_id', TEBA_CONFIG.tenant.id);
-                        catalogItem.parameters = currentParams; 
+            for (let input of inputs) {
+                if (input.value.trim() !== '') {
+                    const vtId = input.getAttribute('data-vtid');
+                    const resultsData = { 'result': { value: input.value.trim() } };
+                    
+                    if (!navigator.onLine) {
+                        await db.offline_results.put({ visitTestId: parseInt(vtId), visitId: selectedVisitId, resultsData: resultsData, tenant_id: TEBA_CONFIG.tenant.id });
+                        const existingIndex = testResults.findIndex(r => r.visit_test_id == vtId);
+                        if (existingIndex > -1) testResults[existingIndex].results_data = resultsData;
+                        else testResults.push({ visit_test_id: parseInt(vtId), results_data: resultsData });
+                        savedCount++;
+                    } else {
+                        const { error } = await _supabase.from('test_results').upsert({
+                            tenant_id: TEBA_CONFIG.tenant.id, visit_test_id: parseInt(vtId), results_data: resultsData
+                        }, { onConflict: 'visit_test_id' });
+                        if (!error) {
+                            const existingIndex = testResults.findIndex(r => r.visit_test_id == vtId);
+                            if (existingIndex > -1) testResults[existingIndex].results_data = resultsData;
+                            else testResults.push({ visit_test_id: parseInt(vtId), results_data: resultsData });
+                            savedCount++;
+                        }
                     }
                 }
-
-                const result = testResults.find(r => r.visit_test_id == vtId);
-                let resultsData = result ? result.results_data : {};
-                resultsData[paramName] = { value: paramValue };
-
-                await _supabase.from('test_results').upsert({
-                    tenant_id: TEBA_CONFIG.tenant.id,
-                    visit_test_id: vtId,
-                    results_data: resultsData
-                }, { onConflict: 'visit_test_id' });
-
-                document.getElementById('quickAddModal').style.display = 'none';
-                await loadData(); 
-                selectPatient(selectedVisitId);
-                showToast('✅ تم إضافة الباراميتر وحفظ النتيجة');
-
-            } catch(err) {
-                alert('❌ خطأ: ' + err.message);
-            } finally {
-                btn.innerText = '💾 حفظ وإضافة'; btn.disabled = false;
+            }
+            
+            if (savedCount > 0) {
+                if (!navigator.onLine) document.getElementById('syncBtn').style.display = 'flex';
+                showToast(`✅ تم حفظ ${savedCount} نتيجة بنجاح`);
+                document.getElementById('singleResultsModal').style.display = 'none';
+                renderQuickCards();
+            } else {
+                showToast('⚠️ لم يتم إدخال أي نتائج', true);
             }
         }
 
-        // ==== مزامنة البيانات المحفوظة أوفلاين ====
-        async function syncOfflineData() {
-            const pending = await db.offline_results.toArray();
-            if (pending.length === 0) {
-                showToast('✅ لا توجد بيانات معلقة للمزامنة.');
-                document.getElementById('syncBtn').style.display = 'none';
-                return;
-            }
-            if (!navigator.onLine) return alert('لا يوجد اتصال بالإنترنت! يرجى توصيل النت أولاً.');
-
-            const btn = document.getElementById('syncBtn');
-            btn.innerText = '⏳ جاري المزامنة...';
+        // ==== حفظ النتائج (البروفايل) ====
+        async function saveProfileResults(vtId) {
+            if (!vtId) return;
+            const vt = visitTests.find(v => v.id === vtId);
+            const catalogItem = testsCatalog.find(c => c.code === vt.test_code);
+            const params = getSmartParams(catalogItem);
             
-            let successCount = 0;
-            for (let p of pending) {
-                try {
-                    const { error } = await _supabase.from('test_results').upsert({
-                        tenant_id: p.tenant_id,
-                        visit_test_id: p.visitTestId,
-                        results_data: p.resultsData
-                    }, { onConflict: 'visit_test_id' });
-                    
-                    if (!error) {
-                        await db.offline_results.delete(p.id);
-                        successCount++;
-                    }
-                } catch(e) { console.error("Sync error for result", p.id, e); }
-            }
+            triggerCalc(vtId, vt.test_code);
 
-            if (successCount > 0) showToast(`✅ تم مزامنة ${successCount} نتيجة بنجاح!`);
-            if (await db.offline_results.count() === 0) btn.style.display = 'none';
-            else btn.innerText = '🔄 مزامنة البيانات';
-            
-            await loadData();
-            if (selectedVisitId) selectPatient(selectedVisitId);
-        }
-
-        // ==== النشر وحذف التحليل ====
-        async function publishVisit() {
-            if (!selectedVisitId) return;
-            const visitObj = allVisits.find(v => v.visit_id === selectedVisitId);
-            const vTests = visitTests.filter(vt => vt.visit_id === selectedVisitId);
-            if (vTests.length === 0) return alert('لا يوجد تحاليل في هذه الزيارة لنشرها.');
-            let completedTests = 0;
-            vTests.forEach(vt => {
-                const res = testResults.find(r => r.visit_test_id === vt.id);
-                if (res && res.results_data && Object.keys(res.results_data).length > 0) completedTests++;
+            let resultsData = {};
+            params.forEach(param => {
+                const input = document.getElementById(`res_${vtId}_${param.name}`);
+                if (input && input.value.trim() !== '') {
+                    resultsData[param.name] = { value: input.value.trim() };
+                }
             });
-            const pendingTests = vTests.length - completedTests;
-            if (!confirm(`أنت على وشك نشر الزيارة للمريض.\n\nالتحاليل الجاهزة: ${completedTests}\nالتحاليل قيد التشغيل: ${pendingTests}\n\nهل أنت متأكد من النشر/التحديث؟`)) return;
+
+            if (Object.keys(resultsData).length === 0) return showToast('⚠️ لم يتم إدخال أي نتائج', true);
+
+            if (!navigator.onLine) {
+                await db.offline_results.put({ visitTestId: vtId, visitId: vt.visit_id, resultsData: resultsData, tenant_id: TEBA_CONFIG.tenant.id });
+                document.getElementById('syncBtn').style.display = 'flex';
+                showToast('⚠️ تم الحفظ محلياً (أوفلاين)');
+            } else {
+                const { error } = await _supabase.from('test_results').upsert({
+                    tenant_id: TEBA_CONFIG.tenant.id, visit_test_id: vtId, results_data: resultsData
+                }, { onConflict: 'visit_test_id' });
+                if (error) return alert('خطأ: ' + error.message);
+                showToast('✅ تم الحفظ بنجاح');
+            }
             
-            try {
-                const { error } = await _supabase.from('visits').update({
-                    is_published: true,
-                    published_at: new Date().toISOString()
-                }).eq('visit_id', selectedVisitId).eq('tenant_id', TEBA_CONFIG.tenant.id);
-                if (error) throw error;
-                visitObj.is_published = true;
-                visitObj.published_at = new Date().toISOString();
-                selectPatient(selectedVisitId); 
-                showToast(`✅ تم النشر (${completedTests} جاهز، ${pendingTests} قيد التشغيل)`);
-                
-                const bcNotify = new BroadcastChannel('teba_sync');
-                bcNotify.postMessage('result_published');
-            } catch (err) { alert('خطأ أثناء النشر: ' + err.message); }
+            const existingIndex = testResults.findIndex(r => r.visit_test_id === vtId);
+            if (existingIndex > -1) testResults[existingIndex].results_data = resultsData;
+            else testResults.push({ visit_test_id: vtId, results_data: resultsData });
+            
+            document.getElementById('profileResultModal').style.display = 'none';
+            renderQuickCards();
         }
 
-        async function deleteVisitTest(visitTestId, visitId) {
-            if(!confirm('هل أنت متأكد من حذف هذا التحليل نهائياً من الطلب؟')) return;
-            try {
-                await _supabase.from('test_results').delete().eq('visit_test_id', visitTestId).eq('tenant_id', TEBA_CONFIG.tenant.id);
-                await _supabase.from('visit_tests').delete().eq('id', visitTestId).eq('tenant_id', TEBA_CONFIG.tenant.id);
-                const index = testResults.findIndex(r => r.visit_test_id === visitTestId);
-                if(index > -1) testResults.splice(index, 1);
-                const vtIndex = visitTests.findIndex(v => v.id === visitTestId);
-                if(vtIndex > -1) visitTests.splice(vtIndex, 1);
-                selectPatient(visitId);
-                showToast('🗑️ تم حذف التحليل');
-            } catch (err) { alert('خطأ: ' + err.message); }
+        // ==== تعديل بيانات المريض ====
+        function openEditPatientModal(visitId) {
+            const v = allVisits.find(x => x.visit_id === visitId);
+            if(!v || !v.patient) return;
+            document.getElementById('editVisitId').value = v.visit_id;
+            document.getElementById('editVisitIdDisplay').value = v.visit_id;
+            document.getElementById('editPatientId').value = v.patient.id;
+            document.getElementById('editPName').value = v.patient.name;
+            document.getElementById('editPPhone').value = v.patient.phone || '';
+            document.getElementById('editPDoctor').value = v.patient.doctor_name || '';
+            document.getElementById('editPAge').value = v.patient.age || 30;
+            document.getElementById('editPAgeType').value = v.patient.age_type || 'Years';
+            document.getElementById('editPGender').value = v.patient.gender || 'male';
+            document.getElementById('editPBranch').value = v.branch_id || 1;
+            document.getElementById('editPatientModal').style.display = 'flex';
         }
 
-        // ==== إضافة تحليل جديد للمريض ====
+        async function savePatientEdit() {
+            const pId = document.getElementById('editPatientId').value;
+            const vId = document.getElementById('editVisitId').value;
+            const name = document.getElementById('editPName').value.trim();
+            const phone = document.getElementById('editPPhone').value.trim();
+            const doctor = document.getElementById('editPDoctor').value.trim();
+            const age = parseInt(document.getElementById('editPAge').value) || 0;
+            const ageType = document.getElementById('editPAgeType').value;
+            const gender = document.getElementById('editPGender').value;
+            const branchId = parseInt(document.getElementById('editPBranch').value);
+
+            if(!name) return showToast('⚠️ اسم المريض مطلوب', true);
+            const btn = document.querySelector('#editPatientModal .btn-save-test');
+            btn.innerText = '⏳ جاري الحفظ...'; btn.disabled = true;
+
+            try {
+                const { error: pErr } = await _supabase.from('patients').update({ name, phone, doctor_name: doctor, age, age_type: ageType, gender }).eq('id', pId).eq('tenant_id', TEBA_CONFIG.tenant.id);
+                if (pErr) throw pErr;
+                const { error: vErr } = await _supabase.from('visits').update({ branch_id: branchId }).eq('visit_id', vId).eq('tenant_id', TEBA_CONFIG.tenant.id);
+                if (vErr) throw vErr;
+                showToast('✅ تم تعديل البيانات بنجاح');
+                document.getElementById('editPatientModal').style.display = 'none';
+                await loadData(); 
+                if (selectedVisitId == vId) selectPatient(vId);
+            } catch(e) {
+                showToast('❌ حدث خطأ: ' + e.message, true);
+            } finally {
+                btn.innerText = '💾 حفظ التعديلات'; btn.disabled = false;
+            }
+        }
+
+        // ==== حذف الحالة بالكامل ====
+        async function deleteFullVisit(visitId) {
+            if(!confirm('هل أنت متأكد من حذف هذه الحالة (الزيارة) بالكامل؟ سيتم حذف كل التحاليل والنتائج المرتبطة بها.')) return;
+            try {
+                const { data: vt } = await _supabase.from('visit_tests').select('id').eq('visit_id', visitId);
+                if(vt && vt.length > 0) { await _supabase.from('test_results').delete().in('visit_test_id', vt.map(x => x.id)); }
+                await _supabase.from('visit_tests').delete().eq('visit_id', visitId);
+                const { error } = await _supabase.from('visits').delete().eq('visit_id', visitId).eq('tenant_id', TEBA_CONFIG.tenant.id);
+                if(error) throw error;
+                showToast('🗑️ تم حذف الحالة بالكامل');
+                if (selectedVisitId === visitId) { selectedVisitId = null; document.getElementById('singleQuickGrid').innerHTML = ''; document.getElementById('profileQuickGrid').innerHTML = ''; }
+                await loadData();
+            } catch(e) { alert('خطأ أثناء الحذف: ' + e.message); }
+        }
+
+        // ==== إضافة تحليل جديد ====
         function openAddTestModal() {
             if(!selectedVisitId) return alert('اختر مريضاً أولاً!');
             document.getElementById('addTestModal').style.display = 'flex';
@@ -1023,10 +837,8 @@
             const filtered = testsCatalog.filter(t => (t.code && t.code.toLowerCase().includes(query)) || (t.name && t.name.toLowerCase().includes(query)));
             const currentTestCodes = visitTests.filter(vt => vt.visit_id === selectedVisitId).map(vt => vt.test_code);
             const available = filtered.filter(t => !currentTestCodes.includes(t.code));
-            if(available.length === 0) {
-                container.innerHTML = '<div style="grid-column: 1/-1; text-align: center;">لا توجد تحاليل مطابقة أو متاحة للإضافة</div>';
-                return;
-            }
+            if(available.length === 0) { container.innerHTML = '<div style="grid-column: 1/-1; text-align: center;">لا توجد تحاليل متاحة</div>'; return; }
+            
             container.innerHTML = available.map(t => `
                 <button class="btn btn-primary" style="text-align: right; padding: 10px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer;" onclick="addTestToVisit('${t.code}', '${t.name}')">
                     ${t.name} (${t.code})
@@ -1037,12 +849,7 @@
         async function addTestToVisit(code, name) {
             if(!selectedVisitId) return;
             try {
-                const { error } = await _supabase.from('visit_tests').insert([{ 
-                    tenant_id: TEBA_CONFIG.tenant.id,
-                    visit_id: selectedVisitId, 
-                    test_code: code, 
-                    price_at_time: 0 
-                }]);
+                const { error } = await _supabase.from('visit_tests').insert([{ tenant_id: TEBA_CONFIG.tenant.id, visit_id: selectedVisitId, test_code: code, price_at_time: 0 }]);
                 if(error) throw error;
                 await loadData(); 
                 selectPatient(selectedVisitId);
@@ -1051,7 +858,38 @@
             } catch(err) { alert('خطأ في الإضافة: ' + err.message); }
         }
 
-        // ==== دوال الطباعة الاحترافية ====
+        // ==== النشر والطباعة والمزامنة ====
+        async function publishVisit() {
+            if (!selectedVisitId) return;
+            const visitObj = allVisits.find(v => v.visit_id === selectedVisitId);
+            try {
+                const { error } = await _supabase.from('visits').update({ is_published: true, published_at: new Date().toISOString() }).eq('visit_id', selectedVisitId).eq('tenant_id', TEBA_CONFIG.tenant.id);
+                if (error) throw error;
+                visitObj.is_published = true;
+                selectPatient(selectedVisitId); 
+                showToast(`✅ تم نشر الزيارة للمريض`);
+            } catch (err) { alert('خطأ أثناء النشر: ' + err.message); }
+        }
+
+        async function syncOfflineData() {
+            const pending = await db.offline_results.toArray();
+            if (pending.length === 0) { showToast('✅ لا توجد بيانات معلقة.'); document.getElementById('syncBtn').style.display = 'none'; return; }
+            if (!navigator.onLine) return alert('لا يوجد اتصال بالإنترنت!');
+            const btn = document.getElementById('syncBtn'); btn.innerText = '⏳ جاري المزامنة...';
+            let successCount = 0;
+            for (let p of pending) {
+                try {
+                    const { error } = await _supabase.from('test_results').upsert({ tenant_id: p.tenant_id, visit_test_id: p.visitTestId, results_data: p.resultsData }, { onConflict: 'visit_test_id' });
+                    if (!error) { await db.offline_results.delete(p.id); successCount++; }
+                } catch(e) { console.error(e); }
+            }
+            if (successCount > 0) showToast(`✅ تم مزامنة ${successCount} نتيجة!`);
+            if (await db.offline_results.count() === 0) btn.style.display = 'none';
+            else btn.innerText = '🔄 مزامنة البيانات';
+            await loadData(); if (selectedVisitId) selectPatient(selectedVisitId);
+        }
+
+        // ==== الطباعة وتحميل PDF ====
         function getHeaderHtml(visit, reqDate, printDate) {
             let ageStr = visit.patient.age + ' Years';
             if(visit.patient.age_type === 'Months') ageStr = visit.patient.age + ' Months';
@@ -1063,11 +901,8 @@
                         <p style="font-size: 15px;">For Medical Analyzes</p>
                         <p>${TEBA_CONFIG.lab.doctor}</p>
                     </div>
-                    <div class="print-header-right">
-                        <img src="../header.png" alt="Logo" onerror="this.style.display='none'">
-                    </div>
+                    <div class="print-header-right"><img src="../header.png" alt="Logo" onerror="this.style.display='none'"></div>
                 </div>
-                
                 <div style="display: flex; justify-content: space-between; border: 1.5px solid #000; padding: 10px 15px; border-radius: 4px; background: #fff; font-size: 13px; margin-bottom: 20px;">
                     <div style="width: 50%; display: flex; flex-direction: column; gap: 5px;">
                         <div><strong style="color: #000; display: inline-block; width: 100px;">Patient:</strong> <span style="font-weight: bold;">${visit.patient.name || 'Unknown'}</span></div>
@@ -1086,14 +921,8 @@
         function getFooterHtml() {
             return `
                 <div class="print-footer">
-                    <div class="print-footer-phones">
-                        <p>📞 01123702062</p>
-                        <p>📱 01099003494</p>
-                    </div>
-                    <div class="print-footer-addresses">
-                        <p>الفرع الأول: الجعافرة - الطريق العمومي - أعلى صيدلية الصحابة</p>
-                        <p>الفرع الثاني: بهتيم - مساكن اسكو - أمام مدرسة ابن الخطاب - عيادة د. محمد رمضان</p>
-                    </div>
+                    <div class="print-footer-phones"><p>📞 01123702062</p><p>📱 01099003494</p></div>
+                    <div class="print-footer-addresses"><p>الفرع الأول: الجعافرة - الطريق العمومي - أعلى صيدلية الصحابة</p><p>الفرع الثاني: بهتيم - مساكن اسكو - أمام مدرسة ابن الخطاب - عيادة د. محمد رمضان</p></div>
                 </div>
             `;
         }
@@ -1107,13 +936,11 @@
             const printArea = document.getElementById('print-area');
             printArea.innerHTML = '';
             
-            let singlesRows = '';
-            let profilesData = []; 
+            let singlesRows = ''; let profilesData = []; 
             
             function getStateHtml(val, range) {
                 if (!val || !range) return '';
-                const num = parseFloat(val);
-                const match = range.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
+                const num = parseFloat(val); const match = range.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
                 let color = '#000'; let text = '';
                 if (!isNaN(num) && match) {
                     const min = parseFloat(match[1]), max = parseFloat(match[2]);
@@ -1121,7 +948,7 @@
                     else if (num > max) { text = 'High'; color = '#d32f2f'; }
                     else { text = 'Normal'; color = '#2e7d32'; }
                 }
-                if (text) { return `<span style="border: 1px solid #000; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; color: ${color}; display: inline-block;">${text}</span>`; }
+                if (text) return `<span style="border: 1px solid #000; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; color: ${color}; display: inline-block;">${text}</span>`;
                 return '';
             }
             
@@ -1131,13 +958,11 @@
                 const savedData = result ? result.results_data : {};
                 const params = getSmartParams(catalogItem);
                 const isProfile = params.length > 1 || (params.length === 1 && params[0].name !== 'Result');
-                let hasTestData = false;
-                let testRows = '';
+                let hasTestData = false; let testRows = '';
                 
                 if (isProfile) {
                     params.forEach(param => {
-                        const val = savedData[param.name]?.value;
-                        const phase = savedData[param.name]?.phase; 
+                        const val = savedData[param.name]?.value; const phase = savedData[param.name]?.phase; 
                         if (val) {
                             hasTestData = true;
                             const range = getSmartRange(param, visit.patient, phase);
@@ -1145,20 +970,11 @@
                             const flagStr = getStateHtml(val, range);
                             let displayParamName = param.label || param.name;
                             if (phase) displayParamName += ` (${phase})`;
-                            testRows += `<tr>
-                                <td style="border-bottom: 1px solid #ccc; padding: 8px 6px;">${displayParamName}</td>
-                                <td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center; font-weight:bold; color: #000;">${val}</td>
-                                <td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${flagStr}</td>
-                                <td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${unit}</td>
-                                <td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${range}</td>
-                            </tr>`;
+                            testRows += `<tr><td style="border-bottom: 1px solid #ccc; padding: 8px 6px;">${displayParamName}</td><td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center; font-weight:bold; color: #000;">${val}</td><td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${flagStr}</td><td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${unit}</td><td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${range}</td></tr>`;
                         }
                     });
-                    if (hasTestData) { profilesData.push({ name: catalogItem.name, rows: testRows }); } 
-                    else {
-                        testRows = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #666;">لا توجد نتائج محفوظة لهذا التحليل. تأكد من الضغط على زر "حفظ" للتحليل.</td></tr>`;
-                        profilesData.push({ name: catalogItem.name, rows: testRows });
-                    }
+                    if (hasTestData) profilesData.push({ name: catalogItem.name, rows: testRows }); 
+                    else profilesData.push({ name: catalogItem.name, rows: `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #666;">لا توجد نتائج محفوظة.</td></tr>` });
                 } else {
                     const val = savedData['result']?.value;
                     if (val) {
@@ -1166,45 +982,15 @@
                         const range = getSmartRange(p, visit.patient, null);
                         const unit = p.unit || catalogItem.unit || '-';
                         const flagStr = getStateHtml(val, range);
-                        singlesRows += `<tr>
-                            <td style="border-bottom: 1px solid #ccc; padding: 8px 6px;">${catalogItem.name}</td>
-                            <td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center; font-weight:bold; color: #000;">${val}</td>
-                            <td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${flagStr}</td>
-                            <td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${unit}</td>
-                            <td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${range}</td>
-                        </tr>`;
+                        singlesRows += `<tr><td style="border-bottom: 1px solid #ccc; padding: 8px 6px;">${catalogItem.name}</td><td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center; font-weight:bold; color: #000;">${val}</td><td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${flagStr}</td><td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${unit}</td><td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${range}</td></tr>`;
                     }
                 }
             });
 
             let htmlContent = '';
-
-            if (singlesRows !== '') {
-                let page = `<div class="print-page">`;
-                page += getHeaderHtml(visit, reqDate, printDate);
-                page += `<div style="margin-bottom: 25px;"><h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000;">SINGLE TESTS</h3><table style="width: 100%; border-collapse: collapse; font-size: 13px;"><thead><tr style="background: #000; color: #fff;"><th style="padding: 8px 6px; text-align:left;">Test Name</th><th style="padding: 8px 6px; text-align:center;">Result</th><th style="padding: 8px 6px; text-align:center;">State</th><th style="padding: 8px 6px; text-align:center;">Unit</th><th style="padding: 8px 6px; text-align:center;">Ref. Range</th></tr></thead><tbody>${singlesRows}</tbody></table></div>`;
-                page += getFooterHtml();
-                page += `</div>`;
-                htmlContent += page;
-            }
-
-            profilesData.forEach(profile => {
-                let page = `<div class="print-page">`;
-                page += getHeaderHtml(visit, reqDate, printDate);
-                page += `<div style="margin-bottom: 25px;"><h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000;">${profile.name}</h3><table style="width: 100%; border-collapse: collapse; font-size: 13px;"><thead><tr style="background: #000; color: #fff;"><th style="padding: 8px 6px; text-align:left;">Test Name</th><th style="padding: 8px 6px; text-align:center;">Result</th><th style="padding: 8px 6px; text-align:center;">State</th><th style="padding: 8px 6px; text-align:center;">Unit</th><th style="padding: 8px 6px; text-align:center;">Ref. Range</th></tr></thead><tbody>${profile.rows}</tbody></table></div>`;
-                page += getFooterHtml();
-                page += `</div>`;
-                htmlContent += page;
-            });
-
-            if (htmlContent === '') {
-                let page = `<div class="print-page">`;
-                page += getHeaderHtml(visit, reqDate, printDate);
-                page += `<p style="text-align:center; font-weight:bold; margin-top:50px;">No results recorded for this visit.</p>`;
-                page += getFooterHtml();
-                page += `</div>`;
-                htmlContent += page;
-            }
+            if (singlesRows !== '') { htmlContent += `<div class="print-page">${getHeaderHtml(visit, reqDate, printDate)}<div style="margin-bottom: 25px;"><h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000;">SINGLE TESTS</h3><table style="width: 100%; border-collapse: collapse; font-size: 13px;"><thead><tr style="background: #000; color: #fff;"><th style="padding: 8px 6px; text-align:left;">Test Name</th><th style="padding: 8px 6px; text-align:center;">Result</th><th style="padding: 8px 6px; text-align:center;">State</th><th style="padding: 8px 6px; text-align:center;">Unit</th><th style="padding: 8px 6px; text-align:center;">Ref. Range</th></tr></thead><tbody>${singlesRows}</tbody></table></div>${getFooterHtml()}</div>`; }
+            profilesData.forEach(profile => { htmlContent += `<div class="print-page">${getHeaderHtml(visit, reqDate, printDate)}<div style="margin-bottom: 25px;"><h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000;">${profile.name}</h3><table style="width: 100%; border-collapse: collapse; font-size: 13px;"><thead><tr style="background: #000; color: #fff;"><th style="padding: 8px 6px; text-align:left;">Test Name</th><th style="padding: 8px 6px; text-align:center;">Result</th><th style="padding: 8px 6px; text-align:center;">State</th><th style="padding: 8px 6px; text-align:center;">Unit</th><th style="padding: 8px 6px; text-align:center;">Ref. Range</th></tr></thead><tbody>${profile.rows}</tbody></table></div>${getFooterHtml()}</div>`; });
+            if (htmlContent === '') { htmlContent += `<div class="print-page">${getHeaderHtml(visit, reqDate, printDate)}<p style="text-align:center; font-weight:bold; margin-top:50px;">No results recorded.</p>${getFooterHtml()}</div>`; }
 
             printArea.innerHTML = htmlContent;
             document.getElementById('printModal').style.display = 'flex';
@@ -1214,27 +1000,11 @@
             if (!selectedVisitId) return alert('اختر مريضاً أولاً!');
             openPrintModal(); 
             const element = document.getElementById('print-area');
-            const opt = {
-                margin:       0,
-                filename:     `Report_Visit_${selectedVisitId}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-            const btn = document.getElementById('btnDownloadPdf');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '⏳ جاري التحميل...';
-            
-            html2pdf().set(opt).from(element).save().then(() => {
-                btn.innerHTML = originalText;
-            }).catch(err => {
-                console.error(err);
-                alert('حدث خطأ أثناء التحميل، جرب الطباعة العادية واختر Save as PDF');
-                btn.innerHTML = originalText;
-            });
+            const opt = { margin: 0, filename: `Report_Visit_${selectedVisitId}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+            const btn = document.getElementById('btnDownloadPdf'); const originalText = btn.innerHTML; btn.innerHTML = '⏳ جاري التحميل...';
+            html2pdf().set(opt).from(element).save().then(() => { btn.innerHTML = originalText; }).catch(err => { console.error(err); alert('حدث خطأ أثناء التحميل'); btn.innerHTML = originalText; });
         }
 
-        // ==== التشغيل ====
         window.onload = async () => { 
             await loadData(); 
             if (await db.offline_results.count() > 0) {

@@ -54,21 +54,7 @@
             100% { transform: translateX(-100%); }
         }
 
-        /* تعديل الكمبيوتر عشان يبقى عمودي زي الموبايل */
-        @media (min-width: 1025px) {
-            .main-container { 
-                display: flex; 
-                flex-direction: column; 
-                max-width: 900px; 
-                margin: 0 auto; 
-                height: auto; 
-                overflow-y: auto; 
-                padding-bottom: 50px;
-                gap: 20px;
-            }
-            .panel { min-height: 400px; }
-        }
-        
+        /* الشاشة الأساسية 3 أعمدة (كمبيوتر) */
         .main-container { display: grid; grid-template-columns: 340px 1fr 380px; gap: 15px; padding: 15px; flex-grow: 1; height: calc(100vh - 120px); overflow: hidden; min-width: 0; }
         
         .panel { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; border: 1px solid var(--border); overflow: hidden; min-width: 0; }
@@ -106,6 +92,7 @@
         .modal-content { background: var(--surface); padding: 25px; border-radius: var(--radius); width: 100%; max-width: 600px; max-height: 95vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.2); border-top: 5px solid var(--primary); position: relative;}
         .btn-close { background: #fee2e2; color: var(--danger); border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: inherit;}
 
+        /* التجاوب مع الموبايل والتابلت (التحويل لعمود واحد) */
         @media (max-width: 1024px) {
             body { overflow-y: auto; height: auto; }
             .main-container { grid-template-columns: 1fr; height: auto; overflow: visible; padding-bottom: 50px; gap: 20px; }
@@ -123,7 +110,8 @@
             .nav-btn { width: 100%; justify-content: center; }
         }
     </style>
-</head><body>
+</head>
+<body>
 
     <header>
         <div class="brand">
@@ -149,16 +137,14 @@
         </div>
     </div>
 
-    <div class="toast" id="toastMsg">تم الحفظ بنجاح!</div>
-
-    <div class="main-container">
+    <div class="toast" id="toastMsg">تم الحفظ بنجاح!</div>    <div class="main-container">
+        <!-- العمود الأول (يمين): بيانات المريض + آخر 5 حالات -->
         <div class="panel patient-panel">
             <div class="panel-header">
                 <span>👤 بيانات المريض</span>
                 <button class="nav-btn" onclick="startNewPatient()" style="padding: 5px 10px; font-size: 0.8rem; background: var(--primary); color: white;">➕ مريض جديد</button>
             </div>
             <div class="patient-form">
-                
                 <!-- حقول توليدية (مغلقة) -->
                 <div class="row-2" style="margin-bottom: 5px; background: #e2e8f0; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
                     <div style="font-size: 0.85rem;"><strong>رقم الزيارة:</strong> <span id="displayVisitId" style="color: var(--primary); font-weight: bold; font-size: 1rem;">جديد</span></div>
@@ -216,7 +202,10 @@
             <div id="recentPatientsList" style="padding: 10px; background: var(--surface-hover); border-top: 1px solid var(--border); border-radius: 0 0 var(--radius) var(--radius); max-height: 200px; overflow-y: auto; font-size: 0.9rem;">
                 جاري التحميل...
             </div>
-        </div>        <div class="panel cart-panel">
+        </div>
+
+        <!-- العمود التاني (وسط): السلة -->
+        <div class="panel cart-panel">
             <div class="panel-header">
                 <span>🛒 سلة التحاليل</span>
                 <span id="cartCount" style="background: var(--accent); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">0</span>
@@ -255,6 +244,7 @@
             </div>
         </div>
 
+        <!-- العمود التالت (شمال): الكتالوج -->
         <div class="panel catalog-panel">
             <div class="panel-header">🔬 كتالوج التحاليل</div>
             <div class="catalog-layout">
@@ -406,12 +396,11 @@
         }
 
         // ==========================================
-        // 🆔 توليد رقم زيارة وتاريخ
+        // 🆔 توليد رقم زيارة وتاريخ وتجهيز مريض جديد
         // ==========================================
         function generateVisitPreview() {
             const dateStr = new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
             document.getElementById('displayVisitDate').innerText = dateStr;
-            // توليد رقم وهمي للعرض فقط (السيرفر هو اللي بيولد الرقم الحقيقي عند الحفظ)
             const tempId = Math.floor(1000 + Math.random() * 9000);
             document.getElementById('displayVisitId').innerText = tempId + " (مؤقت)";
         }
@@ -436,7 +425,7 @@
         // ==========================================
         async function loadRecentPatients() {
             const container = document.getElementById('recentPatientsList');
-            if(!navigator.onLine) { container.innerHTML = '<div style="color:red; text-align:center;">وضع أوفلاين: لا يمكن جلب الحالات</div>'; return; }
+            if(!navigator.onLine) { container.innerHTML = '<div style="color:red; text-align:center;">وضع أوفلاين</div>'; return; }
             
             const { data, error } = await _supabase.from('visits')
                 .select(`visit_id, visit_date, patients (name)`)
@@ -481,9 +470,8 @@
             document.getElementById('displayVisitDate').innerText = new Date().toLocaleDateString('ar-EG');
             document.getElementById('btnPatientHistory').style.display = 'block';
             
-            // جلب تحاليل الزيارة للسلة
             const { data: tests } = await _supabase.from('visit_tests').select('*').eq('visit_id', visitId);
-            cart = []; // تفريغ السلة الأول
+            cart = [];
             if(tests) {
                 tests.forEach(t => {
                     const catTest = masterTests.find(m => m.code === t.test_code);
@@ -734,16 +722,14 @@
                 const { error: tErr } = await _supabase.from('visit_tests').insert(tests);
                 if (tErr) throw tErr;
 
-                // 📢 إرسال إشعار صوتي للمعمل
                 const bc = new BroadcastChannel('teba_sync');
                 bc.postMessage('new_order');
 
                 showToast('✅ تم حفظ الطلب بنجاح!');
                 
-                // تحديث الواجهة
                 document.getElementById('displayVisitId').innerText = vData[0].visit_id;
-                await loadRecentPatients(); // تحديث قائمة الـ 5 حالات
-                startNewPatient(); // تجهيز استمارة جديدة
+                await loadRecentPatients(); 
+                startNewPatient(); 
 
             } catch (error) {
                 await db.offline_orders.add(orderData);
@@ -930,9 +916,7 @@
             renderCart(); 
             updateLiveTicker();
             
-            // تحميل آخر حالة مسجلة
             await loadLastPatient();
-            // تحميل قائمة آخر 5 حالات
             await loadRecentPatients();
 
             if (await db.offline_orders.count() > 0) {
