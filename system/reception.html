@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
-    <script src="../config.js"></script>
+    <script src="config.js"></script>
     <style>
         :root {
             --bg: #f4f7f6; --surface: #ffffff; --surface-hover: #f8fafc;
@@ -54,7 +54,11 @@
             100% { transform: translateX(-100%); }
         }
 
-        /* الشاشة الأساسية 3 أعمدة (كمبيوتر) */
+        @media (min-width: 1025px) {
+            .main-container { display: flex; flex-direction: column; max-width: 900px; margin: 0 auto; height: auto; overflow-y: auto; padding-bottom: 50px; gap: 20px; }
+            .panel { min-height: 400px; }
+        }
+        
         .main-container { display: grid; grid-template-columns: 340px 1fr 380px; gap: 15px; padding: 15px; flex-grow: 1; height: calc(100vh - 120px); overflow: hidden; min-width: 0; }
         
         .panel { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; border: 1px solid var(--border); overflow: hidden; min-width: 0; }
@@ -92,7 +96,6 @@
         .modal-content { background: var(--surface); padding: 25px; border-radius: var(--radius); width: 100%; max-width: 600px; max-height: 95vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.2); border-top: 5px solid var(--primary); position: relative;}
         .btn-close { background: #fee2e2; color: var(--danger); border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: inherit;}
 
-        /* التجاوب مع الموبايل والتابلت (التحويل لعمود واحد) */
         @media (max-width: 1024px) {
             body { overflow-y: auto; height: auto; }
             .main-container { grid-template-columns: 1fr; height: auto; overflow: visible; padding-bottom: 50px; gap: 20px; }
@@ -109,9 +112,30 @@
             .modal-content { padding: 15px; }
             .nav-btn { width: 100%; justify-content: center; }
         }
+
+        /* ==========================================
+           تنسيقات الطباعة (الفاتورة) - تم إصلاحها
+           ========================================== */
+        @media print {
+            @page { size: A4; margin: 10mm; }
+            body * { visibility: hidden; }
+            #print-section, #print-section * { visibility: visible; }
+            #print-section { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 100%; 
+                display: block !important; 
+                background: white; 
+                padding: 20px; 
+                color: #000;
+            }
+            .print-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+            .print-table th, .print-table td { border: 1px solid #000; padding: 8px; text-align: right; }
+            .print-table th { background: #eee; }
+        }
     </style>
-</head>
-<body>
+</head><body>
 
     <header>
         <div class="brand">
@@ -137,14 +161,16 @@
         </div>
     </div>
 
-    <div class="toast" id="toastMsg">تم الحفظ بنجاح!</div>    <div class="main-container">
-        <!-- العمود الأول (يمين): بيانات المريض + آخر 5 حالات -->
+    <div class="toast" id="toastMsg">تم الحفظ بنجاح!</div>
+
+    <div class="main-container">
         <div class="panel patient-panel">
             <div class="panel-header">
                 <span>👤 بيانات المريض</span>
                 <button class="nav-btn" onclick="startNewPatient()" style="padding: 5px 10px; font-size: 0.8rem; background: var(--primary); color: white;">➕ مريض جديد</button>
             </div>
             <div class="patient-form">
+                
                 <!-- حقول توليدية (مغلقة) -->
                 <div class="row-2" style="margin-bottom: 5px; background: #e2e8f0; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
                     <div style="font-size: 0.85rem;"><strong>رقم الزيارة:</strong> <span id="displayVisitId" style="color: var(--primary); font-weight: bold; font-size: 1rem;">جديد</span></div>
@@ -202,9 +228,8 @@
             <div id="recentPatientsList" style="padding: 10px; background: var(--surface-hover); border-top: 1px solid var(--border); border-radius: 0 0 var(--radius) var(--radius); max-height: 200px; overflow-y: auto; font-size: 0.9rem;">
                 جاري التحميل...
             </div>
-        </div>
-
-        <!-- العمود التاني (وسط): السلة -->
+        </div>        
+        
         <div class="panel cart-panel">
             <div class="panel-header">
                 <span>🛒 سلة التحاليل</span>
@@ -244,7 +269,6 @@
             </div>
         </div>
 
-        <!-- العمود التالت (شمال): الكتالوج -->
         <div class="panel catalog-panel">
             <div class="panel-header">🔬 كتالوج التحاليل</div>
             <div class="catalog-layout">
@@ -317,20 +341,25 @@
         </div>
     </div>
 
+    <!-- قسم الطباعة (مخفي في الشاشة العادية) -->
     <div id="print-section" style="display: none;">
-        <div class="print-header">
-            <h2 id="printLabName">معامل طيبة للتحاليل الطبية</h2>
-            <p>فاتورة مبدئية</p>
+        <div class="print-header" style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
+            <h2 id="printLabName" style="margin: 0;">معامل طيبة للتحاليل الطبية</h2>
+            <p style="margin: 5px 0 0 0;">فاتورة مبدئية</p>
         </div>
-        <p><strong>اسم المريض:</strong> <span id="printName"></span></p>
-        <p><strong>التاريخ:</strong> <span id="printDate"></span></p>
-        <table class="print-table" style="width: 100%; border-collapse: collapse;">
-            <thead><tr><th style="border-bottom:1px solid #000;">كود التحليل</th><th style="border-bottom:1px solid #000;">اسم التحليل</th><th style="border-bottom:1px solid #000;">السعر</th></tr></thead>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 16px;">
+            <p><strong>اسم المريض:</strong> <span id="printName"></span></p>
+            <p><strong>التاريخ:</strong> <span id="printDate"></span></p>
+        </div>
+        <table class="print-table">
+            <thead><tr><th>كود التحليل</th><th>اسم التحليل</th><th>السعر</th></tr></thead>
             <tbody id="printTableBody"></tbody>
         </table>
-        <p><strong>الإجمالي:</strong> <span id="printTotal"></span> ج.م</p>
-        <p><strong>المدفوع:</strong> <span id="printPaid"></span> ج.م</p>
-        <p><strong>الباقي:</strong> <span id="printRemain"></span> ج.م</p>
+        <div style="margin-top: 20px; text-align: left; font-size: 16px;">
+            <p><strong>الإجمالي:</strong> <span id="printTotal"></span> ج.م</p>
+            <p><strong>المدفوع:</strong> <span id="printPaid"></span> ج.م</p>
+            <p style="color: #d32f2f;"><strong>الباقي:</strong> <span id="printRemain"></span> ج.م</p>
+        </div>
     </div>    <script>
         // ==== التحقق من تسجيل الدخول ====
         if (!localStorage.getItem('teba_tenant_id')) {
@@ -350,8 +379,8 @@
         const supabaseKey = TEBA_CONFIG.supabase.key;
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // ==== تهيئة الداتابيز المحلية (Dexie للأوفلاين) ====
-        const db = new Dexie('TebaOfflineDB');
+        // ==== تهيئة الداتابيز المحلية (تم توحيد الاسم مع المعمل) ====
+        const db = new Dexie('TebaLabOfflineDB');
         db.version(2).stores({
             offline_orders: '++id, patientName, timestamp',
             catalog: 'code, name, price, category' 
@@ -396,7 +425,7 @@
         }
 
         // ==========================================
-        // 🆔 توليد رقم زيارة وتاريخ وتجهيز مريض جديد
+        // 🆔 توليد رقم زيارة وتاريخ
         // ==========================================
         function generateVisitPreview() {
             const dateStr = new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -425,7 +454,7 @@
         // ==========================================
         async function loadRecentPatients() {
             const container = document.getElementById('recentPatientsList');
-            if(!navigator.onLine) { container.innerHTML = '<div style="color:red; text-align:center;">وضع أوفلاين</div>'; return; }
+            if(!navigator.onLine) { container.innerHTML = '<div style="color:red; text-align:center;">وضع أوفلاين: لا يمكن جلب الحالات</div>'; return; }
             
             const { data, error } = await _supabase.from('visits')
                 .select(`visit_id, visit_date, patients (name)`)
@@ -471,7 +500,7 @@
             document.getElementById('btnPatientHistory').style.display = 'block';
             
             const { data: tests } = await _supabase.from('visit_tests').select('*').eq('visit_id', visitId);
-            cart = [];
+            cart = []; 
             if(tests) {
                 tests.forEach(t => {
                     const catTest = masterTests.find(m => m.code === t.test_code);
@@ -728,8 +757,8 @@
                 showToast('✅ تم حفظ الطلب بنجاح!');
                 
                 document.getElementById('displayVisitId').innerText = vData[0].visit_id;
-                await loadRecentPatients(); 
-                startNewPatient(); 
+                await loadRecentPatients();
+                startNewPatient();
 
             } catch (error) {
                 await db.offline_orders.add(orderData);
@@ -819,8 +848,11 @@
         function executePrint() {
             closeModal('invoicePreviewModal');
             document.getElementById('print-section').style.display = 'block';
-            window.print();
-            document.getElementById('print-section').style.display = 'none';
+            setTimeout(() => {
+                window.print();
+                // إخفاء القسم بعد انتهاء الطباعة
+                setTimeout(() => { document.getElementById('print-section').style.display = 'none'; }, 500);
+            }, 100);
         }
 
         // ==== قائمة المرضى ====
