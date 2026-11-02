@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿﻿﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -13,7 +13,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- تصحيح مسار الـ config -->
     <script src="config.js"></script>
     
     <style>
@@ -40,102 +39,45 @@
             padding: 20px;
         }
 
-        /* شاشة الدخول */
-        #loginScreen { 
-            background: var(--surface); padding: 40px 30px; border-radius: 24px; 
-            box-shadow: var(--shadow); 
-            text-align: center; width: 100%; max-width: 400px; 
-            border-top: 6px solid var(--primary); 
-        }
+        #loginScreen { background: var(--surface); padding: 40px 30px; border-radius: 24px; box-shadow: var(--shadow); text-align: center; width: 100%; max-width: 400px; border-top: 6px solid var(--primary); }
         #loginScreen h1 { color: var(--primary); margin-bottom: 10px; font-size: 2rem; font-weight: 800;}
         #loginScreen p { color: var(--text-muted); margin-bottom: 30px; font-weight: 600; font-size: 0.9rem;}
-        
         .input-group { margin-bottom: 15px; position: relative; text-align: right;}
         .input-group label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 0.85rem; color: var(--text-muted); }
-        .input-group input { 
-            width: 100%; padding: 14px; border-radius: 12px; border: 2px solid var(--border); 
-            background: var(--bg); color: var(--text); font-size: 1rem; outline: none; transition: 0.3s; font-weight: bold;
-        }
+        .input-group input { width: 100%; padding: 14px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg); color: var(--text); font-size: 1rem; outline: none; transition: 0.3s; font-weight: bold; }
         .input-group input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 4px rgba(10,104,71,0.1); }
-        
-        .btn-login { 
-            width: 100%; padding: 14px; background: var(--primary); 
-            color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; 
-            cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px -5px rgba(10,104,71,0.3); margin-top: 10px;
-        }
+        .btn-login { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px -5px rgba(10,104,71,0.3); margin-top: 10px; }
         .btn-login:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 15px 25px -5px rgba(10,104,71,0.4); }
-        
-        .btn-install-pwa {
-            width: 100%; padding: 12px; background: #f8fafc; color: var(--primary);
-            border: 2px dashed var(--primary-light); border-radius: 12px; font-size: 1rem; font-weight: bold;
-            cursor: pointer; transition: 0.3s; margin-top: 15px; display: none; align-items: center; justify-content: center; gap: 8px;
-        }
-        .btn-install-pwa:hover { background: #f0fdf4; border-color: var(--primary); }
-
+        .btn-install-pwa { width: 100%; padding: 12px; background: #f8fafc; color: var(--primary); border: 2px dashed var(--primary-light); border-radius: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 15px; display: none; align-items: center; justify-content: center; gap: 8px; }
         .error-msg { color: var(--danger); margin-top: 15px; font-weight: bold; display: none; font-size: 0.85rem; background: #fef2f2; padding: 10px; border-radius: 8px; border: 1px solid #fecaca;}
-
-        /* شاشة الديسك توب */
         #desktopScreen { display: none; width: 100%; max-width: 900px; position: relative; animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1); margin: auto; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .logout-btn { 
-            position: absolute; top: 0; left: 0; background: #fee2e2; color: var(--danger); 
-            border: 1px solid #fecaca; padding: 8px 16px; border-radius: 10px; 
-            cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 0.85rem; z-index: 10;
-            font-family: inherit;
-        }
+        .logout-btn { position: absolute; top: 0; left: 0; background: #fee2e2; color: var(--danger); border: 1px solid #fecaca; padding: 8px 16px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 0.85rem; z-index: 10; font-family: inherit; }
         .logout-btn:hover { background: var(--danger); color: white; transform: translateY(-2px); }
-
-        .install-btn-desktop {
-            position: absolute; top: 0; left: 110px; background: #e0f2fe; color: #0284c7;
-            border: 1px solid #bae6fd; padding: 8px 16px; border-radius: 10px;
-            cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 0.85rem; z-index: 10;
-            font-family: inherit; display: none;
-        }
-        .install-btn-desktop:hover { background: #0284c7; color: white; transform: translateY(-2px); }
-
+        .install-btn-desktop { position: absolute; top: 0; left: 110px; background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; padding: 8px 16px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 0.85rem; z-index: 10; font-family: inherit; display: none; }
         .desktop-header { display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 25px; text-align: center; padding-top: 30px;}
-        
         .logo-container { margin-bottom: 15px; display: flex; align-items: center; justify-content: center; height: 90px; }
         .logo-container img { height: 90px; width: auto; object-fit: contain; display: block; filter: drop-shadow(0 5px 10px rgba(10,104,71,0.15)); }
         .logo-fallback { display: flex; flex-direction: column; align-items: center; }
         .logo-fallback .en { font-size: 2.5rem; font-weight: 800; color: var(--primary); letter-spacing: 2px; line-height: 1; }
         .logo-fallback .ar { font-size: 1.3rem; font-weight: 700; color: var(--text); margin-top: 2px;}
-        
         .desktop-header h1 { color: var(--text); font-size: 1.6rem; font-weight: 800; margin-bottom: 5px; }
         .desktop-header p { color: var(--text-muted); font-size: 1rem; font-weight: 600; }
-
         .apps-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 650px; margin: 0 auto; }
-        
-        .app-card { 
-            background: var(--surface); border: 2px solid transparent; border-radius: var(--radius); 
-            padding: 20px 15px; text-align: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); 
-            display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: var(--text);
-            box-shadow: var(--shadow); position: relative;
-        }
-        
+        .app-card { background: var(--surface); border: 2px solid transparent; border-radius: var(--radius); padding: 20px 15px; text-align: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: var(--text); box-shadow: var(--shadow); position: relative; }
         .app-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-hover); }
         .app-card:nth-child(1):hover { border-color: #0284c7; }
         .app-card:nth-child(2):hover { border-color: #10b981; }
         .app-card:nth-child(3):hover { border-color: #9333ea; }
         .app-card:nth-child(4):hover { border-color: var(--gold); }
-
-        .app-icon-box { 
-            width: 55px; height: 55px; border-radius: 16px; display: flex; align-items: center; justify-content: center; 
-            font-size: 1.6rem; margin-bottom: 5px; transition: 0.3s; box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-        }
-        
+        .app-icon-box { width: 55px; height: 55px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 5px; transition: 0.3s; box-shadow: 0 3px 10px rgba(0,0,0,0.05); }
         .app-card:nth-child(1) .app-icon-box { color: #0284c7; background: #e0f2fe; }
         .app-card:nth-child(2) .app-icon-box { color: #10b981; background: #dcfce7; }
         .app-card:nth-child(3) .app-icon-box { color: #9333ea; background: #f3e8ff; }
         .app-card:nth-child(4) .app-icon-box { color: #d97706; background: #fef3c7; }
-
         .app-card:hover .app-icon-box { transform: scale(1.1) rotate(5deg); }
-
         .app-name { font-size: 1.1rem; font-weight: 800; color: var(--text); }
         .app-desc { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; line-height: 1.4;}
-
-        /* المودال (باسورد الدكتور) */
         #secretModal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
         .secret-box { background: var(--surface); padding: 30px 25px; border-radius: 24px; text-align: center; width: 90%; max-width: 380px; border-top: 6px solid var(--gold); box-shadow: 0 20px 50px rgba(0,0,0,0.2); animation: fadeIn 0.4s ease-out;}
         .secret-box h2 { color: var(--gold); margin-bottom: 10px; font-size: 1.6rem; font-weight: 800;}
@@ -145,14 +87,11 @@
         .modal-actions { display: flex; gap: 10px; }
         .secret-box button { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; font-size: 0.95rem; transition: 0.2s; font-family: inherit;}
         .btn-confirm { background: var(--gold); color: white; }
-        .btn-confirm:hover { background: #b8902e; transform: translateY(-2px); }
         .btn-cancel { background: var(--border); color: var(--text); }
-        .btn-cancel:hover { background: #cbd5e1; }
     </style>
 </head>
 <body>
 
-    <!-- شاشة الدخول الديناميكية -->
     <div id="loginScreen">
         <h1 id="loginLabName">🔬 جاري التحميل...</h1>
         <p>أدخل بيانات حسابك للدخول إلى النظام</p>
@@ -168,7 +107,6 @@
         
         <button class="btn-login" onclick="loginUser()">دخول آمن</button>
         
-        <!-- زرار تثبيت التطبيق في شاشة الدخول -->
         <button class="btn-install-pwa" id="pwaInstallBtnLogin" onclick="installPWA()">
             📲 تثبيت التطبيق على جهازك
         </button>
@@ -176,7 +114,6 @@
         <div class="error-msg" id="loginError"></div>
     </div>
 
-    <!-- شاشة الديسك توب -->
     <div id="desktopScreen">
         <button class="logout-btn" onclick="logout()">🚪 خروج</button>
         <button class="install-btn-desktop" id="pwaInstallBtnDesktop" onclick="installPWA()">📲 تثبيت التطبيق</button>
@@ -194,7 +131,6 @@
             <p>النظام الرئيسي لإدارة المعامل</p>
         </div>
         
-        <!-- الكروت -->
         <div class="apps-grid">
             <a href="reception.html" class="app-card">
                 <div class="app-icon-box">🏥</div>
@@ -214,7 +150,6 @@
                 <div class="app-desc">الأسعار والباراميترز</div>
             </a>
 
-            <!-- تم إضافة ID هنا عشان نخفيه لو المستخدم مش أدمن -->
             <div class="app-card" id="cardDashboard" onclick="openSecretModal()">
                 <div class="app-icon-box">📊</div>
                 <div class="app-name">لوحة التحكم</div>
@@ -223,7 +158,6 @@
         </div>
     </div>
 
-    <!-- شاشة الباسورد السرية للدكتور -->
     <div id="secretModal">
         <div class="secret-box">
             <h2>🔒 منطقة محظورة</h2>
@@ -241,7 +175,6 @@
         const supabaseKey = TEBA_CONFIG.supabase.key;
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // ==== الدخول الديناميكي ====
         async function loginUser() {
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
@@ -259,22 +192,18 @@
             errorEl.style.display = 'none';
 
             try {
-                // 1. التحقق من الإيميل والباسورد
                 const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({ email, password });
                 if (authError) throw new Error('الإيميل أو الباسورد غير صحيح');
 
-                // 2. جلب الصلاحية من جدول users
-                const { data: userProfile, error: profileError } = await _supabase.from('users').select('role').eq('email', email).single();
+                // التعديل: لو مش لاقي المستخدم في users، هيقراه من auth عادي
+                const { data: userProfile } = await _supabase.from('users').select('role').eq('email', email).single();
                 
-                // لو المستخدم مش موجود في جدول users، هنخليه موظف عادي كإجراء احتياطي
                 const userRole = (userProfile && userProfile.role) ? userProfile.role : 'lab_tech';
 
-                // 3. حفظ البيانات في المتصفح
-                localStorage.setItem('teba_tenant_id', TEBA_CONFIG.tenant.id); // من ملف الـ config
+                localStorage.setItem('teba_tenant_id', TEBA_CONFIG.tenant.id);
                 localStorage.setItem('teba_tenant_name', TEBA_CONFIG.lab.name);
                 localStorage.setItem('teba_user_role', userRole);
 
-                // 4. عرض لوحة التحكم
                 showDashboard({ name: TEBA_CONFIG.lab.name }, userRole);
 
             } catch (err) {
@@ -285,7 +214,6 @@
             }
         }
 
-        // ==== عرض لوحة التحكم بعد الدخول ====
         function showDashboard(tenant, role) {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('desktopScreen').style.display = 'block';
@@ -293,16 +221,14 @@
             document.getElementById('desktopLabName').innerText = "مرحباً، " + tenant.name;
             document.getElementById('loginLabName').innerText = tenant.name;
 
-            // إخفاء أو إظهار كارت لوحة التحكم بناءً على الصلاحية
             const dashboardCard = document.getElementById('cardDashboard');
             if (role === 'admin') {
                 dashboardCard.style.display = 'flex';
             } else {
-                dashboardCard.style.display = 'none'; // إخفاء للفنيين والاستقبال
+                dashboardCard.style.display = 'none'; 
             }
         }
 
-        // ==== التحقق من الجلسة عند فتح الصفحة (تحديث الصفحة) ====
         _supabase.auth.getSession().then(async ({ data: { session } }) => {
             if (session) {
                 const email = session.user.email;
@@ -317,7 +243,6 @@
             }
         });
 
-        // ==== تسجيل الخروج ====
         async function logout() {
             await _supabase.auth.signOut();
             localStorage.removeItem('teba_tenant_id');
@@ -326,7 +251,6 @@
             location.reload();
         }
 
-        // ==== لوحة التحكم (باسورد الدكتور) ====
         function openSecretModal() {
             document.getElementById('secretModal').style.display = 'flex';
             document.getElementById('docPassword').focus();
@@ -341,7 +265,6 @@
             const input = document.getElementById('docPassword').value;
             const role = localStorage.getItem('teba_user_role');
             
-            // لو المستخدم أدمن أصلاً، أو كتب الباسورد الصح
             if (role === 'admin' || input === TEBA_CONFIG.auth.doctorPassword) {
                 sessionStorage.setItem('doctor_access', 'granted');
                 window.location.href = '../dashboard/admin.html';
@@ -360,9 +283,6 @@
             if (e.key === 'Enter') checkDoctorPassword();
         });
 
-        // ==========================================
-        // 💡 كود PWA Install Prompt
-        // ==========================================
         let deferredPrompt;
         const btnLogin = document.getElementById('pwaInstallBtnLogin');
         const btnDesktop = document.getElementById('pwaInstallBtnDesktop');
@@ -388,7 +308,6 @@
             deferredPrompt = null;
         };
 
-        // تفعيل الـ PWA Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('../service-worker.js')

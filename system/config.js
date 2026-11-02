@@ -8,21 +8,21 @@ const TEBA_CONFIG = {
         name: _currentTenantName
     },
     lab: {
-        // هنخلي الاسم ديناميكي برضه عشان يظهر في التقارير والطباعة
         name: _currentTenantName,
-        nameEn: "TEBA LABS", // ممكن نخليها ديناميكية بعدين
-        doctor: "د/ أحمد طه أبوندا", // دي ممكن تفضل ثابتة أو نضيفها في الداتابيز
+        nameEn: "TEBA LABS",
+        doctor: "د/ أحمد طه أبوندا",
         phone: "01123702062",
         whatsapp: "201099003494",
         address: "شبين القناطر، القليوبية"
     },
     supabase: {
-        url: "https://hgqwpykeazuzceeiumjg.supabase.co",
-        key: "sb_publishable_7FzS_dDxTF7bObMLJfI_sQ_6ac410OO"
+        // الروابط الصح بتاعة مشروعك
+        url: "https://khjzoleiuiipyodpkieg.supabase.co",
+        key: "sb_publishable_2Q7SPvruXJar3gvOxtvl5w_p4CVDfcU"
     },
     auth: {
-        employeePassword: "123", // سيتم إلغاؤه لاحقاً
-        doctorPassword: "999",
+        employeePassword: "123", 
+        doctorPassword: "999", // الباسورد اللي بيفتح السعر في إدارة التحاليل
         sessionTimeout: 2 * 60 * 60 * 1000
     }
 };
