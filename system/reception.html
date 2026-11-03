@@ -359,7 +359,7 @@
         const supabaseKey = TEBA_CONFIG.supabase.key;
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // ==== تهيئة الداتابيز المحلية (النسخة الشاملة) ====
+        // ==== تهيئة الداتابيز المحلية ====
         const db = new Dexie('TebaLabOfflineDB');
         db.version(3).stores({
             patients: 'id, name, phone',
@@ -375,7 +375,6 @@
         let currentPatientId = null;
         let currentCategory = 'all';
         
-        // ✅ التعديل 1: متغير الفرع الحالي وعزل الفروع
         let currentBranch = localStorage.getItem('teba_current_branch') || '1';
 
         function updateLocalBranch(val) {
@@ -460,17 +459,21 @@
                             const { error: tErr } = await _supabase.from('visit_tests').insert(tests);
                             if (tErr) throw tErr;
 
-                            // ✅ التعديل 2: تحديث الـ ID المؤقت في الداتابيز المحلية بالـ ID الحقيقي
+                            // ✅ التعديل: تحديث الـ ID المؤقت في الداتابيز المحلية بالـ ID الحقيقي (بدون update للـ PK)
                             const oldTempVisitId = order.tempVisitId; 
                             if(oldTempVisitId) {
-                                await db.visits.update(oldTempVisitId, { visit_id: realVisitId });
+                                const oldVisit = await db.visits.get(oldTempVisitId);
+                                if (oldVisit) {
+                                    await db.visits.delete(oldTempVisitId);
+                                    oldVisit.visit_id = realVisitId;
+                                    await db.visits.put(oldVisit);
+                                }
                                 const localTests = await db.visit_tests.where('visit_id').equals(oldTempVisitId).toArray();
                                 for(let lt of localTests) {
                                     await db.visit_tests.update(lt.id, { visit_id: realVisitId });
                                 }
                             }
 
-                            // إرسال إشعار للمعمل (مع تحديد الفرع)
                             const bc = new BroadcastChannel('teba_sync');
                             bc.postMessage({ type: 'new_order', branch_id: order.branch_id });
                         } 
@@ -550,10 +553,9 @@
             const dateStr = new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
             document.getElementById('displayVisitDate').innerText = dateStr;
             
-            // ✅ التعديل 3: توليد رقم مؤقت فريد (TMP) بدل الـ Counter القديم لمنع التكرار
             let localCounter = parseInt(localStorage.getItem('teba_local_visit_counter') || '1000');
-localCounter++;
-document.getElementById('displayVisitId').innerText = localCounter + " (مؤقت)";
+            localCounter++;
+            document.getElementById('displayVisitId').innerText = localCounter + " (مؤقت)";
         }
 
         function startNewPatient() {
@@ -564,7 +566,7 @@ document.getElementById('displayVisitId').innerText = localCounter + " (مؤقت
             document.getElementById('pAge').value = '30';
             document.getElementById('pAgeType').value = 'Years';
             document.getElementById('pGender').value = 'male';
-            document.getElementById('pBranch').value = currentBranch; // ربط الفرع الحالي
+            document.getElementById('pBranch').value = currentBranch; 
             document.getElementById('btnPatientHistory').style.display = 'none';
             cart = []; renderCart(); calculateChanges();
             generateVisitPreview();
@@ -577,7 +579,6 @@ document.getElementById('displayVisitId').innerText = localCounter + " (مؤقت
             
             try {
                 if(navigator.onLine) {
-                    // ✅ التعديل 4: فلترة السحابة بالفرع الحالي
                     const { data, error } = await _supabase.from('visits')
                         .select(`visit_id, visit_date, patients (id, name, phone, doctor_name, age, age_type, gender)`)
                         .eq('tenant_id', TEBA_CONFIG.tenant.id)
@@ -590,12 +591,11 @@ document.getElementById('displayVisitId').innerText = localCounter + " (مؤقت
                             if(v.patients) {
                                 await db.patients.put({ ...v.patients, id: v.patients.id });
                             }
-                            await db.visits.put({ visit_id: v.visit_id, visit_date: v.visit_date, patient_id: v.patients ? v.patients.id : null, branch_id: currentBranch });
+                            await db.visits.put({ visit_id: Number(v.visit_id), visit_date: v.visit_date, patient_id: v.patients ? v.patients.id : null, branch_id: currentBranch });
                         }
                     }
                 }
 
-                // ✅ التعديل 5: فلترة الداتابيز المحلية بالفرع الحالي
                 const localVisits = await db.visits
                     .filter(v => String(v.branch_id) === String(currentBranch))
                     .reverse()
@@ -631,7 +631,9 @@ document.getElementById('displayVisitId').innerText = localCounter + " (مؤقت
 
         async function loadPatientToForm(visitId) {
             try {
-                const vData = await db.visits.get(visitId);
+                // تحويل صريح للرقم عشان الذاكرة المحلية متتلخبطش
+                const numericVisitId = Number(visitId);
+                const vData = await db.visits.get(numericVisitId);
                 if(!vData) return showToast('الزيارة غير موجودة محلياً', true);
 
                 const p = await db.patients.get(vData.patient_id);
@@ -650,7 +652,7 @@ document.getElementById('displayVisitId').innerText = localCounter + " (مؤقت
                 document.getElementById('displayVisitDate').innerText = vData.visit_date ? new Date(vData.visit_date).toLocaleDateString('ar-EG') : new Date().toLocaleDateString('ar-EG');
                 document.getElementById('btnPatientHistory').style.display = 'block';
                 
-                const tests = await db.visit_tests.where('visit_id').equals(visitId).toArray();
+                const tests = await db.visit_tests.where('visit_id').equals(numericVisitId).toArray();
                 cart = []; 
                 tests.forEach(t => {
                     const catTest = masterTests.find(m => m.code === t.test_code);
@@ -829,7 +831,7 @@ document.getElementById('displayVisitId').innerText = localCounter + " (مؤقت
         }
 
         // ==========================================
-        // الحفظ (معدل ليدعم الأوفلاين والمزامنة وعزل الفروع)
+        // الحفظ
         // ==========================================
         async function saveOrder() {
             const pName = document.getElementById('pName').value.trim();
@@ -845,8 +847,7 @@ document.getElementById('displayVisitId').innerText = localCounter + " (مؤقت
                     localPatientId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
                 }
 
-                // ✅ التعديل 6: استخدام ID مؤقت نصي لمنع التكرار
-                                let localCounter = parseInt(localStorage.getItem('teba_local_visit_counter') || '1000');
+                let localCounter = parseInt(localStorage.getItem('teba_local_visit_counter') || '1000');
                 localCounter++;
                 localStorage.setItem('teba_local_visit_counter', localCounter.toString());
                 const tempVisitId = localCounter;
@@ -873,7 +874,6 @@ document.getElementById('displayVisitId').innerText = localCounter + " (مؤقت
                     id: localPatientId, name: orderData.patientName, phone: orderData.phone, age: orderData.age, age_type: orderData.age_type, gender: orderData.gender, doctor_name: orderData.doctor_name
                 });
                 
-                // حفظ الزيارة محلياً بالرقم المؤقت والفرع
                 await db.visits.put({
                     visit_id: tempVisitId, patient_id: localPatientId, branch_id: branchId, visit_date: new Date().toISOString(), is_published: false
                 });
@@ -913,7 +913,6 @@ document.getElementById('displayVisitId').innerText = localCounter + " (مؤقت
             document.getElementById('patientListModal').style.display = 'flex';
 
             try {
-                // ✅ التعديل 7: فلترة قائمة المرضى بالفرع الحالي
                 const visits = await db.visits
                     .filter(v => String(v.branch_id) === String(currentBranch))
                     .toArray();
@@ -929,8 +928,8 @@ document.getElementById('displayVisitId').innerText = localCounter + " (مؤقت
                         <td style="padding:10px;">${branchName}</td>
                         <td style="padding:10px;">---</td>
                         <td style="padding:10px; display:flex; gap:5px;">
-                            <button style="padding: 5px 10px; background:var(--danger); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="deleteVisit('${v.visit_id}')">حذف</button>
-                            <button style="padding: 5px 10px; background:var(--primary); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="loadPatientToForm('${v.visit_id}'); closeModal('patientListModal');">فتح</button>
+                            <button style="padding: 5px 10px; background:var(--danger); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="deleteVisit(${v.visit_id})">حذف</button>
+                            <button style="padding: 5px 10px; background:var(--primary); color:white; border:none; border-radius:5px; cursor:pointer;" onclick="loadPatientToForm(${v.visit_id}); closeModal('patientListModal');">فتح</button>
                         </td>
                     </tr>`;
                 }
@@ -942,11 +941,12 @@ document.getElementById('displayVisitId').innerText = localCounter + " (مؤقت
         }
 
         async function deleteVisit(visitId) {
+            const numericVisitId = Number(visitId);
             if(!confirm('هل أنت متأكد من حذف هذه الزيارة نهائياً؟')) return;
             try {
-                await db.visits.delete(visitId);
-                await db.visit_tests.where('visit_id').equals(visitId).delete();
-                await addToOutbox('visits', 'DELETE', { visit_id: visitId });
+                await db.visits.delete(numericVisitId);
+                await db.visit_tests.where('visit_id').equals(numericVisitId).delete();
+                await addToOutbox('visits', 'DELETE', { visit_id: numericVisitId });
                 showToast('🗑️ تم الحذف محلياً!'); 
                 openPatientList(); 
                 loadRecentPatients();
@@ -958,7 +958,6 @@ document.getElementById('displayVisitId').innerText = localCounter + " (مؤقت
             const query = document.getElementById('patientSearch').value.trim();
             if(!query) return;
             try {
-                // البحث في مرضى الفرع الحالي
                 const visits = await db.visits.filter(v => String(v.branch_id) === String(currentBranch)).toArray();
                 const visitPatientIds = new Set(visits.map(v => v.patient_id));
                 
