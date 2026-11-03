@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Patient Portal (v2.2 - Final)
+   TEBA LABS - Patient Portal (v2.3 - Final)
    ===================================================== */
 
 const supabaseUrl = TEBA_CONFIG.supabase.url;
@@ -27,8 +27,14 @@ async function fetchPatientResult() {
             p_visit_id: parseInt(visitId)
         });
 
-        if (rpcErr) throw new Error('تفاصيل الخطأ: ' + rpcErr.message);
-        if (!results || results.length === 0) throw new Error('لم يتم العثور على نتيجة مطابقة. تأكد من الاسم ورقم الزيارة أو أن النتيجة لم يتم نشرها بعد.');
+        if (rpcErr) {
+            console.error("Supabase RPC Error:", rpcErr);
+            throw new Error('حدث خطأ في الاتصال بقاعدة البيانات. يرجى المحاولة لاحقاً.');
+        }
+        
+        if (!results || results.length === 0) {
+            throw new Error('لم يتم العثور على نتيجة مطابقة. تأكد من الاسم ورقم الزيارة أو أن النتيجة لم يتم نشرها بعد.');
+        }
 
         const patientInfo = results[0];
         const testsData = results; 

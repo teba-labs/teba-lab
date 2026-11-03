@@ -24,7 +24,10 @@ header { background: var(--surface); color: var(--text); display: flex; justify-
 .btn-sync { background: var(--gold); display: none; animation: pulse 2s infinite; }
 .btn-whatsapp { background: var(--whatsapp); }
 .btn-pdf { background: var(--danger); }
+.btn-back-reception { background: #3498db; } /* زرار الرجوع للاستقبال */
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+.branch-selector { padding: 8px 12px; border-radius: 8px; border: 2px solid var(--primary); font-family: inherit; font-weight: bold; color: var(--primary); outline: none; cursor: pointer; background: white;}
 
 .main-grid { display: grid; grid-template-columns: 340px 1fr 1fr; gap: 15px; padding: 15px; flex-grow: 1; height: calc(100vh - 70px); overflow: hidden; }
 .panel { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; border: 1px solid var(--border); overflow: hidden; }
@@ -85,6 +88,11 @@ header { background: var(--surface); color: var(--text); display: flex; justify-
 .input-group input, .input-group select { padding: 12px 15px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 1.05rem; font-family: inherit; outline: none; text-align: center; font-weight: bold; background: var(--surface); color: var(--text); transition: 0.2s;}
 .input-group input:focus, .input-group select:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(10, 104, 71, 0.1); }
 .input-calc { background-color: #f0fdf4; color: var(--primary); border-color: #bbf7d0;}
+
+/* ✅ التعديل الجديد: زرار تعديل الرينج */
+.btn-edit-range { background: none; border: none; cursor: pointer; font-size: 1rem; margin-right: 5px; padding: 0 4px; transition: 0.2s; }
+.btn-edit-range:hover { transform: scale(1.2); }
+.range-input-custom { width: 80px; padding: 4px 8px !important; font-size: 0.8rem !important; border-radius: 4px !important; text-align: center; }
 
 .phase-selector { margin-bottom: 10px; padding: 10px; border-radius: 6px; border: 1px solid var(--warning); background: #fffbeb; font-size: 0.85rem; font-weight: bold; color: #b45309; width: 100%; text-align: center;}
 

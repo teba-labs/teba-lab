@@ -1,8 +1,8 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v90 - Cache Update)
+   TEBA LABS - Service Worker (v91 - Cache Update)
    ===================================================== */
 
-const CACHE_VERSION = 'v90'; 
+const CACHE_VERSION = 'v91'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
@@ -12,9 +12,9 @@ const PRECACHE_ASSETS = [
   './', './index.html', 
   './system/home.html', './system/reception.html', './system/lab.html', './system/tests_manage.html', 
   './system/lab.css', './system/lab.js',
-  './dashboard/admin.html', 
-  './styles.css', './admin.css', 
-  './data.js', './app.js', './admin.js', 
+  './dashboard/admin.html', './dashboard/admin.css', './dashboard/admin.js',
+  './styles.css', 
+  './data.js', './app.js', 
   './site_dynamic.js', './patient_portal.js', './config.js',
   './logo.png', './brand-logo.png', './header.png', './manifest.json'
 ];

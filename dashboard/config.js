@@ -14,12 +14,10 @@ const TEBA_CONFIG = {
         phone: "01123702062",
         whatsapp: "201099003494",
         address: "شبين القناطر، القليوبية",
-        portalUrl: "https://teba-labs.github.io/t/patient_portal.html" // تأكد إن الرابط ده صح لو مستخدم في الكود
+        portalUrl: "https://teba-labs.github.io/teba-lab/patient_portal.html" 
     },
     supabase: {
-        // الرابط الصح بتاع مشروعك
         url: "https://khjzoleiuiipyodpkieg.supabase.co",
-        // المفتاح الصح اللي إنت جبته
         key: "sb_publishable_2Q7SPvruXJar3gvOxtvl5w_p4CVDfcU"
     },
     auth: {
