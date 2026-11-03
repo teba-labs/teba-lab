@@ -551,8 +551,9 @@
             document.getElementById('displayVisitDate').innerText = dateStr;
             
             // ✅ التعديل 3: توليد رقم مؤقت فريد (TMP) بدل الـ Counter القديم لمنع التكرار
-            const tempId = 'TMP-' + Math.floor(Math.random() * 90000 + 10000);
-            document.getElementById('displayVisitId').innerText = tempId;
+            let localCounter = parseInt(localStorage.getItem('teba_local_visit_counter') || '1000');
+localCounter++;
+document.getElementById('displayVisitId').innerText = localCounter + " (مؤقت)";
         }
 
         function startNewPatient() {
@@ -845,7 +846,10 @@
                 }
 
                 // ✅ التعديل 6: استخدام ID مؤقت نصي لمنع التكرار
-                const tempVisitId = 'TMP-' + Math.floor(Math.random() * 90000 + 10000);
+                                let localCounter = parseInt(localStorage.getItem('teba_local_visit_counter') || '1000');
+                localCounter++;
+                localStorage.setItem('teba_local_visit_counter', localCounter.toString());
+                const tempVisitId = localCounter;
                 const branchId = parseInt(document.getElementById('pBranch').value);
 
                 const orderData = {
