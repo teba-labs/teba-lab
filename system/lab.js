@@ -16,7 +16,7 @@ const supabaseUrl = TEBA_CONFIG.supabase.url;
 const supabaseKey = TEBA_CONFIG.supabase.key;
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// ==== تهيئة الداتابيز المحلية (النسخة الشاملة) ====
+// ==== تهيئة الداتابيز المحلية ====
 const db = new Dexie('TebaLabOfflineDB');
 db.version(3).stores({
     patients: 'id, name, phone',
@@ -31,7 +31,7 @@ let allVisits = [], visitTests = [], testsCatalog = [], testResults = [];
 let selectedVisitId = null;
 let currentLabBranch = localStorage.getItem('teba_current_branch') || '1'; // عزل الفروع
 
-// ✅ دالة تغيير الفرع في المعمل
+// ✅ دالة تغيير الفرع في المعمل (لو فيه قائمة منسدلة في lab.html)
 function changeLabBranch(val) {
     currentLabBranch = val;
     localStorage.setItem('teba_current_branch', val);
@@ -139,7 +139,6 @@ window.addEventListener('offline', () => { showToast('⚠️ انقطع الات
 // ==========================================
 const bc = new BroadcastChannel('teba_sync');
 bc.onmessage = (event) => {
-    // ✅ التعديل: لا يستقبل الإشعار إلا لو الفرع مطابق
     if (event.data && event.data.type === 'new_order') {
         if (String(event.data.branch_id) === String(currentLabBranch)) {
             const audio = document.getElementById('notifSound');
@@ -158,9 +157,10 @@ function showToast(msg, isError = false) {
     setTimeout(() => { t.style.display = 'none'; }, 4000);
 }
 
+// ✅ زرار الواتساب المباشر
 function sendLabWhatsApp() {
     if (!selectedVisitId) return showToast('⚠️ اختر مريضاً أولاً', true);
-    const visit = allVisits.find(v => v.visit_id == selectedVisitId);
+    const visit = allVisits.find(v => String(v.visit_id) === String(selectedVisitId));
     if (!visit || !visit.patient) return showToast('⚠️ بيانات المريض غير متوفرة', true);
     
     const phone = visit.patient.phone;
@@ -183,10 +183,17 @@ document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
     }
-});// ==========================================
-// 🧠 دوال ذكية للرينجات
+});
+
 // ==========================================
-function getSmartRange(param, patient, selectedPhase = null) {
+// 🧠 دوال ذكية للرينجات (مع دعم الرينج المخصص)
+// ==========================================
+function getSmartRange(param, patient, selectedPhase = null, savedData = {}) {
+    // ✅ التعديل: الأولوية للرينج المخصص اللي إحنا حفظناه
+    if (savedData && savedData[param.name] && savedData[param.name].customRange) {
+        return savedData[param.name].customRange;
+    }
+
     let ageInYears = parseFloat(patient.age) || 0;
     if (patient.age_type === 'Months') ageInYears = ageInYears / 12;
     if (patient.age_type === 'Days') ageInYears = ageInYears / 365;
@@ -232,7 +239,7 @@ window.updateRangeUI = function(vtId, paramName, refMale, refFemale, age, ageTyp
     const patient = { age: age, age_type: ageType, gender: gender };
     const param = { name: paramName, ref_male: refMale, ref_female: refFemale };
     const newRange = getSmartRange(param, patient, selectedPhase);
-    const rangeLabel = document.getElementById(`range_${vtId}_${paramName}`);
+    const rangeLabel = document.getElementById(`range_text_${vtId}_${paramName}`);
     if (rangeLabel) rangeLabel.innerText = newRange;
 };
 
@@ -242,7 +249,6 @@ window.updateRangeUI = function(vtId, paramName, refMale, refFemale, age, ageTyp
 async function loadData() {
     try {
         if (navigator.onLine) {
-            // جلب الكتالوج
             const { data: catalog } = await _supabase.from('tests_catalog').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id);
             if (catalog) {
                 if (catalog.length === 0) {
@@ -253,7 +259,6 @@ async function loadData() {
                 }
             }
 
-            // جلب الزيارات الخاصة بالفرع الحالي فقط
             const { data: visits } = await _supabase.from('visits')
                 .select('*')
                 .eq('tenant_id', TEBA_CONFIG.tenant.id)
@@ -284,9 +289,10 @@ async function loadData() {
 
         testsCatalog = await db.catalog.toArray();
         
-        // جلب الزيارات من الداتابيز المحلية للفرع الحالي
-        let localVisits = await db.visits.where('branch_id').equals(parseInt(currentLabBranch)).toArray();
-        localVisits.sort((a, b) => b.visit_id - a.visit_id); // ترتيب تنازلي حسب رقم الزيارة
+        // ✅ التعديل: القراءة الآمنة للزيارات عشان الطابور ميقفش
+        const allLocalVisits = await db.visits.toArray();
+        let localVisits = allLocalVisits.filter(v => String(v.branch_id) === String(currentLabBranch));
+        localVisits.sort((a, b) => Number(b.visit_id) - Number(a.visit_id));
         localVisits = localVisits.slice(0, 100);
 
         allVisits = [];
@@ -360,17 +366,15 @@ function populateSelectors() {
     profileSelect.onchange = () => { if(profileSelect.value) addTestFromSelect('profile'); };
 }
 
-// ✅ التعديل الحاسم لمشكلة البروفايل أوفلاين
+// ✅ التعديل الحاسم: الاعتماد على test_type أولاً
 function isProfileTest(catalogItem) {
     if (!catalogItem) return false;
+    if (catalogItem.test_type === 'Profile') return true;
     let params = catalogItem.parameters;
-    
-    // لو الداتا جاية من الداتابيز كنص، بنحولها لـ Array
     if (typeof params === 'string') {
         try { params = JSON.parse(params); } catch(e) { params = []; }
     }
     if (!Array.isArray(params)) params = [];
-    
     return params.length > 1 || (params.length === 1 && params[0].name !== 'Result');
 }
 
@@ -380,7 +384,7 @@ function getSmartParams(catalogItem) {
         try { params = JSON.parse(params); } catch(e) { params = []; }
     }
     if (!Array.isArray(params)) params = [];
-    else params = JSON.parse(JSON.stringify(params)); // Deep copy
+    else params = JSON.parse(JSON.stringify(params)); 
 
     const isLipid = (catalogItem.name && catalogItem.name.toUpperCase().includes('LIPID')) || catalogItem.code === '109';
     if (isLipid) {
@@ -495,7 +499,9 @@ function selectPatient(visitId) {
         btnPub.style.display = 'block';
         btnPub.innerHTML = visitObj.is_published ? '🔄 تحديث النشر' : '🌐 نشر الزيارة';
     }
-}// ==========================================
+}
+
+// ==========================================
 // 📝 المودالات وتسجيل النتائج (مع تعديل الرينج)
 // ==========================================
 function openSingleResultModal(vtId, testCode){
@@ -508,8 +514,6 @@ function openSingleResultModal(vtId, testCode){
     const unit = p.unit || catalogItem.unit || '-';
     const visit = allVisits.find(v => String(v.visit_id) === String(selectedVisitId));
     const patient = visit ? visit.patient : { age: 0, age_type: 'Years', gender: 'male' };
-    
-    // ✅ تمرير savedData عشان يقرأ الرينج المخصص لو موجود
     const range = getSmartRange(p, patient, null, savedData);
 
     document.getElementById('singleModalTitle').innerText = `🧪 تسجيل نتيجة: ${catalogItem.name}`;
@@ -536,7 +540,7 @@ function openSingleResultModal(vtId, testCode){
 window.enableRangeEdit = function(vtId, paramName) {
     const container = document.getElementById(`range_container_${vtId}_${paramName}`);
     const currentRange = document.getElementById(`range_text_${vtId}_${paramName}`).innerText;
-    container.innerHTML = `<input type="text" id="custom_range_${vtId}_${paramName}" class="range-input-custom" value="${currentRange}" placeholder="Range">`;
+    container.innerHTML = `<input type="text" id="custom_range_${vtId}_${paramName}" class="range-input-custom" value="${currentRange}" placeholder="Range" style="width:100px; padding:2px; font-size:12px;">`;
     document.getElementById(`custom_range_${vtId}_${paramName}`).focus();
 }
 
@@ -576,7 +580,7 @@ function openProfileResultModal(vtId, testCode) {
                     <span>${param.label || param.name}</span>
                     <span class="range-info" id="range_container_${vtId}_${param.name}">
                         <span id="range_text_${vtId}_${param.name}">${range}</span> ${unit}
-                        <button type="button" class="btn-edit-range" onclick="enableRangeEdit('${vtId}', '${param.name}')" title="تعديل الرينج لهذه الحالة">✏️</button>
+                        <button type="button" class="btn-edit-range" onclick="enableRangeEdit('${vtId}', '${param.name}')" title="تعديل الرينج لهذه الحالة" style="background:none; border:none; cursor:pointer;">✏️</button>
                     </span>
                 </label>
                 ${inputElement}
@@ -621,13 +625,13 @@ async function saveProfileResult(vtId, testCode) {
     params.forEach(param => {
         const input = document.getElementById(`res_${vtId}_${param.name}`);
         const phaseSelect = document.getElementById(`phase_${vtId}_${param.name}`);
-        const customRangeInput = document.getElementById(`custom_range_${vtId}_${param.name}`); // ✅ قراءة الرينج المعدل
+        const customRangeInput = document.getElementById(`custom_range_${vtId}_${param.name}`);
         
         if (input && input.value.trim() !== '') {
             resultsData[param.name] = { value: input.value.trim() };
             if (phaseSelect) resultsData[param.name].phase = phaseSelect.value;
             if (customRangeInput && customRangeInput.value.trim() !== '') {
-                resultsData[param.name].customRange = customRangeInput.value.trim(); // حفظ التعديل
+                resultsData[param.name].customRange = customRangeInput.value.trim();
             }
         }
     });
@@ -818,7 +822,6 @@ function getHeaderHtml(visit, reqDate, printDate) {
     if(visit.patient.age_type === 'Months') ageStr = visit.patient.age + ' Months';
     if(visit.patient.age_type === 'Days') ageStr = visit.patient.age + ' Days';
     
-    // ✅ التعديل: استخدام صورة الهيدر المخزنة أوفلاين
     return `
         <div class="print-header">
             <div class="print-header-left">
@@ -893,7 +896,6 @@ function openPrintModal() {
                 const val = savedData[param.name]?.value; const phase = savedData[param.name]?.phase; 
                 if (val) {
                     hasTestData = true;
-                    // ✅ قراءة الرينج من السجل المخصص لو موجود
                     const range = getSmartRange(param, visit.patient, phase, savedData);
                     const unit = param.unit || param.units || '-';
                     const flagStr = getStateHtml(val, range);
@@ -939,7 +941,10 @@ function downloadPDF() {
 // 🚀 التشغيل عند فتح الصفحة
 // ==========================================
 window.onload = async () => { 
-    document.getElementById('labBranch').value = currentLabBranch;
+    // التأكد من وجود قائمة اختيار الفرع لو موجودة في الـ HTML
+    const branchSelector = document.getElementById('labBranch');
+    if (branchSelector) branchSelector.value = currentLabBranch;
+
     await loadData(); 
     checkSyncStatus();
 };
