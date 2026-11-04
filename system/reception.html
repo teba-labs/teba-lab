@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -10,12 +10,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <script src="config.js?v=97"></script>
     
     <style>
-        /* ================= Design System Variables ================= */
         :root {
             /* Light Mode (Default - Silver) */
             --bg: #f1f5f9; 
@@ -62,7 +62,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
         body { font-family: var(--font); background-color: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* ================= Header ================= */
         header { 
             background: var(--surface); color: var(--text); 
             display: flex; justify-content: space-between; align-items: center; 
@@ -70,7 +69,7 @@
             z-index: 10; border-bottom: 1px solid var(--border-color); 
         }
         .brand { display: flex; align-items: center; gap: 15px; }
-        .brand img { height: 45px; width: auto; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05)); }
+        .brand img { height: 45px; width: auto; object-fit: contain; }
         .brand-text h1 { font-size: 1.3rem; color: var(--primary); font-weight: 800; margin-bottom: 2px;}
         .brand-text p { font-size: 0.8rem; color: var(--text-muted); font-weight: 600;}
         
@@ -98,7 +97,6 @@
 
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
-        /* ================= Live Ticker ================= */
         .live-ticker-wrap { background: #0f172a; color: #fff; padding: 6px 0; overflow: hidden; font-size: 0.85rem; white-space: nowrap; display: flex; align-items: center; border-bottom: 1px solid var(--border-color);}
         .live-ticker { display: flex; animation: ticker 25s linear infinite; padding-left: 100%; }
         .live-ticker:hover { animation-play-state: paused; }
@@ -108,7 +106,6 @@
         .dot.offline { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
         @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
-        /* ================= Main Layout ================= */
         .main-container { display: grid; grid-template-columns: 360px 1fr 400px; gap: 15px; padding: 15px; flex-grow: 1; height: calc(100vh - 120px); overflow: hidden; min-width: 0; }
         
         .panel { 
@@ -123,7 +120,6 @@
             justify-content: space-between; align-items: center;
         }
 
-        /* ================= Forms & Inputs ================= */
         .patient-form { padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto;}
         .form-group { display: flex; flex-direction: column; gap: 8px; }
         .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); }
@@ -139,7 +135,6 @@
         }
         .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-        /* ================= Cart ================= */
         .cart-items { flex-grow: 1; overflow-y: auto; padding: 15px; }
         .cart-item { 
             display: flex; justify-content: space-between; padding: 15px; 
@@ -162,7 +157,6 @@
         .payment-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
         .payment-actions .nav-btn { justify-content: center; padding: 15px; font-size: 1rem; }
 
-        /* ================= Catalog ================= */
         .catalog-layout { display: flex; flex-direction: column; height: 100%; min-width: 0;}
         .catalog-tabs { display: flex; overflow-x: auto; gap: 8px; padding: 15px; border-bottom: 1px solid var(--border-color); scrollbar-width: thin;}
         .cat-btn { 
@@ -186,7 +180,6 @@
         }
         .test-btn:hover { border-color: var(--primary) !important; transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.05) !important; }
 
-        /* ================= Toast ================= */
         .toast { 
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%); 
             background: var(--primary-gradient); color: white; padding: 15px 30px; 
@@ -195,7 +188,6 @@
         }
         .toast.error { background: var(--danger); }
 
-        /* ================= Modals ================= */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(8px); padding: 20px;}
         .modal-content { 
             background: var(--surface); padding: 30px; border-radius: var(--radius); 
@@ -206,7 +198,6 @@
         .btn-close { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: inherit; transition: 0.2s;}
         .btn-close:hover { background: var(--danger); color: white; }
 
-        /* Responsive */
         @media (max-width: 1024px) {
             body { overflow-y: auto; height: auto; }
             .main-container { display: flex; flex-direction: column; height: auto; overflow: visible; padding-bottom: 50px; gap: 20px; }
@@ -224,7 +215,6 @@
             .nav-btn { width: 100%; justify-content: center; }
         }
 
-        /* ================= Print (ممنوع اللمس) ================= */
         @media print {
             @page { size: A4; margin: 0; }
             body * { visibility: hidden; }
@@ -246,7 +236,7 @@
             </div>
         </div>
         <div class="nav-links">
-            <button id="themeToggleBtn" onclick="toggleTheme()" title="تغيير المظهر">🌙</button>
+            <button id="themeToggleBtn" title="تغيير المظهر">🌙</button>
             <button class="nav-btn sync" id="syncBtn" onclick="processOutbox()">🔄 مزامنة</button>
             <button class="nav-btn whatsapp" onclick="sendSmartWhatsApp()" title="إرسال رسالة للمريض">💬 واتساب</button>
             <button class="nav-btn" onclick="window.location.href='home.html'">🏠 الرئيسية</button>
@@ -675,7 +665,7 @@
             setTimeout(() => { toast.style.display = 'none'; }, 4000);
         }
 
-        // ✅ دالة توليد رقم زيارة تسلسلي
+        // ✅ دالة توليد رقم زيارة تسلسلي (بناءً على آخر زيارة محلية)
         async function getNextSequentialVisitId() {
             try {
                 const lastVisit = await db.visits.orderBy('visit_id').last();
@@ -752,10 +742,11 @@
                 for (let v of recentVisits) {
                     const p = await db.patients.get(v.patient_id);
                     if(p) {
+                        const paddedId = String(v.visit_id).padStart(4, '0');
                         html += `
                         <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid var(--border-color); align-items:center;">
                             <div>
-                                <span style="font-weight:bold; color:var(--primary);">${String(v.visit_id).padStart(4, '0')}</span> - 
+                                <span style="font-weight:bold; color:var(--primary);">${paddedId}</span> - 
                                 <span style="color:var(--text);">${p.name}</span>
                             </div>
                             <button onclick="loadPatientToForm(${v.visit_id})" style="background:var(--surface); border:1px solid var(--border-color); color:var(--text); padding:5px 12px; border-radius:8px; cursor:pointer; font-size:0.8rem;">عرض</button>
@@ -1080,28 +1071,55 @@
             } catch(e) { console.error(e); }
         }
 
+        // ✅ دالة البحث المحدثة (تقرأ من السحابة مباشرة لو متصل)
         async function searchPatient() {
             const query = document.getElementById('patientSearch').value.trim();
             if(!query) return;
+            
             try {
-                const visits = await db.visits.filter(v => String(v.branch_id) === String(currentBranch)).toArray();
-                const visitPatientIds = new Set(visits.map(v => v.patient_id));
-                
-                const patients = await db.patients.filter(p => visitPatientIds.has(p.id) && (p.name.includes(query) || (p.phone && p.phone.includes(query)))).toArray();
-                
-                if(patients.length > 0) {
-                    const p = patients[0];
-                    currentPatientId = p.id;
-                    document.getElementById('pName').value = p.name; 
-                    document.getElementById('pPhone').value = p.phone || ''; 
-                    document.getElementById('pAge').value = p.age || 30; 
-                    document.getElementById('pAgeType').value = p.age_type || 'Years'; 
-                    document.getElementById('pGender').value = p.gender || 'male'; 
-                    document.getElementById('pDoctor').value = p.doctor_name || '';
+                let foundPatient = null;
+
+                // البحث في السحابة الأول (لو متصل)
+                if (navigator.onLine) {
+                    const { data: cloudPatients, error } = await _supabase.from('patients')
+                        .select('*')
+                        .eq('tenant_id', TEBA_CONFIG.tenant.id)
+                        .or(`name.ilike.%${query}%,phone.ilike.%${query}%`)
+                        .limit(1);
+
+                    if (!error && cloudPatients && cloudPatients.length > 0) {
+                        foundPatient = cloudPatients[0];
+                        // نحفظه محلياً عشان يبقى متاح أوفلاين بعدين
+                        await db.patients.put(foundPatient);
+                    }
+                }
+
+                // لو ملقاهوش في السحابة أو الجهاز أوفلاين، نبحث محلياً
+                if (!foundPatient) {
+                    const localPatients = await db.patients.filter(p => p.name.includes(query) || (p.phone && p.phone.includes(query))).toArray();
+                    if (localPatients.length > 0) {
+                        foundPatient = localPatients[0];
+                    }
+                }
+
+                if(foundPatient) {
+                    currentPatientId = foundPatient.id;
+                    currentEditingVisitId = null; // دي زيارة جديدة للمريض ده
+                    
+                    document.getElementById('pName').value = foundPatient.name || ''; 
+                    document.getElementById('pPhone').value = foundPatient.phone || ''; 
+                    document.getElementById('pAge').value = foundPatient.age || 30; 
+                    document.getElementById('pAgeType').value = foundPatient.age_type || 'Years'; 
+                    document.getElementById('pGender').value = foundPatient.gender || 'male'; 
+                    document.getElementById('pDoctor').value = foundPatient.doctor_name || '';
                     document.getElementById('btnPatientHistory').style.display = 'block';
-                    showToast('✅ تم العثور على المريض');
+                    
+                    cart = []; renderCart(); calculateChanges();
+                    await generateVisitPreview();
+                    
+                    showToast('✅ تم العثور على المريض (زيارة جديدة)');
                 } else { 
-                    showToast('⚠️ لم يتم العثور على مريض في هذا الفرع', true); 
+                    showToast('⚠️ لم يتم العثور على مريض بهذا الاسم أو الرقم', true); 
                     document.getElementById('btnPatientHistory').style.display = 'none';
                     currentPatientId = null;
                 }
