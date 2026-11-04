@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
-    <script src="config.js?v=102"></script>
+    <script src="config.js?v=103"></script>
     
     <style>
         :root {
@@ -326,7 +326,9 @@
             <p style="color: #d32f2f;"><strong>الباقي:</strong> <span id="printRemain"></span> ج.م</p>
         </div>
     </div>
+
     <script>
+        // ==== 1. إعدادات الوضع الليلي والنهاري (Dark/Light Mode) ====
         const themeBtn = document.getElementById('themeToggleBtn');
         const currentTheme = localStorage.getItem('teba_theme') || 'light';
         
@@ -342,6 +344,7 @@
             if(themeBtn) themeBtn.innerText = isDark ? '☀️' : '🌙';
         }
 
+        // ==== 2. التحقق من تسجيل الدخول ====
         if (!localStorage.getItem('teba_tenant_id')) {
             window.location.href = 'home.html';
         }
@@ -354,6 +357,7 @@
             }
         });
 
+        // ==== 3. تهيئة السحابة والداتابيز ====
         const supabaseUrl = TEBA_CONFIG.supabase.url;
         const supabaseKey = TEBA_CONFIG.supabase.key;
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -373,6 +377,7 @@
         let currentPatientId = null;
         let currentCategory = 'all';
         let currentEditingVisitId = null; 
+        let isSyncing = false; // 🔥 قفل لمنع المزامنة المتكررة
         
         let currentBranch = localStorage.getItem('teba_current_branch') || '1';
 
@@ -386,6 +391,9 @@
             }
         }
 
+        // ==========================================
+        // ⚙️ محرك المزامنة (Outbox) - النسخة الصاروخية المحدثة
+        // ==========================================
         async function addToOutbox(table_name, action, payload) {
             try {
                 await db.outbox.add({ table_name, action, payload, timestamp: new Date().toISOString() });
@@ -395,11 +403,14 @@
 
         async function processOutbox() {
             if (!navigator.onLine) return showToast('لا يوجد اتصال بالإنترنت!', true);
+            if (isSyncing) return; // 🔥 منع التداخل والتكرار
             
+            isSyncing = true;
             try {
                 const pending = await db.outbox.toArray();
                 if (pending.length === 0) {
                     document.getElementById('syncBtn').style.display = 'none';
+                    isSyncing = false;
                     return;
                 }
 
@@ -425,13 +436,20 @@
                             
                             let realVisitId = order.tempVisitId;
 
+                            // 🔥 السر هنا: لو التعديل، بنحدث. لو جديد، بنضيف
                             if (item.table_name === 'orders') {
-                                const { data: vData, error: vErr } = await _supabase.from('visits').insert([{
-                                    tenant_id: TEBA_CONFIG.tenant.id, patient_id: patientId, branch_id: order.branch_id, 
-                                    total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount, status: 'Pending'
-                                }]).select();
-                                if (vErr) throw vErr;
-                                realVisitId = vData[0].visit_id;
+                                // فحص إذا كانت الزيارة موجودة بالفعل لتجنب التكرار
+                                const { data: existingVisit } = await _supabase.from('visits').select('visit_id').eq('patient_id', patientId).eq('visit_date', order.visit_date).maybeSingle();
+                                if (existingVisit) {
+                                    realVisitId = existingVisit.visit_id;
+                                } else {
+                                    const { data: vData, error: vErr } = await _supabase.from('visits').insert([{
+                                        tenant_id: TEBA_CONFIG.tenant.id, patient_id: patientId, branch_id: order.branch_id, 
+                                        total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount, status: 'Pending', visit_date: order.visit_date
+                                    }]).select();
+                                    if (vErr) throw vErr;
+                                    realVisitId = vData[0].visit_id;
+                                }
                             } else {
                                 const { error: vErr } = await _supabase.from('visits').update({
                                     total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount
@@ -490,12 +508,17 @@
             } catch(e) {
                 console.error("Outbox error:", e);
                 document.getElementById('syncBtn').innerText = '🔄 مزامنة البيانات';
+            } finally {
+                isSyncing = false; // 🔥 فك القفل بعد الانتهاء
             }
         }
 
         window.addEventListener('online', () => { processOutbox(); updateLiveTicker(); });
         window.addEventListener('offline', updateLiveTicker);
 
+        // ==========================================
+        // دوال مساعدة
+        // ==========================================
         function logout() {
             _supabase.auth.signOut().then(() => {
                 localStorage.removeItem('teba_tenant_id');
@@ -530,6 +553,7 @@
             setTimeout(() => { toast.style.display = 'none'; }, 4000);
         }
 
+        // ✅ دالة توليد رقم زيارة تسلسلي
         async function getNextSequentialVisitId() {
             try {
                 const lastVisit = await db.visits.orderBy('visit_id').last();
@@ -700,6 +724,9 @@
             window.open(`https://wa.me/2${phone.replace(/^0/, '')}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
+        // ==========================================
+        // الكتالوج والسلة
+        // ==========================================
         async function fetchCatalogFromCloud() {
             try {
                 if (navigator.onLine) {
@@ -803,6 +830,9 @@
             document.getElementById('remainAmount').innerText = `${(netTotal - paid).toFixed(2)} ج.م`;
         }
 
+        // ==========================================
+        // الحفظ (تعديل أو جديد)
+        // ==========================================
         async function saveOrder() {
             const pName = document.getElementById('pName').value.trim();
             if (!pName) return showToast('⚠️ الرجاء إدخال اسم المريض!', true);
@@ -819,6 +849,7 @@
 
                 const branchId = parseInt(document.getElementById('pBranch').value);
                 let visitIdToUse;
+                let visitDateToUse = new Date().toISOString(); // 🔥 للحماية من التكرار
 
                 if (currentEditingVisitId) {
                     visitIdToUse = currentEditingVisitId;
@@ -836,6 +867,7 @@
                     gender: document.getElementById('pGender').value,
                     doctor_name: document.getElementById('pDoctor').value,
                     branch_id: branchId,
+                    visit_date: visitDateToUse, // 🔥 إضافة التاريخ
                     netTotal: parseFloat(document.getElementById('netTotalAmount').innerText),
                     paid: parseFloat(document.getElementById('paidAmount').value) || 0,
                     discountPercent: parseFloat(document.getElementById('discountPercent').value) || 0,
@@ -855,7 +887,7 @@
                     await addToOutbox('orders_edit', 'UPDATE', orderData);
                     showToast('✅ تم تعديل الطلب محلياً!');
                 } else {
-                    await db.visits.put({ visit_id: visitIdToUse, patient_id: localPatientId, branch_id: branchId, visit_date: new Date().toISOString(), is_published: false });
+                    await db.visits.put({ visit_id: visitIdToUse, patient_id: localPatientId, branch_id: branchId, visit_date: visitDateToUse, is_published: false });
                     for (let item of orderData.cart) {
                         await db.visit_tests.put({ id: item.id, visit_id: visitIdToUse, test_code: item.code, price_at_time: item.price });
                     }
@@ -877,6 +909,9 @@
             }
         }
 
+        // ==========================================
+        // التعديل والحذف وقائمة المرضى
+        // ==========================================
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         async function openPatientList() {
@@ -911,6 +946,7 @@
             }
         }
 
+        // 🔥 الحذف السريع: بيمسح من الشاشة فوراً بدون تعليق
         async function deleteVisit(visitId) {
             const numericVisitId = Number(visitId);
             if(!confirm('هل أنت متأكد من حذف هذه الزيارة نهائياً؟')) return;
@@ -921,7 +957,8 @@
                 showToast('🗑️ تم الحذف محلياً!'); 
                 openPatientList(); 
                 loadRecentPatients();
-                if (navigator.onLine) processOutbox();
+                // 🔥 مش بنستنى المزامنة هنا عشان الشاشة متعلقش
+                if (navigator.onLine) processOutbox(); 
             } catch(e) { console.error(e); }
         }
 
@@ -970,6 +1007,9 @@
             } catch(e) { console.error(e); }
         }
 
+        // ==========================================
+        // الفاتورة والطباعة
+        // ==========================================
         function resetForm() { 
             startNewPatient(); 
             document.getElementById('paidAmount').value = ''; 
@@ -1013,6 +1053,9 @@
             }, 100);
         }
 
+        // ==========================================
+        // التشغيل عند فتح الصفحة
+        // ==========================================
         window.onload = async () => { 
             document.getElementById('currentBranchDisplay').innerText = currentBranch === '1' ? 'الجعافرة' : 'بهتيم';
             document.getElementById('pBranch').value = currentBranch;
@@ -1026,8 +1069,16 @@
 
             if (navigator.onLine) processOutbox();
         };
+
+        // 🔥 التحديث التلقائي كل دقيقة لو فيه عمليات معلقة
+        setInterval(() => {
+            if (navigator.onLine && !isSyncing) {
+                processOutbox();
+            }
+        }, 60000);
     </script>
 
+    <!-- سكريبت تفعيل الـ PWA (التحديث التلقائي) -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {

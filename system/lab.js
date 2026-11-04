@@ -1,4 +1,4 @@
-﻿﻿// ==== التحقق من تسجيل الدخول ====
+﻿// ==== التحقق من تسجيل الدخول ====
 if (!localStorage.getItem('teba_tenant_id')) {
     window.location.href = 'home.html';
 }
@@ -30,6 +30,7 @@ db.version(3).stores({
 let allVisits = [], visitTests = [], testsCatalog = [], testResults = [];
 let selectedVisitId = null;
 let currentLabBranch = localStorage.getItem('teba_current_branch') || '1'; 
+let isSyncing = false; // 🔥 قفل لمنع التكرار والتعليق
 
 function changeLabBranch(val) {
     currentLabBranch = val;
@@ -43,7 +44,7 @@ function changeLabBranch(val) {
 }
 
 // ==========================================
-// ⚙️ محرك المزامنة (Outbox) 
+// ⚙️ محرك المزامنة (Outbox) - النسخة الصاروخية
 // ==========================================
 async function addToOutbox(table_name, action, payload) {
     try {
@@ -54,11 +55,14 @@ async function addToOutbox(table_name, action, payload) {
 
 async function processOutbox() {
     if (!navigator.onLine) return showToast('لا يوجد اتصال بالإنترنت!', true);
+    if (isSyncing) return; // 🔥 منع التداخل
     
+    isSyncing = true;
     try {
         const pending = await db.outbox.toArray();
         if (pending.length === 0) {
             document.getElementById('syncBtn').style.display = 'none';
+            isSyncing = false;
             return showToast('✅ لا توجد بيانات معلقة.');
         }
 
@@ -76,25 +80,31 @@ async function processOutbox() {
                     }, { onConflict: 'visit_test_id' });
                     if (error) throw error;
                 }
-                else if (item.table_name === 'visit_tests' && item.action === 'INSERT') {
-                    const { data, error } = await _supabase.from('visit_tests').insert([item.payload]).select();
-                    if (error) throw error;
-                    if(data && data.length > 0) {
-                        const oldId = item.payload.id;
-                        const newId = data[0].id;
-                        await db.visit_tests.update(oldId, { id: newId });
-                        
-                        const localResult = await db.test_results.where('visit_test_id').equals(oldId).first();
-                        if(localResult) {
-                            await db.test_results.update(localResult.id, { visit_test_id: newId });
-                        }
-                        const pendingResults = await db.outbox.where('table_name', 'test_results').toArray();
-                        for(let res of pendingResults) {
-                            if(res.payload.visit_test_id == oldId) {
-                                res.payload.visit_test_id = newId;
-                                await db.outbox.put(res);
+                else if (item.table_name === 'visit_tests') {
+                    if (item.action === 'INSERT') {
+                        const { data, error } = await _supabase.from('visit_tests').insert([item.payload]).select();
+                        if (error) throw error;
+                        if(data && data.length > 0) {
+                            const oldId = item.payload.id;
+                            const newId = data[0].id;
+                            await db.visit_tests.update(oldId, { id: newId });
+                            
+                            const localResult = await db.test_results.where('visit_test_id').equals(oldId).first();
+                            if(localResult) {
+                                await db.test_results.update(localResult.id, { visit_test_id: newId });
+                            }
+                            const pendingResults = await db.outbox.where('table_name', 'test_results').toArray();
+                            for(let res of pendingResults) {
+                                if(res.payload.visit_test_id == oldId) {
+                                    res.payload.visit_test_id = newId;
+                                    await db.outbox.put(res);
+                                }
                             }
                         }
+                    } else if (item.action === 'DELETE') {
+                        // 🔥 تفعيل حذف التحليل الغلط من السحابة
+                        await _supabase.from('visit_tests').delete().eq('id', item.payload.id);
+                        await _supabase.from('test_results').delete().eq('visit_test_id', item.payload.id);
                     }
                 }
                 else if (item.table_name === 'patients' && item.action === 'UPDATE') {
@@ -130,6 +140,8 @@ async function processOutbox() {
     } catch(e) {
         console.error("Outbox error:", e);
         document.getElementById('syncBtn').innerText = '🔄 مزامنة البيانات';
+    } finally {
+        isSyncing = false; // 🔥 فك القفل
     }
 }
 
@@ -159,24 +171,21 @@ function showToast(msg, isError = false) {
     setTimeout(() => { t.style.display = 'none'; }, 4000);
 }
 
-// ✅ زرار الواتساب الجديد (بيصلح مشكلة الأرقام نهائياً)
 function sendLabWhatsApp() {
     if (!selectedVisitId) return showToast('⚠️ اختر مريضاً أولاً', true);
     const visit = allVisits.find(v => String(v.visit_id) === String(selectedVisitId));
     if (!visit || !visit.patient) return showToast('⚠️ بيانات المريض غير متوفرة', true);
     
     const rawPhone = visit.patient.phone || ''; 
-    let cleanPhone = rawPhone.replace(/\D/g, ''); // شيل أي حاجة مش رقم
+    let cleanPhone = rawPhone.replace(/\D/g, ''); 
     
     if (!cleanPhone) {
         window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         return;
     }
 
-    // تصليح الرقم عشان يبقى بصيغة دولية (20...)
     if (cleanPhone.startsWith('0020')) cleanPhone = cleanPhone.substring(2);
     if (cleanPhone.startsWith('20')) {
-        // سليم
     } else if (cleanPhone.startsWith('0')) {
         cleanPhone = '20' + cleanPhone.substring(1);
     } else if (cleanPhone.startsWith('1')) {
@@ -342,7 +351,14 @@ async function checkSyncStatus() {
     const pending = await db.outbox.count();
     if(pending > 0) document.getElementById('syncBtn').style.display = 'flex';
     else document.getElementById('syncBtn').style.display = 'none';
-}// ==========================================
+}
+
+// 🔥 التحديث التلقائي للمزامنة كل دقيقة عشان ميتعلقش
+setInterval(() => {
+    if (navigator.onLine && !isSyncing) {
+        processOutbox();
+    }
+}, 60000);// ==========================================
 // 🖥️ واجهة المستخدم
 // ==========================================
 function renderPatients() {
@@ -369,7 +385,7 @@ function renderPatients() {
     `}).join('');
 }
 
-// ✅ دالة الإخفاء المحدثة (بتبعت للسحابة عشان تختفي نهائي)
+// ✅ دالة الإخفاء (تختفي من الشاشة فوراً وتبعت للسحابة)
 async function hideFromLabQueue(visitId) {
     if(!confirm('هل أنت متأكد من إخفاء هذه الحالة من طابور المعمل؟ (لن تُحذف نهائياً من النظام)')) return;
     try {
@@ -378,13 +394,11 @@ async function hideFromLabQueue(visitId) {
             v.hidden_in_lab = true;
             await db.visits.put(v);
             
-            // ✅ إرسال الإخفاء للسحابة
             await addToOutbox('visits', 'UPDATE', { visit_id: parseInt(visitId), hidden_in_lab: true });
             
-            // مسح الحالة من المصفوفة اللي على الشاشة فوراً
             allVisits = allVisits.filter(visit => String(visit.visit_id) !== String(visitId));
-            
             renderPatients();
+            
             if (String(selectedVisitId) === String(visitId)) { 
                 selectedVisitId = null; 
                 document.getElementById('singleTestsContainer').innerHTML = '<div class="empty-msg">اختر مريضاً</div>';
@@ -392,8 +406,7 @@ async function hideFromLabQueue(visitId) {
                 document.getElementById('btnPublishVisit').style.display = 'none';
                 document.getElementById('btnDownloadPdf').style.display = 'none';
             }
-            
-            showToast('✅ تم إخفاء الحالة من الطابور');
+            showToast('🙈 تم إخفاء الحالة من الطابور');
             if (navigator.onLine) processOutbox();
         }
     } catch (e) {
@@ -402,7 +415,7 @@ async function hideFromLabQueue(visitId) {
     }
 }
 
-// ✅ دالة النشر المحدثة (بتطبع أي إيرور لو حصل)
+// ✅ دالة النشر (بتحدث الحالة وتبعت للسحابة)
 async function publishVisit() {
     if (!selectedVisitId) return;
     try {
@@ -414,13 +427,10 @@ async function publishVisit() {
             const payload = { visit_id: parseInt(selectedVisitId), is_published: true, published_at: new Date().toISOString() };
             await addToOutbox('visits', 'UPDATE', payload);
             
-            showToast('✅ تم النشر محلياً وجاري الرفع للسحابة...');
+            showToast('✅ تم النشر بنجاح!');
+            if (navigator.onLine) processOutbox();
             
-            if (navigator.onLine) {
-                await processOutbox();
-            }
-            
-            selectPatient(selectedVisitId);
+            selectPatient(selectedVisitId); // تحديث الشاشة عشان يظهر بادج "تم النشر"
         }
     } catch(e) { 
         console.error("Publish Error:", e);
@@ -429,7 +439,7 @@ async function publishVisit() {
 }
 
 // ==========================================
-// 📝 المودالات وتسجيل النتائج
+// 📝 المودالات وتسجيل النتائج (مع تعديل الرينج)
 // ==========================================
 function openSingleResultModal(vtId, testCode){
     const catalogItem = testsCatalog.find(c => c.code === testCode) || { name: testCode, code: testCode, parameters: [] };
@@ -447,6 +457,7 @@ function openSingleResultModal(vtId, testCode){
     document.getElementById('singleModalTitle').innerText = `🧪 تسجيل نتيجة: ${catalogItem.name}`;
     const area = document.getElementById('singleResultArea');
     
+    // ✅ إضافة زرار تعديل الرينج (✏️) في التحليل الفردي
     area.innerHTML = `
         <div class="test-item">
             <div class="test-body">
@@ -471,18 +482,24 @@ function openSingleResultModal(vtId, testCode){
     setTimeout(() => { const i = area.querySelector('input'); if(i) i.focus(); }, 100);
 }
 
+// ✅ تفعيل زرار تعديل الرينج (شغال في الـ Single والـ Profile)
 window.enableRangeEdit = function(vtId, paramName, isSingle = false) {
     const container = document.getElementById(`range_container_${vtId}_${paramName}`);
     const currentRange = document.getElementById(`range_text_${vtId}_${paramName}`).innerText;
-    container.innerHTML = `<input type="text" id="custom_range_${vtId}_${paramName}" class="range-input-custom" value="${currentRange}" placeholder="Range" style="width:100px; padding:2px; font-size:12px;">`;
+    
+    // بنحول النص لحقل إدخال
+    container.innerHTML = `<input type="text" id="custom_range_${vtId}_${paramName}" class="range-input-custom" value="${currentRange}" placeholder="Range" style="width:100px; padding:2px; font-size:12px; border:1px solid var(--primary); border-radius:4px;">`;
+    
     const input = document.getElementById(`custom_range_${vtId}_${paramName}`);
     input.focus();
     input.select();
     
+    // لما نخرج من الحقل أو ندوس Enter، بنرجع النص تاني
     input.onblur = function() {
         if (this.value.trim() === '') return; 
         container.innerHTML = `<span id="range_text_${vtId}_${paramName}">${this.value}</span> <button type="button" class="btn-edit-range" onclick="enableRangeEdit('${vtId}', '${paramName}', ${isSingle})" title="تعديل الرينج" style="background:none; border:none; cursor:pointer;">✏️</button>`;
     };
+    input.onkeydown = function(e) { if(e.key === 'Enter') this.blur(); };
 }
 
 function openProfileResultModal(vtId, testCode) {
@@ -577,7 +594,7 @@ function handleArrowKeys(e, el) {
 }
 
 // ==========================================
-// 💾 حفظ النتائج
+// 💾 حفظ النتائج (أوفلاين + مزامنة + رينج مخصص)
 // ==========================================
 async function saveSingleResult(vtId) {
     const input = document.getElementById(`res_${vtId}_simple`);
@@ -650,6 +667,51 @@ async function saveResultToCloud(visitTestId, resultsData) {
         showToast('❌ حدث خطأ أثناء الحفظ', true);
         console.error(e);
     }
+}
+
+// ==========================================
+// 🧮 الحسابات
+// ==========================================
+function triggerCalc(visitTestId, testCode) {
+    const catalogItem = testsCatalog.find(c => c.code === testCode);
+    if (!catalogItem) return;
+    const params = getSmartParams(catalogItem);
+    let vals = {};
+    params.forEach(p => {
+        const input = document.getElementById(`res_${visitTestId}_${p.name}`);
+        if (input && input.value.trim() !== '') {
+            let parsed = parseFloat(input.value);
+            if (!isNaN(parsed)) vals[p.name] = parsed;
+        }
+    });
+    
+    let hba1c = vals['HbA1c'] || vals['HbA1C'] || vals['HBA1C'];
+    if (hba1c !== undefined) {
+        let eagInput = document.getElementById(`res_${visitTestId}_eAG`);
+        if (eagInput) { let eagVal = (28.7 * hba1c) - 46.7; eagInput.value = eagVal.toFixed(1); vals['eAG'] = eagVal; }
+    }
+    params.forEach(p => {
+        if (p.name.toLowerCase() === 'eag') return;
+        let calcVal = null; let formula = p.formula;
+        if (formula) {
+            try {
+                let evalStr = formula; let hasAllVars = true;
+                let vars = formula.match(/[a-zA-Z_]+/g) || [];
+                vars = vars.filter(v => v !== 'Math' && v !== 'min' && v !== 'max');
+                for (let v of vars) {
+                    let valToUse = undefined;
+                    for (let key in vals) { if (key.toLowerCase() === v.toLowerCase()) { valToUse = vals[key]; break; } }
+                    if (valToUse === undefined) { hasAllVars = false; break; }
+                    evalStr = evalStr.replace(new RegExp('\\b' + v + '\\b', 'g'), valToUse);
+                }
+                if (hasAllVars) calcVal = Function('"use strict";return (' + evalStr + ')')();
+            } catch(e) {}
+        }
+        if (calcVal !== null && isFinite(calcVal) && calcVal >= 0) {
+            const input = document.getElementById(`res_${visitTestId}_${p.name}`);
+            if (input) input.value = parseFloat(calcVal.toFixed(1));
+        }
+    });
 }// ==========================================
 // ✏️ التعديل والحذف
 // ==========================================
@@ -783,15 +845,19 @@ function renderOrderedTests() {
         const btnClass = hasResult ? 'btn-result done' : 'btn-result';
         const btnText = hasResult ? '👁️ عرض/تعديل' : '▶ Result';
 
+        // 🔥 إضافة زرار الحذف (سلة المهملات) جوه الطلب عشان يمسح التحليل الغلط
         const rowHtml = `
-            <div class="ordered-test-row">
+            <div class="ordered-test-row" style="display:flex; justify-content:space-between; align-items:center;">
                 <div>
                     <span class="ordered-test-name">${catalogItem.name}</span>
                     <span class="ordered-test-code">(${catalogItem.code})</span>
                 </div>
-                <button class="${btnClass}" onclick="openResultModal('${vt.id}', ${isProfile}, '${vt.test_code}')">
-                    ${btnText}
-                </button>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button class="${btnClass}" onclick="openResultModal('${vt.id}', ${isProfile}, '${vt.test_code}')">
+                        ${btnText}
+                    </button>
+                    <button onclick="removeTestFromOrder('${vt.id}')" style="background:rgba(239,68,68,0.1); color:var(--danger); border:none; border-radius:8px; padding:8px 12px; cursor:pointer; font-size:1rem;" title="حذف التحليل من الطلب">🗑️</button>
+                </div>
             </div>
         `;
 
@@ -801,6 +867,28 @@ function renderOrderedTests() {
 
     singleContainer.innerHTML = singlesHtml || '<div class="empty-msg">لا توجد تحاليل فردية مطلوبة</div>';
     profileContainer.innerHTML = profilesHtml || '<div class="empty-msg">لا توجد بروفايلات مطلوبة</div>';
+}
+
+// 🔥 دالة حذف التحليل الغلط
+async function removeTestFromOrder(vtId) {
+    if (!confirm('هل أنت متأكد من حذف هذا التحليل من الطلب؟')) return;
+    try {
+        // مسح من الداتابيز المحلية
+        await db.visit_tests.delete(vtId);
+        await db.test_results.where('visit_test_id').equals(vtId).delete();
+        
+        // إضافة الأمر للسحابة عشان يتمسح منها
+        await addToOutbox('visit_tests', 'DELETE', { id: vtId });
+        
+        showToast('🗑️ تم حذف التحليل من الطلب');
+        
+        // إعادة تحميل الشاشة
+        await loadData();
+        if (navigator.onLine) processOutbox();
+    } catch (e) {
+        console.error("Error removing test:", e);
+        showToast('❌ حدث خطأ أثناء حذف التحليل', true);
+    }
 }
 
 async function addTestFromSelect(type) {
@@ -858,51 +946,6 @@ function selectPatient(visitId) {
         btnPub.style.display = 'block';
         btnPub.innerHTML = visitObj.is_published ? '🔄 تحديث النشر' : '🌐 نشر الزيارة';
     }
-}
-
-// ==========================================
-// 🧮 الحسابات
-// ==========================================
-function triggerCalc(visitTestId, testCode) {
-    const catalogItem = testsCatalog.find(c => c.code === testCode);
-    if (!catalogItem) return;
-    const params = getSmartParams(catalogItem);
-    let vals = {};
-    params.forEach(p => {
-        const input = document.getElementById(`res_${visitTestId}_${p.name}`);
-        if (input && input.value.trim() !== '') {
-            let parsed = parseFloat(input.value);
-            if (!isNaN(parsed)) vals[p.name] = parsed;
-        }
-    });
-    
-    let hba1c = vals['HbA1c'] || vals['HbA1C'] || vals['HBA1C'];
-    if (hba1c !== undefined) {
-        let eagInput = document.getElementById(`res_${visitTestId}_eAG`);
-        if (eagInput) { let eagVal = (28.7 * hba1c) - 46.7; eagInput.value = eagVal.toFixed(1); vals['eAG'] = eagVal; }
-    }
-    params.forEach(p => {
-        if (p.name.toLowerCase() === 'eag') return;
-        let calcVal = null; let formula = p.formula;
-        if (formula) {
-            try {
-                let evalStr = formula; let hasAllVars = true;
-                let vars = formula.match(/[a-zA-Z_]+/g) || [];
-                vars = vars.filter(v => v !== 'Math' && v !== 'min' && v !== 'max');
-                for (let v of vars) {
-                    let valToUse = undefined;
-                    for (let key in vals) { if (key.toLowerCase() === v.toLowerCase()) { valToUse = vals[key]; break; } }
-                    if (valToUse === undefined) { hasAllVars = false; break; }
-                    evalStr = evalStr.replace(new RegExp('\\b' + v + '\\b', 'g'), valToUse);
-                }
-                if (hasAllVars) calcVal = Function('"use strict";return (' + evalStr + ')')();
-            } catch(e) {}
-        }
-        if (calcVal !== null && isFinite(calcVal) && calcVal >= 0) {
-            const input = document.getElementById(`res_${visitTestId}_${p.name}`);
-            if (input) input.value = parseFloat(calcVal.toFixed(1));
-        }
-    });
 }
 
 // ==========================================
