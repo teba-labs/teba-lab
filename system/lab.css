@@ -1,31 +1,5 @@
-﻿/* ================= Dark Mode (Default) ================= */
+﻿/* ================= Light Mode (Default) ================= */
 :root {
-    --bg: #0f172a; 
-    --surface: #1e293b; 
-    --surface-hover: #334155;
-    --bg-input: #0f172a;
-    --text: #f8fafc; 
-    --text-muted: #94a3b8; 
-    --border-color: #334155;
-    
-    --primary: #10b981; 
-    --primary-hover: #34d399; 
-    --primary-gradient: linear-gradient(135deg, #34d399, #10b981);
-    --primary-light: #34d399;
-    
-    --accent: #3498db; 
-    --gold: #d4a843; 
-    --danger: #ef4444; 
-    --warning: #f39c12;
-    --whatsapp: #25D366;
-    
-    --font: 'Almarai', sans-serif; 
-    --radius: 16px;
-    --shadow: 0 10px 30px -5px rgba(0,0,0,0.4);
-}
-
-body.light-mode {
-    /* ================= Light Mode (Silver / Clean UI) ================= */
     --bg: #f1f5f9; 
     --surface: #ffffff; 
     --surface-hover: #f8fafc;
@@ -39,7 +13,33 @@ body.light-mode {
     --primary-gradient: linear-gradient(135deg, #10b981, #0a6847);
     --primary-light: #10b981;
     
+    --accent: #3498db; 
+    --gold: #d4a843; 
+    --danger: #ef4444; 
+    --warning: #f39c12;
+    --whatsapp: #25D366;
+    
+    --font: 'Almarai', sans-serif; 
+    --radius: 16px;
     --shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+/* ================= Dark Mode ================= */
+body.dark-mode {
+    --bg: #0f172a; 
+    --surface: #1e293b; 
+    --surface-hover: #334155;
+    --bg-input: #0f172a;
+    --text: #f8fafc; 
+    --text-muted: #94a3b8; 
+    --border-color: #334155;
+    
+    --primary: #10b981; 
+    --primary-hover: #34d399; 
+    --primary-gradient: linear-gradient(135deg, #34d399, #10b981);
+    --primary-light: #34d399;
+    
+    --shadow: 0 10px 30px -5px rgba(0,0,0,0.4);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
@@ -61,7 +61,7 @@ header {
     font-family: inherit; font-size: 0.9rem; display: flex; 
     align-items: center; gap: 6px; transition: all 0.2s; 
     box-shadow: 0 2px 5px rgba(0,0,0,0.02); 
-    background: var(--surface); color: var(--text); /* لون واضح */
+    background: var(--surface); color: var(--text);
 }
 .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.08); background: var(--surface-hover); }
 
