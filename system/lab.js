@@ -122,7 +122,6 @@ async function processOutbox() {
                 successCount++;
             } catch (e) { 
                 console.error("Outbox item sync failed:", item, e); 
-                // لو فيه عنصر فشل، هنطبع تفاصيله في الكونسول
             }
         }
 
@@ -171,14 +170,13 @@ function sendLabWhatsApp() {
     const visit = allVisits.find(v => String(v.visit_id) === String(selectedVisitId));
     if (!visit || !visit.patient) return showToast('⚠️ بيانات المريض غير متوفرة', true);
     
-    const phone = visit.patient.phone || ''; // لو مفيش رقم، هيبقى فاضي
+    const phone = visit.patient.phone || ''; 
     const name = visit.patient.name;
-    const visitId = visit.visit_id;
+    const visitId = String(visit.visit_id).padStart(4, '0');
     const portalLink = TEBA_CONFIG.lab.portalUrl;
     
     let msg = `أهلاً ${name} 👋،\nنتيجة تحليلك جاهزة 🧪.\nيمكنك استلامها من خلال موقعنا عبر إدخال اسمك ورقم الزيارة (${visitId}):\n${portalLink}\n\nمعامل طيبة - د/ أحمد طه أبوندا`;
     
-    // لو فيه رقم هيبعتله، لو مفيش هيفتح الواتساب عادي
     const waUrl = phone ? `https://wa.me/2${phone.replace(/^0/, '')}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
     window.open(waUrl, '_blank');
 }
@@ -251,7 +249,7 @@ window.updateRangeUI = function(vtId, paramName, refMale, refFemale, age, ageTyp
 };
 
 // ==========================================
-// 📥 جلب البيانات (معدلة عشان تحترم الإخفاء)
+// 📥 جلب البيانات (معدلة عشان تحترم الإخفاء ومنع رجوعه)
 // ==========================================
 async function loadData() {
     try {
@@ -274,6 +272,14 @@ async function loadData() {
                 .limit(100);
             
             if (visits && visits.length > 0) {
+                // ✅ التعديل الجوهري: الحفاظ على حالة الإخفاء من الداتابيز المحلية
+                for (let v of visits) {
+                    const localV = await db.visits.get(v.visit_id);
+                    if (localV && localV.hidden_in_lab === true) {
+                        v.hidden_in_lab = true; 
+                    }
+                }
+
                 const visitIds = visits.map(v => v.visit_id);
                 const patientIds = [...new Set(visits.map(v => v.patient_id))];
                 
@@ -296,7 +302,7 @@ async function loadData() {
 
         testsCatalog = await db.catalog.toArray();
         
-        // ✅ التعديل: فلترة الحالات المخفية من طابور المعمل فقط (UI Filtering)
+        // فلترة الحالات المخفية من طابور المعمل فقط (UI Filtering)
         const allLocalVisits = await db.visits.toArray();
         let localVisits = allLocalVisits.filter(v => String(v.branch_id) === String(currentLabBranch) && v.hidden_in_lab !== true);
         localVisits.sort((a, b) => Number(b.visit_id) - Number(a.visit_id));
@@ -342,18 +348,53 @@ function renderPatients() {
         if(v.patient.age_type === 'Months') ageStr = v.patient.age + ' شهر';
         if(v.patient.age_type === 'Days') ageStr = v.patient.age + ' يوم';
         const pubBadge = v.is_published ? `<span class="badge-published">تم النشر</span>` : '';
+        const paddedId = String(v.visit_id).padStart(4, '0');
         
         return `
         <div class="patient-card ${String(v.visit_id) === String(selectedVisitId) ? 'active' : ''}" onclick="selectPatient('${v.visit_id}')">
             ${pubBadge}
             <div class="p-name">${v.patient.name}</div>
-            <div class="p-meta"><span>زيارة #${v.visit_id}</span><span>${v.patient.gender === 'male' ? 'ذكر' : 'أنثى'} • ${ageStr}</span></div>
+            <div class="p-meta"><span>زيارة #${paddedId}</span><span>${v.patient.gender === 'male' ? 'ذكر' : 'أنثى'} • ${ageStr}</span></div>
             <div class="card-actions">
                 <button class="btn-card-action btn-card-edit" onclick="event.stopPropagation(); openEditPatientModal('${v.visit_id}')">✏️ تعديل</button>
                 <button class="btn-card-action btn-card-del" onclick="event.stopPropagation(); hideFromLabQueue('${v.visit_id}')">🗑️ إخفاء</button>
             </div>
         </div>
     `}).join('');
+}
+
+// ✅ دالة الإخفاء من طابور المعمل
+async function hideFromLabQueue(visitId) {
+    try {
+        const v = await db.visits.get(Number(visitId));
+        if (v) {
+            v.hidden_in_lab = true;
+            await db.visits.put(v);
+            showToast('✅ تم إخفاء الحالة من الطابور');
+            await loadData();
+        }
+    } catch (e) {
+        console.error("Error hiding visit:", e);
+        showToast('❌ حدث خطأ أثناء الإخفاء', true);
+    }
+}
+
+// ✅ دالة النشر
+async function publishVisit() {
+    if (!selectedVisitId) return;
+    try {
+        const visit = await db.visits.get(Number(selectedVisitId));
+        if (visit) {
+            visit.is_published = true;
+            await db.visits.put(visit);
+            await addToOutbox('visits', 'UPDATE', { visit_id: visit.visit_id, is_published: true });
+            showToast('✅ تم النشر محلياً');
+            if (navigator.onLine) processOutbox();
+            
+            const btnPub = document.getElementById('btnPublishVisit');
+            if(btnPub) btnPub.innerHTML = '🔄 تحديث النشر';
+        }
+    } catch(e) { console.error(e); }
 }
 
 function populateSelectors() {
@@ -505,7 +546,9 @@ function selectPatient(visitId) {
         btnPub.style.display = 'block';
         btnPub.innerHTML = visitObj.is_published ? '🔄 تحديث النشر' : '🌐 نشر الزيارة';
     }
-}// ==========================================
+}
+
+// ==========================================
 // 📝 المودالات وتسجيل النتائج (مع تعديل الرينج والكيبورد)
 // ==========================================
 function openSingleResultModal(vtId, testCode){
@@ -519,7 +562,6 @@ function openSingleResultModal(vtId, testCode){
     const visit = allVisits.find(v => String(v.visit_id) === String(selectedVisitId));
     const patient = visit ? visit.patient : { age: 0, age_type: 'Years', gender: 'male' };
     
-    // قراءة الرينج (سواء المخصص أو الذكي)
     const range = getSmartRange(p, patient, null, savedData);
 
     document.getElementById('singleModalTitle').innerText = `🧪 تسجيل نتيجة: ${catalogItem.name}`;
@@ -788,247 +830,17 @@ function triggerCalc(visitTestId, testCode) {
             if (input) input.value = parseFloat(calcVal.toFixed(1));
         }
     });
-}// ==========================================
-// ✏️ التعديل والحذف والإخفاء والنشر
-// ==========================================
-function openEditPatientModal(visitId) {
-    const v = allVisits.find(x => String(x.visit_id) === String(visitId));
-    if(!v || !v.patient) return;
-    document.getElementById('editVisitId').value = v.visit_id;
-    document.getElementById('editVisitIdDisplay').value = v.visit_id;
-    document.getElementById('editPatientId').value = v.patient.id;
-    document.getElementById('editPName').value = v.patient.name;
-    document.getElementById('editPPhone').value = v.patient.phone || '';
-    document.getElementById('editPDoctor').value = v.patient.doctor_name || '';
-    document.getElementById('editPAge').value = v.patient.age || 30;
-    document.getElementById('editPAgeType').value = v.patient.age_type || 'Years';
-    document.getElementById('editPGender').value = v.patient.gender || 'male';
-    document.getElementById('editPBranch').value = v.branch_id || 1;
-    document.getElementById('editPatientModal').style.display = 'flex';
-}
-
-async function savePatientEdit() {
-    const pId = document.getElementById('editPatientId').value;
-    const vId = document.getElementById('editVisitId').value;
-    const name = document.getElementById('editPName').value.trim();
-    const phone = document.getElementById('editPPhone').value.trim();
-    const doctor = document.getElementById('editPDoctor').value.trim();
-    const age = parseInt(document.getElementById('editPAge').value) || 0;
-    const ageType = document.getElementById('editPAgeType').value;
-    const gender = document.getElementById('editPGender').value;
-    const branchId = parseInt(document.getElementById('editPBranch').value);
-
-    if(!name) return showToast('⚠️ اسم المريض مطلوب', true);
-    const btn = document.querySelector('#editPatientModal .btn-save-test');
-    btn.innerText = '⏳ جاري الحفظ...'; btn.disabled = true;
-
-    try {
-        const pPayload = { id: pId, name, phone, doctor_name: doctor, age, age_type: ageType, gender };
-        await db.patients.update(pId, pPayload);
-        await addToOutbox('patients', 'UPDATE', pPayload);
-
-        const vPayload = { visit_id: parseInt(vId), branch_id: branchId };
-        await db.visits.update(parseInt(vId), { branch_id: branchId });
-        await addToOutbox('visits', 'UPDATE', vPayload);
-
-        showToast('✅ تم تعديل البيانات محلياً');
-        document.getElementById('editPatientModal').style.display = 'none';
-        
-        if (navigator.onLine) processOutbox();
-        await loadData(); 
-        if (String(selectedVisitId) === String(vId)) selectPatient(vId);
-    } catch(e) {
-        showToast('❌ حدث خطأ: ' + e.message, true);
-    } finally {
-        btn.innerText = '💾 حفظ التعديلات'; btn.disabled = false;
-    }
-}
-
-// ✅ دالة الإخفاء المحدثة: تختفي فوراً من الشاشة وتتبعت للسحابة
-async function hideFromLabQueue(visitId) {
-    if(!confirm('هل أنت متأكد من إخفاء هذه الحالة من طابور المعمل؟ (لن تُحذف نهائياً من النظام)')) return;
-    try {
-        // 1. تحديث الداتابيز المحلية
-        await db.visits.update(parseInt(visitId), { hidden_in_lab: true });
-        
-        // 2. مسح الحالة من المصفوفة اللي على الشاشة فوراً
-        allVisits = allVisits.filter(v => String(v.visit_id) !== String(visitId));
-        
-        // 3. إعادة رسم الطابور والقوايم
-        renderPatients();
-        if (String(selectedVisitId) === String(visitId)) { 
-            selectedVisitId = null; 
-            document.getElementById('singleTestsContainer').innerHTML = '<div class="empty-msg">اختر مريضاً</div>';
-            document.getElementById('profileTestsContainer').innerHTML = '<div class="empty-msg">اختر مريضاً</div>';
-            document.getElementById('btnPublishVisit').style.display = 'none';
-            document.getElementById('btnDownloadPdf').style.display = 'none';
-        }
-        showToast('🙈 تم إخفاء الحالة من طابور المعمل');
-        
-        // 4. إضافة العملية للسحابة عشان تختفي من كل الأجهزة
-        await addToOutbox('visits', 'UPDATE', { visit_id: parseInt(visitId), hidden_in_lab: true });
-        if (navigator.onLine) processOutbox();
-        
-    } catch(e) { 
-        console.error(e);
-        showToast('❌ حدث خطأ أثناء الإخفاء', true);
-    }
-}
-
-// ✅ زرار النشر المحدث: بيطبع أي إيرور لو السحابة رفضت
-async function publishVisit() {
-    if (!selectedVisitId) return;
-    try {
-        const payload = { visit_id: parseInt(selectedVisitId), is_published: true, published_at: new Date().toISOString() };
-        
-        // تحديث محلي
-        await db.visits.update(parseInt(selectedVisitId), { is_published: true, published_at: new Date().toISOString() });
-        // إضافة للمزامنة
-        await addToOutbox('visits', 'UPDATE', payload);
-        
-        selectPatient(selectedVisitId); 
-        showToast(`✅ تم نشر النتيجة بنجاح في بوابة المريض`);
-        
-        if (navigator.onLine) {
-            // نستدعي المزامنة ونستنى نتيجتها لو فيها إيرور
-            await processOutbox();
-        }
-    } catch (err) { 
-        console.error("Publish Error:", err);
-        showToast('❌ خطأ أثناء النشر: ' + err.message, true); 
-    }
 }
 
 // ==========================================
-// 🖨️ الطباعة و PDF (ممنوع اللمس - زي ما هو)
+// 📥 جلب البيانات الأساسي والتحميل الأولي
 // ==========================================
-function getHeaderHtml(visit, reqDate, printDate) {
-    let ageStr = visit.patient.age + ' Years';
-    if(visit.patient.age_type === 'Months') ageStr = visit.patient.age + ' Months';
-    if(visit.patient.age_type === 'Days') ageStr = visit.patient.age + ' Days';
-    
-    return `
-        <div class="print-header">
-            <div class="print-header-left">
-                <h1>${TEBA_CONFIG.lab.nameEn || 'TEBA LABS'}</h1>
-                <p style="font-size: 15px;">For Medical Analyzes</p>
-                <p>${TEBA_CONFIG.lab.doctor || ''}</p>
-            </div>
-            <div class="print-header-right"><img src="../header.png" alt="Logo" onerror="this.style.display='none'"></div>
-        </div>
-        <div style="display: flex; justify-content: space-between; border: 1.5px solid #000; padding: 10px 15px; border-radius: 4px; background: #fff; font-size: 13px; margin-bottom: 20px;">
-            <div style="width: 50%; display: flex; flex-direction: column; gap: 5px;">
-                <div><strong style="color: #000; display: inline-block; width: 100px;">Patient:</strong> <span style="font-weight: bold;">${visit.patient.name || 'Unknown'}</span></div>
-                <div><strong style="color: #000; display: inline-block; width: 100px;">Age/Gender:</strong> <span style="font-weight: bold;">${ageStr} / ${visit.patient.gender}</span></div>
-                <div><strong style="color: #000; display: inline-block; width: 100px;">Referred By:</strong> <span style="font-weight: bold;">${visit.patient.doctor_name || '---'}</span></div>
-            </div>
-            <div style="width: 50%; display: flex; flex-direction: column; gap: 5px; text-align: right; border-left: 1.5px solid #000; padding-left: 15px;">
-                <div><strong style="color: #000; display: inline-block; width: 100px;">Visit ID:</strong> <span style="font-weight: bold;">${visit.visit_id}</span></div>
-                <div><strong style="color: #000; display: inline-block; width: 100px;">Request Date:</strong> <span style="font-weight: bold;">${reqDate}</span></div>
-                <div><strong style="color: #000; display: inline-block; width: 100px;">Print Date:</strong> <span style="font-weight: bold;">${printDate}</span></div>
-            </div>
-        </div>
-    `;
+async function loadInitialData() {
+    await loadData();
 }
 
-function getFooterHtml() {
-    return `
-        <div class="print-footer">
-            <div class="print-footer-phones"><p>📞 01123702062</p><p>📱 01099003494</p></div>
-            <div class="print-footer-addresses"><p>الفرع الأول: الجعافرة - الطريق العمومي - أعلى صيدلية الصحابة</p><p>الفرع الثاني: بهتيم - مساكن اسكو - أمام مدرسة ابن الخطاب - عيادة د. محمد رمضان</p></div>
-        </div>
-    `;
-}
-
-function openPrintModal() {
-    if (!selectedVisitId) return alert('اختر مريضاً أولاً!');
-    const visit = allVisits.find(v => String(v.visit_id) === String(selectedVisitId));
-    const vTests = visitTests.filter(vt => String(vt.visit_id) === String(selectedVisitId));
-    
-    if(!visit) return;
-    
-    const reqDate = visit.visit_date ? new Date(visit.visit_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-    const printDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-    const printArea = document.getElementById('print-area');
-    printArea.innerHTML = '';
-    
-    let singlesRows = ''; let profilesData = []; 
-    
-    function getStateHtml(val, range) {
-        if (!val || !range) return '';
-        const num = parseFloat(val); const match = range.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
-        let color = '#000'; let text = '';
-        if (!isNaN(num) && match) {
-            const min = parseFloat(match[1]), max = parseFloat(match[2]);
-            if (num < min) { text = 'Low'; color = '#d32f2f'; }
-            else if (num > max) { text = 'High'; color = '#d32f2f'; }
-            else { text = 'Normal'; color = '#2e7d32'; }
-        }
-        if (text) return `<span style="border: 1px solid #000; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; color: ${color}; display: inline-block;">${text}</span>`;
-        return '';
-    }
-    
-    vTests.forEach(vt => {
-        const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, code: vt.test_code, parameters: [] };
-        const result = testResults.find(r => String(r.visit_test_id) === String(vt.id));
-        const savedData = result ? result.results_data : {};
-        const params = getSmartParams(catalogItem);
-        const isProfile = isProfileTest(catalogItem);
-        let hasTestData = false; let testRows = '';
-        
-        if (isProfile) {
-            params.forEach(param => {
-                const val = savedData[param.name]?.value; const phase = savedData[param.name]?.phase; 
-                if (val) {
-                    hasTestData = true;
-                    const range = getSmartRange(param, visit.patient, phase, savedData);
-                    const unit = param.unit || param.units || '-';
-                    const flagStr = getStateHtml(val, range);
-                    let displayParamName = param.label || param.name;
-                    if (phase) displayParamName += ` (${phase})`;
-                    testRows += `<tr><td style="border-bottom: 1px solid #ccc; padding: 8px 6px;">${displayParamName}</td><td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center; font-weight:bold; color: #000;">${val}</td><td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${flagStr}</td><td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${unit}</td><td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${range}</td></tr>`;
-                }
-            });
-            if (hasTestData) profilesData.push({ name: catalogItem.name, rows: testRows }); 
-            else profilesData.push({ name: catalogItem.name, rows: `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #666;">لا توجد نتائج محفوظة.</td></tr>` });
-        } else {
-            const val = savedData['result']?.value;
-            if (val) {
-                const p = params[0] || {};
-                const range = getSmartRange(p, visit.patient, null, savedData);
-                const unit = p.unit || catalogItem.unit || '-';
-                const flagStr = getStateHtml(val, range);
-                singlesRows += `<tr><td style="border-bottom: 1px solid #ccc; padding: 8px 6px;">${catalogItem.name}</td><td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center; font-weight:bold; color: #000;">${val}</td><td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${flagStr}</td><td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${unit}</td><td style="border-bottom: 1px solid #ccc; padding: 8px 6px; text-align:center;">${range}</td></tr>`;
-            }
-        }
-    });
-
-    let htmlContent = '';
-    if (singlesRows !== '') { htmlContent += `<div class="print-page">${getHeaderHtml(visit, reqDate, printDate)}<div style="margin-bottom: 25px;"><h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000;">SINGLE TESTS</h3><table style="width: 100%; border-collapse: collapse; font-size: 13px;"><thead><tr style="background: #000; color: #fff;"><th style="padding: 8px 6px; text-align:left;">Test Name</th><th style="padding: 8px 6px; text-align:center;">Result</th><th style="padding: 8px 6px; text-align:center;">State</th><th style="padding: 8px 6px; text-align:center;">Unit</th><th style="padding: 8px 6px; text-align:center;">Ref. Range</th></tr></thead><tbody>${singlesRows}</tbody></table></div>${getFooterHtml()}</div>`; }
-    profilesData.forEach(profile => { htmlContent += `<div class="print-page">${getHeaderHtml(visit, reqDate, printDate)}<div style="margin-bottom: 25px;"><h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000; font-size: 15px; text-transform: uppercase; color: #000;">${profile.name}</h3><table style="width: 100%; border-collapse: collapse; font-size: 13px;"><thead><tr style="background: #000; color: #fff;"><th style="padding: 8px 6px; text-align:left;">Test Name</th><th style="padding: 8px 6px; text-align:center;">Result</th><th style="padding: 8px 6px; text-align:center;">State</th><th style="padding: 8px 6px; text-align:center;">Unit</th><th style="padding: 8px 6px; text-align:center;">Ref. Range</th></tr></thead><tbody>${profile.rows}</tbody></table></div>${getFooterHtml()}</div>`; });
-    
-    if (htmlContent === '') { htmlContent += `<div class="print-page">${getHeaderHtml(visit, reqDate, printDate)}<p style="text-align:center; font-weight:bold; margin-top:50px;">No results recorded.</p>${getFooterHtml()}</div>`; }
-
-    printArea.innerHTML = htmlContent;
-    document.getElementById('printModal').style.display = 'flex';
-}
-
-function downloadPDF() {
-    if (!selectedVisitId) return alert('اختر مريضاً أولاً!');
-    openPrintModal(); 
-    const element = document.getElementById('print-area');
-    const opt = { margin: 0, filename: `Report_Visit_${selectedVisitId}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
-    const btn = document.getElementById('btnDownloadPdf'); const originalText = btn.innerHTML; btn.innerHTML = '⏳ جاري التحميل...';
-    html2pdf().set(opt).from(element).save().then(() => { btn.innerHTML = originalText; }).catch(err => { console.error(err); alert('حدث خطأ أثناء التحميل'); btn.innerHTML = originalText; });
-}
-
-// ==========================================
-// 🚀 التشغيل عند فتح الصفحة
-// ==========================================
 window.onload = async () => { 
-    const branchSelector = document.getElementById('labBranch');
-    if (branchSelector) branchSelector.value = currentLabBranch;
-
-    await loadData(); 
+    document.getElementById('labBranch').value = currentLabBranch;
+    await loadInitialData(); 
     checkSyncStatus();
 };

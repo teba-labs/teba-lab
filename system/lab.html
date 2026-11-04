@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -24,8 +24,7 @@
     <header>
         <div class="brand-info" id="brandInfo">🔬 المعمل - جاري التحميل...</div>
         <div class="header-actions">
-            <!-- زرار تبديل المود -->
-            <button id="themeToggleBtn" onclick="toggleTheme()" title="تغيير المظهر" style="background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:var(--text);">🌙</button>
+            <button id="themeToggleBtn" title="تغيير المظهر" style="background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:var(--text);">🌙</button>
 
             <select id="labBranch" class="branch-selector" onchange="changeLabBranch(this.value)">
                 <option value="1">🏥 الجعافرة</option>
@@ -142,7 +141,7 @@
     <script src="lab.js?v=97"></script>
     
     <script>
-      // سكريبت تبديل المود
+      // سكريبت تبديل المود (يتوافق مع الـ CSS الجديد)
       const themeBtn = document.getElementById('themeToggleBtn');
       const currentTheme = localStorage.getItem('teba_theme') || 'light';
       
