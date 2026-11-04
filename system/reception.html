@@ -3,171 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المعمل الذكي | معامل طيبة</title>
+    <title>بوابة الاستقبال | معامل طيبة</title>
     <link rel="icon" type="image/png" href="../logo.png">
     <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#0a6847">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
-    <script src="config.js?v=101"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="config.js?v=102"></script>
     
-    <link rel="stylesheet" href="lab.css?v=101">
+    <style>
+        :root {
+            --bg: #f1f5f9; --surface: #ffffff; --surface-hover: #f8fafc;
+            --bg-input: #f8fafc; --text: #0f172a; --text-muted: #64748b;
+            --border-color: #e2e8f0; --primary: #0a6847; --primary-hover: #085a3d;
+            --primary-gradient: linear-gradient(135deg, #10b981, #0a6847);
+            --primary-light: #10b981; --accent: #3498db; --gold: #d4a843; 
+            --danger: #ef4444; --whatsapp: #25D366;
+            --font: 'Almarai', sans-serif; --radius: 16px;
+            --shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        body.dark-mode {
+            --bg: #0b1120; --surface: #1e293b; --surface-hover: #334155;
+            --bg-input: #0f172a; --text: #f8fafc; --text-muted: #94a3b8;
+            --border-color: #334155; --primary: #10b981; --primary-hover: #34d399;
+            --primary-gradient: linear-gradient(135deg, #34d399, #10b981);
+            --primary-light: #34d399; --shadow: 0 10px 30px -5px rgba(0,0,0,0.4);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+        body { font-family: var(--font); background-color: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        header { background: var(--surface); color: var(--text); display: flex; justify-content: space-between; align-items: center; padding: 12px 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); z-index: 10; border-bottom: 1px solid var(--border-color); }
+        .brand { display: flex; align-items: center; gap: 15px; }
+        .brand img { height: 45px; width: auto; object-fit: contain; }
+        .brand-text h1 { font-size: 1.3rem; color: var(--primary); font-weight: 800; margin-bottom: 2px;}
+        .brand-text p { font-size: 0.8rem; color: var(--text-muted); font-weight: 600;}
+        .nav-links { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center;}
+        .nav-btn { background: var(--bg-input); color: var(--text); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.9rem; transition: all 0.2s; font-family: inherit; display: flex; align-items: center; gap: 6px; }
+        .nav-btn:hover { background: var(--surface-hover); transform: translateY(-2px); }
+        .nav-btn.sync { background: var(--gold); color: #fff; border-color: var(--gold); display: none; animation: pulse 2s infinite; }
+        .nav-btn.whatsapp { background: var(--whatsapp); color: white; border-color: var(--whatsapp); }
+        .nav-btn.logout { color: var(--danger); border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); }
+        .nav-btn.logout:hover { background: var(--danger); color: white; }
+        #themeToggleBtn { background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text); width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.2rem; transition: 0.3s; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .live-ticker-wrap { background: #0f172a; color: #fff; padding: 6px 0; overflow: hidden; font-size: 0.85rem; white-space: nowrap; display: flex; align-items: center; border-bottom: 1px solid var(--border-color);}
+        .live-ticker { display: flex; animation: ticker 25s linear infinite; padding-left: 100%; }
+        .live-ticker:hover { animation-play-state: paused; }
+        .ticker-item { padding: 0 30px; border-left: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 8px; font-weight: bold;}
+        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .dot.online { background: #10b981; box-shadow: 0 0 8px #10b981; }
+        .dot.offline { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+        @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+        .main-container { display: grid; grid-template-columns: 360px 1fr 400px; gap: 15px; padding: 15px; flex-grow: 1; height: calc(100vh - 120px); overflow: hidden; min-width: 0; }
+        .panel { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; border: 1px solid var(--border-color); overflow: hidden; min-width: 0; }
+        .panel-header { background: var(--surface); padding: 15px 20px; border-bottom: 1px solid var(--border-color); font-weight: 800; color: var(--primary); font-size: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .patient-form { padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto;}
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); }
+        .form-group input, .form-group select { padding: 12px; border: 1.5px solid var(--border-color); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background: var(--bg-input); color: var(--text); width: 100%; transition: 0.3s; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary); background: var(--surface); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); }
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .cart-items { flex-grow: 1; overflow-y: auto; padding: 15px; }
+        .cart-item { display: flex; justify-content: space-between; padding: 15px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 10px; transition: 0.2s; }
+        .cart-item:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .cart-summary { padding: 20px; background: var(--surface); border-top: 1px solid var(--border-color); }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-weight: bold; }
+        .summary-row.total { font-size: 1.2rem; color: var(--primary); border-top: 1px dashed var(--border-color); padding-top: 12px; margin-top: 5px; }
+        .discount-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .discount-row input, .payment-inputs input { width: 100%; padding: 12px; border: 1.5px solid var(--border-color); border-radius: 10px; font-family: inherit; background: var(--bg-input); color: var(--text); outline: none; }
+        .discount-row input:focus, .payment-inputs input:focus { border-color: var(--primary); }
+        .payment-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
+        .payment-actions .nav-btn { justify-content: center; padding: 15px; font-size: 1rem; }
+        .catalog-layout { display: flex; flex-direction: column; height: 100%; min-width: 0;}
+        .catalog-tabs { display: flex; overflow-x: auto; gap: 8px; padding: 15px; border-bottom: 1px solid var(--border-color); scrollbar-width: thin;}
+        .cat-btn { padding: 8px 16px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 50px; cursor: pointer; white-space: nowrap; font-family: inherit; font-weight: bold; font-size: 0.85rem; color: var(--text); transition: 0.2s; }
+        .cat-btn.active { background: var(--primary-gradient); color: white; border-color: transparent; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); }
+        .catalog-search { padding: 15px; }
+        .catalog-search input { width: 100%; padding: 12px 15px; border: 1.5px solid var(--border-color); border-radius: 10px; font-family: inherit; background: var(--bg-input); color: var(--text); outline: none; }
+        .catalog-search input:focus { border-color: var(--primary); }
+        .test-btn { transition: 0.2s; background: var(--surface) !important; border: 1px solid var(--border-color) !important; border-radius: 10px !important; }
+        .test-btn:hover { border-color: var(--primary) !important; transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.05) !important; }
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--primary-gradient); color: white; padding: 15px 30px; border-radius: 50px; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: none; z-index: 1000; border: 1px solid rgba(255,255,255,0.2); }
+        .toast.error { background: var(--danger); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(8px); padding: 20px;}
+        .modal-content { background: var(--surface); padding: 30px; border-radius: var(--radius); width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid var(--border-color); position: relative; }
+        .btn-close { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: inherit; transition: 0.2s;}
+        .btn-close:hover { background: var(--danger); color: white; }
+        @media (max-width: 1024px) {
+            body { overflow-y: auto; height: auto; }
+            .main-container { display: flex; flex-direction: column; height: auto; overflow: visible; padding-bottom: 50px; gap: 20px; }
+            .panel { min-height: 400px; max-height: 600px; }
+            header { flex-direction: column; gap: 15px; padding: 15px; text-align: center; }
+            .brand { justify-content: center; }
+            .nav-links { justify-content: center; }
+            .nav-btn { font-size: 0.8rem; padding: 8px 12px; }
+            .live-ticker-wrap { display: none; }
+        }
+        @media (max-width: 600px) {
+            .row-2, .discount-row, .payment-actions { grid-template-columns: 1fr; }
+            .modal-content { padding: 20px; }
+            .nav-btn { width: 100%; justify-content: center; }
+        }
+        @media print {
+            @page { size: A4; margin: 0; }
+            body * { visibility: hidden; }
+            #print-section, #print-section * { visibility: visible; }
+            #print-section { position: absolute; left: 0; top: 0; width: 100%; display: block !important; background: white; padding: 15mm; color: #000; }
+            .print-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+            .print-table th, .print-table td { border: 1px solid #000; padding: 8px; text-align: right; }
+            .print-table th { background: #eee; }
+        }
+    </style>
 </head>
 <body>
-
-    <header>
-        <div class="brand-info" id="brandInfo">🔬 المعمل - جاري التحميل...</div>
-        <div class="header-actions">
-            <button id="themeToggleBtn" onclick="toggleTheme()" title="تغيير المظهر" style="background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:var(--text);">🌙</button>
-
-            <select id="labBranch" class="branch-selector" onchange="changeLabBranch(this.value)">
-                <option value="1">🏥 الجعافرة</option>
-                <option value="2">🏥 بهتيم</option>
-            </select>
-
-            <button class="nav-btn btn-sync" id="syncBtn" onclick="processOutbox()">🔄 مزامنة</button>
-            <button class="nav-btn btn-whatsapp" onclick="sendLabWhatsApp()" title="إرسال رسالة للمريض">💬 واتساب</button>
-            <button class="nav-btn btn-back-reception" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
-            <button class="nav-btn btn-home" onclick="window.location.href='home.html'">🏠 الرئيسية</button>
-            <button class="nav-btn btn-publish" id="btnPublishVisit" onclick="publishVisit()" style="display:none;">🌐 نشر النتائج</button>
-            <button class="nav-btn btn-print" onclick="openPrintModal()">👁️ معاينة التقرير</button>
-            <button class="nav-btn btn-pdf" id="btnDownloadPdf" onclick="downloadPDF()" style="display:none;">📥 تحميل PDF</button>
-        </div>
-    </header>
-
-    <div id="toast">✅ تم الحفظ</div>
-    <audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3" preload="auto"></audio>
-
-    <div class="main-grid">
-        <div class="panel">
-            <div class="panel-header">طابور المرضى (آخر 100 زيارة)</div>
-            <div class="patient-list" id="patientList"><div class="empty-msg">جاري التحميل...</div></div>
-        </div>
-        
-        <div class="panel">
-            <div class="panel-header">التحاليل الفردية (Single)</div>
-            <div class="selector-area">
-                <select class="custom-select" id="singleTestSelect">
-                    <option value="">-- اختر تحليلاً لإضافته للطلب --</option>
-                </select>
-            </div>
-            <div class="ordered-tests-list" id="singleTestsContainer">
-                <div class="empty-msg">اختر مريضاً لعرض التحاليل المطلوبة</div>
-            </div>
-        </div>
-        
-        <div class="panel">
-            <div class="panel-header">التحاليل المركبة (Profiles)</div>
-            <div class="selector-area">
-                <select class="custom-select" id="profileTestSelect">
-                    <option value="">-- اختر بروفايل لإضافته للطلب --</option>
-                </select>
-            </div>
-            <div class="ordered-tests-list" id="profileTestsContainer">
-                <div class="empty-msg">اختر مريضاً لعرض التحاليل المطلوبة</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" id="singleResultModal">
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="modal-header">
-                <h3 id="singleModalTitle">🧪 تسجيل نتيجة</h3>
-                <button class="btn-del-test" style="padding:5px 15px;" onclick="document.getElementById('singleResultModal').style.display='none'">✕ إغلاق</button>
-            </div>
-            <div class="modal-body" id="singleResultArea"></div>
-            <div style="padding: 15px; border-top: 1px solid var(--border-color); background: var(--bg-input); text-align: center;">
-                <button class="btn-save-test" style="max-width: 300px; margin: 0 auto; display: block;" id="btnSaveSingleResult">💾 حفظ النتيجة</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" id="profileResultModal">
-        <div class="modal-content" style="max-width: 700px;">
-            <div class="modal-header">
-                <h3 id="profileModalTitle">🧬 تسجيل نتائج البروفايل</h3>
-                <button class="btn-del-test" style="padding:5px 15px;" onclick="document.getElementById('profileResultModal').style.display='none'">✕ إغلاق</button>
-            </div>
-            <div class="modal-body" id="profileResultsArea"></div>
-            <div style="padding: 15px; border-top: 1px solid var(--border-color); background: var(--bg-input); text-align: center;">
-                <button class="btn-save-test" style="max-width: 300px; margin: 0 auto; display: block;" id="btnSaveProfileResult">💾 حفظ نتائج البروفايل</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" id="editPatientModal">
-        <div class="modal-content" style="max-width: 500px;">
-            <div class="modal-header">
-                <h3>✏️ تعديل بيانات المريض</h3>
-                <button class="btn-del-test" style="padding:5px 15px;" onclick="document.getElementById('editPatientModal').style.display='none'">✕ إغلاق</button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="editPatientId">
-                <input type="hidden" id="editVisitId">
-                <div class="form-group-modal"><label>رقم الزيارة (لا يمكن تعديله)</label><input type="text" id="editVisitIdDisplay" disabled style="background:var(--bg-input); cursor:not-allowed; opacity:0.7;"></div>
-                <div class="form-group-modal"><label>اسم المريض</label><input type="text" id="editPName"></div>
-                <div class="form-group-modal"><label>رقم التليفون</label><input type="text" id="editPPhone"></div>
-                <div class="form-group-modal"><label>الطبيب المحول</label><input type="text" id="editPDoctor"></div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    <div class="form-group-modal"><label>العمر</label><input type="number" id="editPAge"></div>
-                    <div class="form-group-modal"><label>الوحدة</label><select id="editPAgeType"><option value="Years">سنوات</option><option value="Months">شهور</option><option value="Days">أيام</option></select></div>
-                </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    <div class="form-group-modal"><label>النوع</label><select id="editPGender"><option value="male">ذكر</option><option value="female">أنثى</option></select></div>
-                    <div class="form-group-modal"><label>الفرع</label><select id="editPBranch"><option value="1">الجعافرة</option><option value="2">بهتيم</option></select></div>
-                </div>
-                <button class="btn-save-test" style="width: 100%; margin-top: 15px; padding: 15px;" onclick="savePatientEdit()">💾 حفظ التعديلات</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" id="printModal">
-        <div class="modal-content" style="background: #e0e0e0; max-width: 1000px; padding: 20px;">
-            <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; width: 100%;"></div>
-            <button class="btn-print-modal" onclick="window.print()">🖨️ Print Now</button>
-        </div>
-    </div>
-
-    <script src="lab.js?v=101"></script>
-    
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('../service-worker.js').then(reg => {
-            reg.onupdatefound = () => {
-              const installingWorker = reg.installing;
-              installingWorker.onstatechange = () => {
-                if (installingWorker.state === 'installed') {
-                  if (navigator.serviceWorker.controller) {
-                    window.location.reload();
-                  }
-                }
-              };
-            };
-          }).catch(err => console.warn('SW Error:', err));
-        });
-      }
-
-      const themeBtn = document.getElementById('themeToggleBtn');
-      if (themeBtn) {
-          const currentTheme = localStorage.getItem('teba_theme') || 'light';
-          if (currentTheme === 'dark') { document.body.classList.add('dark-mode'); themeBtn.innerText = '☀️'; }
-          window.toggleTheme = function() {
-              document.body.classList.toggle('dark-mode');
-              const isDark = document.body.classList.contains('dark-mode');
-              localStorage.setItem('teba_theme', isDark ? 'dark' : 'light');
-              themeBtn.innerText = isDark ? '☀️' : '🌙';
-          };
-      }
-    </script>
-</body>
-</html><body>
-
     <header>
         <div class="brand">
             <img src="../brand-logo.png" alt="Logo" onerror="this.style.display='none'">
@@ -186,29 +136,23 @@
             <button class="nav-btn logout" onclick="logout()">🚪 خروج</button>
         </div>
     </header>
-
     <div class="live-ticker-wrap">
         <div class="live-ticker" id="liveTickerContent">
             <div class="ticker-item"><span class="dot online"></span> جاري الاتصال بالسحابة...</div>
         </div>
     </div>
-
     <div class="toast" id="toastMsg">تم الحفظ بنجاح!</div>
-
     <div class="main-container">
-        <!-- 1. لوحة بيانات المريض -->
         <div class="panel patient-panel">
             <div class="panel-header">
                 <span>👤 بيانات المريض</span>
                 <button class="nav-btn" onclick="startNewPatient()" style="padding: 8px 15px; font-size: 0.8rem; background: var(--primary-gradient); color: white; border: none;">➕ مريض جديد</button>
             </div>
             <div class="patient-form">
-                
                 <div class="row-2" style="margin-bottom: 5px; background: var(--bg-input); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color);">
                     <div style="font-size: 0.85rem;"><strong>رقم الزيارة:</strong> <span id="displayVisitId" style="color: var(--primary); font-weight: bold; font-size: 1.1rem;">جديد</span></div>
                     <div style="font-size: 0.85rem;"><strong>التاريخ:</strong> <span id="displayVisitDate" style="font-weight: bold;"></span></div>
                 </div>
-
                 <div class="form-group">
                     <label>بحث سريع (تليفون أو اسم)</label>
                     <input type="text" id="patientSearch" placeholder="اكتب واضغط Enter..." onkeydown="if(event.key === 'Enter') searchPatient()" style="border-color: var(--accent);">
@@ -254,14 +198,11 @@
                 </div>
                 <button class="nav-btn" id="btnPatientHistory" style="display:none; margin-top:10px; background:#8e44ad; color:white; justify-content:center; border:none;" onclick="openPatientHistory()">👁️ عرض تاريخ المريض</button>
             </div>
-
             <div class="panel-header" style="margin-top: 15px; border-top: 1px solid var(--border-color); border-bottom: none; background: transparent;">⏱️ آخر 5 حالات مسجلة</div>
             <div id="recentPatientsList" style="padding: 15px; background: var(--bg-input); border-top: 1px solid var(--border-color); border-radius: 0 0 var(--radius) var(--radius); max-height: 200px; overflow-y: auto; font-size: 0.9rem;">
                 جاري التحميل...
             </div>
         </div>        
-        
-        <!-- 2. لوحة السلة -->
         <div class="panel cart-panel">
             <div class="panel-header">
                 <span>🛒 سلة التحاليل</span>
@@ -300,8 +241,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- 3. لوحة الكتالوج -->
         <div class="panel catalog-panel">
             <div class="panel-header">🔬 كتالوج التحاليل</div>
             <div class="catalog-layout">
@@ -316,8 +255,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Modals -->
     <div class="modal" id="patientListModal">
         <div class="modal-content" style="max-width: 1000px;">
             <button class="btn-close" style="float:left;" onclick="closeModal('patientListModal')">✕ إغلاق</button>
@@ -336,7 +273,6 @@
             </div>
         </div>
     </div>
-
     <div class="modal" id="editPatientModal">
         <div class="modal-content" style="max-width: 500px;">
             <button class="btn-close" style="float:left;" onclick="closeModal('editPatientModal')">✕ إغلاق</button>
@@ -348,7 +284,6 @@
             <button class="nav-btn" style="background: var(--primary-gradient); color: white; border:none; width: 100%; justify-content: center; margin-top:20px; padding: 15px;" onclick="savePatientEdit()">💾 حفظ التعديلات</button>
         </div>
     </div>
-
     <div class="modal" id="patientHistoryModal">
         <div class="modal-content" style="max-width: 800px;">
             <button class="btn-close" style="float:left;" onclick="closeModal('patientHistoryModal')">✕ إغلاق</button>
@@ -361,7 +296,6 @@
             </div>
         </div>
     </div>
-
     <div class="modal" id="invoicePreviewModal">
         <div class="modal-content" style="max-width: 600px;">
             <button class="btn-close" style="float:left;" onclick="closeModal('invoicePreviewModal')">✕ إغلاق</button>
@@ -373,8 +307,6 @@
             </div>
         </div>
     </div>
-
-    <!-- قسم الطباعة (ممنوع اللمس) -->
     <div id="print-section" style="display: none;">
         <div class="print-header" style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
             <h2 id="printLabName" style="margin: 0;">معامل طيبة للتحاليل الطبية</h2>
@@ -393,8 +325,8 @@
             <p><strong>المدفوع:</strong> <span id="printPaid"></span> ج.م</p>
             <p style="color: #d32f2f;"><strong>الباقي:</strong> <span id="printRemain"></span> ج.م</p>
         </div>
-    </div>    <script>
-        // ==== 1. إعدادات الوضع الليلي والنهاري (Dark/Light Mode) ====
+    </div>
+    <script>
         const themeBtn = document.getElementById('themeToggleBtn');
         const currentTheme = localStorage.getItem('teba_theme') || 'light';
         
@@ -410,7 +342,6 @@
             if(themeBtn) themeBtn.innerText = isDark ? '☀️' : '🌙';
         }
 
-        // ==== 2. التحقق من تسجيل الدخول ====
         if (!localStorage.getItem('teba_tenant_id')) {
             window.location.href = 'home.html';
         }
@@ -423,7 +354,6 @@
             }
         });
 
-        // ==== 3. تهيئة السحابة والداتابيز ====
         const supabaseUrl = TEBA_CONFIG.supabase.url;
         const supabaseKey = TEBA_CONFIG.supabase.key;
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -456,9 +386,6 @@
             }
         }
 
-        // ==========================================
-        // ⚙️ محرك المزامنة (Outbox)
-        // ==========================================
         async function addToOutbox(table_name, action, payload) {
             try {
                 await db.outbox.add({ table_name, action, payload, timestamp: new Date().toISOString() });
@@ -569,9 +496,6 @@
         window.addEventListener('online', () => { processOutbox(); updateLiveTicker(); });
         window.addEventListener('offline', updateLiveTicker);
 
-        // ==========================================
-        // دوال مساعدة
-        // ==========================================
         function logout() {
             _supabase.auth.signOut().then(() => {
                 localStorage.removeItem('teba_tenant_id');
@@ -606,7 +530,6 @@
             setTimeout(() => { toast.style.display = 'none'; }, 4000);
         }
 
-        // ✅ دالة توليد رقم زيارة تسلسلي
         async function getNextSequentialVisitId() {
             try {
                 const lastVisit = await db.visits.orderBy('visit_id').last();
@@ -777,9 +700,6 @@
             window.open(`https://wa.me/2${phone.replace(/^0/, '')}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // ==========================================
-        // الكتالوج والسلة
-        // ==========================================
         async function fetchCatalogFromCloud() {
             try {
                 if (navigator.onLine) {
@@ -883,9 +803,6 @@
             document.getElementById('remainAmount').innerText = `${(netTotal - paid).toFixed(2)} ج.م`;
         }
 
-        // ==========================================
-        // الحفظ (تعديل أو جديد)
-        // ==========================================
         async function saveOrder() {
             const pName = document.getElementById('pName').value.trim();
             if (!pName) return showToast('⚠️ الرجاء إدخال اسم المريض!', true);
@@ -960,9 +877,6 @@
             }
         }
 
-        // ==========================================
-        // التعديل والحذف وقائمة المرضى
-        // ==========================================
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         async function openPatientList() {
@@ -1056,9 +970,6 @@
             } catch(e) { console.error(e); }
         }
 
-        // ==========================================
-        // الفاتورة والطباعة
-        // ==========================================
         function resetForm() { 
             startNewPatient(); 
             document.getElementById('paidAmount').value = ''; 
@@ -1102,9 +1013,6 @@
             }, 100);
         }
 
-        // ==========================================
-        // التشغيل عند فتح الصفحة
-        // ==========================================
         window.onload = async () => { 
             document.getElementById('currentBranchDisplay').innerText = currentBranch === '1' ? 'الجعافرة' : 'بهتيم';
             document.getElementById('pBranch').value = currentBranch;
@@ -1120,7 +1028,6 @@
         };
     </script>
 
-    <!-- سكريبت تفعيل الـ PWA (التحديث التلقائي) -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
