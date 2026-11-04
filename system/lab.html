@@ -4,27 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>المعمل الذكي | معامل طيبة</title>
-    
+    <link rel="icon" type="image/png" href="../logo.png">
     <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#0a6847">
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
-
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
-    <script src="config.js?v=97"></script>
+    <script src="config.js?v=101"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
-    <link rel="stylesheet" href="lab.css?v=97">
+    <link rel="stylesheet" href="lab.css?v=101">
 </head>
 <body>
 
     <header>
         <div class="brand-info" id="brandInfo">🔬 المعمل - جاري التحميل...</div>
         <div class="header-actions">
-            <button id="themeToggleBtn" title="تغيير المظهر" style="background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:var(--text);">🌙</button>
+            <button id="themeToggleBtn" onclick="toggleTheme()" title="تغيير المظهر" style="background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:var(--text);">🌙</button>
 
             <select id="labBranch" class="branch-selector" onchange="changeLabBranch(this.value)">
                 <option value="1">🏥 الجعافرة</option>
@@ -75,7 +74,6 @@
         </div>
     </div>
 
-    <!-- مودال تسجيل نتيجة التحليل الفردي -->
     <div class="modal" id="singleResultModal">
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
@@ -89,7 +87,6 @@
         </div>
     </div>
 
-    <!-- مودال تسجيل نتائج البروفايل المركب -->
     <div class="modal" id="profileResultModal">
         <div class="modal-content" style="max-width: 700px;">
             <div class="modal-header">
@@ -103,7 +100,6 @@
         </div>
     </div>
 
-    <!-- مودال تعديل بيانات المريض -->
     <div class="modal" id="editPatientModal">
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
@@ -130,7 +126,6 @@
         </div>
     </div>
 
-    <!-- مودال معاينة الطباعة -->
     <div class="modal" id="printModal">
         <div class="modal-content" style="background: #e0e0e0; max-width: 1000px; padding: 20px;">
             <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; width: 100%;"></div>
@@ -138,32 +133,36 @@
         </div>
     </div>
 
-    <script src="lab.js?v=97"></script>
+    <script src="lab.js?v=101"></script>
     
     <script>
-      // سكريبت تبديل المود (يتوافق مع الـ CSS الجديد)
-      const themeBtn = document.getElementById('themeToggleBtn');
-      const currentTheme = localStorage.getItem('teba_theme') || 'light';
-      
-      if (currentTheme === 'dark') {
-          document.body.classList.add('dark-mode');
-          if(themeBtn) themeBtn.innerText = '☀️';
-      }
-
-      function toggleTheme() {
-          document.body.classList.toggle('dark-mode');
-          const isDark = document.body.classList.contains('dark-mode');
-          localStorage.setItem('teba_theme', isDark ? 'dark' : 'light');
-          if(themeBtn) themeBtn.innerText = isDark ? '☀️' : '🌙';
-      }
-
-      // تفعيل الـ PWA
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('../service-worker.js')
-            .then(reg => console.log('✅ Service Worker Registered'))
-            .catch(err => console.warn('SW registration failed:', err));
+          navigator.serviceWorker.register('../service-worker.js').then(reg => {
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed') {
+                  if (navigator.serviceWorker.controller) {
+                    window.location.reload();
+                  }
+                }
+              };
+            };
+          }).catch(err => console.warn('SW Error:', err));
         });
+      }
+
+      const themeBtn = document.getElementById('themeToggleBtn');
+      if (themeBtn) {
+          const currentTheme = localStorage.getItem('teba_theme') || 'light';
+          if (currentTheme === 'dark') { document.body.classList.add('dark-mode'); themeBtn.innerText = '☀️'; }
+          window.toggleTheme = function() {
+              document.body.classList.toggle('dark-mode');
+              const isDark = document.body.classList.contains('dark-mode');
+              localStorage.setItem('teba_theme', isDark ? 'dark' : 'light');
+              themeBtn.innerText = isDark ? '☀️' : '🌙';
+          };
       }
     </script>
 </body>

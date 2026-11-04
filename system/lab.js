@@ -159,24 +159,28 @@ function showToast(msg, isError = false) {
     setTimeout(() => { t.style.display = 'none'; }, 4000);
 }
 
-// ✅ زرار الواتساب الجديد (بيصلح مشكلة الأرقام)
+// ✅ زرار الواتساب الجديد (بيصلح مشكلة الأرقام نهائياً)
 function sendLabWhatsApp() {
     if (!selectedVisitId) return showToast('⚠️ اختر مريضاً أولاً', true);
     const visit = allVisits.find(v => String(v.visit_id) === String(selectedVisitId));
     if (!visit || !visit.patient) return showToast('⚠️ بيانات المريض غير متوفرة', true);
     
     const rawPhone = visit.patient.phone || ''; 
-    const cleanPhone = rawPhone.replace(/[^0-9]/g, ''); // شيل أي حاجة مش رقم
+    let cleanPhone = rawPhone.replace(/\D/g, ''); // شيل أي حاجة مش رقم
     
-    let finalPhone = '';
-    if (cleanPhone) {
-        if (cleanPhone.startsWith('20')) {
-            finalPhone = cleanPhone;
-        } else if (cleanPhone.startsWith('0')) {
-            finalPhone = '20' + cleanPhone.substring(1);
-        } else {
-            finalPhone = '20' + cleanPhone;
-        }
+    if (!cleanPhone) {
+        window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+        return;
+    }
+
+    // تصليح الرقم عشان يبقى بصيغة دولية (20...)
+    if (cleanPhone.startsWith('0020')) cleanPhone = cleanPhone.substring(2);
+    if (cleanPhone.startsWith('20')) {
+        // سليم
+    } else if (cleanPhone.startsWith('0')) {
+        cleanPhone = '20' + cleanPhone.substring(1);
+    } else if (cleanPhone.startsWith('1')) {
+        cleanPhone = '20' + cleanPhone;
     }
     
     const name = visit.patient.name;
@@ -185,7 +189,7 @@ function sendLabWhatsApp() {
     
     let msg = `أهلاً ${name} 👋،\nنتيجة تحليلك جاهزة 🧪.\nيمكنك استلامها من خلال موقعنا عبر إدخال اسمك ورقم الزيارة (${visitId}):\n${portalLink}\n\nمعامل طيبة - د/ أحمد طه أبوندا`;
     
-    const waUrl = finalPhone ? `https://wa.me/${finalPhone}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
     window.open(waUrl, '_blank');
 }
 

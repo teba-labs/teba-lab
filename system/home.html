@@ -1,10 +1,11 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>بوابة الدخول | النظام</title>
     
+    <link rel="icon" type="image/png" href="../logo.png">
     <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#0a6847">
 
@@ -13,12 +14,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js?v=98"></script>
+    <script src="config.js?v=101"></script>
     
     <style>
-        /* ================= Design System Variables ================= */
         :root {
-            /* Light Mode (Default - Silver) */
             --bg-body: #f1f5f9; 
             --bg-card: #ffffff;
             --bg-input: #f8fafc;
@@ -36,7 +35,6 @@
         }
 
         body.dark-mode {
-            /* Dark Mode */
             --bg-body: #0b1120;
             --bg-card: #1e293b;
             --bg-input: #0f172a;
@@ -66,7 +64,6 @@
             position: relative;
         }
 
-        /* زرار تبديل المود */
         #themeToggleBtn {
             position: absolute; top: 20px; left: 20px;
             background: var(--bg-card); border: 1px solid var(--border-light);
@@ -77,7 +74,6 @@
         }
         #themeToggleBtn:hover { transform: scale(1.1); }
 
-        /* ================= Login Screen ================= */
         #loginScreen { 
             background: var(--bg-card); 
             padding: 45px 35px; 
@@ -136,7 +132,6 @@
             padding: 12px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.2);
         }
 
-        /* ================= Desktop Screen (Apps) ================= */
         #desktopScreen { display: none; width: 100%; max-width: 900px; position: relative; animation: fadeIn 0.5s ease-out; margin: auto; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
@@ -168,7 +163,6 @@
         .desktop-header h1 { color: var(--text-main); font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; }
         .desktop-header p { color: var(--text-muted); font-size: 1.05rem; font-weight: 600; }
         
-        /* App Cards */
         .apps-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 700px; margin: 0 auto; }
         .app-card { 
             background: var(--bg-card); border: 1px solid var(--border-light); 
@@ -186,16 +180,15 @@
             font-size: 2rem; margin-bottom: 8px; transition: 0.3s; 
             background: var(--icon-bg); color: var(--icon-color);
         }
-        .app-card:nth-child(1) .app-icon-box { background: rgba(2, 132, 199, 0.1); color: #0284c7; } /* استقبال */
-        .app-card:nth-child(2) .app-icon-box { background: rgba(16, 185, 129, 0.1); color: #10b981; } /* معمل */
-        .app-card:nth-child(3) .app-icon-box { background: rgba(147, 51, 234, 0.1); color: #9333ea; } /* إدارة */
-        .app-card:nth-child(4) .app-icon-box { background: rgba(217, 119, 6, 0.1); color: #d97706; } /* لوحة التحكم */
+        .app-card:nth-child(1) .app-icon-box { background: rgba(2, 132, 199, 0.1); color: #0284c7; } 
+        .app-card:nth-child(2) .app-icon-box { background: rgba(16, 185, 129, 0.1); color: #10b981; } 
+        .app-card:nth-child(3) .app-icon-box { background: rgba(147, 51, 234, 0.1); color: #9333ea; } 
+        .app-card:nth-child(4) .app-icon-box { background: rgba(217, 119, 6, 0.1); color: #d97706; } 
         
         .app-card:hover .app-icon-box { transform: scale(1.1) rotate(5deg); }
         .app-name { font-size: 1.25rem; font-weight: 800; color: var(--text-main); }
         .app-desc { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; line-height: 1.5;}
 
-        /* Secret Modal */
         #secretModal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
         .secret-box { background: var(--bg-card); padding: 35px 30px; border-radius: var(--card-radius); text-align: center; width: 90%; max-width: 400px; border: 1px solid var(--border-light); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); animation: fadeIn 0.4s ease-out;}
         .secret-box h2 { color: var(--primary); margin-bottom: 10px; font-size: 1.8rem; font-weight: 800;}
@@ -458,12 +451,22 @@
             deferredPrompt = null;
         };
 
-        // ==== 9. تسجيل الـ Service Worker ====
+        // ==== 9. تسجيل الـ Service Worker (التحديث التلقائي) ====
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../service-worker.js')
-                    .then(reg => console.log('✅ Service Worker Registered'))
-                    .catch(err => console.warn('SW registration failed:', err));
+                navigator.serviceWorker.register('../service-worker.js').then(reg => {
+                    reg.onupdatefound = () => {
+                        const installingWorker = reg.installing;
+                        installingWorker.onstatechange = () => {
+                            if (installingWorker.state === 'installed') {
+                                if (navigator.serviceWorker.controller) {
+                                    console.log('🔄 تم اكتشاف تحديث جديد.. جاري إعادة التحميل...');
+                                    window.location.reload();
+                                }
+                            }
+                        };
+                    };
+                }).catch(err => console.warn('SW Error:', err));
             });
         }
     </script>
