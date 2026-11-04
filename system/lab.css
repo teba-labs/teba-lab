@@ -1,6 +1,32 @@
 ﻿﻿:root {
-    /* Light Mode */
-    --bg: #f0f4f8; 
+    /* Dark Mode (Default) */
+    --bg: #0f172a; 
+    --surface: #1e293b; 
+    --surface-hover: #334155;
+    --bg-input: #0f172a;
+    --text: #f8fafc; 
+    --text-muted: #94a3b8; 
+    --border-color: #334155;
+    
+    --primary: #10b981; 
+    --primary-hover: #34d399; 
+    --primary-gradient: linear-gradient(135deg, #34d399, #10b981);
+    --primary-light: #34d399;
+    
+    --accent: #3498db; 
+    --gold: #d4a843; 
+    --danger: #ef4444; 
+    --warning: #f39c12;
+    --whatsapp: #25D366;
+    
+    --font: 'Almarai', sans-serif; 
+    --radius: 16px;
+    --shadow: 0 10px 30px -5px rgba(0,0,0,0.4);
+}
+
+body.light-mode {
+    /* Light Mode (Silver / Clean UI) */
+    --bg: #f1f5f9; 
     --surface: #ffffff; 
     --surface-hover: #f8fafc;
     --bg-input: #f8fafc;
@@ -19,33 +45,13 @@
     --warning: #f39c12;
     --whatsapp: #25D366;
     
-    --font: 'Almarai', sans-serif; 
-    --radius: 16px;
-    --shadow: 0 10px 30px -5px rgba(0,0,0,0.05);
-}
-
-body.dark-mode {
-    /* Dark Mode */
-    --bg: #0b1120; 
-    --surface: #1e293b; 
-    --surface-hover: #334155;
-    --bg-input: #0f172a;
-    --text: #f8fafc; 
-    --text-muted: #94a3b8; 
-    --border-color: #334155;
-    
-    --primary: #10b981; 
-    --primary-hover: #34d399; 
-    --primary-gradient: linear-gradient(135deg, #34d399, #10b981);
-    --primary-light: #34d399;
-    
-    --shadow: 0 10px 30px -5px rgba(0,0,0,0.4);
+    --shadow: 0 4px 20px rgba(0,0,0,0.05);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
 body { font-family: var(--font); background-color: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-/* ================= Header ================= */
+/* ================= Header & Buttons ================= */
 header { 
     background: var(--surface); color: var(--text); 
     display: flex; justify-content: space-between; align-items: center; 
@@ -60,12 +66,13 @@ header {
     border-radius: 10px; cursor: pointer; font-weight: bold; 
     font-family: inherit; font-size: 0.9rem; display: flex; 
     align-items: center; gap: 6px; transition: all 0.2s; 
-    box-shadow: 0 2px 5px rgba(0,0,0,0.02); color: var(--text);
-    background: var(--bg-input);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02); 
+    background: var(--bg-input); color: var(--text); /* النص هياخد لون النص الأساسي */
 }
-.nav-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+.nav-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.08); background: var(--surface-hover); }
 
-.btn-home { background: var(--surface-hover); }
+/* ألوان الأزرار المحددة عشان تبان في اللايت مود */
+.btn-home { background: var(--surface-hover); color: var(--text); }
 .btn-publish { background: #8e44ad; color: white; border: none; }
 .btn-print { background: var(--warning); color: white; border: none; }
 .btn-sync { background: var(--gold); color: white; border: none; display: none; animation: pulse 2s infinite; }
@@ -152,7 +159,9 @@ header {
 .btn-result:hover { background: var(--primary-gradient); color: white; border-color: transparent; }
 .btn-result.done { background: rgba(16, 185, 129, 0.1); color: #16a34a; border-color: #16a34a; }
 
-.empty-msg { text-align: center; padding: 50px 20px; color: var(--text-muted); font-size: 1.1rem; }/* ================= Modals ================= */
+.empty-msg { text-align: center; padding: 50px 20px; color: var(--text-muted); font-size: 1.1rem; }
+
+/* ================= Modals ================= */
 .modal { 
     display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
     background: rgba(15, 23, 42, 0.7); z-index: 100; justify-content: center; 
@@ -270,12 +279,9 @@ header {
 .print-footer p { margin: 0; }
 
 @media print {
-    /* إلغاء هوامش المتصفح تماماً */
     @page { size: A4; margin: 0; } 
-    
     body * { visibility: hidden; }
     #printModal, #printModal * { visibility: visible; }
-    
     #printModal { position: absolute; left: 0; top: 0; width: 100%; background: white; display: block !important; margin: 0 !important; padding: 0 !important; }
     .modal-content { box-shadow: none !important; max-height: none !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; background: white !important; max-width: 100% !important; border-radius: 0 !important; border: none !important; }
     .btn-print-modal { display: none !important; }
@@ -284,9 +290,8 @@ header {
         display: block !important;
         position: relative !important;
         width: 210mm !important;
-        height: 297mm !important; /* مقاس A4 بالظبط */
+        height: 297mm !important;
         margin: 0 auto !important;
-        /* السر هنا: 15مم مساحة أمان من اليمين والشمال عشان ميتقصش، و35مم من تحت للفوتر */
         padding: 15mm 15mm 35mm 15mm !important; 
         box-sizing: border-box !important;
         page-break-after: always;
@@ -294,11 +299,7 @@ header {
         background: white;
         overflow: hidden;
     }
-    
-    /* منع الورقة الفاضية الأخيرة */
     .print-page:last-child { page-break-after: auto !important; }
-    
-    /* الفوتر يثبت في قاع كل صفحة */
     .print-footer {
         position: absolute !important; 
         bottom: 10mm !important; 
@@ -311,7 +312,6 @@ header {
         border-top: 1px solid #000;
         page-break-inside: avoid;
     }
-    
     table { page-break-inside: auto; table-layout: fixed; width: 100%; word-wrap: break-word; }
     tr { page-break-inside: avoid; page-break-after: auto; }
     thead { display: table-header-group; }
@@ -323,7 +323,6 @@ header {
 }
 
 @media screen {
-    /* تنسيق المعاينة على الشاشة عشان تبان مطابقة للطباعة */
     #print-area { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px; background: #525659; border-radius: 8px; overflow-x: auto; }
     .print-page { background: white !important; width: 210mm !important; height: 297mm !important; padding: 15mm 15mm 35mm 15mm !important; box-shadow: 0 10px 20px rgba(0,0,0,0.4) !important; box-sizing: border-box !important; position: relative !important; display: block !important; margin: 0 auto !important; flex-shrink: 0 !important; overflow: hidden; }
     .print-page .print-footer { position: absolute !important; bottom: 10mm !important; left: 15mm !important; right: 15mm !important; width: auto !important; margin-top: 0 !important; }
