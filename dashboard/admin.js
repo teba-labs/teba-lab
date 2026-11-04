@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Admin Logic (v99 - Part 1/3)
+   TEBA LABS - Admin Logic (v70 - Part 1/3)
    ===================================================== */
 
 (function(){
@@ -11,7 +11,7 @@
 
   /* ============= SECURITY CONSTANTS ============= */
   const MAX_FILE_SIZE = 20 * 1024 * 1024;
-  const BACKUP_VERSION = 'v99';
+  const BACKUP_VERSION = 'v70';
 
   let salesWorkbook = null;
   let pricesWorkbook = null;

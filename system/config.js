@@ -14,7 +14,8 @@ const TEBA_CONFIG = {
         phone: "01123702062",
         whatsapp: "201099003494",
         address: "شبين القناطر، القليوبية",
-        portalUrl: "https://teba-labs.github.io/teba-lab/patient_portal.html" 
+        // ✅ تم تعديل اللينك هنا ليكون موقعك بدل البوابة القديمة
+        portalUrl: "https://teba-labs.github.io/teba-lab/index.html" 
     },
     supabase: {
         url: "https://khjzoleiuiipyodpkieg.supabase.co",
