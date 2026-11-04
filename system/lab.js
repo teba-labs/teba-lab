@@ -159,19 +159,33 @@ function showToast(msg, isError = false) {
     setTimeout(() => { t.style.display = 'none'; }, 4000);
 }
 
+// ✅ زرار الواتساب الجديد (بيصلح مشكلة الأرقام)
 function sendLabWhatsApp() {
     if (!selectedVisitId) return showToast('⚠️ اختر مريضاً أولاً', true);
     const visit = allVisits.find(v => String(v.visit_id) === String(selectedVisitId));
     if (!visit || !visit.patient) return showToast('⚠️ بيانات المريض غير متوفرة', true);
     
-    const phone = visit.patient.phone || ''; 
+    const rawPhone = visit.patient.phone || ''; 
+    const cleanPhone = rawPhone.replace(/[^0-9]/g, ''); // شيل أي حاجة مش رقم
+    
+    let finalPhone = '';
+    if (cleanPhone) {
+        if (cleanPhone.startsWith('20')) {
+            finalPhone = cleanPhone;
+        } else if (cleanPhone.startsWith('0')) {
+            finalPhone = '20' + cleanPhone.substring(1);
+        } else {
+            finalPhone = '20' + cleanPhone;
+        }
+    }
+    
     const name = visit.patient.name;
     const visitId = String(visit.visit_id).padStart(4, '0');
     const portalLink = TEBA_CONFIG.lab.portalUrl;
     
     let msg = `أهلاً ${name} 👋،\nنتيجة تحليلك جاهزة 🧪.\nيمكنك استلامها من خلال موقعنا عبر إدخال اسمك ورقم الزيارة (${visitId}):\n${portalLink}\n\nمعامل طيبة - د/ أحمد طه أبوندا`;
     
-    const waUrl = phone ? `https://wa.me/2${phone.replace(/^0/, '')}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    const waUrl = finalPhone ? `https://wa.me/${finalPhone}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
     window.open(waUrl, '_blank');
 }
 
@@ -360,7 +374,7 @@ async function hideFromLabQueue(visitId) {
             v.hidden_in_lab = true;
             await db.visits.put(v);
             
-            // ✅ السطر ده اللي كان ناقص عشان يبعت الإخفاء للسحابة
+            // ✅ إرسال الإخفاء للسحابة
             await addToOutbox('visits', 'UPDATE', { visit_id: parseInt(visitId), hidden_in_lab: true });
             
             // مسح الحالة من المصفوفة اللي على الشاشة فوراً
@@ -633,7 +647,7 @@ async function saveResultToCloud(visitTestId, resultsData) {
         console.error(e);
     }
 }// ==========================================
-// ✏️ التعديل والحذف والإخفاء والنشر
+// ✏️ التعديل والحذف
 // ==========================================
 function openEditPatientModal(visitId) {
     const v = allVisits.find(x => String(x.visit_id) === String(visitId));
@@ -688,6 +702,9 @@ async function savePatientEdit() {
     }
 }
 
+// ==========================================
+// 🔬 عرض وإضافة التحاليل
+// ==========================================
 function populateSelectors() {
     const singleSelect = document.getElementById('singleTestSelect');
     const profileSelect = document.getElementById('profileTestSelect');
