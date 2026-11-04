@@ -1,8 +1,8 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v97 - Force Cache Update)
+   TEBA LABS - Service Worker (v98 - Force Cache Update)
    ===================================================== */
 
-const CACHE_VERSION = 'v97'; 
+const CACHE_VERSION = 'v98'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
