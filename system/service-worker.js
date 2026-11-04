@@ -1,8 +1,8 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v96 - Offline Fix & Cache Update)
+   TEBA LABS - Service Worker (v97 - Force Cache Update)
    ===================================================== */
 
-const CACHE_VERSION = 'v96'; 
+const CACHE_VERSION = 'v97'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
@@ -12,7 +12,7 @@ const PRECACHE_ASSETS = [
   './', './index.html', 
   './system/home.html', './system/reception.html', './system/lab.html', './system/tests_manage.html', 
   './system/lab.css', './system/lab.js',
-  './system/config.js', './system/data.js', /* إضافة ملفات الكونفيج والداتا الخاصة بالنظام */
+  './system/config.js', './system/data.js', 
   './dashboard/admin.html', './dashboard/admin.css', './dashboard/admin.js',
   './styles.css', 
   './data.js', './app.js', 
@@ -101,14 +101,9 @@ async function networkFirstNavigation(request) {
     }
     return response;
   } catch (err) {
-    // في حالة الأوفلاين، نرجع الصفحة المطلوبة أو صفحة الهوم كاحتياطي
     const cached = await caches.match(request, { ignoreSearch: true });
     if (cached) return cached;
-    
-    const fallbackHome = await caches.match('./system/home.html');
-    if (fallbackHome) return fallbackHome;
-    
-    return new Response('Offline', { status: 503 });
+    return caches.match('./system/home.html').then(fallback => fallback || new Response('Offline', { status: 503 }));
   }
 }
 
