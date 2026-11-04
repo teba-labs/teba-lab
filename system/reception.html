@@ -12,57 +12,59 @@
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
-    <script src="config.js?v=96"></script>
+    <script src="config.js?v=97"></script>
     
     <style>
         /* ================= Design System Variables ================= */
         :root {
-            /* Light Mode */
-            --bg-body: #f0f4f8;
-            --bg-panel: #ffffff;
+            /* Light Mode (Default - Silver) */
+            --bg: #f1f5f9; 
+            --surface: #ffffff; 
+            --surface-hover: #f8fafc;
             --bg-input: #f8fafc;
-            --bg-hover: #f1f5f9;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
+            --text: #0f172a; 
+            --text-muted: #64748b; 
             --border-color: #e2e8f0;
             
-            --primary: #0a6847;
+            --primary: #0a6847; 
+            --primary-hover: #085a3d; 
             --primary-gradient: linear-gradient(135deg, #10b981, #0a6847);
-            --accent: #3498db;
-            --danger: #ef4444;
-            --gold: #d4a843;
+            --primary-light: #10b981;
+            
+            --accent: #3498db; 
+            --gold: #d4a843; 
+            --danger: #ef4444; 
             --whatsapp: #25D366;
             
-            --shadow-panel: 0 10px 30px -5px rgba(0,0,0,0.05);
-            --shadow-card: 0 4px 15px rgba(0,0,0,0.03);
-            --radius-panel: 20px;
-            --radius-btn: 12px;
-            --radius-input: 10px;
-            --font: 'Almarai', sans-serif;
+            --font: 'Almarai', sans-serif; 
+            --radius: 16px;
+            --shadow: 0 4px 20px rgba(0,0,0,0.05);
         }
 
         body.dark-mode {
             /* Dark Mode */
-            --bg-body: #0b1120;
-            --bg-panel: #1e293b;
+            --bg: #0b1120; 
+            --surface: #1e293b; 
+            --surface-hover: #334155;
             --bg-input: #0f172a;
-            --bg-hover: #334155;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            --text: #f8fafc; 
+            --text-muted: #94a3b8; 
             --border-color: #334155;
             
-            --primary: #10b981;
+            --primary: #10b981; 
+            --primary-hover: #34d399; 
             --primary-gradient: linear-gradient(135deg, #34d399, #10b981);
-            --shadow-panel: 0 10px 30px -5px rgba(0,0,0,0.4);
-            --shadow-card: 0 4px 15px rgba(0,0,0,0.2);
+            --primary-light: #34d399;
+            
+            --shadow: 0 10px 30px -5px rgba(0,0,0,0.4);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
-        body { font-family: var(--font); background-color: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        body { font-family: var(--font); background-color: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
         /* ================= Header ================= */
         header { 
-            background: var(--bg-panel); color: var(--text-main); 
+            background: var(--surface); color: var(--text); 
             display: flex; justify-content: space-between; align-items: center; 
             padding: 12px 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
             z-index: 10; border-bottom: 1px solid var(--border-color); 
@@ -74,13 +76,13 @@
         
         .nav-links { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center;}
         .nav-btn { 
-            background: var(--bg-input); color: var(--text-main); 
+            background: var(--bg-input); color: var(--text); 
             border: 1px solid var(--border-color); padding: 10px 18px; 
-            border-radius: var(--radius-btn); cursor: pointer; font-weight: 700; 
+            border-radius: 10px; cursor: pointer; font-weight: 700; 
             font-size: 0.9rem; transition: all 0.2s; font-family: inherit; 
             display: flex; align-items: center; gap: 6px;
         }
-        .nav-btn:hover { background: var(--bg-hover); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .nav-btn:hover { background: var(--surface-hover); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .nav-btn.sync { background: var(--gold); color: #fff; border-color: var(--gold); display: none; animation: pulse 2s infinite; }
         .nav-btn.whatsapp { background: var(--whatsapp); color: white; border-color: var(--whatsapp); }
         .nav-btn.logout { color: var(--danger); border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); }
@@ -88,7 +90,7 @@
         
         #themeToggleBtn {
             background: var(--bg-input); border: 1px solid var(--border-color);
-            color: var(--text-main); width: 42px; height: 42px;
+            color: var(--text); width: 42px; height: 42px;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             cursor: pointer; font-size: 1.2rem; transition: 0.3s;
         }
@@ -110,12 +112,12 @@
         .main-container { display: grid; grid-template-columns: 360px 1fr 400px; gap: 15px; padding: 15px; flex-grow: 1; height: calc(100vh - 120px); overflow: hidden; min-width: 0; }
         
         .panel { 
-            background: var(--bg-panel); border-radius: var(--radius-panel); 
-            box-shadow: var(--shadow-panel); display: flex; flex-direction: column; 
+            background: var(--surface); border-radius: var(--radius); 
+            box-shadow: var(--shadow); display: flex; flex-direction: column; 
             border: 1px solid var(--border-color); overflow: hidden; min-width: 0; 
         }
         .panel-header { 
-            background: var(--bg-panel); padding: 15px 20px; 
+            background: var(--surface); padding: 15px 20px; 
             border-bottom: 1px solid var(--border-color); font-weight: 800; 
             color: var(--primary); font-size: 1rem; display: flex; 
             justify-content: space-between; align-items: center;
@@ -127,12 +129,12 @@
         .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); }
         .form-group input, .form-group select { 
             padding: 12px; border: 1.5px solid var(--border-color); 
-            border-radius: var(--radius-input); font-family: inherit; 
+            border-radius: 10px; font-family: inherit; 
             font-size: 0.95rem; outline: none; background: var(--bg-input); 
-            color: var(--text-main); width: 100%; transition: 0.3s;
+            color: var(--text); width: 100%; transition: 0.3s;
         }
         .form-group input:focus, .form-group select:focus { 
-            border-color: var(--primary); background: var(--bg-panel); 
+            border-color: var(--primary); background: var(--surface); 
             box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); 
         }
         .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -142,18 +144,18 @@
         .cart-item { 
             display: flex; justify-content: space-between; padding: 15px; 
             background: var(--bg-input); border: 1px solid var(--border-color); 
-            border-radius: var(--radius-input); margin-bottom: 10px; transition: 0.2s;
+            border-radius: 10px; margin-bottom: 10px; transition: 0.2s;
         }
         .cart-item:hover { border-color: var(--primary); transform: translateY(-2px); }
-        .cart-summary { padding: 20px; background: var(--bg-panel); border-top: 1px solid var(--border-color); }
+        .cart-summary { padding: 20px; background: var(--surface); border-top: 1px solid var(--border-color); }
         .summary-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-weight: bold; }
         .summary-row.total { font-size: 1.2rem; color: var(--primary); border-top: 1px dashed var(--border-color); padding-top: 12px; margin-top: 5px; }
         
         .discount-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
         .discount-row input, .payment-inputs input { 
             width: 100%; padding: 12px; border: 1.5px solid var(--border-color); 
-            border-radius: var(--radius-input); font-family: inherit; background: var(--bg-input); 
-            color: var(--text-main); outline: none;
+            border-radius: 10px; font-family: inherit; background: var(--bg-input); 
+            color: var(--text); outline: none;
         }
         .discount-row input:focus, .payment-inputs input:focus { border-color: var(--primary); }
         
@@ -166,21 +168,21 @@
         .cat-btn { 
             padding: 8px 16px; background: var(--bg-input); border: 1px solid var(--border-color); 
             border-radius: 50px; cursor: pointer; white-space: nowrap; 
-            font-family: inherit; font-weight: bold; font-size: 0.85rem; color: var(--text-main); transition: 0.2s;
+            font-family: inherit; font-weight: bold; font-size: 0.85rem; color: var(--text); transition: 0.2s;
         }
         .cat-btn.active { background: var(--primary-gradient); color: white; border-color: transparent; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); }
         
         .catalog-search { padding: 15px; }
         .catalog-search input { 
             width: 100%; padding: 12px 15px; border: 1.5px solid var(--border-color); 
-            border-radius: var(--radius-input); font-family: inherit; background: var(--bg-input); 
-            color: var(--text-main); outline: none;
+            border-radius: 10px; font-family: inherit; background: var(--bg-input); 
+            color: var(--text); outline: none;
         }
         .catalog-search input:focus { border-color: var(--primary); }
         
         .test-btn { 
-            transition: 0.2s; background: var(--bg-panel) !important; 
-            border: 1px solid var(--border-color) !important; border-radius: var(--radius-input) !important;
+            transition: 0.2s; background: var(--surface) !important; 
+            border: 1px solid var(--border-color) !important; border-radius: 10px !important;
         }
         .test-btn:hover { border-color: var(--primary) !important; transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.05) !important; }
 
@@ -196,7 +198,7 @@
         /* ================= Modals ================= */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(8px); padding: 20px;}
         .modal-content { 
-            background: var(--bg-panel); padding: 30px; border-radius: var(--radius-panel); 
+            background: var(--surface); padding: 30px; border-radius: var(--radius); 
             width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; 
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid var(--border-color); 
             position: relative;
@@ -271,7 +273,7 @@
             </div>
             <div class="patient-form">
                 
-                <div class="row-2" style="margin-bottom: 5px; background: var(--bg-input); padding: 12px; border-radius: var(--radius-input); border: 1px solid var(--border-color);">
+                <div class="row-2" style="margin-bottom: 5px; background: var(--bg-input); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color);">
                     <div style="font-size: 0.85rem;"><strong>رقم الزيارة:</strong> <span id="displayVisitId" style="color: var(--primary); font-weight: bold; font-size: 1.1rem;">جديد</span></div>
                     <div style="font-size: 0.85rem;"><strong>التاريخ:</strong> <span id="displayVisitDate" style="font-weight: bold;"></span></div>
                 </div>
@@ -323,7 +325,7 @@
             </div>
 
             <div class="panel-header" style="margin-top: 15px; border-top: 1px solid var(--border-color); border-bottom: none; background: transparent;">⏱️ آخر 5 حالات مسجلة</div>
-            <div id="recentPatientsList" style="padding: 15px; background: var(--bg-input); border-top: 1px solid var(--border-color); border-radius: 0 0 var(--radius-panel) var(--radius-panel); max-height: 200px; overflow-y: auto; font-size: 0.9rem;">
+            <div id="recentPatientsList" style="padding: 15px; background: var(--bg-input); border-top: 1px solid var(--border-color); border-radius: 0 0 var(--radius) var(--radius); max-height: 200px; overflow-y: auto; font-size: 0.9rem;">
                 جاري التحميل...
             </div>
         </div>        
@@ -363,7 +365,7 @@
                 <div class="payment-actions">
                     <button class="nav-btn" style="background: var(--primary-gradient); color: white; border:none; font-size: 1.1rem; grid-column: span 2;" id="saveBtn" onclick="saveOrder()">💾 حفظ الطلب</button>
                     <button class="nav-btn" style="background: var(--accent); color: white; border:none;" onclick="openInvoicePreview()">👁️ الفاتورة</button>
-                    <button class="nav-btn" style="background: var(--bg-hover); color: var(--text-main); border:none;" onclick="resetForm()">🗑️ إلغاء</button>
+                    <button class="nav-btn" style="background: var(--surface-hover); color: var(--text); border:none;" onclick="resetForm()">🗑️ إلغاء</button>
                 </div>
             </div>
         </div>
@@ -433,7 +435,7 @@
         <div class="modal-content" style="max-width: 600px;">
             <button class="btn-close" style="float:left;" onclick="closeModal('invoicePreviewModal')">✕ إغلاق</button>
             <h3 style="text-align: center; color:var(--primary); margin-bottom:20px;">🧾 معاينة الفاتورة</h3>
-            <div id="previewContent" style="padding: 20px; border: 1px dashed var(--border-color); border-radius: var(--radius-input); background: var(--bg-input);"></div>
+            <div id="previewContent" style="padding: 20px; border: 1px dashed var(--border-color); border-radius: 10px; background: var(--bg-input);"></div>
             <div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
                 <button class="nav-btn" style="background: var(--primary-gradient); color: white; border:none; width: 150px; justify-content: center; padding:12px;" onclick="executePrint()">🖨️ طباعة الآن</button>
                 <button class="nav-btn" style="background: var(--danger); color: white; border:none; width: 100px; justify-content: center; padding:12px;" onclick="closeModal('invoicePreviewModal')">إلغاء</button>
@@ -498,7 +500,7 @@
         const db = new Dexie('TebaLabOfflineDB');
         db.version(3).stores({
             patients: 'id, name, phone',
-            visits: 'visit_id, patient_id, branch_id, is_published',
+            visits: 'visit_id, patient_id, branch_id, is_published, hidden_in_lab',
             visit_tests: 'id, visit_id, test_code',
             test_results: 'id, visit_test_id',
             catalog: 'code, name, price, category',
@@ -754,9 +756,9 @@
                         <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid var(--border-color); align-items:center;">
                             <div>
                                 <span style="font-weight:bold; color:var(--primary);">${String(v.visit_id).padStart(4, '0')}</span> - 
-                                <span style="color:var(--text-main);">${p.name}</span>
+                                <span style="color:var(--text);">${p.name}</span>
                             </div>
-                            <button onclick="loadPatientToForm(${v.visit_id})" style="background:var(--bg-panel); border:1px solid var(--border-color); color:var(--text-main); padding:5px 12px; border-radius:8px; cursor:pointer; font-size:0.8rem;">عرض</button>
+                            <button onclick="loadPatientToForm(${v.visit_id})" style="background:var(--surface); border:1px solid var(--border-color); color:var(--text); padding:5px 12px; border-radius:8px; cursor:pointer; font-size:0.8rem;">عرض</button>
                         </div>`;
                     }
                 }
@@ -900,7 +902,7 @@
             grid.innerHTML = filtered.map(test => `
                 <div class="test-btn" onclick='addToCart(${JSON.stringify(test)})' style="padding: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 5px;">
                     <div style="font-weight: 800; color: var(--text-muted); font-size: 0.75rem;">${test.code}</div>
-                    <div style="font-size: 0.9rem; font-weight: bold; color: var(--text-main); line-height: 1.4;">${test.name}</div>
+                    <div style="font-size: 0.9rem; font-weight: bold; color: var(--text); line-height: 1.4;">${test.name}</div>
                     <div style="font-size: 1rem; color: var(--primary); font-weight: 900; margin-top: auto;">${test.price} ج.م</div>
                 </div>
             `).join('');
@@ -924,7 +926,7 @@
                 list.innerHTML = cart.map((item, index) => `
                     <div class="cart-item">
                         <div style="display: flex; flex-direction: column;">
-                            <span style="font-weight: bold; font-size: 0.95rem; color: var(--text-main);">${item.name}</span>
+                            <span style="font-weight: bold; font-size: 0.95rem; color: var(--text);">${item.name}</span>
                             <span style="color: var(--primary); font-size: 0.9rem; font-weight: bold; margin-top: 4px;">${item.price} ج.م</span>
                         </div>
                         <button style="background: rgba(239, 68, 68, 0.1); color: var(--danger); border: none; border-radius: 8px; padding: 5px 12px; cursor: pointer;" onclick="removeFromCart(${index})">✕</button>
@@ -1146,7 +1148,7 @@
                 <div style="text-align:center; margin-bottom: 20px;"><h3>${TEBA_CONFIG.lab.name} للتحاليل</h3><p style="color:var(--text-muted); font-size:0.9rem;">فاتورة مبدئية</p></div>
                 <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:0.9rem;"><p><strong>المريض:</strong> ${pName}</p><p><strong>التاريخ:</strong> ${date}</p></div>
                 <table style="width:100%; text-align:right; margin-top:10px; border-collapse: collapse;">
-                    <tr style="background:var(--bg-hover);"><th style="padding:10px; border:1px solid var(--border-color);">التحليل</th><th style="padding:10px; border:1px solid var(--border-color);">السعر</th></tr>
+                    <tr style="background:var(--surface-hover);"><th style="padding:10px; border:1px solid var(--border-color);">التحليل</th><th style="padding:10px; border:1px solid var(--border-color);">السعر</th></tr>
                     ${cart.map(i => `<tr><td style="padding:10px; border:1px solid var(--border-color);">${i.name}</td><td style="padding:10px; border:1px solid var(--border-color);">${i.price} ج.م</td></tr>`).join('')}
                 </table>
                 <div style="margin-top:20px; border-top:1px dashed var(--border-color); padding-top:15px;">
