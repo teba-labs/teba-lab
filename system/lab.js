@@ -1,4 +1,4 @@
-﻿// ==== التحقق من تسجيل الدخول ====
+﻿﻿// ==== التحقق من تسجيل الدخول ====
 if (!localStorage.getItem('teba_tenant_id')) {
     window.location.href = 'home.html';
 }
@@ -31,7 +31,7 @@ let allVisits = [], visitTests = [], testsCatalog = [], testResults = [];
 let selectedVisitId = null;
 let currentLabBranch = localStorage.getItem('teba_current_branch') || '1'; // عزل الفروع
 
-// ✅ دالة تغيير الفرع في المعمل (لو فيه قائمة منسدلة في lab.html)
+// ✅ دالة تغيير الفرع في المعمل
 function changeLabBranch(val) {
     currentLabBranch = val;
     localStorage.setItem('teba_current_branch', val);
@@ -189,7 +189,7 @@ document.addEventListener('keydown', function(event) {
 // 🧠 دوال ذكية للرينجات (مع دعم الرينج المخصص)
 // ==========================================
 function getSmartRange(param, patient, selectedPhase = null, savedData = {}) {
-    // ✅ التعديل: الأولوية للرينج المخصص اللي إحنا حفظناه
+    // ✅ الأولوية للرينج المخصص اللي إحنا حفظناه (للمريض ده بس)
     if (savedData && savedData[param.name] && savedData[param.name].customRange) {
         return savedData[param.name].customRange;
     }
@@ -289,9 +289,9 @@ async function loadData() {
 
         testsCatalog = await db.catalog.toArray();
         
-        // ✅ التعديل: القراءة الآمنة للزيارات عشان الطابور ميقفش
+        // ✅ التعديل: فلترة الحالات المخفية من طابور المعمل فقط (UI Filtering)
         const allLocalVisits = await db.visits.toArray();
-        let localVisits = allLocalVisits.filter(v => String(v.branch_id) === String(currentLabBranch));
+        let localVisits = allLocalVisits.filter(v => String(v.branch_id) === String(currentLabBranch) && v.hidden_in_lab !== true);
         localVisits.sort((a, b) => Number(b.visit_id) - Number(a.visit_id));
         localVisits = localVisits.slice(0, 100);
 
@@ -321,9 +321,7 @@ async function checkSyncStatus() {
     const pending = await db.outbox.count();
     if(pending > 0) document.getElementById('syncBtn').style.display = 'flex';
     else document.getElementById('syncBtn').style.display = 'none';
-}
-
-// ==========================================
+}// ==========================================
 // 🖥️ واجهة المستخدم
 // ==========================================
 function renderPatients() {
@@ -343,7 +341,7 @@ function renderPatients() {
             <div class="p-meta"><span>زيارة #${v.visit_id}</span><span>${v.patient.gender === 'male' ? 'ذكر' : 'أنثى'} • ${ageStr}</span></div>
             <div class="card-actions">
                 <button class="btn-card-action btn-card-edit" onclick="event.stopPropagation(); openEditPatientModal('${v.visit_id}')">✏️ تعديل</button>
-                <button class="btn-card-action btn-card-del" onclick="event.stopPropagation(); deleteFullVisit('${v.visit_id}')">🗑️ حذف</button>
+                <button class="btn-card-action btn-card-del" onclick="event.stopPropagation(); hideFromLabQueue('${v.visit_id}')">🗑️ إخفاء</button>
             </div>
         </div>
     `}).join('');
@@ -366,7 +364,6 @@ function populateSelectors() {
     profileSelect.onchange = () => { if(profileSelect.value) addTestFromSelect('profile'); };
 }
 
-// ✅ التعديل الحاسم: الاعتماد على test_type أولاً
 function isProfileTest(catalogItem) {
     if (!catalogItem) return false;
     if (catalogItem.test_type === 'Profile') return true;
@@ -514,17 +511,26 @@ function openSingleResultModal(vtId, testCode){
     const unit = p.unit || catalogItem.unit || '-';
     const visit = allVisits.find(v => String(v.visit_id) === String(selectedVisitId));
     const patient = visit ? visit.patient : { age: 0, age_type: 'Years', gender: 'male' };
+    
+    // ✅ قراءة الرينج (سواء المخصص أو الذكي)
     const range = getSmartRange(p, patient, null, savedData);
 
     document.getElementById('singleModalTitle').innerText = `🧪 تسجيل نتيجة: ${catalogItem.name}`;
     const area = document.getElementById('singleResultArea');
     
+    // ✅ إضافة زرار تعديل الرينج ✏️ في التحليل الفردي
     area.innerHTML = `
         <div class="test-item">
             <div class="test-body">
                 <div class="input-group">
-                    <label><span>النتيجة</span><span class="range-info">${range} ${unit}</span></label>
-                    <input type="text" id="res_${vtId}_simple" value="${val}" placeholder="أدخل النتيجة هنا..." style="font-size: 1.5rem; padding: 15px;">
+                    <label>
+                        <span>النتيجة</span>
+                        <span class="range-info" id="range_container_${vtId}_result">
+                            <span id="range_text_${vtId}_result">${range}</span> ${unit}
+                            <button type="button" class="btn-edit-range" onclick="enableRangeEdit('${vtId}', 'result', true)" title="تعديل الرينج لهذه الحالة" style="background:none; border:none; cursor:pointer;">✏️</button>
+                        </span>
+                    </label>
+                    <input type="text" id="res_${vtId}_simple" value="${val}" placeholder="أدخل النتيجة هنا..." style="font-size: 1.5rem; padding: 15px;" onkeydown="handleEnter(event, this, '${vtId}', false)">
                 </div>
             </div>
         </div>
@@ -537,11 +543,20 @@ function openSingleResultModal(vtId, testCode){
     setTimeout(() => { const i = area.querySelector('input'); if(i) i.focus(); }, 100);
 }
 
-window.enableRangeEdit = function(vtId, paramName) {
+// ✅ تعديل دالة الرينج عشان تخدم الـ Single والـ Profile
+window.enableRangeEdit = function(vtId, paramName, isSingle = false) {
     const container = document.getElementById(`range_container_${vtId}_${paramName}`);
     const currentRange = document.getElementById(`range_text_${vtId}_${paramName}`).innerText;
     container.innerHTML = `<input type="text" id="custom_range_${vtId}_${paramName}" class="range-input-custom" value="${currentRange}" placeholder="Range" style="width:100px; padding:2px; font-size:12px;">`;
-    document.getElementById(`custom_range_${vtId}_${paramName}`).focus();
+    const input = document.getElementById(`custom_range_${vtId}_${paramName}`);
+    input.focus();
+    input.select();
+    
+    // لو المستخدم ساب الحقل، نرجع النص تاني
+    input.onblur = function() {
+        if (this.value.trim() === '') return; 
+        container.innerHTML = `<span id="range_text_${vtId}_${paramName}">${this.value}</span> <button type="button" class="btn-edit-range" onclick="enableRangeEdit('${vtId}', '${paramName}', ${isSingle})" title="تعديل الرينج" style="background:none; border:none; cursor:pointer;">✏️</button>`;
+    };
 }
 
 function openProfileResultModal(vtId, testCode) {
@@ -566,11 +581,12 @@ function openProfileResultModal(vtId, testCode) {
         const calcClass = isCalc ? 'input-calc' : '';
         const phaseSelectorHtml = renderPhaseSelector(vtId, param, patient, savedData);
         
-        let inputElement = `<input type="text" inputmode="decimal" class="${calcClass}" id="res_${vtId}_${param.name}" value="${val}" placeholder="..." ${readonly} oninput="triggerCalc('${vtId}', '${testCode}')" onkeydown="handleEnter(event, this, ${vtId}, true)">`;
+        // ✅ إضافة أسهم الكيبورد للتنقل بين الحقول
+        let inputElement = `<input type="text" inputmode="decimal" class="${calcClass}" id="res_${vtId}_${param.name}" value="${val}" placeholder="..." ${readonly} oninput="triggerCalc('${vtId}', '${testCode}')" onkeydown="handleEnter(event, this, '${vtId}', true); handleArrowKeys(event, this)">`;
         
         if (param.type === 'dropdown' && param.options && Array.isArray(param.options)) {
             let opts = `<option value="">-- اختر --</option>` + param.options.map(o => `<option value="${o}" ${val === o ? 'selected' : ''}>${o}</option>`).join('');
-            inputElement = `<select class="${calcClass}" id="res_${vtId}_${param.name}" onchange="triggerCalc('${vtId}', '${testCode}')">${opts}</select>`;
+            inputElement = `<select class="${calcClass}" id="res_${vtId}_${param.name}" onchange="triggerCalc('${vtId}', '${testCode}')" onkeydown="handleArrowKeys(event, this)">${opts}</select>`;
         }
 
         inputsHtml += `
@@ -580,7 +596,7 @@ function openProfileResultModal(vtId, testCode) {
                     <span>${param.label || param.name}</span>
                     <span class="range-info" id="range_container_${vtId}_${param.name}">
                         <span id="range_text_${vtId}_${param.name}">${range}</span> ${unit}
-                        <button type="button" class="btn-edit-range" onclick="enableRangeEdit('${vtId}', '${param.name}')" title="تعديل الرينج لهذه الحالة" style="background:none; border:none; cursor:pointer;">✏️</button>
+                        <button type="button" class="btn-edit-range" onclick="enableRangeEdit('${vtId}', '${param.name}', false)" title="تعديل الرينج لهذه الحالة" style="background:none; border:none; cursor:pointer;">✏️</button>
                     </span>
                 </label>
                 ${inputElement}
@@ -603,13 +619,60 @@ function openResultModal(vtId, isProfile, testCode) {
 }
 
 // ==========================================
+// ⌨️ تحسين الـ UX للكيبورد (Enter والأسهم)
+// ==========================================
+function handleEnter(e, el, vtId, isProfile) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        if (!isProfile) {
+            // لو Single: Enter بيحفظ ويقفل
+            const saveBtn = document.getElementById('btnSaveSingleResult');
+            if (saveBtn) saveBtn.click();
+        } else {
+            // لو Profile: Enter بينقل للحقل اللي بعده، ولو آخر حقل يروح لزرار الحفظ
+            let form = el.closest('.modal-body');
+            if (!form) return;
+            let inputs = Array.from(form.querySelectorAll('input:not([readonly]), select'));
+            let index = inputs.indexOf(el);
+            if (index > -1 && index < inputs.length - 1) { 
+                inputs[index + 1].focus(); 
+            } else { 
+                const saveBtn = form.parentElement.querySelector('.btn-save-test'); 
+                if (saveBtn) saveBtn.focus(); 
+            }
+        }
+    }
+}
+
+function handleArrowKeys(e, el) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        let form = el.closest('.modal-body');
+        if (!form) return;
+        let inputs = Array.from(form.querySelectorAll('input:not([readonly]), select'));
+        let index = inputs.indexOf(el);
+        
+        if (e.key === 'ArrowDown' && index < inputs.length - 1) {
+            inputs[index + 1].focus();
+        } else if (e.key === 'ArrowUp' && index > 0) {
+            inputs[index - 1].focus();
+        }
+    }
+}// ==========================================
 // 💾 حفظ النتائج (أوفلاين + مزامنة + رينج مخصص)
 // ==========================================
 async function saveSingleResult(vtId) {
     const input = document.getElementById(`res_${vtId}_simple`);
     if (!input || input.value.trim() === '') return showToast('⚠️ أدخل النتيجة أولاً', true);
     
-    const resultsData = { 'result': { value: input.value.trim() } };
+    let resultsData = { 'result': { value: input.value.trim() } };
+    
+    // ✅ حفظ الرينج المخصص للتحليل الفردي لو اتعدل
+    const customRangeInput = document.getElementById(`custom_range_${vtId}_result`);
+    if (customRangeInput && customRangeInput.value.trim() !== '') {
+        resultsData['result'].customRange = customRangeInput.value.trim();
+    }
+    
     await saveResultToCloud(vtId, resultsData);
     document.getElementById('singleResultModal').style.display = 'none';
     renderOrderedTests();
@@ -718,20 +781,8 @@ function triggerCalc(visitTestId, testCode) {
     });
 }
 
-function handleEnter(e, el, vtId, isProfile) {
-    let form = el.closest('.modal-body');
-    if (!form) return;
-    let inputs = Array.from(form.querySelectorAll('input:not([readonly]), select'));
-    let index = inputs.indexOf(el);
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        if (index > -1 && index < inputs.length - 1) { inputs[index + 1].focus(); }
-        else { const saveBtn = form.parentElement.querySelector('.btn-save-test'); if (saveBtn) saveBtn.focus(); }
-    }
-}
-
 // ==========================================
-// ✏️ التعديل والحذف والنشر
+// ✏️ التعديل والحذف والإخفاء والنشر
 // ==========================================
 function openEditPatientModal(visitId) {
     const v = allVisits.find(x => String(x.visit_id) === String(visitId));
@@ -786,36 +837,42 @@ async function savePatientEdit() {
     }
 }
 
-async function deleteFullVisit(visitId) {
-    if(!confirm('هل أنت متأكد من حذف هذه الحالة بالكامل؟ سيتم حذف كل التحاليل والنتائج المرتبطة بها.')) return;
+// ✅ دالة الإخفاء من طابور المعمل (بدون حذف من الداتابيز)
+async function hideFromLabQueue(visitId) {
+    if(!confirm('هل أنت متأكد من إخفاء هذه الحالة من طابور المعمل؟ (لن تُحذف نهائياً من النظام)')) return;
     try {
-        await db.visits.delete(visitId);
-        await db.visit_tests.where('visit_id').equals(visitId).delete();
-        await addToOutbox('visits', 'DELETE', { visit_id: visitId });
+        // إضافة علامة hidden_in_lab = true في الداتابيز المحلية
+        await db.visits.update(parseInt(visitId), { hidden_in_lab: true });
         
-        showToast('🗑️ تم حذف الحالة محلياً');
+        showToast('🙈 تم إخفاء الحالة من طابور المعمل');
         if (String(selectedVisitId) === String(visitId)) { selectedVisitId = null; renderOrderedTests(); }
         
-        if (navigator.onLine) processOutbox();
-        await loadData();
-    } catch(e) { alert('خطأ أثناء الحذف: ' + e.message); }
+        await loadData(); // إعادة تحميل البيانات عشان الفلتر يطبق
+    } catch(e) { 
+        console.error(e);
+        showToast('❌ حدث خطأ أثناء الإخفاء', true);
+    }
 }
 
+// ✅ زرار النشر المحدث
 async function publishVisit() {
     if (!selectedVisitId) return;
     try {
-        const payload = { visit_id: selectedVisitId, is_published: true, published_at: new Date().toISOString() };
-        await db.visits.update(selectedVisitId, { is_published: true });
+        const payload = { visit_id: parseInt(selectedVisitId), is_published: true, published_at: new Date().toISOString() };
+        
+        // تحديث محلي
+        await db.visits.update(parseInt(selectedVisitId), { is_published: true, published_at: new Date().toISOString() });
+        // إضافة للمزامنة
         await addToOutbox('visits', 'UPDATE', payload);
         
         selectPatient(selectedVisitId); 
-        showToast(`✅ تم نشر الزيارة محلياً`);
+        showToast(`✅ تم نشر النتيجة بنجاح في بوابة المريض`);
         if (navigator.onLine) processOutbox();
     } catch (err) { alert('خطأ أثناء النشر: ' + err.message); }
 }
 
 // ==========================================
-// 🖨️ الطباعة و PDF
+// 🖨️ الطباعة و PDF (ممنوع اللمس - زي ما هو)
 // ==========================================
 function getHeaderHtml(visit, reqDate, printDate) {
     let ageStr = visit.patient.age + ' Years';
@@ -941,7 +998,6 @@ function downloadPDF() {
 // 🚀 التشغيل عند فتح الصفحة
 // ==========================================
 window.onload = async () => { 
-    // التأكد من وجود قائمة اختيار الفرع لو موجودة في الـ HTML
     const branchSelector = document.getElementById('labBranch');
     if (branchSelector) branchSelector.value = currentLabBranch;
 

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -14,17 +14,19 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
-    <script src="config.js"></script>
+    <script src="config.js?v=96"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
-    <link rel="stylesheet" href="lab.css?v=95">
+    <link rel="stylesheet" href="lab.css?v=96">
 </head>
 <body>
 
     <header>
         <div class="brand-info" id="brandInfo">🔬 المعمل - جاري التحميل...</div>
         <div class="header-actions">
-            <!-- ✅ التعديل 1: اختيار الفرع للمعمل -->
+            <!-- زرار تبديل المود -->
+            <button id="themeToggleBtn" onclick="toggleTheme()" title="تغيير المظهر" style="background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:var(--text);">🌙</button>
+
             <select id="labBranch" class="branch-selector" onchange="changeLabBranch(this.value)">
                 <option value="1">🏥 الجعافرة</option>
                 <option value="2">🏥 بهتيم</option>
@@ -32,7 +34,6 @@
 
             <button class="nav-btn btn-sync" id="syncBtn" onclick="processOutbox()">🔄 مزامنة</button>
             <button class="nav-btn btn-whatsapp" onclick="sendLabWhatsApp()" title="إرسال رسالة للمريض">💬 واتساب</button>
-            <!-- ✅ التعديل 2: زرار الرجوع للاستقبال -->
             <button class="nav-btn btn-back-reception" onclick="window.location.href='reception.html'">🏥 الاستقبال</button>
             <button class="nav-btn btn-home" onclick="window.location.href='home.html'">🏠 الرئيسية</button>
             <button class="nav-btn btn-publish" id="btnPublishVisit" onclick="publishVisit()" style="display:none;">🌐 نشر النتائج</button>
@@ -73,7 +74,9 @@
                 <div class="empty-msg">اختر مريضاً لعرض التحاليل المطلوبة</div>
             </div>
         </div>
-    </div>    <!-- مودال تسجيل نتيجة التحليل الفردي -->
+    </div>
+
+    <!-- مودال تسجيل نتيجة التحليل الفردي -->
     <div class="modal" id="singleResultModal">
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
@@ -81,7 +84,7 @@
                 <button class="btn-del-test" style="padding:5px 15px;" onclick="document.getElementById('singleResultModal').style.display='none'">✕ إغلاق</button>
             </div>
             <div class="modal-body" id="singleResultArea"></div>
-            <div style="padding: 15px; border-top: 1px solid var(--border); background: #f8fafc; text-align: center;">
+            <div style="padding: 15px; border-top: 1px solid var(--border-color); background: var(--bg-input); text-align: center;">
                 <button class="btn-save-test" style="max-width: 300px; margin: 0 auto; display: block;" id="btnSaveSingleResult">💾 حفظ النتيجة</button>
             </div>
         </div>
@@ -95,7 +98,7 @@
                 <button class="btn-del-test" style="padding:5px 15px;" onclick="document.getElementById('profileResultModal').style.display='none'">✕ إغلاق</button>
             </div>
             <div class="modal-body" id="profileResultsArea"></div>
-            <div style="padding: 15px; border-top: 1px solid var(--border); background: #f8fafc; text-align: center;">
+            <div style="padding: 15px; border-top: 1px solid var(--border-color); background: var(--bg-input); text-align: center;">
                 <button class="btn-save-test" style="max-width: 300px; margin: 0 auto; display: block;" id="btnSaveProfileResult">💾 حفظ نتائج البروفايل</button>
             </div>
         </div>
@@ -111,7 +114,7 @@
             <div class="modal-body">
                 <input type="hidden" id="editPatientId">
                 <input type="hidden" id="editVisitId">
-                <div class="form-group-modal"><label>رقم الزيارة (لا يمكن تعديله)</label><input type="text" id="editVisitIdDisplay" disabled style="background:#e2e8f0; cursor:not-allowed;"></div>
+                <div class="form-group-modal"><label>رقم الزيارة (لا يمكن تعديله)</label><input type="text" id="editVisitIdDisplay" disabled style="background:var(--bg-input); cursor:not-allowed; opacity:0.7;"></div>
                 <div class="form-group-modal"><label>اسم المريض</label><input type="text" id="editPName"></div>
                 <div class="form-group-modal"><label>رقم التليفون</label><input type="text" id="editPPhone"></div>
                 <div class="form-group-modal"><label>الطبيب المحول</label><input type="text" id="editPDoctor"></div>
@@ -136,11 +139,26 @@
         </div>
     </div>
 
-    <!-- استدعاء ملف الجافاسكريبت الرئيسي -->
-    <script src="lab.js?v=95"></script>
+    <script src="lab.js?v=96"></script>
     
-    <!-- سكريبت تفعيل الـ PWA -->
     <script>
+      // سكريبت تبديل المود
+      const themeBtn = document.getElementById('themeToggleBtn');
+      const currentTheme = localStorage.getItem('teba_theme') || 'light';
+      
+      if (currentTheme === 'dark') {
+          document.body.classList.add('dark-mode');
+          if(themeBtn) themeBtn.innerText = '☀️';
+      }
+
+      function toggleTheme() {
+          document.body.classList.toggle('dark-mode');
+          const isDark = document.body.classList.contains('dark-mode');
+          localStorage.setItem('teba_theme', isDark ? 'dark' : 'light');
+          if(themeBtn) themeBtn.innerText = isDark ? '☀️' : '🌙';
+      }
+
+      // تفعيل الـ PWA
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('../service-worker.js')
