@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Patient Portal (v2.3 - Final)
+   TEBA LABS - Patient Portal (v2.4 - Print Fix)
    ===================================================== */
 
 const supabaseUrl = TEBA_CONFIG.supabase.url;
@@ -21,7 +21,6 @@ async function fetchPatientResult() {
     modal.style.display = 'block';
 
     try {
-        // استدعاء الدالة الآمنة من السحابة
         const { data: results, error: rpcErr } = await _supabasePortal.rpc('get_secure_patient_results', {
             p_name: name,
             p_visit_id: parseInt(visitId)
@@ -39,19 +38,20 @@ async function fetchPatientResult() {
         const patientInfo = results[0];
         const testsData = results; 
 
-        // بناء شكل التقرير
+        // ✅ إجبار الألوان على الأسود والأبيض عشان تظهر في الـ PDF
         let reportHtml = `
-            <div style="border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <img src="header.png" alt="TEBA LABS" style="max-height: 80px; object-fit: contain;" onerror="this.style.display='none'">
+            <div style="color: #000 !important; background: #fff !important; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; width: 100%;">
+                <div style="border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <img src="header.png" alt="TEBA LABS" style="max-height: 80px; object-fit: contain;" onerror="this.style.display='none'">
+                    </div>
+                    <div style="text-align: left;">
+                        <p style="margin: 2px 0; font-size: 14px; color: #000 !important;"><strong>Patient:</strong> <span style="color: #000 !important;">${patientInfo.name}</span></p>
+                        <p style="margin: 2px 0; font-size: 14px; color: #000 !important;"><strong>Age/Gender:</strong> <span style="color: #000 !important;">${patientInfo.age} ${patientInfo.age_type} / ${patientInfo.gender === 'male' ? 'Male' : 'Female'}</span></p>
+                        <p style="margin: 2px 0; font-size: 14px; color: #000 !important;"><strong>Visit ID:</strong> <span style="color: #000 !important;">${patientInfo.visit_id}</span></p>
+                        <p style="margin: 2px 0; font-size: 14px; color: #000 !important;"><strong>Date:</strong> <span style="color: #000 !important;">${new Date(patientInfo.visit_date).toLocaleDateString('en-GB')}</span></p>
+                    </div>
                 </div>
-                <div style="text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-                    <p style="margin: 2px 0; font-size: 14px;"><strong>Patient:</strong> ${patientInfo.name}</p>
-                    <p style="margin: 2px 0; font-size: 14px;"><strong>Age/Gender:</strong> ${patientInfo.age} ${patientInfo.age_type} / ${patientInfo.gender === 'male' ? 'Male' : 'Female'}</p>
-                    <p style="margin: 2px 0; font-size: 14px;"><strong>Visit ID:</strong> ${patientInfo.visit_id}</p>
-                    <p style="margin: 2px 0; font-size: 14px;"><strong>Date:</strong> ${new Date(patientInfo.visit_date).toLocaleDateString('en-GB')}</p>
-                </div>
-            </div>
         `;
 
         const groupedTests = {};
@@ -68,18 +68,18 @@ async function fetchPatientResult() {
         for (const code in groupedTests) {
             const test = groupedTests[code];
             reportHtml += `
-                <div style="margin-bottom: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-                    <h3 style="background: #eee; padding: 8px; border-right: 4px solid #000; font-size: 16px; margin-bottom: 10px;">${test.name}</h3>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <div style="margin-bottom: 20px;">
+                    <h3 style="background: #eee !important; color: #000 !important; padding: 8px; border-right: 4px solid #000; font-size: 16px; margin-bottom: 10px;">${test.name}</h3>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #000 !important;">
                         <thead>
-                            <tr style="background: #000; color: #fff;">
-                                <th style="padding: 6px; text-align: right;">Test Name</th>
-                                <th style="padding: 6px; text-align: center;">Result</th>
-                                <th style="padding: 6px; text-align: center;">Unit</th>
-                                <th style="padding: 6px; text-align: center;">Ref. Range</th>
+                            <tr style="background: #000 !important; color: #fff !important;">
+                                <th style="padding: 6px; text-align: right; color: #fff !important;">Test Name</th>
+                                <th style="padding: 6px; text-align: center; color: #fff !important;">Result</th>
+                                <th style="padding: 6px; text-align: center; color: #fff !important;">Unit</th>
+                                <th style="padding: 6px; text-align: center; color: #fff !important;">Ref. Range</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody style="color: #000 !important;">
             `;
 
             test.params.forEach(p => {
@@ -87,19 +87,19 @@ async function fetchPatientResult() {
                 const range = (patientInfo.gender === 'female' ? p.ref_female : p.ref_male) || '-';
                 
                 let displayVal = val;
-                let rowStyle = '';
+                let rowStyle = 'color: #000 !important;';
                 
                 if (!val) {
-                    displayVal = '<span style="color:#dc2626; font-weight:bold;">Under Processing</span>';
-                    rowStyle = 'background-color: #fef2f2;';
+                    displayVal = '<span style="color:#dc2626 !important; font-weight:bold;">Under Processing</span>';
+                    rowStyle = 'background-color: #fef2f2; color: #000 !important;';
                 }
 
                 reportHtml += `
                     <tr style="${rowStyle}">
-                        <td style="padding: 6px; border-bottom: 1px solid #ddd;">${p.label || p.name}</td>
-                        <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center; font-weight: bold;">${displayVal}</td>
-                        <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center;">${p.unit || '-'}</td>
-                        <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center;">${range}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #ddd; color: #000 !important;">${p.label || p.name}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center; font-weight: bold; color: #000 !important;">${displayVal}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center; color: #000 !important;">${p.unit || '-'}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center; color: #000 !important;">${range}</td>
                     </tr>
                 `;
             });
@@ -108,9 +108,10 @@ async function fetchPatientResult() {
         }
 
         reportHtml += `
-            <div style="margin-top: 40px; border-top: 1px solid #000; padding-top: 10px; text-align: center; font-size: 12px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-                <p style="margin: 4px 0; font-weight: bold; color: #000;">معامل طيبة - د/ أحمد طه أبوندا</p>
-                <p style="margin: 4px 0; color: #333;">Tel: 01123702062 | WhatsApp: 01099003494</p>
+                <div style="margin-top: 40px; border-top: 1px solid #000; padding-top: 10px; text-align: center; font-size: 12px;">
+                    <p style="margin: 4px 0; font-weight: bold; color: #000 !important;">معامل طيبة - د/ أحمد طه أبوندا</p>
+                    <p style="margin: 4px 0; color: #333 !important;">Tel: 01123702062 | WhatsApp: 01099003494</p>
+                </div>
             </div>
         `;
 
@@ -126,8 +127,8 @@ function downloadPDF() {
     const opt = {
         margin: 10,
         filename: `Teba_Result_${new Date().toISOString().slice(0,10)}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' }, // ✅ خلفية بيضاء
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     html2pdf().set(opt).from(element).save();
