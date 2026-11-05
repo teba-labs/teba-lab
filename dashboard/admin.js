@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Admin Logic (v70 - Part 1/3)
+   TEBA LABS - Admin Logic (v71 - Fixed Live Stats)
    ===================================================== */
 
 (function(){
@@ -11,7 +11,7 @@
 
   /* ============= SECURITY CONSTANTS ============= */
   const MAX_FILE_SIZE = 20 * 1024 * 1024;
-  const BACKUP_VERSION = 'v70';
+  const BACKUP_VERSION = 'v71';
 
   let salesWorkbook = null;
   let pricesWorkbook = null;
@@ -222,7 +222,8 @@
     } catch(err) {
       hideLoading(); alert('❌ خطأ: ' + err.message);
     }
-  };  /* ============= REPORT NAVIGATION ============= */
+  };  
+  /* ============= REPORT NAVIGATION ============= */
   window.showReport = function(reportName){
     document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
     const target = document.getElementById('report-' + reportName); if(target) target.classList.add('active');
@@ -344,7 +345,7 @@
     const sheetName = salesWorkbook.SheetNames.find(n => n.includes(sheetKey)); 
     if (!sheetName) return []; 
     return XLSX.utils.sheet_to_json(salesWorkbook.Sheets[sheetName], { header: 1, defval: "" }); 
-  }  // ✅ إصلاح 1: تقارير الأصفار (إزالة المسافات المخفية trim)
+  }    // ✅ إصلاح 1: تقارير الأصفار (إزالة المسافات المخفية trim)
   const extractYearData = memoizeMap(_yearCache, function(year, branch) {
     const annualData = getSheetData('السنوية'); let totalRev = 0, totalExp = 0;
     for (let i = 1; i < annualData.length; i++) { 
@@ -646,37 +647,50 @@
         ${name}<br><span style="font-size:0.7rem;">${boxClass === 'green' ? 'معتمد ✅' : boxClass === 'yellow' ? 'محتاج مراجعة ⚠️' : 'لا يوجد بيانات ⚪'}</span>
       </div>`;
     }).join('');
-  }  async function getBranchLiveStats(branchId) {
+  }  
+
+  // 🔥 إصلاح الإحصائيات اللايف (Live Stats) - قراءة is_published بدل published_at
+  async function getBranchLiveStats(branchId) {
       const today = new Date(); today.setHours(0,0,0,0); const todayISO = today.toISOString();
       
-      let query = _supabase.from('visits').select('visit_id, paid_amount').eq('tenant_id', TEBA_CONFIG.tenant.id).gte('visit_date', todayISO);
+      // 1. جلب زيارات اليوم (للفرع المحدد أو الكل)
+      let query = _supabase.from('visits').select('visit_id, paid_amount, is_published').eq('tenant_id', TEBA_CONFIG.tenant.id).gte('visit_date', todayISO);
       if (branchId) query = query.eq('branch_id', branchId);
-      const { data: visits } = await query;
+      const { data: visits, error: vErr } = await query;
       
+      if (vErr) throw vErr;
+
       const casesCount = visits ? visits.length : 0;
       const revTotal = visits ? visits.reduce((sum, v) => sum + parseFloat(v.paid_amount || 0), 0) : 0;
+      // حساب المنشور من نفس الداتا اللي جبناها
+      const pubCount = visits ? visits.filter(v => v.is_published === true).length : 0; 
+      
       const vIds = visits ? visits.map(v => v.visit_id) : [];
       
       let testsCount = 0, pendingCount = 0;
       if (vIds.length > 0) {
-          const { data: vt } = await _supabase.from('visit_tests').select('id').eq('tenant_id', TEBA_CONFIG.tenant.id).in('visit_id', vIds);
+          // 2. جلب التحاليل الخاصة بزيارات اليوم
+          const { data: vt, error: vtErr } = await _supabase.from('visit_tests').select('id').eq('tenant_id', TEBA_CONFIG.tenant.id).in('visit_id', vIds);
+          if (vtErr) throw vtErr;
+          
           testsCount = vt ? vt.length : 0;
           const vtIds = vt ? vt.map(v => v.id) : [];
+          
           if (vtIds.length > 0) {
-              const { data: res } = await _supabase.from('test_results').select('visit_test_id').eq('tenant_id', TEBA_CONFIG.tenant.id).in('visit_test_id', vtIds);
+              // 3. جلب النتائج لمعرفة المتبقي (Pending)
+              const { data: res, error: resErr } = await _supabase.from('test_results').select('visit_test_id').eq('tenant_id', TEBA_CONFIG.tenant.id).in('visit_test_id', vtIds);
+              if (resErr) throw resErr;
+              
               const resIds = new Set((res||[]).map(r => r.visit_test_id));
               pendingCount = vtIds.filter(id => !resIds.has(id)).length;
           }
       }
       
-      let pubQ = _supabase.from('visits').select('*', { count: 'exact', head: true }).eq('tenant_id', TEBA_CONFIG.tenant.id).eq('is_published', true).gte('published_at', todayISO);
-      if (branchId) pubQ = pubQ.eq('branch_id', branchId);
-      const { count: pCount } = await pubQ;
-      
-      return { cases: casesCount, rev: revTotal, tests: testsCount, pending: pendingCount, published: pCount || 0 };
+      return { cases: casesCount, rev: revTotal, tests: testsCount, pending: pendingCount, published: pubCount };
   }
 
   window.renderLiveStats = async function() {
+      // تصفير العدادت مؤقتاً
       ['all','j','b'].forEach(p => {
           ['cases','tests','rev','pending','published'].forEach(m => {
               const el = document.getElementById(`live-${m}-${p}`); if(el) el.innerText = '...';
@@ -684,10 +698,11 @@
       });
 
       try {
+          // جلب البيانات للفرعين + الفرع الأول + الفرع التاني
           const [statsAll, statsJ, statsB] = await Promise.all([
-              getBranchLiveStats(null),
-              getBranchLiveStats(1),
-              getBranchLiveStats(2)
+              getBranchLiveStats(null), // كل الفروع
+              getBranchLiveStats(1),    // الجعافرة
+              getBranchLiveStats(2)     // بهتيم
           ]);
 
           const updateDOM = (prefix, data) => {
@@ -704,6 +719,7 @@
 
       } catch(err) {
           console.error("Live Stats Error:", err);
+          // لو حصل خطأ، تظهر علامة تعجب
           ['all','j','b'].forEach(p => {
               ['cases','tests','rev','pending','published'].forEach(m => {
                   const el = document.getElementById(`live-${m}-${p}`); if(el) el.innerText = '!';
@@ -712,8 +728,7 @@
       }
   };
 
-  window.renderMonthlyAdvisor = function() {
-    const container = document.getElementById('advisorReport');
+  window.renderMonthlyAdvisor = function() {    const container = document.getElementById('advisorReport');
     if (!container) return;
     if (!salesWorkbook) { container.innerHTML = '<div class="advisor-card"><div class="advisor-card-title">👨‍⚕️ رسالة المستشار</div><div class="advisor-card-body">⚠️ ارفع ملف المتابعة السنوية أولاً عشان يظهر التقرير الشهري.</div></div>'; return; }
     const period = findLatestReportMonth();
@@ -875,7 +890,9 @@
     const targetRev = Math.round(refRev * 1.12);
     points.push(`📈 مستهدف ${monthName}: نمو إيراد 10-15% (${targetRev.toLocaleString()} ج).`);
     return points;
-  }  window.renderMonthlyPlan = function() {
+  }  
+
+  window.renderMonthlyPlan = function() {
     const container = document.getElementById('planContent');
     const subtitle = document.getElementById('planSubtitle');
     if (!container) return;
@@ -1043,7 +1060,9 @@
     const textColor = isLight ? '#334155' : '#fff';
     const gridColor = isLight ? '#e2e8f0' : '#a8b5a8';
     window.finChart = new Chart(ctx, { type: 'bar', data: { labels: ['الإيرادات', 'المصروفات', 'صافي الربح'], datasets: [{ data: [totalRev, totalExp, (totalRev - totalExp)], backgroundColor: ['rgba(22, 163, 74, 0.7)', 'rgba(220, 38, 38, 0.7)', 'rgba(217, 119, 6, 0.7)'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: gridColor } }, x: { ticks: { color: gridColor } } } } });
-  };  window.renderAnnualReport = function() {
+  };  
+
+  window.renderAnnualReport = function() {
     const selectedYear = document.getElementById('annualYearSelector').value; const selectedBranch = document.getElementById('annualBranchSelector').value;
     let finalRev = 0, finalExp = 0;
     let branchesToProcess = selectedBranch === 'combined' ? ['الجعافرة', 'بهتيم'] : [selectedBranch === 'jaafara' ? 'الجعافرة' : 'بهتيم'];
@@ -1345,7 +1364,9 @@
     const result = { chemicals, salaries, misc };
     _expenseBreakdownCache.set(cacheKey, result);
     return result;
-  }  window.renderExpenseBreakdown = function() {
+  }  
+
+  window.renderExpenseBreakdown = function() {
     const yearEl = document.getElementById('expenseYearSelector'); const monthEl = document.getElementById('expenseMonthSelector');
     if (!yearEl || !monthEl) return;
     const year = yearEl.value; const month = monthEl.value;
@@ -1556,6 +1577,7 @@
     losers.forEach((test) => { html += `<tr><td style="color: var(--text); text-align:right;">${test.name}</td><td style="color: #16a34a;">${test.sell} ج</td><td style="color: #dc2626;">${test.trueCost.toFixed(1)} ج</td><td style="color: #dc2626; font-weight:bold;">${test.trueProfitUnit.toFixed(1)} ج</td></tr>`; });
     tbody.innerHTML = html;
   };
+
   window.openAIAssistant = function() {
     const modal = document.getElementById('aiModal');
     const body = document.getElementById('aiModalBody');

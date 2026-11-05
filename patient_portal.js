@@ -1,5 +1,5 @@
 ﻿/* =====================================================
-   TEBA LABS - Patient Portal (v2.4 - Print Fix)
+   TEBA LABS - Patient Portal (v2.5 - Fixed)
    ===================================================== */
 
 const supabaseUrl = TEBA_CONFIG.supabase.url;
@@ -15,6 +15,12 @@ async function fetchPatientResult() {
         return;
     }
 
+    const parsedVisitId = parseInt(visitId);
+    if (isNaN(parsedVisitId)) {
+        alert('رقم الزيارة يجب أن يكون رقماً (مثال: 91 أو 0091)');
+        return;
+    }
+
     const modal = document.getElementById('resultModal');
     const printArea = document.getElementById('print-area');
     printArea.innerHTML = '<p style="text-align:center; padding:50px; font-size:1.2rem; color:#666;">⏳ جاري البحث عن النتيجة...</p>';
@@ -23,7 +29,7 @@ async function fetchPatientResult() {
     try {
         const { data: results, error: rpcErr } = await _supabasePortal.rpc('get_secure_patient_results', {
             p_name: name,
-            p_visit_id: parseInt(visitId)
+            p_visit_id: parsedVisitId
         });
 
         if (rpcErr) {
@@ -37,6 +43,9 @@ async function fetchPatientResult() {
 
         const patientInfo = results[0];
         const testsData = results; 
+        
+        // تنسيق رقم الزيارة ليكون 4 أرقام (زي 0091)
+        const formattedVisitId = String(patientInfo.visit_id).padStart(4, '0');
 
         // ✅ إجبار الألوان على الأسود والأبيض عشان تظهر في الـ PDF
         let reportHtml = `
@@ -48,7 +57,7 @@ async function fetchPatientResult() {
                     <div style="text-align: left;">
                         <p style="margin: 2px 0; font-size: 14px; color: #000 !important;"><strong>Patient:</strong> <span style="color: #000 !important;">${patientInfo.name}</span></p>
                         <p style="margin: 2px 0; font-size: 14px; color: #000 !important;"><strong>Age/Gender:</strong> <span style="color: #000 !important;">${patientInfo.age} ${patientInfo.age_type} / ${patientInfo.gender === 'male' ? 'Male' : 'Female'}</span></p>
-                        <p style="margin: 2px 0; font-size: 14px; color: #000 !important;"><strong>Visit ID:</strong> <span style="color: #000 !important;">${patientInfo.visit_id}</span></p>
+                        <p style="margin: 2px 0; font-size: 14px; color: #000 !important;"><strong>Visit ID:</strong> <span style="color: #000 !important;">${formattedVisitId}</span></p>
                         <p style="margin: 2px 0; font-size: 14px; color: #000 !important;"><strong>Date:</strong> <span style="color: #000 !important;">${new Date(patientInfo.visit_date).toLocaleDateString('en-GB')}</span></p>
                     </div>
                 </div>
@@ -128,7 +137,7 @@ function downloadPDF() {
         margin: 10,
         filename: `Teba_Result_${new Date().toISOString().slice(0,10)}.pdf`,
         image: { type: 'jpeg', quality: 1 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' }, // ✅ خلفية بيضاء
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     html2pdf().set(opt).from(element).save();

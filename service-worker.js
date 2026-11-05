@@ -1,8 +1,8 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v101 - Auto Smart Update)
+   TEBA LABS - Service Worker (v102 - Sync Fixes Release)
    ===================================================== */
 
-const CACHE_VERSION = 'v101'; 
+const CACHE_VERSION = 'v102'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
@@ -12,7 +12,7 @@ const PRECACHE_ASSETS = [
   './', './index.html', 
   './system/home.html', './system/reception.html', './system/lab.html', './system/tests_manage.html', 
   './system/lab.css', './system/lab.js',
-  './system/config.js', './system/data.js', 
+  './system/config.js', 
   './dashboard/admin.html', './dashboard/admin.css', './dashboard/admin.js',
   './styles.css', './data.js', './app.js', './site_dynamic.js', './patient_portal.js', './config.js',
   './logo.png', './brand-logo.png', './header.png', './manifest.json'
