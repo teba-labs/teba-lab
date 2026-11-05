@@ -35,7 +35,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
         body { font-family: var(--font); background-color: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* 🔥 تعديل الهيدر عشان الموبايل */
+        /* 🔥 تعديل شكل الهيدر للموبايل */
         header { background: var(--surface); color: var(--text); display: flex; justify-content: space-between; align-items: center; padding: 12px 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); z-index: 10; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 10px; }
         .brand { display: flex; align-items: center; gap: 15px; }
         .brand img { height: 45px; width: auto; object-fit: contain; }
@@ -332,8 +332,9 @@
             <p><strong>المدفوع:</strong> <span id="printPaid"></span> ج.م</p>
             <p style="color: #d32f2f;"><strong>الباقي:</strong> <span id="printRemain"></span> ج.م</p>
         </div>
-    </div>    <script>
-        // ==== 1. إعدادات الوضع الليلي والنهاري (Dark/Light Mode) ====
+    </div>
+
+    <script>        // ==== 1. إعدادات الوضع الليلي والنهاري (Dark/Light Mode) ====
         const themeBtn = document.getElementById('themeToggleBtn');
         const currentTheme = localStorage.getItem('teba_theme') || 'light';
         
@@ -477,6 +478,7 @@
                                 if (tErr) throw tErr;
                             }
 
+                            // 🔥 ربط الـ ID المحلي بالـ server_id بتاع السحابة
                             if (item.table_name === 'orders' && localVisit) {
                                 await db.visits.update(order.tempVisitId, { server_id: realVisitId });
                             }
@@ -613,10 +615,8 @@
             }, 100);
             
             showToast('تم تجهيز استمارة مريض جديد');
-        }
-
-        // ==========================================
-        // جلب المرضى والكتالوج
+        }        // ==========================================
+        // جلب المرضى (🔥 التعديل هنا لمنع التكرار)
         // ==========================================
         async function loadRecentPatients() {
             const container = document.getElementById('recentPatientsList');
@@ -632,14 +632,23 @@
                     if(!error && data && data.length > 0) {
                         for (let v of data) {
                             if(v.patients) { await db.patients.put({ ...v.patients, id: v.patients.id }); }
-                            const localV = await db.visits.get(Number(v.visit_id));
-                            await db.visits.put({ 
-                                visit_id: Number(v.visit_id), 
-                                visit_date: v.visit_date, 
-                                patient_id: v.patients ? v.patients.id : null, 
-                                branch_id: Number(currentBranch),
-                                server_id: localV ? localV.server_id : Number(v.visit_id)
-                            });
+                            
+                            // 🔥 البحث بـ server_id بدل الـ visit_id
+                            const localV = await db.visits.where('server_id').equals(Number(v.visit_id)).first();
+                            
+                            if (localV) {
+                                // لو موجودة محلياً، نحدث التاريخ بس
+                                await db.visits.update(localV.visit_id, { visit_date: v.visit_date, branch_id: Number(currentBranch) });
+                            } else {
+                                // لو مش موجودة، نضيفها برقم السحابة
+                                await db.visits.put({ 
+                                    visit_id: Number(v.visit_id), 
+                                    visit_date: v.visit_date, 
+                                    patient_id: v.patients ? v.patients.id : null, 
+                                    branch_id: Number(currentBranch),
+                                    server_id: Number(v.visit_id)
+                                });
+                            }
                         }
                     }
                 }
