@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -14,7 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js?v=101"></script>
+    <script src="config.js?v=105"></script>
     
     <style>
         :root {
@@ -97,13 +97,13 @@
         
         .input-group { margin-bottom: 20px; position: relative; text-align: right;}
         .input-group label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 0.85rem; color: var(--text-main); }
-        .input-group input { 
+        .input-group input, .input-group select { 
             width: 100%; padding: 15px 16px; border-radius: 14px; 
             border: 2px solid var(--border-light); 
             background: var(--bg-input); color: var(--text-main); 
             font-size: 1rem; outline: none; font-weight: bold; font-family: inherit;
         }
-        .input-group input:focus { 
+        .input-group input:focus, .input-group select:focus { 
             border-color: var(--primary); 
             box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15); 
             background: var(--bg-card);
@@ -224,6 +224,19 @@
             <input type="password" id="loginPassword" placeholder="********" autocomplete="current-password" style="text-align: center; letter-spacing: 2px;">
         </div>
         
+        <!-- 🔥 اختيار الفرع وباسورده (الإضافة الجديدة) -->
+        <div class="input-group">
+            <label>الفرع</label>
+            <select id="loginBranch">
+                <option value="1">🏥 فرع الجعافرة</option>
+                <option value="2">🏥 فرع بهتيم</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>باسورد الفرع</label>
+            <input type="password" id="loginBranchPassword" placeholder="******" style="text-align: center;">
+        </div>
+        
         <button class="btn-login" onclick="loginUser()">دخول آمن</button>
         
         <button class="btn-install-pwa" id="pwaInstallBtnLogin" onclick="installPWA()">
@@ -289,9 +302,7 @@
                 <button class="btn-cancel" onclick="closeSecretModal()">إلغاء</button>
             </div>
         </div>
-    </div>
-
-    <!-- ================= سكريبت النظام ================= -->
+    </div>    <!-- ================= سكريبت النظام ================= -->
     <script>
         // ==== 1. إعدادات الوضع الليلي والنهاري (Dark/Light Mode) ====
         const themeBtn = document.getElementById('themeToggleBtn');
@@ -318,11 +329,24 @@
         async function loginUser() {
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
+            const branch = document.getElementById('loginBranch').value;
+            const branchPwd = document.getElementById('loginBranchPassword').value;
+            
             const errorEl = document.getElementById('loginError');
             const btn = document.querySelector('.btn-login');
 
             if (!email || !password) {
                 errorEl.textContent = 'يرجى إدخال الإيميل والباسورد';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            // 🔥 التحقق من باسورد الفرع
+            const validBranchPwd = (branch === '1' ? '11' : '22');
+            const isDoctor = (branchPwd === TEBA_CONFIG.auth.doctorPassword); // لو دخل بباسورد الدكتور
+
+            if (branchPwd !== validBranchPwd && !isDoctor) {
+                errorEl.textContent = '❌ باسورد الفرع غير صحيح!';
                 errorEl.style.display = 'block';
                 return;
             }
@@ -338,9 +362,11 @@
                 const { data: userProfile } = await _supabase.from('users').select('role').eq('email', email).single();
                 const userRole = (userProfile && userProfile.role) ? userProfile.role : 'lab_tech';
 
+                // 🔥 حفظ بيانات الدخول والفرع في المتصفح
                 localStorage.setItem('teba_tenant_id', TEBA_CONFIG.tenant.id);
                 localStorage.setItem('teba_tenant_name', TEBA_CONFIG.lab.name);
-                localStorage.setItem('teba_user_role', userRole);
+                localStorage.setItem('teba_user_role', isDoctor ? 'admin' : userRole);
+                localStorage.setItem('teba_current_branch', branch);
 
                 showDashboard({ name: TEBA_CONFIG.lab.name }, userRole);
 
@@ -377,6 +403,10 @@
                 localStorage.setItem('teba_tenant_id', TEBA_CONFIG.tenant.id);
                 localStorage.setItem('teba_tenant_name', TEBA_CONFIG.lab.name);
                 localStorage.setItem('teba_user_role', userRole);
+                // بنحط الفرع الافتراضي لو مش محفوظ
+                if(!localStorage.getItem('teba_current_branch')) {
+                    localStorage.setItem('teba_current_branch', '1');
+                }
                 
                 showDashboard({ name: TEBA_CONFIG.lab.name }, userRole);
             }
@@ -388,6 +418,7 @@
             localStorage.removeItem('teba_tenant_id');
             localStorage.removeItem('teba_tenant_name');
             localStorage.removeItem('teba_user_role');
+            localStorage.removeItem('teba_current_branch');
             location.reload();
         }
 
@@ -418,6 +449,10 @@
 
         // ==== 7. أحداث الكيبورد ====
         document.getElementById('loginPassword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') loginUser();
+        });
+        
+        document.getElementById('loginBranchPassword').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') loginUser();
         });
         

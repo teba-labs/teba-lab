@@ -34,20 +34,24 @@
         }
         * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
         body { font-family: var(--font); background-color: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        header { background: var(--surface); color: var(--text); display: flex; justify-content: space-between; align-items: center; padding: 12px 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); z-index: 10; border-bottom: 1px solid var(--border-color); }
+        
+        /* 🔥 تعديل الهيدر عشان الموبايل */
+        header { background: var(--surface); color: var(--text); display: flex; justify-content: space-between; align-items: center; padding: 12px 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); z-index: 10; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 10px; }
         .brand { display: flex; align-items: center; gap: 15px; }
         .brand img { height: 45px; width: auto; object-fit: contain; }
         .brand-text h1 { font-size: 1.3rem; color: var(--primary); font-weight: 800; margin-bottom: 2px;}
         .brand-text p { font-size: 0.8rem; color: var(--text-muted); font-weight: 600;}
-        .nav-links { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center;}
-        .nav-btn { background: var(--bg-input); color: var(--text); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.9rem; transition: all 0.2s; font-family: inherit; display: flex; align-items: center; gap: 6px; }
+        
+        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: center;}
+        .nav-btn { background: var(--bg-input); color: var(--text); border: 1px solid var(--border-color); padding: 8px 15px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.85rem; transition: all 0.2s; font-family: inherit; display: flex; align-items: center; gap: 6px; }
         .nav-btn:hover { background: var(--surface-hover); transform: translateY(-2px); }
         .nav-btn.sync { background: var(--gold); color: #fff; border-color: var(--gold); display: none; animation: pulse 2s infinite; }
         .nav-btn.whatsapp { background: var(--whatsapp); color: white; border-color: var(--whatsapp); }
         .nav-btn.logout { color: var(--danger); border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); }
         .nav-btn.logout:hover { background: var(--danger); color: white; }
-        #themeToggleBtn { background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text); width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.2rem; transition: 0.3s; }
+        #themeToggleBtn { background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.2rem; transition: 0.3s; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        
         .live-ticker-wrap { background: #0f172a; color: #fff; padding: 6px 0; overflow: hidden; font-size: 0.85rem; white-space: nowrap; display: flex; align-items: center; border-bottom: 1px solid var(--border-color);}
         .live-ticker { display: flex; animation: ticker 25s linear infinite; padding-left: 100%; }
         .live-ticker:hover { animation-play-state: paused; }
@@ -56,6 +60,7 @@
         .dot.online { background: #10b981; box-shadow: 0 0 8px #10b981; }
         .dot.offline { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
         @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+        
         .main-container { display: grid; grid-template-columns: 360px 1fr 400px; gap: 15px; padding: 15px; flex-grow: 1; height: calc(100vh - 120px); overflow: hidden; min-width: 0; }
         .panel { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; border: 1px solid var(--border-color); overflow: hidden; min-width: 0; }
         .panel-header { background: var(--surface); padding: 15px 20px; border-bottom: 1px solid var(--border-color); font-weight: 800; color: var(--primary); font-size: 1rem; display: flex; justify-content: space-between; align-items: center; }
@@ -91,14 +96,16 @@
         .modal-content { background: var(--surface); padding: 30px; border-radius: var(--radius); width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid var(--border-color); position: relative; }
         .btn-close { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: inherit; transition: 0.2s;}
         .btn-close:hover { background: var(--danger); color: white; }
+        
+        /* 🔥 إصلاح شكل الموبايل */
         @media (max-width: 1024px) {
             body { overflow-y: auto; height: auto; }
             .main-container { display: flex; flex-direction: column; height: auto; overflow: visible; padding-bottom: 50px; gap: 20px; }
             .panel { min-height: 400px; max-height: 600px; }
-            header { flex-direction: column; gap: 15px; padding: 15px; text-align: center; }
+            header { flex-direction: column; gap: 10px; padding: 10px; text-align: center; }
             .brand { justify-content: center; }
-            .nav-links { justify-content: center; }
-            .nav-btn { font-size: 0.8rem; padding: 8px 12px; }
+            .nav-links { justify-content: center; gap: 5px; }
+            .nav-btn { font-size: 0.75rem; padding: 6px 10px; }
             .live-ticker-wrap { display: none; }
         }
         @media (max-width: 600px) {
@@ -360,7 +367,6 @@
         const supabaseKey = TEBA_CONFIG.supabase.key;
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // 🔥 إضافة server_id للربط بين المحلي والسحابي
         const db = new Dexie('TebaLabOfflineDB');
         db.version(4).stores({
             patients: 'id, name, phone',
@@ -380,21 +386,12 @@
         
         let currentBranch = localStorage.getItem('teba_current_branch') || '1';
 
-        // 🔥 قفل الفروع بالباسورد
         function updateLocalBranch(val) {
             const role = localStorage.getItem('teba_user_role');
-            
             if (role !== 'admin') {
-                // لو الموظف بيحاول يغير الفرع
-                const branchPassword = val === '1' ? '11' : '22'; // الباسوردات (قابلة للتغيير)
-                const input = prompt('🔒 هذا الفرع محمي. أدخل باسورد الفرع للدخول:');
-                
-                if (input !== branchPassword && input !== TEBA_CONFIG.auth.doctorPassword) {
-                    document.getElementById('pBranch').value = currentBranch; // رجع الاختيار القديم
-                    return showToast('❌ باسورد الفرع خطأ!', true);
-                }
+                document.getElementById('pBranch').value = currentBranch;
+                return showToast('🔒 لا تملك صلاحية تغيير الفرع', true);
             }
-
             currentBranch = val;
             localStorage.setItem('teba_current_branch', val);
             document.getElementById('currentBranchDisplay').innerText = val === '1' ? 'الجعافرة' : 'بهتيم';
@@ -405,7 +402,7 @@
         }
 
         // ==========================================
-        // ⚙️ محرك المزامنة (Outbox) - النسخة النهائية الصادقة
+        // ⚙️ محرك المزامنة (Outbox) - النسخة الصادقة
         // ==========================================
         async function addToOutbox(table_name, action, payload) {
             try {
@@ -437,7 +434,6 @@
                         if (item.table_name === 'orders' || item.table_name === 'orders_edit') {
                             const order = item.payload;
                             
-                            // 1. رفع المريض
                             let patientId = order.patientId;
                             const { error: pErr } = await _supabase.from('patients').upsert([{
                                 id: patientId, tenant_id: TEBA_CONFIG.tenant.id, name: order.patientName, 
@@ -452,7 +448,6 @@
                             let realVisitId = null;
                             let localVisit = await db.visits.get(order.tempVisitId);
 
-                            // 2. رفع أو تحديث الزيارة
                             if (item.table_name === 'orders') {
                                 const { data: vData, error: vErr } = await _supabase.from('visits').insert([{
                                     tenant_id: TEBA_CONFIG.tenant.id, patient_id: patientId, branch_id: order.branch_id, 
@@ -461,7 +456,6 @@
                                 if (vErr) throw vErr;
                                 realVisitId = vData[0].visit_id;
                             } else {
-                                // تحديث زيارة موجودة باستخدام server_id
                                 const serverIdToUpdate = localVisit && localVisit.server_id ? localVisit.server_id : order.tempVisitId;
                                 const { error: vErr } = await _supabase.from('visits').update({
                                     total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount
@@ -471,7 +465,6 @@
                                 await _supabase.from('visit_tests').delete().eq('visit_id', realVisitId);
                             }
 
-                            // 3. رفع التحاليل (بـ IDs فريدة عشان السحابة تقبلها)
                             if (order.cart.length > 0) {
                                 const tests = order.cart.map(i => ({ 
                                     id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), 
@@ -484,7 +477,6 @@
                                 if (tErr) throw tErr;
                             }
 
-                            // 4. تحديث الداتا المحلية بالـ server_id عشان المرة الجاية نعدل صح
                             if (item.table_name === 'orders' && localVisit) {
                                 await db.visits.update(order.tempVisitId, { server_id: realVisitId });
                             }
@@ -513,10 +505,9 @@
                     }
                 }
 
-                // 🔥 رسالة صادقة
                 if (successCount > 0 && failCount === 0) showToast(`✅ تمت مزامنة ${successCount} عملية بنجاح!`);
-                else if (successCount > 0 && failCount > 0) showToast(`⚠️ نجح ${successCount} وفشل ${failCount}. راجع الكونسول.`, true);
-                else if (failCount > 0) showToast(`❌ فشل مزامنة ${failCount} عملية. راجع الكونسول.`, true);
+                else if (successCount > 0 && failCount > 0) showToast(`⚠️ نجح ${successCount} وفشل ${failCount}.`, true);
+                else if (failCount > 0) showToast(`❌ فشل مزامنة ${failCount} عملية.`, true);
                 
                 const remaining = await db.outbox.count();
                 if (remaining === 0) btn.style.display = 'none';
@@ -527,7 +518,6 @@
             } catch(e) {
                 console.error("Outbox error:", e);
                 document.getElementById('syncBtn').innerText = '🔄 مزامنة البيانات';
-                showToast('❌ حدث خطأ أثناء المزامنة', true);
             } finally {
                 isSyncing = false; 
             }
@@ -539,14 +529,15 @@
         // ==========================================
         // دوال مساعدة
         // ==========================================
-        function logout() {
-            _supabase.auth.signOut().then(() => {
-                localStorage.removeItem('teba_tenant_id');
-                localStorage.removeItem('teba_tenant_name');
-                localStorage.removeItem('teba_user_role');
-                localStorage.removeItem('teba_current_branch');
-                window.location.href = 'home.html';
-            });
+        async function logout() {
+            try {
+                await _supabase.auth.signOut();
+            } catch (e) {
+                console.error("Logout Error:", e);
+            } finally {
+                localStorage.clear(); 
+                window.location.replace('home.html');
+            }
         }
 
         document.addEventListener("wheel", function(event){
@@ -573,7 +564,6 @@
             setTimeout(() => { toast.style.display = 'none'; }, 4000);
         }
 
-        // ✅ دالة توليد رقم زيارة تسلسلي (محلي للعرض فقط)
         async function getNextSequentialVisitId() {
             try {
                 const lastVisit = await db.visits.orderBy('visit_id').last();
@@ -614,12 +604,21 @@
             document.getElementById('pBranch').value = currentBranch; 
             document.getElementById('btnPatientHistory').style.display = 'none';
             cart = []; renderCart(); calculateChanges();
+            
             await generateVisitPreview();
-            document.getElementById('pName').focus();
+            
+            setTimeout(() => {
+                const nameInput = document.getElementById('pName');
+                if(nameInput) { nameInput.focus(); nameInput.click(); } 
+            }, 100);
+            
             showToast('تم تجهيز استمارة مريض جديد');
         }
-        
-        // (باقي الدوال هتيجي في الجزء الثالث)        async function loadRecentPatients() {
+
+        // ==========================================
+        // جلب المرضى والكتالوج
+        // ==========================================
+        async function loadRecentPatients() {
             const container = document.getElementById('recentPatientsList');
             try {
                 if(navigator.onLine) {
@@ -678,7 +677,7 @@
             try {
                 const numericVisitId = Number(visitId);
                 if (isNaN(numericVisitId)) {
-                    return showToast('❌ رقم الزيارة غير صالح (قد يكون من نسخة قديمة)', true);
+                    return showToast('❌ رقم الزيارة غير صالح', true);
                 }
 
                 const vData = await db.visits.get(numericVisitId);
@@ -865,7 +864,7 @@
         }
 
         // ==========================================
-        // الحفظ (تعديل أو جديد)
+        // الحفظ
         // ==========================================
         async function saveOrder() {
             const pName = document.getElementById('pName').value.trim();
@@ -1091,7 +1090,7 @@
         window.onload = async () => { 
             const role = localStorage.getItem('teba_user_role');
             if (role !== 'admin') {
-                document.getElementById('pBranch').style.display = 'none'; // إخفاء اختيار الفرع للموظف العادي
+                document.getElementById('pBranch').style.display = 'none';
             }
 
             document.getElementById('currentBranchDisplay').innerText = currentBranch === '1' ? 'الجعافرة' : 'بهتيم';
@@ -1107,12 +1106,30 @@
             if (navigator.onLine) processOutbox();
         };
 
-        // 🔥 التحديث التلقائي كل دقيقة لو فيه عمليات معلقة
         setInterval(() => {
             if (navigator.onLine && !isSyncing) {
                 processOutbox();
             }
         }, 60000);
+    </script>
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('../service-worker.js').then(reg => {
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed') {
+                  if (navigator.serviceWorker.controller) {
+                    window.location.reload();
+                  }
+                }
+              };
+            };
+          }).catch(err => console.warn('SW Error:', err));
+        });
+      }
     </script>
 </body>
 </html>
