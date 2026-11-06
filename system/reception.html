@@ -1,4 +1,4 @@
-﻿﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -390,7 +390,9 @@
             localStorage.setItem('teba_current_branch', val);
             document.getElementById('currentBranchDisplay').innerText = val === '1' ? 'الجعافرة' : 'بهتيم';
             loadRecentPatients(); 
-        }        // ==== المزامنة ====
+        }
+
+        // ==== المزامنة ====
         async function addToOutbox(table_name, action, payload) {
             try {
                 await db.outbox.add({ table_name, action, payload, timestamp: new Date().toISOString() });
@@ -444,7 +446,7 @@
                                 await _supabase.from('visit_tests').delete().eq('visit_id', realVisitId);
                             }
                             if (order.cart.length > 0) {
-                                // ✅ تعديل: استخدام الـ id المحلي بدل توليد id جديد (سبب التكرار في المعمل)
+                                // ✅ تعديل: استخدام الـ id المحلي بدل توليد id جديد
                                 const tests = order.cart.map(i => ({ 
                                     id: i.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())), 
                                     tenant_id: TEBA_CONFIG.tenant.id, visit_id: realVisitId, test_code: i.code, price_at_time: i.price 
@@ -591,7 +593,9 @@
                 console.error(e);
                 container.innerHTML = '<div style="text-align:center; color:var(--danger);">حدث خطأ في تحميل البيانات</div>';
             }
-        }        async function loadPatientToForm(visitId) {
+        }
+
+        async function loadPatientToForm(visitId) {
             try {
                 const numericVisitId = Number(visitId);
                 if (isNaN(numericVisitId)) return showToast('❌ رقم الزيارة غير صالح', true);
@@ -617,7 +621,7 @@
                 
                 const tests = await db.visit_tests.where('visit_id').equals(numericVisitId).toArray();
                 cart = []; 
-                // ✅ تعديل: fallback من db.catalog لو masterTests فاضية أوفلاين (سبب السلة الفاضية)
+                // ✅ تعديل: fallback من db.catalog لو masterTests فاضية أوفلاين
                 for (const t of tests) {
                     let catTest = masterTests.find(m => m.code === t.test_code);
                     if (!catTest) { catTest = await db.catalog.where('code').equals(t.test_code).first(); }
@@ -694,7 +698,9 @@
                 const localCatalog = await db.catalog.toArray();
                 if (localCatalog.length > 0) { masterTests = localCatalog; renderCategories(); renderCatalog(); }
             } catch(e) { console.error(e); }
-        }        function renderCategories() {
+        }
+
+        function renderCategories() {
             const sidebar = document.getElementById('catalogSidebar');
             const categories = [...new Set(masterTests.map(t => t.category))];
             let html = `<button class="cat-btn ${currentCategory === 'all' ? 'active' : ''}" onclick="filterByCategory('all', this)">📋 الكل</button>`;
@@ -719,7 +725,7 @@
                 grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 20px;">لا توجد تحاليل مطابقة</div>';
                 return;
             }
-            // ✅ تعديل: الزرار يبعت الكود بس بدل JSON كامل (سبب التكرار عند الإضافة)
+            // ✅ تعديل: الزرار يبعت الكود بس بدل JSON كامل
             grid.innerHTML = filtered.map(test => `
                 <div class="test-btn" onclick="addToCartByCode('${test.code.replace(/'/g, "\\'")}')" style="padding: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 5px;">
                     <div style="font-weight: 800; color: var(--text-muted); font-size: 0.75rem;">${test.code}</div>
@@ -731,7 +737,7 @@
 
         function filterCatalog() { renderCatalog(); }
 
-        // ✅ دالة جديدة: تضيف بالكود وتدور عليه في masterTests أو db.catalog
+        // ✅ دالة جديدة: تضيف بالكود
         async function addToCartByCode(code) {
             let test = masterTests.find(t => t.code === code);
             if (!test) { test = await db.catalog.where('code').equals(code).first(); }
@@ -780,10 +786,14 @@
         }
 
         // ==== الحفظ ====
+        let isSavingOrder = false; // قفل لمنع التكرار (مشكلة 106, 107, 108)
         async function saveOrder() {
+            if (isSavingOrder) return; 
             const pName = document.getElementById('pName').value.trim();
             if (!pName) return showToast('⚠️ الرجاء إدخال اسم المريض!', true);
             if (cart.length === 0) return showToast('⚠️ السلة فارغة!', true);
+            
+            isSavingOrder = true;
             const btn = document.getElementById('saveBtn');
             btn.innerText = 'جاري الحفظ...'; btn.disabled = true;
             try {
@@ -850,7 +860,11 @@
                 if (navigator.onLine) processOutbox();
                 loadRecentPatients();
             } catch (e) { console.error(e); showToast('❌ حدث خطأ أثناء الحفظ', true); }
-            finally { btn.innerText = '💾 حفظ الطلب'; btn.disabled = false; }
+            finally { 
+                btn.innerText = '💾 حفظ الطلب'; 
+                btn.disabled = false; 
+                isSavingOrder = false; 
+            }
         }        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         async function openPatientList() {
@@ -893,7 +907,7 @@
             } catch(e) { console.error(e); }
         }
 
-        // ✅ تعديل: البحث بيفتح آخر زيارة للمريض بدل ما يمسح السلة ويعمل زيارة جديدة
+        // ✅ تعديل: البحث بيفتح آخر زيارة للمريض بدل ما يمسح السلة
         async function searchPatient() {
             const query = document.getElementById('patientSearch').value.trim();
             if(!query) return;
@@ -904,14 +918,11 @@
                 
                 if(patients.length > 0) {
                     const p = patients[0];
-                    // البحث عن آخر زيارة للمريض
                     const patientVisits = visits.filter(v => v.patient_id === p.id).sort((a,b) => Number(b.visit_id) - Number(a.visit_id));
                     if (patientVisits.length > 0) {
-                        // فتح آخر زيارة بكل تحاليلها
                         await loadPatientToForm(patientVisits[0].visit_id);
                         showToast('✅ تم فتح آخر زيارة للمريض');
                     } else {
-                        // مفيش زيارات - ملء بيانات المريض بس
                         currentPatientId = p.id;
                         currentEditingVisitId = null;
                         cart = []; renderCart();
