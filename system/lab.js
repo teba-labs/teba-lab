@@ -1,4 +1,4 @@
-﻿// ==== التحقق من تسجيل الدخول ====
+﻿﻿// ==== التحقق من تسجيل الدخول ====
 if (!localStorage.getItem('teba_tenant_id')) {
     window.location.href = 'home.html';
 }
@@ -31,6 +31,7 @@ let allVisits = [], visitTests = [], testsCatalog = [], testResults = [];
 let selectedVisitId = null;
 let currentLabBranch = localStorage.getItem('teba_current_branch') || '1'; 
 let isSyncing = false; 
+let showHiddenVisits = false; // 🔥 متغير للتحكم في عرض المحذوفات
 
 window.customRanges = {}; 
 
@@ -189,7 +190,7 @@ function showToast(msg, isError = false) {
 }
 
 // ==========================================
-// 📥 جلب البيانات 
+// 📥 جلب البيانات (تم التعديل لمنع الشبح ودعم عرض المحذوفات)
 // ==========================================
 async function loadData() {
     try {
@@ -211,6 +212,18 @@ async function loadData() {
                 .limit(100);
             
             if (visits && visits.length > 0) {
+                // 🔥 إصلاح الكمبيوتر اللي بيشوف بيانات قديمة: مسح الزيارات المحلية اللي مش موجودة في السحابة
+                const serverVisitIds = visits.map(v => Number(v.visit_id));
+                const localDbVisits = await db.visits.where('branch_id').equals(Number(currentLabBranch)).toArray();
+                for (let lv of localDbVisits) {
+                    if (lv.server_id && !serverVisitIds.includes(Number(lv.server_id))) {
+                        await db.visits.delete(lv.visit_id);
+                        const vts = await db.visit_tests.where('visit_id').equals(lv.visit_id).toArray();
+                        for(let vt of vts) { await db.test_results.where('visit_test_id').equals(vt.id).delete(); }
+                        await db.visit_tests.where('visit_id').equals(lv.visit_id).delete();
+                    }
+                }
+
                 for (let v of visits) {
                     const localV = await db.visits.get(Number(v.visit_id));
                     if (localV && localV.hidden_in_lab === true) { v.hidden_in_lab = true; }
@@ -240,7 +253,9 @@ async function loadData() {
         testsCatalog = await db.catalog.toArray();
         
         const allLocalVisits = await db.visits.toArray();
-        let localVisits = allLocalVisits.filter(v => String(v.branch_id) === String(currentLabBranch) && v.hidden_in_lab !== true);
+        // 🔥 إصلاح زرار عرض المحذوفات: بنفلتر بناءً على المتغير showHiddenVisits
+        let localVisits = allLocalVisits.filter(v => String(v.branch_id) === String(currentLabBranch) && (showHiddenVisits || v.hidden_in_lab !== true));
+        
         localVisits.sort((a, b) => Number(b.visit_id) - Number(a.visit_id));
         localVisits = localVisits.slice(0, 100);
 
@@ -280,16 +295,19 @@ setInterval(() => {
 }, 60000);// ==========================================
 // 🖥️ واجهة المستخدم وعرض المرضى
 // ==========================================
-let showHiddenVisits = false;
-
 document.addEventListener("DOMContentLoaded", () => {
     const headerActions = document.querySelector('.header-actions');
     if (headerActions) {
         const btnShowHidden = document.createElement('button');
         btnShowHidden.className = 'nav-btn';
         btnShowHidden.style.background = 'var(--surface-hover)';
+        btnShowHidden.id = 'btnToggleHidden';
         btnShowHidden.innerHTML = '👁️ عرض المحذوفات';
-        btnShowHidden.onclick = () => { showHiddenVisits = !showHiddenVisits; loadData(); };
+        btnShowHidden.onclick = () => { 
+            showHiddenVisits = !showHiddenVisits; 
+            btnShowHidden.innerHTML = showHiddenVisits ? '🙈 إخفاء المحذوفات' : '👁️ عرض المحذوفات';
+            loadData(); 
+        };
         headerActions.insertBefore(btnShowHidden, headerActions.firstChild);
     }
 });
@@ -367,6 +385,7 @@ async function publishVisit() {
             await addToOutbox('visits', 'UPDATE', { visit_id: parseInt(selectedVisitId), is_published: true });
             if (navigator.onLine) processOutbox();
             selectPatient(selectedVisitId); 
+            showToast('✅ تم النشر بنجاح!');
         }
     } catch(e) { showToast('❌ حدث خطأ أثناء النشر', true); }
 }
@@ -393,7 +412,7 @@ function openSingleResultModal(vtId, testCode){
     const savedData = result ? result.results_data : {};
     const p = getSmartParams(catalogItem)[0] || { name: 'Result' };
     const val = savedData[p.name]?.value || savedData['Result']?.value || '';
-    const savedCustomRange = savedData[p.name]?.customRange || savedData['Result']?.customRange || '';
+    const savedCustomRange = savedData[p.name]?.customRange || savedData['Result']?.customRange || window.customRanges[`${vtId}_result`] || '';
     const visit = allVisits.find(v => String(v.visit_id) === String(selectedVisitId));
     const range = savedCustomRange || getSmartRange(p, visit.patient, null, savedData);
 
@@ -411,6 +430,7 @@ function openSingleResultModal(vtId, testCode){
 
     document.getElementById('btnSaveSingleResult').onclick = () => saveSingleResult(vtId);
     document.getElementById('singleResultModal').style.display = 'flex';
+    setTimeout(() => { const i = document.getElementById(`res_${vtId}_simple`); if(i) i.focus(); }, 100);
 }
 
 window.enableRangeEdit = function(vtId, paramName, isSingle = false) {
@@ -441,14 +461,15 @@ function openProfileResultModal(vtId, testCode) {
     let inputsHtml = '';
     params.forEach(param => {
         const val = savedData[param.name]?.value || '';
-        const range = getSmartRange(param, patient, savedData[param.name]?.phase || null, savedData);
+        const customR = window.customRanges[`${vtId}_${param.name}`] || savedData[param.name]?.customRange || '';
+        const range = customR || getSmartRange(param, patient, savedData[param.name]?.phase || null, savedData);
         const isCalc = param.is_calc === true || param.is_calculated === true;
         const phaseSelectorHtml = renderPhaseSelector(vtId, param, patient, savedData);
         
-        let inputElement = `<input type="text" class="${isCalc ? 'input-calc' : ''}" id="res_${vtId}_${param.name}" value="${val}" ${isCalc ? 'readonly' : ''} oninput="triggerCalc('${vtId}', '${testCode}')" onkeydown="handleEnter(event, this, '${vtId}', true)">`;
+        let inputElement = `<input type="text" class="${isCalc ? 'input-calc' : ''}" id="res_${vtId}_${param.name}" value="${val}" ${isCalc ? 'readonly' : ''} oninput="triggerCalc('${vtId}', '${testCode}')" onkeydown="handleEnter(event, this, '${vtId}', true); handleArrowKeys(event, this)">`;
         if (param.type === 'dropdown' && param.options) {
             let opts = `<option value="">-- اختر --</option>` + param.options.map(o => `<option value="${o}" ${val === o ? 'selected' : ''}>${o}</option>`).join('');
-            inputElement = `<select id="res_${vtId}_${param.name}" onchange="triggerCalc('${vtId}', '${testCode}')">${opts}</select>`;
+            inputElement = `<select id="res_${vtId}_${param.name}" onchange="triggerCalc('${vtId}', '${testCode}')" onkeydown="handleArrowKeys(event, this)">${opts}</select>`;
         }
         inputsHtml += `
             <div class="input-group">${phaseSelectorHtml}
@@ -463,6 +484,7 @@ function openProfileResultModal(vtId, testCode) {
     area.innerHTML = `<div class="test-item"><div class="test-body">${inputsHtml}</div></div>`;
     document.getElementById('btnSaveProfileResult').onclick = () => saveProfileResult(vtId, testCode);
     document.getElementById('profileResultModal').style.display = 'flex';
+    setTimeout(() => { const i = area.querySelector('input:not([readonly]), select'); if(i) i.focus(); }, 100);
 }
 
 function openResultModal(vtId, isProfile, testCode) {
@@ -478,7 +500,18 @@ function handleEnter(e, el, vtId, isProfile) {
             let inputs = Array.from(el.closest('.modal-body').querySelectorAll('input:not([readonly]), select'));
             let index = inputs.indexOf(el);
             if (index > -1 && index < inputs.length - 1) inputs[index + 1].focus();
+            else { const saveBtn = document.getElementById('btnSaveProfileResult'); if(saveBtn) saveBtn.focus(); }
         }
+    }
+}
+
+function handleArrowKeys(e, el) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        let inputs = Array.from(el.closest('.modal-body').querySelectorAll('input:not([readonly]), select'));
+        let index = inputs.indexOf(el);
+        if (e.key === 'ArrowDown' && index < inputs.length - 1) inputs[index + 1].focus();
+        else if (e.key === 'ArrowUp' && index > 0) inputs[index - 1].focus();
     }
 }
 
@@ -487,9 +520,12 @@ async function saveSingleResult(vtId) {
     if (!input || input.value.trim() === '') return showToast('⚠️ أدخل النتيجة أولاً', true);
     const vt = visitTests.find(v => String(v.id) === String(vtId));
     const p = getSmartParams(testsCatalog.find(c => c.code === vt.test_code))[0] || { name: 'Result' };
+    
     let resultsData = { [p.name]: { value: input.value.trim() } };
     const customRange = window.customRanges[`${vtId}_result`] || window.customRanges[`${vtId}_Result`] || window.customRanges[`${vtId}_${p.name}`];
+    
     if (customRange) resultsData[p.name].customRange = customRange;
+    
     await saveResultToCloud(vtId, resultsData);
     document.getElementById('singleResultModal').style.display = 'none';
     renderOrderedTests();
@@ -502,6 +538,7 @@ async function saveProfileResult(vtId, testCode) {
     params.forEach(param => {
         const input = document.getElementById(`res_${vtId}_${param.name}`);
         const phaseSelect = document.getElementById(`phase_${vtId}_${param.name}`);
+        
         if (input && input.value.trim() !== '') {
             resultsData[param.name] = { value: input.value.trim() };
             if (phaseSelect) resultsData[param.name].phase = phaseSelect.value;
@@ -521,16 +558,20 @@ async function saveResultToCloud(visitTestId, resultsData) {
         let existing = await db.test_results.where('visit_test_id').equals(vt.id).first();
         if(existing) await db.test_results.update(existing.id, { results_data: resultsData });
         else await db.test_results.put({ id: String(Date.now()), visit_test_id: vt.id, results_data: resultsData });
+        
         await addToOutbox('test_results', 'UPSERT', { tenant_id: TEBA_CONFIG.tenant.id, visit_test_id: vt.id, results_data: resultsData });
+        
         const idx = testResults.findIndex(r => String(r.visit_test_id) === String(visitTestId));
         if (idx > -1) testResults[idx].results_data = resultsData;
         else testResults.push({ visit_test_id: visitTestId, results_data: resultsData });
+        
+        showToast('✅ تم الحفظ محلياً!');
         if (navigator.onLine) processOutbox();
-    } catch (e) { showToast('❌ حدث خطأ أثناء الحفظ', true); }
+    } catch (e) { showToast('❌ حدث خطأ أثناء الحفظ', true); console.error(e); }
 }
 
 // ==========================================
-// 🧮 الرينجات الديناميكية
+// 🧮 الرينجات الديناميكية والحسابات
 // ==========================================
 function getSmartRange(param, patient, selectedPhase = null, savedData = {}) {
     if (savedData && savedData[param.name] && savedData[param.name].customRange) return savedData[param.name].customRange;
@@ -635,6 +676,15 @@ function triggerCalc(visitTestId, testCode) {
 function openEditPatientModal(visitId) {
     const v = allVisits.find(x => String(x.visit_id) === String(visitId));
     if(!v || !v.patient) return;
+    
+    // 🔥 إخفاء الفرع للموظف
+    const role = localStorage.getItem('teba_user_role');
+    if (role !== 'admin') {
+        document.getElementById('editPBranch').parentElement.style.display = 'none';
+    } else {
+        document.getElementById('editPBranch').parentElement.style.display = 'flex';
+    }
+
     document.getElementById('editVisitId').value = v.visit_id;
     document.getElementById('editVisitIdDisplay').value = String(v.visit_id).padStart(4, '0');
     document.getElementById('editPatientId').value = v.patient.id;
@@ -653,15 +703,22 @@ async function savePatientEdit() {
     const vId = document.getElementById('editVisitId').value;
     const name = document.getElementById('editPName').value.trim();
     if(!name) return showToast('⚠️ اسم المريض مطلوب', true);
+    
     const btn = document.querySelector('#editPatientModal .btn-save-test');
     btn.innerText = '⏳ جاري الحفظ...'; btn.disabled = true;
     try {
         const pPayload = { id: pId, name, phone: document.getElementById('editPPhone').value.trim(), doctor_name: document.getElementById('editPDoctor').value.trim(), age: parseInt(document.getElementById('editPAge').value) || 0, age_type: document.getElementById('editPAgeType').value, gender: document.getElementById('editPGender').value };
         await db.patients.update(pId, pPayload);
         await addToOutbox('patients', 'UPDATE', pPayload);
-        const vPayload = { visit_id: parseInt(vId), branch_id: parseInt(document.getElementById('editPBranch').value) };
-        await db.visits.update(parseInt(vId), { branch_id: parseInt(document.getElementById('editPBranch').value) });
+        
+        let vPayload = { visit_id: parseInt(vId) };
+        const role = localStorage.getItem('teba_user_role');
+        if (role === 'admin') {
+            vPayload.branch_id = parseInt(document.getElementById('editPBranch').value);
+            await db.visits.update(parseInt(vId), { branch_id: vPayload.branch_id });
+        }
         await addToOutbox('visits', 'UPDATE', vPayload);
+        
         document.getElementById('editPatientModal').style.display = 'none';
         if (navigator.onLine) processOutbox();
         await loadData(); 
@@ -773,10 +830,8 @@ function selectPatient(visitId) {
     const visitObj = allVisits.find(v => String(v.visit_id) === String(visitId));
     const btnPub = document.getElementById('btnPublishVisit');
     if(btnPub) { btnPub.style.display = 'block'; btnPub.innerHTML = visitObj.is_published ? '🔄 تحديث النشر' : '🌐 نشر الزيارة'; }
-}
-
-// ==========================================
-// 🖨️ الطباعة (بدون تغيير)
+}// ==========================================
+// 🖨️ الطباعة و PDF (الجزء اللي كان شغال تمام - ممنوع اللمس)
 // ==========================================
 function getHeaderHtml(visit, reqDate, printDate) {
     let ageStr = visit.patient.age + ' Years';
@@ -810,11 +865,13 @@ function openPrintModal() {
     const visit = allVisits.find(v => String(v.visit_id) === String(selectedVisitId));
     const vTests = visitTests.filter(vt => String(vt.visit_id) === String(selectedVisitId));
     if(!visit) return;
+    
     const reqDate = visit.visit_date ? new Date(visit.visit_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('en-GB');
     const printDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     const printArea = document.getElementById('print-area');
     printArea.innerHTML = '';
     let singlesRows = ''; let profilesData = []; 
+    
     function getStateHtml(val, range) {
         if (!val || !range) return '';
         const num = parseFloat(val); const match = range.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
@@ -828,6 +885,7 @@ function openPrintModal() {
         if (text) return `<span style="border: 1px solid #000; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; color: ${color}; display: inline-block;">${text}</span>`;
         return '';
     }
+    
     vTests.forEach(vt => {
         const catalogItem = testsCatalog.find(c => c.code === vt.test_code) || { name: vt.test_code, code: vt.test_code, parameters: [] };
         const result = testResults.find(r => String(r.visit_test_id) === String(vt.id));
@@ -835,6 +893,7 @@ function openPrintModal() {
         const params = getSmartParams(catalogItem);
         const isProfile = isProfileTest(catalogItem);
         let hasTestData = false; let testRows = '';
+        
         if (isProfile) {
             params.forEach(param => {
                 const val = savedData[param.name]?.value; const phase = savedData[param.name]?.phase; 
@@ -859,10 +918,13 @@ function openPrintModal() {
             }
         }
     });
+    
     let htmlContent = '';
     if (singlesRows !== '') htmlContent += `<div class="print-page">${getHeaderHtml(visit, reqDate, printDate)}<div style="margin-bottom: 25px;"><h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000;">SINGLE TESTS</h3><table style="width: 100%; border-collapse: collapse; font-size: 13px;"><thead><tr style="background: #000; color: #fff;"><th style="padding: 8px 6px; text-align:left;">Test Name</th><th style="padding: 8px 6px; text-align:center;">Result</th><th style="padding: 8px 6px; text-align:center;">State</th><th style="padding: 8px 6px; text-align:center;">Unit</th><th style="padding: 8px 6px; text-align:center;">Ref. Range</th></tr></thead><tbody>${singlesRows}</tbody></table></div>${getFooterHtml()}</div>`;
     profilesData.forEach(profile => { htmlContent += `<div class="print-page">${getHeaderHtml(visit, reqDate, printDate)}<div style="margin-bottom: 25px;"><h3 style="margin: 0 0 10px 0; background: #eee; padding: 8px 12px; border-left: 4px solid #000;">${profile.name}</h3><table style="width: 100%; border-collapse: collapse; font-size: 13px;"><thead><tr style="background: #000; color: #fff;"><th style="padding: 8px 6px; text-align:left;">Test Name</th><th style="padding: 8px 6px; text-align:center;">Result</th><th style="padding: 8px 6px; text-align:center;">State</th><th style="padding: 8px 6px; text-align:center;">Unit</th><th style="padding: 8px 6px; text-align:center;">Ref. Range</th></tr></thead><tbody>${profile.rows}</tbody></table></div>${getFooterHtml()}</div>`; });
+    
     if (htmlContent === '') htmlContent += `<div class="print-page">${getHeaderHtml(visit, reqDate, printDate)}<p style="text-align:center; font-weight:bold; margin-top:50px;">No results recorded.</p>${getFooterHtml()}</div>`;
+    
     printArea.innerHTML = htmlContent;
     document.getElementById('printModal').style.display = 'flex';
 }
@@ -873,11 +935,18 @@ function downloadPDF() {
     const element = document.getElementById('print-area');
     const opt = { margin: 0, filename: `Report_Visit_${selectedVisitId}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
     const btn = document.getElementById('btnDownloadPdf'); const originalText = btn.innerHTML; btn.innerHTML = '⏳ جاري التحميل...';
-    html2pdf().set(opt).from(element).save().then(() => { btn.innerHTML = originalText; }).catch(err => { alert('حدث خطأ'); btn.innerHTML = originalText; });
+    html2pdf().set(opt).from(element).save().then(() => { btn.innerHTML = originalText; }).catch(err => { alert('حدث خطأ أثناء التحميل'); btn.innerHTML = originalText; });
 }
 
+// ==========================================
+// 🚀 التشغيل عند فتح الصفحة
+// ==========================================
 window.onload = async () => { 
-    if (localStorage.getItem('teba_user_role') !== 'admin') document.getElementById('labBranch').style.display = 'none';
+    // إخفاء اختيار الفرع للموظف العادي
+    if (localStorage.getItem('teba_user_role') !== 'admin') {
+        document.getElementById('labBranch').style.display = 'none';
+    }
+    
     document.getElementById('labBranch').value = currentLabBranch;
     await loadData(); 
     checkSyncStatus();
