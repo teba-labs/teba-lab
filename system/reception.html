@@ -430,12 +430,28 @@
                             let realVisitId = null;
                             let localVisit = await db.visits.get(order.tempVisitId);
                             if (item.table_name === 'orders') {
-                                const { data: vData, error: vErr } = await _supabase.from('visits').insert([{
-                                    tenant_id: TEBA_CONFIG.tenant.id, patient_id: patientId, branch_id: order.branch_id, 
-                                    total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount, status: 'Pending', visit_date: order.visit_date
-                                }]).select();
-                                if (vErr) throw vErr;
-                                realVisitId = vData[0].visit_id;
+                                // ✅ تعديل: التأكد من عدم وجود الزيارة مسبقاً لمنع التكرار بسبب انقطاع النت
+                                const { data: existingVisit } = await _supabase.from('visits')
+                                    .select('visit_id')
+                                    .eq('tenant_id', TEBA_CONFIG.tenant.id)
+                                    .eq('patient_id', patientId)
+                                    .eq('visit_date', order.visit_date)
+                                    .limit(1);
+                                    
+                                if (existingVisit && existingVisit.length > 0) {
+                                    realVisitId = existingVisit[0].visit_id;
+                                    await _supabase.from('visits').update({
+                                        total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount
+                                    }).eq('visit_id', realVisitId).eq('tenant_id', TEBA_CONFIG.tenant.id);
+                                    await _supabase.from('visit_tests').delete().eq('visit_id', realVisitId);
+                                } else {
+                                    const { data: vData, error: vErr } = await _supabase.from('visits').insert([{
+                                        tenant_id: TEBA_CONFIG.tenant.id, patient_id: patientId, branch_id: order.branch_id, 
+                                        total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount, status: 'Pending', visit_date: order.visit_date
+                                    }]).select();
+                                    if (vErr) throw vErr;
+                                    realVisitId = vData[0].visit_id;
+                                }
                             } else {
                                 const serverIdToUpdate = localVisit && localVisit.server_id ? localVisit.server_id : order.tempVisitId;
                                 const { error: vErr } = await _supabase.from('visits').update({
@@ -446,7 +462,6 @@
                                 await _supabase.from('visit_tests').delete().eq('visit_id', realVisitId);
                             }
                             if (order.cart.length > 0) {
-                                // ✅ تعديل: استخدام الـ id المحلي بدل توليد id جديد
                                 const tests = order.cart.map(i => ({ 
                                     id: i.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())), 
                                     tenant_id: TEBA_CONFIG.tenant.id, visit_id: realVisitId, test_code: i.code, price_at_time: i.price 
@@ -621,7 +636,6 @@
                 
                 const tests = await db.visit_tests.where('visit_id').equals(numericVisitId).toArray();
                 cart = []; 
-                // ✅ تعديل: fallback من db.catalog لو masterTests فاضية أوفلاين
                 for (const t of tests) {
                     let catTest = masterTests.find(m => m.code === t.test_code);
                     if (!catTest) { catTest = await db.catalog.where('code').equals(t.test_code).first(); }
@@ -680,7 +694,6 @@
                         if (data.length === 0) {
                             await db.catalog.clear(); masterTests = []; renderCategories(); renderCatalog(); return;
                         } else {
-                            // ✅ تعديل: فلتر التكرار بالكود قبل الحفظ والعرض
                             const seenCodes = new Set();
                             const uniqueData = [];
                             for (const t of data) {
@@ -725,7 +738,6 @@
                 grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 20px;">لا توجد تحاليل مطابقة</div>';
                 return;
             }
-            // ✅ تعديل: الزرار يبعت الكود بس بدل JSON كامل
             grid.innerHTML = filtered.map(test => `
                 <div class="test-btn" onclick="addToCartByCode('${test.code.replace(/'/g, "\\'")}')" style="padding: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 5px;">
                     <div style="font-weight: 800; color: var(--text-muted); font-size: 0.75rem;">${test.code}</div>
@@ -737,7 +749,6 @@
 
         function filterCatalog() { renderCatalog(); }
 
-        // ✅ دالة جديدة: تضيف بالكود
         async function addToCartByCode(code) {
             let test = masterTests.find(t => t.code === code);
             if (!test) { test = await db.catalog.where('code').equals(code).first(); }
@@ -786,7 +797,7 @@
         }
 
         // ==== الحفظ ====
-        let isSavingOrder = false; // قفل لمنع التكرار (مشكلة 106, 107, 108)
+        let isSavingOrder = false; 
         async function saveOrder() {
             if (isSavingOrder) return; 
             const pName = document.getElementById('pName').value.trim();
@@ -907,7 +918,6 @@
             } catch(e) { console.error(e); }
         }
 
-        // ✅ تعديل: البحث بيفتح آخر زيارة للمريض بدل ما يمسح السلة
         async function searchPatient() {
             const query = document.getElementById('patientSearch').value.trim();
             if(!query) return;
