@@ -32,7 +32,6 @@ let selectedVisitId = null;
 let currentLabBranch = localStorage.getItem('teba_current_branch') || '1'; 
 let isSyncing = false; 
 
-// مخزن مؤقت لحفظ الرينجات المخصصة
 window.customRanges = {}; 
 
 function changeLabBranch(val) {
@@ -53,7 +52,7 @@ function changeLabBranch(val) {
 }
 
 // ==========================================
-// ⚙️ محرك المزامنة (Outbox) - النسخة الصادقة
+// ⚙️ محرك المزامنة (Outbox)
 // ==========================================
 async function addToOutbox(table_name, action, payload) {
     try {
@@ -169,9 +168,6 @@ async function processOutbox() {
 window.addEventListener('online', () => { processOutbox(); });
 window.addEventListener('offline', () => { showToast('⚠️ انقطع الاتصال. تم تفعيل وضع الأوفلاين.', true); });
 
-// ==========================================
-// 🔔 التنبيهات الصوتية والإشعارات
-// ==========================================
 const bc = new BroadcastChannel('teba_sync');
 bc.onmessage = (event) => {
     if (event.data && event.data.type === 'new_order') {
@@ -193,61 +189,54 @@ function showToast(msg, isError = false) {
 }
 
 // ==========================================
-// 📥 جلب البيانات (🔥 إصلاح التعليق أوفلاين)
+// 📥 جلب البيانات (🔥 إصلاح التكرار)
 // ==========================================
 async function loadData() {
     try {
-        // 1. محاولة جلب البيانات من السحابة لو أونلاين
         if (navigator.onLine) {
-            try {
-                const { data: catalog } = await _supabase.from('tests_catalog').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id);
-                if (catalog) {
-                    if (catalog.length === 0) {
-                        await db.catalog.clear();
-                    } else {
-                        await db.catalog.clear();
-                        await db.catalog.bulkPut(catalog.map(t => ({ id: t.id, code: t.code, name: t.name, price: t.price, category: t.category || 'أخرى', parameters: t.parameters, test_type: t.test_type, unit: t.unit })));
-                    }
+            const { data: catalog } = await _supabase.from('tests_catalog').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id);
+            if (catalog) {
+                if (catalog.length === 0) { await db.catalog.clear(); } 
+                else {
+                    await db.catalog.clear();
+                    await db.catalog.bulkPut(catalog.map(t => ({ id: t.id, code: t.code, name: t.name, price: t.price, category: t.category || 'أخرى', parameters: t.parameters, test_type: t.test_type, unit: t.unit })));
+                }
+            }
+
+            const { data: visits } = await _supabase.from('visits')
+                .select('*')
+                .eq('tenant_id', TEBA_CONFIG.tenant.id)
+                .eq('branch_id', currentLabBranch) 
+                .order('visit_id', { ascending: false })
+                .limit(100);
+            
+            if (visits && visits.length > 0) {
+                for (let v of visits) {
+                    const localV = await db.visits.get(Number(v.visit_id));
+                    if (localV && localV.hidden_in_lab === true) { v.hidden_in_lab = true; }
+                    v.server_id = v.visit_id; 
                 }
 
-                const { data: visits } = await _supabase.from('visits')
-                    .select('*')
-                    .eq('tenant_id', TEBA_CONFIG.tenant.id)
-                    .eq('branch_id', currentLabBranch) 
-                    .order('visit_id', { ascending: false })
-                    .limit(100);
+                const visitIds = visits.map(v => v.visit_id);
+                const patientIds = [...new Set(visits.map(v => v.patient_id))];
                 
-                if (visits && visits.length > 0) {
-                    for (let v of visits) {
-                        const localV = await db.visits.get(Number(v.visit_id));
-                        if (localV && localV.hidden_in_lab === true) { v.hidden_in_lab = true; }
-                        v.server_id = v.visit_id; 
-                    }
-
-                    const visitIds = visits.map(v => v.visit_id);
-                    const patientIds = [...new Set(visits.map(v => v.patient_id))];
-                    
-                    const { data: patients } = await _supabase.from('patients').select('*').in('id', patientIds);
-                    const { data: vt } = await _supabase.from('visit_tests').select('*').in('visit_id', visitIds);
-                    const vtIds = vt ? vt.map(v => v.id) : [];
-                    
-                    let results = [];
-                    if (vtIds.length > 0) {
-                        const { data: res } = await _supabase.from('test_results').select('*').in('visit_test_id', vtIds);
-                        results = res || [];
-                    }
-                    
-                    try { if (patients) await db.patients.bulkPut(patients); } catch(e) {}
-                    try { if (visits) await db.visits.bulkPut(visits); } catch(e) {}
-                    try { if (vt) await db.visit_tests.bulkPut(vt); } catch(e) {}
-                    try { if (results) await db.test_results.bulkPut(results); } catch(e) {}
+                const { data: patients } = await _supabase.from('patients').select('*').in('id', patientIds);
+                const { data: vt } = await _supabase.from('visit_tests').select('*').in('visit_id', visitIds);
+                const vtIds = vt ? vt.map(v => v.id) : [];
+                
+                let results = [];
+                if (vtIds.length > 0) {
+                    const { data: res } = await _supabase.from('test_results').select('*').in('visit_test_id', vtIds);
+                    results = res || [];
                 }
-            } catch (cloudErr) {
-                console.warn("Cloud Sync Failed, falling back to local:", cloudErr);
+                
+                try { if (patients) await db.patients.bulkPut(patients); } catch(e) {}
+                try { if (visits) await db.visits.bulkPut(visits); } catch(e) {}
+                try { if (vt) await db.visit_tests.bulkPut(vt); } catch(e) {}
+                try { if (results) await db.test_results.bulkPut(results); } catch(e) {}
             }
         }
 
-        // 2. عرض البيانات من الذاكرة المحلية (سواء أونلاين أو أوفلاين)
         testsCatalog = await db.catalog.toArray();
         
         const allLocalVisits = await db.visits.toArray();
@@ -274,7 +263,7 @@ async function loadData() {
 
     } catch(e) {
         console.error("Load Data Error:", e);
-        renderPatients(); // عرض الفاضي بدل ما يعلق
+        renderPatients();
     }
 }
 
@@ -289,8 +278,23 @@ setInterval(() => {
         processOutbox();
     }
 }, 60000);// ==========================================
-// 🖥️ واجهة المستخدم وعرض المرضى
+// 🖥️ واجهة المستخدم وعرض المرضى (مع إضافة زرار الإرجاع)
 // ==========================================
+let showHiddenVisits = false; // متغير عشان نتحكم في عرض المخفي
+
+// إضافة زرار عرض المخفيين في الهيدر
+document.addEventListener("DOMContentLoaded", () => {
+    const headerActions = document.querySelector('.header-actions');
+    if (headerActions) {
+        const btnShowHidden = document.createElement('button');
+        btnShowHidden.className = 'nav-btn';
+        btnShowHidden.style.background = 'var(--surface-hover)';
+        btnShowHidden.innerHTML = '👁️ عرض/إخفاء المحذوفات';
+        btnShowHidden.onclick = () => { showHiddenVisits = !showHiddenVisits; loadData(); };
+        headerActions.insertBefore(btnShowHidden, headerActions.firstChild);
+    }
+});
+
 function renderPatients() {
     const list = document.getElementById('patientList');
     if (allVisits.length === 0) return list.innerHTML = '<div class="empty-msg">لا توجد زيارات لهذا الفرع</div>';
@@ -302,6 +306,14 @@ function renderPatients() {
         const pubBadge = v.is_published ? `<span class="badge-published">تم النشر</span>` : '';
         const paddedId = String(v.visit_id).padStart(4, '0');
         
+        // لو الحالة مخفية نعرض زرار الإرجاع
+        let actionBtn = '';
+        if (v.hidden_in_lab) {
+            actionBtn = `<button class="btn-card-action" style="background:#e0f2fe; color:#0284c7;" onclick="event.stopPropagation(); restoreToLabQueue('${v.visit_id}')">🔄 إرجاع للطابور</button>`;
+        } else {
+            actionBtn = `<button class="btn-card-action btn-card-del" onclick="event.stopPropagation(); hideFromLabQueue('${v.visit_id}')">🗑️ إخفاء</button>`;
+        }
+
         return `
         <div class="patient-card ${String(v.visit_id) === String(selectedVisitId) ? 'active' : ''}" onclick="selectPatient('${v.visit_id}')">
             ${pubBadge}
@@ -309,21 +321,20 @@ function renderPatients() {
             <div class="p-meta"><span>زيارة #${paddedId}</span><span>${v.patient.gender === 'male' ? 'ذكر' : 'أنثى'} • ${ageStr}</span></div>
             <div class="card-actions">
                 <button class="btn-card-action btn-card-edit" onclick="event.stopPropagation(); openEditPatientModal('${v.visit_id}')">✏️ تعديل</button>
-                <button class="btn-card-action btn-card-del" onclick="event.stopPropagation(); hideFromLabQueue('${v.visit_id}')">🗑️ إخفاء</button>
+                ${actionBtn}
             </div>
         </div>
     `}).join('');
 }
 
-// ✅ دالة الإخفاء (تختفي من الشاشة فوراً وتبعت للسحابة)
+// ✅ دالة الإخفاء
 async function hideFromLabQueue(visitId) {
-    if(!confirm('هل أنت متأكد من إخفاء هذه الحالة من طابور المعمل؟ (لن تُحذف نهائياً من النظام)')) return;
+    if(!confirm('هل أنت متأكد من إخفاء هذه الحالة من طابور المعمل؟')) return;
     try {
         const v = await db.visits.get(Number(visitId));
         if (v) {
             v.hidden_in_lab = true;
             await db.visits.put(v);
-            
             await addToOutbox('visits', 'UPDATE', { visit_id: parseInt(visitId), hidden_in_lab: true });
             
             allVisits = allVisits.filter(visit => String(visit.visit_id) !== String(visitId));
@@ -336,16 +347,28 @@ async function hideFromLabQueue(visitId) {
                 document.getElementById('btnPublishVisit').style.display = 'none';
                 document.getElementById('btnDownloadPdf').style.display = 'none';
             }
-            showToast('🙈 تم إخفاء الحالة من الطابور');
+            showToast('🙈 تم إخفاء الحالة');
             if (navigator.onLine) processOutbox();
         }
-    } catch (e) {
-        console.error("Error hiding visit:", e);
-        showToast('❌ حدث خطأ أثناء الإخفاء', true);
-    }
+    } catch (e) { console.error(e); }
 }
 
-// ✅ دالة النشر (بتحدث الحالة وتبعت للسحابة)
+// ✅ دالة الإرجاع (الجديدة)
+async function restoreToLabQueue(visitId) {
+    try {
+        const v = await db.visits.get(Number(visitId));
+        if (v) {
+            v.hidden_in_lab = false;
+            await db.visits.put(v);
+            await addToOutbox('visits', 'UPDATE', { visit_id: parseInt(visitId), hidden_in_lab: false });
+            showToast('🔄 تم إرجاع الحالة للطابور');
+            if (navigator.onLine) processOutbox();
+            await loadData(); 
+        }
+    } catch (e) { console.error(e); }
+}
+
+// ✅ دالة النشر
 async function publishVisit() {
     if (!selectedVisitId) return;
     try {
@@ -354,23 +377,18 @@ async function publishVisit() {
             visit.is_published = true;
             await db.visits.put(visit);
             
-            // بنبعت is_published بس (شيلنا published_at عشان السحابة تقبل)
             const payload = { visit_id: parseInt(selectedVisitId), is_published: true };
             await addToOutbox('visits', 'UPDATE', payload);
             
             showToast('✅ جاري النشر...', false);
             if (navigator.onLine) processOutbox();
-            
             selectPatient(selectedVisitId); 
         }
-    } catch(e) { 
-        console.error("Publish Error:", e);
-        showToast('❌ حدث خطأ أثناء النشر', true); 
-    }
+    } catch(e) { showToast('❌ حدث خطأ أثناء النشر', true); }
 }
 
 // ==========================================
-// 🔥 إصلاح زرار الواتساب (عشان يفهم الرقم زي ما إنت كاتبه)
+// 🔥 دالة الواتساب (مصلحة)
 // ==========================================
 function sendLabWhatsApp() {
     if (!selectedVisitId) return showToast('⚠️ اختر مريضاً أولاً', true);
@@ -385,7 +403,6 @@ function sendLabWhatsApp() {
         return;
     }
 
-    // 🔥 التعديل هنا: لو بدأ بـ 0 نشيله ونحط 20، لو بدأ بـ 20 نسيبه، لو بدأ بـ 1 نحط 20
     if (cleanPhone.startsWith('0')) {
         cleanPhone = '20' + cleanPhone.substring(1);
     } else if (cleanPhone.startsWith('1')) {
@@ -400,25 +417,28 @@ function sendLabWhatsApp() {
     
     let msg = `أهلاً ${name} 👋،\nنتيجة تحليلك جاهزة 🧪.\nيمكنك استلامها من خلال موقعنا عبر إدخال اسمك ورقم الزيارة (${visitId}):\n${portalLink}\n\nمعامل طيبة - د/ أحمد طه أبوندا`;
     
-    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
-    window.open(waUrl, '_blank');
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 // ==========================================
-// 📝 المودالات وتسجيل النتائج
+// 📝 المودالات وتسجيل النتائج (🔥 إصلاح الرينج الفردي)
 // ==========================================
 function openSingleResultModal(vtId, testCode){
     const catalogItem = testsCatalog.find(c => c.code === testCode) || { name: testCode, code: testCode, parameters: [] };
     const result = testResults.find(r => String(r.visit_test_id) === String(vtId));
     const savedData = result ? result.results_data : {};
     
-    const val = savedData['result']?.value || '';
-    const p = getSmartParams(catalogItem)[0] || {};
+    const p = getSmartParams(catalogItem)[0] || { name: 'Result' };
+    
+    // البحث عن القيمة والرينج بأي مسمى (result أو Result أو اسم البارامتر)
+    const val = savedData[p.name]?.value || savedData['Result']?.value || savedData['result']?.value || '';
+    const savedCustomRange = savedData[p.name]?.customRange || savedData['Result']?.customRange || savedData['result']?.customRange || '';
+    
     const unit = p.unit || catalogItem.unit || '-';
     const visit = allVisits.find(v => String(v.visit_id) === String(selectedVisitId));
     const patient = visit ? visit.patient : { age: 0, age_type: 'Years', gender: 'male' };
     
-    const range = getSmartRange(p, patient, null, savedData);
+    const range = savedCustomRange || getSmartRange(p, patient, null, savedData);
 
     document.getElementById('singleModalTitle').innerText = `🧪 تسجيل نتيجة: ${catalogItem.name}`;
     const area = document.getElementById('singleResultArea');
@@ -431,7 +451,7 @@ function openSingleResultModal(vtId, testCode){
                         <span>النتيجة</span>
                         <span class="range-info" id="range_container_${vtId}_result">
                             <span id="range_text_${vtId}_result">${range}</span> ${unit}
-                            <button type="button" class="btn-edit-range" onclick="enableRangeEdit('${vtId}', 'result', true)" title="تعديل الرينج لهذه الحالة" style="background:none; border:none; cursor:pointer;">✏️</button>
+                            <button type="button" class="btn-edit-range" onclick="enableRangeEdit('${vtId}', 'result', true)" title="تعديل الرينج" style="background:none; border:none; cursor:pointer;">✏️</button>
                         </span>
                     </label>
                     <input type="text" id="res_${vtId}_simple" value="${val}" placeholder="أدخل النتيجة هنا..." style="font-size: 1.5rem; padding: 15px;" onkeydown="handleEnter(event, this, '${vtId}', false)">
@@ -447,7 +467,6 @@ function openSingleResultModal(vtId, testCode){
     setTimeout(() => { const i = area.querySelector('input'); if(i) i.focus(); }, 100);
 }
 
-// ✅ تعديل الرينج وحفظ القيمة (للزيارة المختارة فقط)
 window.enableRangeEdit = function(vtId, paramName, isSingle = false) {
     const container = document.getElementById(`range_container_${vtId}_${paramName}`);
     const currentRange = document.getElementById(`range_text_${vtId}_${paramName}`).innerText;
@@ -460,7 +479,6 @@ window.enableRangeEdit = function(vtId, paramName, isSingle = false) {
     
     input.onblur = function() {
         if (this.value.trim() === '') return; 
-        // 🔥 بنحفظ في المخزن المؤقت عشان متضيعش
         window.customRanges[`${vtId}_${paramName}`] = this.value.trim();
         container.innerHTML = `<span id="range_text_${vtId}_${paramName}">${this.value}</span> <button type="button" class="btn-edit-range" onclick="enableRangeEdit('${vtId}', '${paramName}', ${isSingle})" title="تعديل الرينج" style="background:none; border:none; cursor:pointer;">✏️</button>`;
     };
@@ -503,7 +521,7 @@ function openProfileResultModal(vtId, testCode) {
                     <span>${param.label || param.name}</span>
                     <span class="range-info" id="range_container_${vtId}_${param.name}">
                         <span id="range_text_${vtId}_${param.name}">${range}</span> ${unit}
-                        <button type="button" class="btn-edit-range" onclick="enableRangeEdit('${vtId}', '${param.name}', false)" title="تعديل الرينج لهذه الحالة" style="background:none; border:none; cursor:pointer;">✏️</button>
+                        <button type="button" class="btn-edit-range" onclick="enableRangeEdit('${vtId}', '${param.name}', false)" title="تعديل الرينج" style="background:none; border:none; cursor:pointer;">✏️</button>
                     </span>
                 </label>
                 ${inputElement}
@@ -525,9 +543,6 @@ function openResultModal(vtId, isProfile, testCode) {
     else openSingleResultModal(vtId, testCode);
 }
 
-// ==========================================
-// ⌨️ تحسين الـ UX للكيبورد
-// ==========================================
 function handleEnter(e, el, vtId, isProfile) {
     if (e.key === 'Enter') {
         e.preventDefault();
@@ -559,16 +574,24 @@ function handleArrowKeys(e, el) {
 }
 
 // ==========================================
-// 💾 حفظ النتائج (مع حفظ الرينج المخصص)
+// 💾 حفظ النتائج
 // ==========================================
 async function saveSingleResult(vtId) {
     const input = document.getElementById(`res_${vtId}_simple`);
     if (!input || input.value.trim() === '') return showToast('⚠️ أدخل النتيجة أولاً', true);
     
-    let resultsData = { 'result': { value: input.value.trim() } };
-    const customRange = window.customRanges[`${vtId}_result`];
+    const vt = visitTests.find(v => String(v.id) === String(vtId));
+    const catalogItem = testsCatalog.find(c => c.code === vt.test_code);
+    const p = getSmartParams(catalogItem)[0] || { name: 'Result' };
+    
+    const val = input.value.trim();
+    let resultsData = { [p.name]: { value: val } };
+    
+    // البحث في المصفوفة المؤقتة بأي مسمى
+    const customRange = window.customRanges[`${vtId}_result`] || window.customRanges[`${vtId}_Result`] || window.customRanges[`${vtId}_${p.name}`];
+    
     if (customRange) {
-        resultsData['result'].customRange = customRange;
+        resultsData[p.name].customRange = customRange;
     }
     
     await saveResultToCloud(vtId, resultsData);
@@ -579,7 +602,6 @@ async function saveSingleResult(vtId) {
 async function saveProfileResult(vtId, testCode) {
     const catalogItem = testsCatalog.find(c => c.code === testCode);
     const params = getSmartParams(catalogItem);
-    
     triggerCalc(vtId, testCode);
 
     let resultsData = {};
@@ -592,9 +614,7 @@ async function saveProfileResult(vtId, testCode) {
             if (phaseSelect) resultsData[param.name].phase = phaseSelect.value;
             
             const customRange = window.customRanges[`${vtId}_${param.name}`];
-            if (customRange) {
-                resultsData[param.name].customRange = customRange;
-            }
+            if (customRange) { resultsData[param.name].customRange = customRange; }
         }
     });
 
@@ -629,14 +649,11 @@ async function saveResultToCloud(visitTestId, resultsData) {
         else testResults.push({ visit_test_id: visitTestId, results_data: resultsData });
         
         if (navigator.onLine) processOutbox();
-    } catch (e) {
-        showToast('❌ حدث خطأ أثناء الحفظ', true);
-        console.error(e);
-    }
+    } catch (e) { showToast('❌ حدث خطأ أثناء الحفظ', true); }
 }
 
 // ==========================================
-// 🧮 الحسابات والرينجات
+// 🧮 الحسابات
 // ==========================================
 function getSmartRange(param, patient, selectedPhase = null, savedData = {}) {
     if (savedData && savedData[param.name] && savedData[param.name].customRange) {
@@ -887,6 +904,7 @@ function renderOrderedTests() {
     profileContainer.innerHTML = profilesHtml || '<div class="empty-msg">لا توجد بروفايلات مطلوبة</div>';
 }
 
+// ✅ إصلاح مسح التحليل عشان ميعملش ريفريش يمسح اللي بعده
 async function removeTestFromOrder(vtId) {
     if (!confirm('هل أنت متأكد من حذف هذا التحليل من الطلب؟')) return;
     try {
@@ -894,15 +912,14 @@ async function removeTestFromOrder(vtId) {
         await db.test_results.where('visit_test_id').equals(vtId).delete();
         
         await addToOutbox('visit_tests', 'DELETE', { id: vtId });
-        
         showToast('🗑️ تم حذف التحليل من الطلب');
         
-        await loadData();
+        // تحديث الشاشة فوراً بدل ما نستنى السحابة
+        visitTests = visitTests.filter(v => String(v.id) !== String(vtId));
+        renderOrderedTests(); 
+        
         if (navigator.onLine) processOutbox();
-    } catch (e) {
-        console.error("Error removing test:", e);
-        showToast('❌ حدث خطأ أثناء حذف التحليل', true);
-    }
+    } catch (e) { showToast('❌ حدث خطأ أثناء حذف التحليل', true); }
 }
 
 async function addTestFromSelect(type) {
@@ -925,13 +942,7 @@ async function addTestFromSelect(type) {
 
     try {
         const newTestId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
-        const payload = { 
-            id: newTestId, 
-            tenant_id: TEBA_CONFIG.tenant.id, 
-            visit_id: selectedVisitId, 
-            test_code: testCode, 
-            price_at_time: 0
-        };
+        const payload = { id: newTestId, tenant_id: TEBA_CONFIG.tenant.id, visit_id: selectedVisitId, test_code: testCode, price_at_time: 0 };
 
         await db.visit_tests.put(payload);
         await addToOutbox('visit_tests', 'INSERT', payload);
@@ -942,10 +953,7 @@ async function addTestFromSelect(type) {
         renderOrderedTests(); 
         
         if (navigator.onLine) processOutbox();
-    } catch (err) {
-        showToast('❌ خطأ في الإضافة: ' + err.message, true);
-        selectEl.value = '';
-    }
+    } catch (err) { showToast('❌ خطأ في الإضافة: ' + err.message, true); }
 }
 
 function selectPatient(visitId) {
@@ -963,7 +971,7 @@ function selectPatient(visitId) {
 }
 
 // ==========================================
-// 🖨️ الطباعة و PDF (لم نلمسها بناءً على طلبك)
+// 🖨️ الطباعة و PDF (ممنوع اللمس)
 // ==========================================
 function getHeaderHtml(visit, reqDate, printDate) {
     let ageStr = visit.patient.age + ' Years';
@@ -1055,9 +1063,9 @@ function openPrintModal() {
             if (hasTestData) profilesData.push({ name: catalogItem.name, rows: testRows }); 
             else profilesData.push({ name: catalogItem.name, rows: `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #666;">لا توجد نتائج محفوظة.</td></tr>` });
         } else {
-            const val = savedData['result']?.value;
+            const p = params[0] || { name: 'Result' };
+            const val = savedData[p.name]?.value || savedData['Result']?.value || savedData['result']?.value;
             if (val) {
-                const p = params[0] || {};
                 const range = getSmartRange(p, visit.patient, null, savedData);
                 const unit = p.unit || catalogItem.unit || '-';
                 const flagStr = getStateHtml(val, range);
