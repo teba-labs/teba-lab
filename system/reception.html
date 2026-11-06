@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿﻿﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -123,8 +123,7 @@
             .print-table th { background: #eee; }
         }
     </style>
-</head>
-<body>
+</head><body>
     <header>
         <div class="brand">
             <img src="../brand-logo.png" alt="Logo" onerror="this.style.display='none'">
@@ -261,8 +260,7 @@
                 </div>
             </div>
         </div>
-    </div>
-    <div class="modal" id="patientListModal">
+    </div>    <div class="modal" id="patientListModal">
         <div class="modal-content" style="max-width: 1000px;">
             <button class="btn-close" style="float:left;" onclick="closeModal('patientListModal')">✕ إغلاق</button>
             <h3 style="color:var(--primary); margin-bottom:20px;">📋 قائمة المرضى (كل الزيارات)</h3>
@@ -392,9 +390,7 @@
             localStorage.setItem('teba_current_branch', val);
             document.getElementById('currentBranchDisplay').innerText = val === '1' ? 'الجعافرة' : 'بهتيم';
             loadRecentPatients(); 
-        }
-
-        // ==== المزامنة ====
+        }        // ==== المزامنة ====
         async function addToOutbox(table_name, action, payload) {
             try {
                 await db.outbox.add({ table_name, action, payload, timestamp: new Date().toISOString() });
@@ -448,8 +444,9 @@
                                 await _supabase.from('visit_tests').delete().eq('visit_id', realVisitId);
                             }
                             if (order.cart.length > 0) {
+                                // ✅ تعديل: استخدام الـ id المحلي بدل توليد id جديد (سبب التكرار في المعمل)
                                 const tests = order.cart.map(i => ({ 
-                                    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), 
+                                    id: i.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())), 
                                     tenant_id: TEBA_CONFIG.tenant.id, visit_id: realVisitId, test_code: i.code, price_at_time: i.price 
                                 }));
                                 const { error: tErr } = await _supabase.from('visit_tests').insert(tests);
@@ -535,9 +532,7 @@
             await generateVisitPreview();
             setTimeout(() => { const nameInput = document.getElementById('pName'); if(nameInput) { nameInput.focus(); nameInput.click(); } }, 100);
             showToast('تم تجهيز استمارة مريض جديد');
-        }
-
-        // ==== جلب المرضى ====
+        }        // ==== جلب المرضى ====
         async function loadRecentPatients() {
             const container = document.getElementById('recentPatientsList');
             try {
@@ -622,10 +617,16 @@
                 
                 const tests = await db.visit_tests.where('visit_id').equals(numericVisitId).toArray();
                 cart = []; 
-                tests.forEach(t => {
-                    const catTest = masterTests.find(m => m.code === t.test_code);
-                    if(catTest) cart.push({ ...catTest, id: t.id });
-                });
+                // ✅ تعديل: fallback من db.catalog لو masterTests فاضية أوفلاين (سبب السلة الفاضية)
+                for (const t of tests) {
+                    let catTest = masterTests.find(m => m.code === t.test_code);
+                    if (!catTest) { catTest = await db.catalog.where('code').equals(t.test_code).first(); }
+                    if (catTest) {
+                        cart.push({ ...catTest, id: t.id });
+                    } else {
+                        cart.push({ code: t.test_code, name: t.test_code, price: t.price_at_time || 0, id: t.id });
+                    }
+                }
                 
                 renderCart(); calculateChanges();
                 showToast('تم عرض بيانات الحالة للتعديل');
@@ -675,7 +676,15 @@
                         if (data.length === 0) {
                             await db.catalog.clear(); masterTests = []; renderCategories(); renderCatalog(); return;
                         } else {
-                            masterTests = data.map(t => ({ id: t.id, code: t.code, name: t.name, price: t.price, category: t.category || 'أخرى', parameters: t.parameters, test_type: t.test_type, unit: t.unit }));
+                            // ✅ تعديل: فلتر التكرار بالكود قبل الحفظ والعرض
+                            const seenCodes = new Set();
+                            const uniqueData = [];
+                            for (const t of data) {
+                                if (!t.code || seenCodes.has(t.code)) continue;
+                                seenCodes.add(t.code);
+                                uniqueData.push(t);
+                            }
+                            masterTests = uniqueData.map(t => ({ id: t.id, code: t.code, name: t.name, price: t.price, category: t.category || 'أخرى', parameters: t.parameters, test_type: t.test_type, unit: t.unit }));
                             await db.catalog.clear();
                             await db.catalog.bulkPut(masterTests);
                             renderCategories(); renderCatalog(); return;
@@ -685,9 +694,7 @@
                 const localCatalog = await db.catalog.toArray();
                 if (localCatalog.length > 0) { masterTests = localCatalog; renderCategories(); renderCatalog(); }
             } catch(e) { console.error(e); }
-        }
-
-        function renderCategories() {
+        }        function renderCategories() {
             const sidebar = document.getElementById('catalogSidebar');
             const categories = [...new Set(masterTests.map(t => t.category))];
             let html = `<button class="cat-btn ${currentCategory === 'all' ? 'active' : ''}" onclick="filterByCategory('all', this)">📋 الكل</button>`;
@@ -712,8 +719,9 @@
                 grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 20px;">لا توجد تحاليل مطابقة</div>';
                 return;
             }
+            // ✅ تعديل: الزرار يبعت الكود بس بدل JSON كامل (سبب التكرار عند الإضافة)
             grid.innerHTML = filtered.map(test => `
-                <div class="test-btn" onclick='addToCart(${JSON.stringify(test)})' style="padding: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 5px;">
+                <div class="test-btn" onclick="addToCartByCode('${test.code.replace(/'/g, "\\'")}')" style="padding: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 5px;">
                     <div style="font-weight: 800; color: var(--text-muted); font-size: 0.75rem;">${test.code}</div>
                     <div style="font-size: 0.9rem; font-weight: bold; color: var(--text); line-height: 1.4;">${test.name}</div>
                     <div style="font-size: 1rem; color: var(--primary); font-weight: 900; margin-top: auto;">${test.price} ج.م</div>
@@ -722,6 +730,14 @@
         }
 
         function filterCatalog() { renderCatalog(); }
+
+        // ✅ دالة جديدة: تضيف بالكود وتدور عليه في masterTests أو db.catalog
+        async function addToCartByCode(code) {
+            let test = masterTests.find(t => t.code === code);
+            if (!test) { test = await db.catalog.where('code').equals(code).first(); }
+            if (!test) return showToast('⚠️ التحليل غير موجود', true);
+            addToCart(test);
+        }
 
         function addToCart(test) {
             if (!cart.find(item => item.code === test.code)) { cart.push(test); renderCart(); } 
@@ -806,7 +822,7 @@
                     paid: parseFloat(document.getElementById('paidAmount').value) || 0,
                     discountPercent: parseFloat(document.getElementById('discountPercent').value) || 0,
                     discountFixed: parseFloat(document.getElementById('discountFixed').value) || 0,
-                    cart: cart.map(i => ({ ...i, id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()) }))
+                    cart: cart.map(i => ({ ...i, id: i.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())) }))
                 };
 
                 await db.patients.put({ id: localPatientId, name: orderData.patientName, phone: orderData.phone, age: orderData.age, age_type: orderData.age_type, gender: orderData.gender, doctor_name: orderData.doctor_name });
@@ -835,9 +851,7 @@
                 loadRecentPatients();
             } catch (e) { console.error(e); showToast('❌ حدث خطأ أثناء الحفظ', true); }
             finally { btn.innerText = '💾 حفظ الطلب'; btn.disabled = false; }
-        }
-
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        }        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         async function openPatientList() {
             const tbody = document.getElementById('patientListBody');
@@ -879,6 +893,7 @@
             } catch(e) { console.error(e); }
         }
 
+        // ✅ تعديل: البحث بيفتح آخر زيارة للمريض بدل ما يمسح السلة ويعمل زيارة جديدة
         async function searchPatient() {
             const query = document.getElementById('patientSearch').value.trim();
             if(!query) return;
@@ -889,20 +904,27 @@
                 
                 if(patients.length > 0) {
                     const p = patients[0];
-                    currentPatientId = p.id;
-                    cart = []; // 🔥 مسح السلة
-                    renderCart();
-                    currentEditingVisitId = null; // 🔥 مسح وضع التعديل
-                    
-                    document.getElementById('pName').value = p.name; 
-                    document.getElementById('pPhone').value = p.phone || ''; 
-                    document.getElementById('pAge').value = p.age || 30; 
-                    document.getElementById('pAgeType').value = p.age_type || 'Years'; 
-                    document.getElementById('pGender').value = p.gender || 'male'; 
-                    document.getElementById('pDoctor').value = p.doctor_name || '';
-                    document.getElementById('btnPatientHistory').style.display = 'block';
-                    await generateVisitPreview();
-                    showToast('✅ تم العثور على المريض (سلة جديدة)');
+                    // البحث عن آخر زيارة للمريض
+                    const patientVisits = visits.filter(v => v.patient_id === p.id).sort((a,b) => Number(b.visit_id) - Number(a.visit_id));
+                    if (patientVisits.length > 0) {
+                        // فتح آخر زيارة بكل تحاليلها
+                        await loadPatientToForm(patientVisits[0].visit_id);
+                        showToast('✅ تم فتح آخر زيارة للمريض');
+                    } else {
+                        // مفيش زيارات - ملء بيانات المريض بس
+                        currentPatientId = p.id;
+                        currentEditingVisitId = null;
+                        cart = []; renderCart();
+                        document.getElementById('pName').value = p.name; 
+                        document.getElementById('pPhone').value = p.phone || ''; 
+                        document.getElementById('pAge').value = p.age || 30; 
+                        document.getElementById('pAgeType').value = p.age_type || 'Years'; 
+                        document.getElementById('pGender').value = p.gender || 'male'; 
+                        document.getElementById('pDoctor').value = p.doctor_name || '';
+                        document.getElementById('btnPatientHistory').style.display = 'block';
+                        await generateVisitPreview();
+                        showToast('✅ تم العثور على المريض (زيارة جديدة)');
+                    }
                 } else { 
                     showToast('⚠️ لم يتم العثور على مريض في هذا الفرع', true); 
                     document.getElementById('btnPatientHistory').style.display = 'none';

@@ -1,4 +1,4 @@
-﻿﻿// ==== التحقق من تسجيل الدخول ====
+﻿﻿﻿// ==== التحقق من تسجيل الدخول ====
 if (!localStorage.getItem('teba_tenant_id')) {
     window.location.href = 'home.html';
 }
@@ -187,9 +187,7 @@ function showToast(msg, isError = false) {
     t.className = isError ? 'error' : '';
     t.style.display = 'block';
     setTimeout(() => { t.style.display = 'none'; }, 4000);
-}
-
-// ==========================================
+}// ==========================================
 // 📥 جلب البيانات (تم التعديل لمنع الشبح ودعم عرض المحذوفات)
 // ==========================================
 async function loadData() {
@@ -292,7 +290,9 @@ setInterval(() => {
     if (navigator.onLine && !isSyncing) {
         processOutbox();
     }
-}, 60000);// ==========================================
+}, 60000);
+
+// ==========================================
 // 🖥️ واجهة المستخدم وعرض المرضى
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
@@ -401,9 +401,7 @@ function sendLabWhatsApp() {
     else if (cleanPhone.startsWith('0020')) cleanPhone = cleanPhone.substring(2);
     const msg = `أهلاً ${visit.patient.name} 👋،\nنتيجة تحليلك جاهزة 🧪.\nرقم الزيارة (${String(visit.visit_id).padStart(4, '0')}):\n${TEBA_CONFIG.lab.portalUrl}`;
     window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
-}
-
-// ==========================================
+}// ==========================================
 // 📝 المودالات وتسجيل النتائج
 // ==========================================
 function openSingleResultModal(vtId, testCode){
@@ -568,9 +566,7 @@ async function saveResultToCloud(visitTestId, resultsData) {
         showToast('✅ تم الحفظ محلياً!');
         if (navigator.onLine) processOutbox();
     } catch (e) { showToast('❌ حدث خطأ أثناء الحفظ', true); console.error(e); }
-}
-
-// ==========================================
+}// ==========================================
 // 🧮 الرينجات الديناميكية والحسابات
 // ==========================================
 function getSmartRange(param, patient, selectedPhase = null, savedData = {}) {
@@ -765,7 +761,15 @@ function renderOrderedTests() {
         profileContainer.innerHTML = '<div class="empty-msg">اختر مريضاً</div>';
         return;
     }
-    const vTests = visitTests.filter(vt => String(vt.visit_id) === String(selectedVisitId));
+    // ✅ تعديل: فلتر التكرار بالـ test_code جوه نفس الزيارة (احتياطي لو حصل تكرار في السحابة)
+    let vTestsRaw = visitTests.filter(vt => String(vt.visit_id) === String(selectedVisitId));
+    const seenCodes = new Set();
+    const vTests = [];
+    for (const vt of vTestsRaw) {
+        if (seenCodes.has(vt.test_code)) continue;
+        seenCodes.add(vt.test_code);
+        vTests.push(vt);
+    }
     if (vTests.length === 0) {
         singleContainer.innerHTML = '<div class="empty-msg">لا توجد تحاليل مطلوبة</div>';
         profileContainer.innerHTML = '<div class="empty-msg">لا توجد تحاليل مطلوبة</div>';
@@ -830,7 +834,9 @@ function selectPatient(visitId) {
     const visitObj = allVisits.find(v => String(v.visit_id) === String(visitId));
     const btnPub = document.getElementById('btnPublishVisit');
     if(btnPub) { btnPub.style.display = 'block'; btnPub.innerHTML = visitObj.is_published ? '🔄 تحديث النشر' : '🌐 نشر الزيارة'; }
-}// ==========================================
+}
+
+// ==========================================
 // 🖨️ الطباعة و PDF (الجزء اللي كان شغال تمام - ممنوع اللمس)
 // ==========================================
 function getHeaderHtml(visit, reqDate, printDate) {
