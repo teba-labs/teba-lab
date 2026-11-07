@@ -1,8 +1,8 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v110 - Offline Navigation Fix)
+   TEBA LABS - Service Worker (v111 - Navigation Fix)
    ===================================================== */
 
-const CACHE_VERSION = 'v110'; 
+const CACHE_VERSION = 'v111'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
@@ -53,9 +53,10 @@ self.addEventListener('fetch', event => {
   
   const url = new URL(request.url);
 
+  // ✅ التعديل الجديد: تجاهل أي علامات في الرابط (ignoreSearch) عشان زرار الرجوع يشتغل أوفلاين
   if (request.mode === 'navigate' || (request.headers.get('accept') && request.headers.get('accept').includes('text/html'))) {
     event.respondWith(
-      caches.match(request).then(cachedResponse => {
+      caches.match(request, { ignoreSearch: true }).then(cachedResponse => {
         if (cachedResponse) {
           return cachedResponse; 
         }
