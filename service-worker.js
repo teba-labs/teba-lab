@@ -1,8 +1,8 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v108 - Sync Fixes Release)
+   TEBA LABS - Service Worker (v109 - Sync Fixes Release)
    ===================================================== */
 
-const CACHE_VERSION = 'v108'; 
+const CACHE_VERSION = 'v109'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
