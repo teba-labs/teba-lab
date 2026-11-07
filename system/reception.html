@@ -410,7 +410,6 @@
                 btn.innerText = '⏳ جاري المزامنة...';
                 let successCount = 0, failCount = 0;
                 
-                // ✅ ترتيب المزامنة الشاملة: الزيارات أولاً ثم التحاليل ثم النتائج
                 pending.sort((a, b) => {
                     const order = { 'orders': 1, 'orders_edit': 1, 'patients': 1, 'visits': 2, 'visit_tests': 3, 'test_results': 4 };
                     return (order[a.table_name] || 99) - (order[b.table_name] || 99);
@@ -434,11 +433,12 @@
                             let localVisit = await db.visits.get(order.tempVisitId);
                             
                             if (item.table_name === 'orders') {
-                                // ✅ رفع الزيارة باستخدام رقمها المحلي (يمنع التكرار)
+                                // ✅ التعديل الجديد: استخدام client_uuid بدل visit_id لمنع التضارب
                                 const { data: vData, error: vErr } = await _supabase.from('visits').upsert([{
-                                    visit_id: order.tempVisitId, tenant_id: TEBA_CONFIG.tenant.id, patient_id: patientId, branch_id: order.branch_id, 
+                                    client_uuid: order.client_uuid,
+                                    tenant_id: TEBA_CONFIG.tenant.id, patient_id: patientId, branch_id: order.branch_id, 
                                     total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount, status: 'Pending', visit_date: order.visit_date
-                                }], { onConflict: 'visit_id' }).select();
+                                }], { onConflict: 'client_uuid' }).select();
                                 if (vErr) throw vErr;
                                 realVisitId = vData[0].visit_id;
                             } else {
@@ -466,7 +466,6 @@
                             bc.postMessage({ type: 'new_order', branch_id: order.branch_id });
                         } 
                         else if (item.table_name === 'test_results') {
-                            // ✅ إضافة مزامنة النتائج في الاستقبال أيضاً (مزامنة شاملة)
                             const { error } = await _supabase.from('test_results').upsert({
                                 tenant_id: TEBA_CONFIG.tenant.id,
                                 visit_test_id: item.payload.visit_test_id, 
@@ -826,6 +825,7 @@
                 const orderData = {
                     patientId: localPatientId,
                     tempVisitId: visitIdToUse,
+                    client_uuid: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), // ✅ البصمة السرية للزيارة
                     patientName: pName,
                     phone: document.getElementById('pPhone').value,
                     age: parseInt(document.getElementById('pAge').value) || 0,
@@ -853,7 +853,7 @@
                     await addToOutbox('orders_edit', 'UPDATE', orderData);
                     showToast('✅ تم تعديل الطلب محلياً!');
                 } else {
-                    await db.visits.put({ visit_id: visitIdToUse, patient_id: localPatientId, branch_id: branchId, visit_date: visitDateToUse, is_published: false });
+                    await db.visits.put({ visit_id: visitIdToUse, client_uuid: orderData.client_uuid, patient_id: localPatientId, branch_id: branchId, visit_date: visitDateToUse, is_published: false });
                     for (let item of orderData.cart) {
                         await db.visit_tests.put({ id: item.id, visit_id: visitIdToUse, test_code: item.code, price_at_time: item.price });
                     }

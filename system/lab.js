@@ -78,7 +78,6 @@ async function addToOutbox(table_name, action, payload) {
         let successCount = 0;
         let failCount = 0;
 
-        // ✅ ترتيب المزامنة الشاملة
         pending.sort((a, b) => {
             const order = { 'orders': 1, 'orders_edit': 1, 'patients': 1, 'visits': 2, 'visit_tests': 3, 'test_results': 4 };
             return (order[a.table_name] || 99) - (order[b.table_name] || 99);
@@ -103,11 +102,12 @@ async function addToOutbox(table_name, action, payload) {
                     let localVisit = await db.visits.get(order.tempVisitId);
                     
                     if (item.table_name === 'orders') {
-                        // ✅ إنشاء الزيارة من المعمل (upsert لمنع التكرار)
+                        // ✅ التعديل: استخدام client_uuid في المزامنة
                         const { data: vData, error: vErr } = await _supabase.from('visits').upsert([{
-                            visit_id: order.tempVisitId, tenant_id: TEBA_CONFIG.tenant.id, patient_id: patientId, branch_id: order.branch_id, 
+                            client_uuid: order.client_uuid,
+                            tenant_id: TEBA_CONFIG.tenant.id, patient_id: patientId, branch_id: order.branch_id, 
                             total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount, status: 'Pending', visit_date: order.visit_date
-                        }], { onConflict: 'visit_id' }).select();
+                        }], { onConflict: 'client_uuid' }).select();
                         if (vErr) throw vErr;
                         realVisitId = vData[0].visit_id;
                     } else {
@@ -178,6 +178,7 @@ async function addToOutbox(table_name, action, payload) {
                         const updateData = { ...item.payload };
                         delete updateData.visit_id;
                         delete updateData.published_at;
+                        delete updateData.client_uuid; // 🔥 تأمين
                         const { error } = await _supabase.from('visits').update(updateData).eq('visit_id', targetId).eq('tenant_id', TEBA_CONFIG.tenant.id);
                         if (error) throw error;
                     } else if (item.action === 'DELETE') {
