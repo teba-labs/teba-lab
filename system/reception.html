@@ -35,7 +35,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
         body { font-family: var(--font); background-color: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* 🔥 تعديل شكل الهيدر للموبايل */
         header { background: var(--surface); color: var(--text); display: flex; justify-content: space-between; align-items: center; padding: 12px 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); z-index: 10; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 10px; }
         .brand { display: flex; align-items: center; gap: 15px; }
         .brand img { height: 45px; width: auto; object-fit: contain; }
@@ -97,7 +96,6 @@
         .btn-close { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: inherit; transition: 0.2s;}
         .btn-close:hover { background: var(--danger); color: white; }
         
-        /* 🔥 إصلاح شكل الموبايل */
         @media (max-width: 1024px) {
             body { overflow-y: auto; height: auto; }
             .main-container { display: flex; flex-direction: column; height: auto; overflow: visible; padding-bottom: 50px; gap: 20px; }
@@ -332,7 +330,7 @@
         </div>
     </div>
 
-    <script>        // ==== 1. إعدادات الوضع الليلي والنهاري ====
+    <script>
         const themeBtn = document.getElementById('themeToggleBtn');
         const currentTheme = localStorage.getItem('teba_theme') || 'light';
         if (currentTheme === 'dark') {
@@ -346,7 +344,6 @@
             if(themeBtn) themeBtn.innerText = isDark ? '☀️' : '🌙';
         }
 
-        // ==== 2. التحقق من تسجيل الدخول ====
         if (!localStorage.getItem('teba_tenant_id')) {
             window.location.href = 'home.html';
         }
@@ -358,7 +355,6 @@
             }
         });
 
-        // ==== 3. تهيئة السحابة والداتابيز ====
         const supabaseUrl = TEBA_CONFIG.supabase.url;
         const supabaseKey = TEBA_CONFIG.supabase.key;
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -392,7 +388,6 @@
             loadRecentPatients(); 
         }
 
-        // ==== المزامنة ====
         async function addToOutbox(table_name, action, payload) {
             try {
                 await db.outbox.add({ table_name, action, payload, timestamp: new Date().toISOString() });
@@ -414,6 +409,13 @@
                 const btn = document.getElementById('syncBtn');
                 btn.innerText = '⏳ جاري المزامنة...';
                 let successCount = 0, failCount = 0;
+                
+                // ✅ ترتيب المزامنة الشاملة: الزيارات أولاً ثم التحاليل ثم النتائج
+                pending.sort((a, b) => {
+                    const order = { 'orders': 1, 'orders_edit': 1, 'patients': 1, 'visits': 2, 'visit_tests': 3, 'test_results': 4 };
+                    return (order[a.table_name] || 99) - (order[b.table_name] || 99);
+                });
+
                 for (let item of pending) {
                     try {
                         if (item.table_name === 'orders' || item.table_name === 'orders_edit') {
@@ -425,33 +427,20 @@
                                 gender: order.gender, doctor_name: order.doctor_name
                             }]);
                             if (pErr) throw pErr;
+                            
                             const subTotal = order.cart.reduce((sum, i) => sum + i.price, 0);
                             const discountAmount = (subTotal * (order.discountPercent / 100)) + order.discountFixed;
                             let realVisitId = null;
                             let localVisit = await db.visits.get(order.tempVisitId);
+                            
                             if (item.table_name === 'orders') {
-                                // ✅ تعديل: التأكد من عدم وجود الزيارة مسبقاً لمنع التكرار بسبب انقطاع النت
-                                const { data: existingVisit } = await _supabase.from('visits')
-                                    .select('visit_id')
-                                    .eq('tenant_id', TEBA_CONFIG.tenant.id)
-                                    .eq('patient_id', patientId)
-                                    .eq('visit_date', order.visit_date)
-                                    .limit(1);
-                                    
-                                if (existingVisit && existingVisit.length > 0) {
-                                    realVisitId = existingVisit[0].visit_id;
-                                    await _supabase.from('visits').update({
-                                        total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount
-                                    }).eq('visit_id', realVisitId).eq('tenant_id', TEBA_CONFIG.tenant.id);
-                                    await _supabase.from('visit_tests').delete().eq('visit_id', realVisitId);
-                                } else {
-                                    const { data: vData, error: vErr } = await _supabase.from('visits').insert([{
-                                        tenant_id: TEBA_CONFIG.tenant.id, patient_id: patientId, branch_id: order.branch_id, 
-                                        total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount, status: 'Pending', visit_date: order.visit_date
-                                    }]).select();
-                                    if (vErr) throw vErr;
-                                    realVisitId = vData[0].visit_id;
-                                }
+                                // ✅ رفع الزيارة باستخدام رقمها المحلي (يمنع التكرار)
+                                const { data: vData, error: vErr } = await _supabase.from('visits').upsert([{
+                                    visit_id: order.tempVisitId, tenant_id: TEBA_CONFIG.tenant.id, patient_id: patientId, branch_id: order.branch_id, 
+                                    total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount, status: 'Pending', visit_date: order.visit_date
+                                }], { onConflict: 'visit_id' }).select();
+                                if (vErr) throw vErr;
+                                realVisitId = vData[0].visit_id;
                             } else {
                                 const serverIdToUpdate = localVisit && localVisit.server_id ? localVisit.server_id : order.tempVisitId;
                                 const { error: vErr } = await _supabase.from('visits').update({
@@ -461,12 +450,13 @@
                                 realVisitId = serverIdToUpdate;
                                 await _supabase.from('visit_tests').delete().eq('visit_id', realVisitId);
                             }
+                            
                             if (order.cart.length > 0) {
                                 const tests = order.cart.map(i => ({ 
                                     id: i.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())), 
                                     tenant_id: TEBA_CONFIG.tenant.id, visit_id: realVisitId, test_code: i.code, price_at_time: i.price 
                                 }));
-                                const { error: tErr } = await _supabase.from('visit_tests').insert(tests);
+                                const { error: tErr } = await _supabase.from('visit_tests').upsert(tests, { onConflict: 'id' });
                                 if (tErr) throw tErr;
                             }
                             if (item.table_name === 'orders' && localVisit) {
@@ -475,6 +465,15 @@
                             const bc = new BroadcastChannel('teba_sync');
                             bc.postMessage({ type: 'new_order', branch_id: order.branch_id });
                         } 
+                        else if (item.table_name === 'test_results') {
+                            // ✅ إضافة مزامنة النتائج في الاستقبال أيضاً (مزامنة شاملة)
+                            const { error } = await _supabase.from('test_results').upsert({
+                                tenant_id: TEBA_CONFIG.tenant.id,
+                                visit_test_id: item.payload.visit_test_id, 
+                                results_data: item.payload.results_data
+                            }, { onConflict: 'visit_test_id' });
+                            if (error) throw error;
+                        }
                         else if (item.table_name === 'patients' && item.action === 'UPDATE') {
                             await _supabase.from('patients').update(item.payload).eq('id', item.payload.id).eq('tenant_id', TEBA_CONFIG.tenant.id);
                         }
@@ -503,7 +502,6 @@
         window.addEventListener('online', () => { processOutbox(); updateLiveTicker(); });
         window.addEventListener('offline', updateLiveTicker);
 
-        // ==== دوال مساعدة ====
         async function logout() {
             try { await _supabase.auth.signOut(); } catch (e) {}
             finally { localStorage.clear(); window.location.replace('home.html'); }
@@ -549,8 +547,7 @@
             await generateVisitPreview();
             setTimeout(() => { const nameInput = document.getElementById('pName'); if(nameInput) { nameInput.focus(); nameInput.click(); } }, 100);
             showToast('تم تجهيز استمارة مريض جديد');
-        }        // ==== جلب المرضى ====
-        async function loadRecentPatients() {
+        }        async function loadRecentPatients() {
             const container = document.getElementById('recentPatientsList');
             try {
                 if(navigator.onLine) {
@@ -685,7 +682,6 @@
             window.open(`https://wa.me/2${phone.replace(/^0/, '')}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // ==== الكتالوج والسلة ====
         async function fetchCatalogFromCloud() {
             try {
                 if (navigator.onLine) {
@@ -796,7 +792,6 @@
             document.getElementById('remainAmount').innerText = `${(netTotal - paid).toFixed(2)} ج.م`;
         }
 
-        // ==== الحفظ ====
         let isSavingOrder = false; 
         async function saveOrder() {
             if (isSavingOrder) return; 

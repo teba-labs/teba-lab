@@ -1,4 +1,4 @@
-﻿﻿﻿// ==== التحقق من تسجيل الدخول ====
+﻿// ==== التحقق من تسجيل الدخول ====
 if (!localStorage.getItem('teba_tenant_id')) {
     window.location.href = 'home.html';
 }
@@ -31,7 +31,7 @@ let allVisits = [], visitTests = [], testsCatalog = [], testResults = [];
 let selectedVisitId = null;
 let currentLabBranch = localStorage.getItem('teba_current_branch') || '1'; 
 let isSyncing = false; 
-let showHiddenVisits = false; // 🔥 متغير للتحكم في عرض المحذوفات
+let showHiddenVisits = false; 
 
 window.customRanges = {}; 
 
@@ -60,9 +60,7 @@ async function addToOutbox(table_name, action, payload) {
         await db.outbox.add({ table_name, action, payload, timestamp: new Date().toISOString() });
         document.getElementById('syncBtn').style.display = 'flex';
     } catch(e) { console.error("Outbox Add Error", e); }
-}
-
-async function processOutbox() {
+}async function processOutbox() {
     if (!navigator.onLine) return showToast('لا يوجد اتصال بالإنترنت!', true);
     if (isSyncing) return; 
     
@@ -80,9 +78,63 @@ async function processOutbox() {
         let successCount = 0;
         let failCount = 0;
 
+        // ✅ ترتيب المزامنة الشاملة
+        pending.sort((a, b) => {
+            const order = { 'orders': 1, 'orders_edit': 1, 'patients': 1, 'visits': 2, 'visit_tests': 3, 'test_results': 4 };
+            return (order[a.table_name] || 99) - (order[b.table_name] || 99);
+        });
+
         for (let item of pending) {
             try {
-                if (item.table_name === 'test_results') {
+                if (item.table_name === 'orders' || item.table_name === 'orders_edit') {
+                    const order = item.payload;
+                    let patientId = order.patientId;
+                    
+                    const { error: pErr } = await _supabase.from('patients').upsert([{
+                        id: patientId, tenant_id: TEBA_CONFIG.tenant.id, name: order.patientName, 
+                        phone: order.phone, age: order.age, age_type: order.age_type, 
+                        gender: order.gender, doctor_name: order.doctor_name
+                    }]);
+                    if (pErr) throw pErr;
+                    
+                    const subTotal = order.cart.reduce((sum, i) => sum + i.price, 0);
+                    const discountAmount = (subTotal * (order.discountPercent / 100)) + order.discountFixed;
+                    let realVisitId = null;
+                    let localVisit = await db.visits.get(order.tempVisitId);
+                    
+                    if (item.table_name === 'orders') {
+                        // ✅ إنشاء الزيارة من المعمل (upsert لمنع التكرار)
+                        const { data: vData, error: vErr } = await _supabase.from('visits').upsert([{
+                            visit_id: order.tempVisitId, tenant_id: TEBA_CONFIG.tenant.id, patient_id: patientId, branch_id: order.branch_id, 
+                            total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount, status: 'Pending', visit_date: order.visit_date
+                        }], { onConflict: 'visit_id' }).select();
+                        if (vErr) throw vErr;
+                        realVisitId = vData[0].visit_id;
+                    } else {
+                        const serverIdToUpdate = localVisit && localVisit.server_id ? localVisit.server_id : order.tempVisitId;
+                        const { error: vErr } = await _supabase.from('visits').update({
+                            total_amount: order.netTotal, paid_amount: order.paid, discount: discountAmount
+                        }).eq('visit_id', serverIdToUpdate).eq('tenant_id', TEBA_CONFIG.tenant.id);
+                        if (vErr) throw vErr;
+                        realVisitId = serverIdToUpdate;
+                        await _supabase.from('visit_tests').delete().eq('visit_id', realVisitId);
+                    }
+                    
+                    if (order.cart.length > 0) {
+                        const tests = order.cart.map(i => ({ 
+                            id: i.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())), 
+                            tenant_id: TEBA_CONFIG.tenant.id, visit_id: realVisitId, test_code: i.code, price_at_time: i.price 
+                        }));
+                        const { error: tErr } = await _supabase.from('visit_tests').upsert(tests, { onConflict: 'id' });
+                        if (tErr) throw tErr;
+                    }
+                    if (item.table_name === 'orders' && localVisit) {
+                        await db.visits.update(order.tempVisitId, { server_id: realVisitId });
+                    }
+                    const bc = new BroadcastChannel('teba_sync');
+                    bc.postMessage({ type: 'new_order', branch_id: order.branch_id });
+                }
+                else if (item.table_name === 'test_results') {
                     const { error } = await _supabase.from('test_results').upsert({
                         tenant_id: TEBA_CONFIG.tenant.id,
                         visit_test_id: item.payload.visit_test_id, 
@@ -92,7 +144,7 @@ async function processOutbox() {
                 }
                 else if (item.table_name === 'visit_tests') {
                     if (item.action === 'INSERT') {
-                        const { data, error } = await _supabase.from('visit_tests').insert([item.payload]).select();
+                        const { data, error } = await _supabase.from('visit_tests').upsert([item.payload], { onConflict: 'id' }).select();
                         if (error) throw error;
                         if(data && data.length > 0) {
                             const oldId = item.payload.id;
@@ -123,17 +175,14 @@ async function processOutbox() {
                     if(item.action === 'UPDATE') {
                         const localVisit = await db.visits.get(Number(item.payload.visit_id));
                         const targetId = localVisit && localVisit.server_id ? localVisit.server_id : item.payload.visit_id;
-                        
                         const updateData = { ...item.payload };
                         delete updateData.visit_id;
                         delete updateData.published_at;
-
                         const { error } = await _supabase.from('visits').update(updateData).eq('visit_id', targetId).eq('tenant_id', TEBA_CONFIG.tenant.id);
                         if (error) throw error;
                     } else if (item.action === 'DELETE') {
                         const localVisit = await db.visits.get(Number(item.payload.visit_id));
                         const targetId = localVisit && localVisit.server_id ? localVisit.server_id : item.payload.visit_id;
-
                         const { data: vt } = await _supabase.from('visit_tests').select('id').eq('visit_id', targetId);
                         if(vt && vt.length > 0) { await _supabase.from('test_results').delete().in('visit_test_id', vt.map(x => x.id)); }
                         await _supabase.from('visit_tests').delete().eq('visit_id', targetId);
@@ -210,7 +259,6 @@ async function loadData() {
                 .limit(100);
             
             if (visits && visits.length > 0) {
-                // 🔥 إصلاح الكمبيوتر اللي بيشوف بيانات قديمة: مسح الزيارات المحلية اللي مش موجودة في السحابة
                 const serverVisitIds = visits.map(v => Number(v.visit_id));
                 const localDbVisits = await db.visits.where('branch_id').equals(Number(currentLabBranch)).toArray();
                 for (let lv of localDbVisits) {
@@ -251,7 +299,6 @@ async function loadData() {
         testsCatalog = await db.catalog.toArray();
         
         const allLocalVisits = await db.visits.toArray();
-        // 🔥 إصلاح زرار عرض المحذوفات: بنفلتر بناءً على المتغير showHiddenVisits
         let localVisits = allLocalVisits.filter(v => String(v.branch_id) === String(currentLabBranch) && (showHiddenVisits || v.hidden_in_lab !== true));
         
         localVisits.sort((a, b) => Number(b.visit_id) - Number(a.visit_id));
@@ -566,7 +613,9 @@ async function saveResultToCloud(visitTestId, resultsData) {
         showToast('✅ تم الحفظ محلياً!');
         if (navigator.onLine) processOutbox();
     } catch (e) { showToast('❌ حدث خطأ أثناء الحفظ', true); console.error(e); }
-}// ==========================================
+}
+
+// ==========================================
 // 🧮 الرينجات الديناميكية والحسابات
 // ==========================================
 function getSmartRange(param, patient, selectedPhase = null, savedData = {}) {
@@ -673,7 +722,6 @@ function openEditPatientModal(visitId) {
     const v = allVisits.find(x => String(x.visit_id) === String(visitId));
     if(!v || !v.patient) return;
     
-    // 🔥 إخفاء الفرع للموظف
     const role = localStorage.getItem('teba_user_role');
     if (role !== 'admin') {
         document.getElementById('editPBranch').parentElement.style.display = 'none';
@@ -761,7 +809,7 @@ function renderOrderedTests() {
         profileContainer.innerHTML = '<div class="empty-msg">اختر مريضاً</div>';
         return;
     }
-    // ✅ تعديل: فلتر التكرار بالـ test_code جوه نفس الزيارة (احتياطي لو حصل تكرار في السحابة)
+    
     let vTestsRaw = visitTests.filter(vt => String(vt.visit_id) === String(selectedVisitId));
     const seenCodes = new Set();
     const vTests = [];
@@ -948,7 +996,6 @@ function downloadPDF() {
 // 🚀 التشغيل عند فتح الصفحة
 // ==========================================
 window.onload = async () => { 
-    // إخفاء اختيار الفرع للموظف العادي
     if (localStorage.getItem('teba_user_role') !== 'admin') {
         document.getElementById('labBranch').style.display = 'none';
     }
