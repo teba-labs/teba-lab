@@ -1,8 +1,8 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v109 - Sync Fixes Release)
+   TEBA LABS - Service Worker (v110 - Offline Navigation Fix)
    ===================================================== */
 
-const CACHE_VERSION = 'v109'; 
+const CACHE_VERSION = 'v110'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
@@ -52,6 +52,20 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
   
   const url = new URL(request.url);
+
+  if (request.mode === 'navigate' || (request.headers.get('accept') && request.headers.get('accept').includes('text/html'))) {
+    event.respondWith(
+      caches.match(request).then(cachedResponse => {
+        if (cachedResponse) {
+          return cachedResponse; 
+        }
+        return fetch(request).catch(() => {
+          return caches.match('./system/home.html') || new Response('Offline', { status: 503 });
+        });
+      })
+    );
+    return;
+  }
 
   if (url.origin === self.location.origin) {
     event.respondWith(networkFirst(request));
