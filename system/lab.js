@@ -53,14 +53,16 @@ function changeLabBranch(val) {
 }
 
 // ==========================================
-// ⚙️ محرك المزامنة (Outbox)
+// ⚙️ محرك المزامنة الشامل (Outbox)
 // ==========================================
 async function addToOutbox(table_name, action, payload) {
     try {
         await db.outbox.add({ table_name, action, payload, timestamp: new Date().toISOString() });
         document.getElementById('syncBtn').style.display = 'flex';
     } catch(e) { console.error("Outbox Add Error", e); }
-}async function processOutbox() {
+}
+
+async function processOutbox() {
     if (!navigator.onLine) return showToast('لا يوجد اتصال بالإنترنت!', true);
     if (isSyncing) return; 
     
@@ -78,6 +80,7 @@ async function addToOutbox(table_name, action, payload) {
         let successCount = 0;
         let failCount = 0;
 
+        // ترتيب المزامنة (الزيارة أولاً ثم التحاليل ثم النتائج)
         pending.sort((a, b) => {
             const order = { 'orders': 1, 'orders_edit': 1, 'patients': 1, 'visits': 2, 'visit_tests': 3, 'test_results': 4 };
             return (order[a.table_name] || 99) - (order[b.table_name] || 99);
@@ -102,7 +105,6 @@ async function addToOutbox(table_name, action, payload) {
                     let localVisit = await db.visits.get(order.tempVisitId);
                     
                     if (item.table_name === 'orders') {
-                        // ✅ التعديل: استخدام client_uuid في المزامنة
                         const { data: vData, error: vErr } = await _supabase.from('visits').upsert([{
                             client_uuid: order.client_uuid,
                             tenant_id: TEBA_CONFIG.tenant.id, patient_id: patientId, branch_id: order.branch_id, 
@@ -128,12 +130,38 @@ async function addToOutbox(table_name, action, payload) {
                         const { error: tErr } = await _supabase.from('visit_tests').upsert(tests, { onConflict: 'id' });
                         if (tErr) throw tErr;
                     }
+                    
+                    // توحيد الأرقام (Snapshot للزيارات)
                     if (item.table_name === 'orders' && localVisit) {
-                        await db.visits.update(order.tempVisitId, { server_id: realVisitId });
+                        const oldId = order.tempVisitId;
+                        const newId = realVisitId;
+                        
+                        const updatedVisit = { ...localVisit, visit_id: newId, server_id: newId };
+                        await db.visits.delete(oldId);
+                        await db.visits.put(updatedVisit);
+                        
+                        const localVTs = await db.visit_tests.where('visit_id').equals(oldId).toArray();
+                        for (let vt of localVTs) {
+                            await db.visit_tests.update(vt.id, { visit_id: newId });
+                        }
+                        
+                        const pendingOutbox = await db.outbox.toArray();
+                        for (let pItem of pendingOutbox) {
+                            let changed = false;
+                            if (pItem.payload && pItem.payload.visit_id == oldId) {
+                                pItem.payload.visit_id = newId;
+                                changed = true;
+                            }
+                            if (pItem.payload && pItem.payload.tempVisitId == oldId) {
+                                pItem.payload.tempVisitId = newId;
+                                changed = true;
+                            }
+                            if (changed) await db.outbox.put(pItem);
+                        }
                     }
                     const bc = new BroadcastChannel('teba_sync');
                     bc.postMessage({ type: 'new_order', branch_id: order.branch_id });
-                }
+                } 
                 else if (item.table_name === 'test_results') {
                     const { error } = await _supabase.from('test_results').upsert({
                         tenant_id: TEBA_CONFIG.tenant.id,
@@ -178,7 +206,7 @@ async function addToOutbox(table_name, action, payload) {
                         const updateData = { ...item.payload };
                         delete updateData.visit_id;
                         delete updateData.published_at;
-                        delete updateData.client_uuid; // 🔥 تأمين
+                        delete updateData.client_uuid; 
                         const { error } = await _supabase.from('visits').update(updateData).eq('visit_id', targetId).eq('tenant_id', TEBA_CONFIG.tenant.id);
                         if (error) throw error;
                     } else if (item.action === 'DELETE') {
@@ -238,7 +266,7 @@ function showToast(msg, isError = false) {
     t.style.display = 'block';
     setTimeout(() => { t.style.display = 'none'; }, 4000);
 }// ==========================================
-// 📥 جلب البيانات (تم التعديل لمنع الشبح ودعم عرض المحذوفات)
+// 📥 جلب البيانات (من السحابة للمحلي)
 // ==========================================
 async function loadData() {
     try {
@@ -450,7 +478,7 @@ function sendLabWhatsApp() {
     const msg = `أهلاً ${visit.patient.name} 👋،\nنتيجة تحليلك جاهزة 🧪.\nرقم الزيارة (${String(visit.visit_id).padStart(4, '0')}):\n${TEBA_CONFIG.lab.portalUrl}`;
     window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
 }// ==========================================
-// 📝 المودالات وتسجيل النتائج
+// 📝 المودالات وتسجيل النتائج (مع حفظ اللقطة)
 // ==========================================
 function openSingleResultModal(vtId, testCode){
     const catalogItem = testsCatalog.find(c => c.code === testCode) || { name: testCode, parameters: [] };
@@ -568,8 +596,17 @@ async function saveSingleResult(vtId) {
     const p = getSmartParams(testsCatalog.find(c => c.code === vt.test_code))[0] || { name: 'Result' };
     
     let resultsData = { [p.name]: { value: input.value.trim() } };
-    const customRange = window.customRanges[`${vtId}_result`] || window.customRanges[`${vtId}_Result`] || window.customRanges[`${vtId}_${p.name}`];
     
+    let customRange = window.customRanges[`${vtId}_result`] || window.customRanges[`${vtId}_Result`] || window.customRanges[`${vtId}_${p.name}`];
+    
+    // ✅ حفظ اللقطة التاريخية
+    if (!customRange) {
+        const rangeTextEl = document.getElementById(`range_text_${vtId}_result`);
+        if (rangeTextEl && rangeTextEl.innerText.trim() !== '-') {
+            customRange = rangeTextEl.innerText.trim();
+        }
+    }
+
     if (customRange) resultsData[p.name].customRange = customRange;
     
     await saveResultToCloud(vtId, resultsData);
@@ -588,7 +625,17 @@ async function saveProfileResult(vtId, testCode) {
         if (input && input.value.trim() !== '') {
             resultsData[param.name] = { value: input.value.trim() };
             if (phaseSelect) resultsData[param.name].phase = phaseSelect.value;
-            const customRange = window.customRanges[`${vtId}_${param.name}`];
+            
+            let customRange = window.customRanges[`${vtId}_${param.name}`];
+            
+            // ✅ حفظ اللقطة التاريخية
+            if (!customRange) {
+                const rangeTextEl = document.getElementById(`range_text_${vtId}_${param.name}`);
+                if (rangeTextEl && rangeTextEl.innerText.trim() !== '-') {
+                    customRange = rangeTextEl.innerText.trim();
+                }
+            }
+            
             if (customRange) resultsData[param.name].customRange = customRange;
         }
     });
@@ -614,9 +661,7 @@ async function saveResultToCloud(visitTestId, resultsData) {
         showToast('✅ تم الحفظ محلياً!');
         if (navigator.onLine) processOutbox();
     } catch (e) { showToast('❌ حدث خطأ أثناء الحفظ', true); console.error(e); }
-}
-
-// ==========================================
+}// ==========================================
 // 🧮 الرينجات الديناميكية والحسابات
 // ==========================================
 function getSmartRange(param, patient, selectedPhase = null, savedData = {}) {
@@ -625,17 +670,22 @@ function getSmartRange(param, patient, selectedPhase = null, savedData = {}) {
         const pAge = parseFloat(patient.age) || 0;
         const pUnit = patient.age_type || 'Years';
         const pSex = patient.gender === 'male' ? 'Male' : 'Female';
+        
         let pAgeInDays = pAge;
         if (pUnit === 'Years') pAgeInDays = pAge * 365;
         if (pUnit === 'Months') pAgeInDays = pAge * 30;
+        
         for (let r of param.ranges) {
             if (r.sex !== 'All' && r.sex !== pSex) continue;
+            
             let rFromDays = r.age_from || 0;
             if (r.age_unit === 'Years') rFromDays *= 365;
             if (r.age_unit === 'Months') rFromDays *= 30;
+            
             let rToDays = r.age_to || 120;
             if (r.age_unit === 'Years') rToDays *= 365;
             if (r.age_unit === 'Months') rToDays *= 30;
+            
             if (pAgeInDays >= rFromDays && pAgeInDays <= rToDays) {
                 if (r.normal_text && r.normal_text !== '-' && r.normal_text !== '') return r.normal_text;
                 if (r.min !== null && r.max !== null) return `${r.min} - ${r.max}`;
@@ -883,10 +933,8 @@ function selectPatient(visitId) {
     const visitObj = allVisits.find(v => String(v.visit_id) === String(visitId));
     const btnPub = document.getElementById('btnPublishVisit');
     if(btnPub) { btnPub.style.display = 'block'; btnPub.innerHTML = visitObj.is_published ? '🔄 تحديث النشر' : '🌐 نشر الزيارة'; }
-}
-
-// ==========================================
-// 🖨️ الطباعة و PDF (الجزء اللي كان شغال تمام - ممنوع اللمس)
+}// ==========================================
+// 🖨️ الطباعة و PDF (ممنوع اللمس)
 // ==========================================
 function getHeaderHtml(visit, reqDate, printDate) {
     let ageStr = visit.patient.age + ' Years';
