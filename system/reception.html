@@ -459,7 +459,6 @@
                                 if (tErr) throw tErr;
                             }
                             
-                            // ✅ التعديل السحري: توحيد الأرقام (مسح المحلي وتحويل كل حاجة للسحابي)
                             if (item.table_name === 'orders' && localVisit) {
                                 const oldId = order.tempVisitId;
                                 const newId = realVisitId;
@@ -777,7 +776,11 @@
         }
 
         function addToCart(test) {
-            if (!cart.find(item => item.code === test.code)) { cart.push(test); renderCart(); } 
+            if (!cart.find(item => item.code === test.code)) { 
+                // ✅ التعديل السحري: إضافة التحليل بدون نسخ الـ ID بتاع الكتالوج لمنع تداخل الزيارات
+                cart.push({ code: test.code, name: test.name, price: test.price, category: test.category }); 
+                renderCart(); 
+            } 
             else { showToast('⚠️ التحليل موجود بالفعل في السلة', true); }
         }
 
@@ -847,10 +850,16 @@
                     visitIdToUse = await getNextSequentialVisitId();
                 }
 
+                // ✅ التعديل السحري: كل تحليل في السلة بياخد ID جديد خاص بالزيارة دي
+                const cartWithIds = cart.map(i => ({ 
+                    ...i, 
+                    id: i.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())) 
+                }));
+
                 const orderData = {
                     patientId: localPatientId,
                     tempVisitId: visitIdToUse,
-                    client_uuid: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), // ✅ البصمة السرية
+                    client_uuid: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
                     patientName: pName,
                     phone: document.getElementById('pPhone').value,
                     age: parseInt(document.getElementById('pAge').value) || 0,
@@ -863,7 +872,7 @@
                     paid: parseFloat(document.getElementById('paidAmount').value) || 0,
                     discountPercent: parseFloat(document.getElementById('discountPercent').value) || 0,
                     discountFixed: parseFloat(document.getElementById('discountFixed').value) || 0,
-                    cart: cart.map(i => ({ ...i, id: i.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())) }))
+                    cart: cartWithIds
                 };
 
                 await db.patients.put({ id: localPatientId, name: orderData.patientName, phone: orderData.phone, age: orderData.age, age_type: orderData.age_type, gender: orderData.gender, doctor_name: orderData.doctor_name });
