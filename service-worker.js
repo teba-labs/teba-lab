@@ -1,8 +1,8 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v117 - Navigation Fix)
+   TEBA LABS - Service Worker (v120 - Navigation Fix)
    ===================================================== */
 
-const CACHE_VERSION = 'v117'; 
+const CACHE_VERSION = 'v120'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
