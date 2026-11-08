@@ -80,7 +80,6 @@ async function processOutbox() {
         let successCount = 0;
         let failCount = 0;
 
-        // ترتيب المزامنة (الزيارة أولاً ثم التحاليل ثم النتائج)
         pending.sort((a, b) => {
             const order = { 'orders': 1, 'orders_edit': 1, 'patients': 1, 'visits': 2, 'visit_tests': 3, 'test_results': 4 };
             return (order[a.table_name] || 99) - (order[b.table_name] || 99);
@@ -119,19 +118,17 @@ async function processOutbox() {
                         }).eq('visit_id', serverIdToUpdate).eq('tenant_id', TEBA_CONFIG.tenant.id);
                         if (vErr) throw vErr;
                         realVisitId = serverIdToUpdate;
-                        await _supabase.from('visit_tests').delete().eq('visit_id', realVisitId);
                     }
                     
                     if (order.cart.length > 0) {
                         const tests = order.cart.map(i => ({ 
                             id: i.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())), 
-                            tenant_id: TEBA_CONFIG.tenant.id, visit_id: realVisitId, test_code: i.code, price_at_time: i.price 
+                            tenant_id: TEBA_CONFIG.tenant.id, visit_id: realVisitId, test_code: i.code, price_at_time: i.price, is_cancelled: false
                         }));
                         const { error: tErr } = await _supabase.from('visit_tests').upsert(tests, { onConflict: 'id' });
                         if (tErr) throw tErr;
                     }
                     
-                    // توحيد الأرقام (Snapshot للزيارات)
                     if (item.table_name === 'orders' && localVisit) {
                         const oldId = order.tempVisitId;
                         const newId = realVisitId;
@@ -162,14 +159,6 @@ async function processOutbox() {
                     const bc = new BroadcastChannel('teba_sync');
                     bc.postMessage({ type: 'new_order', branch_id: order.branch_id });
                 } 
-                else if (item.table_name === 'test_results') {
-                    const { error } = await _supabase.from('test_results').upsert({
-                        tenant_id: TEBA_CONFIG.tenant.id,
-                        visit_test_id: item.payload.visit_test_id, 
-                        results_data: item.payload.results_data
-                    }, { onConflict: 'visit_test_id' });
-                    if (error) throw error;
-                }
                 else if (item.table_name === 'visit_tests') {
                     if (item.action === 'INSERT') {
                         const { data, error } = await _supabase.from('visit_tests').upsert([item.payload], { onConflict: 'id' }).select();
@@ -177,24 +166,36 @@ async function processOutbox() {
                         if(data && data.length > 0) {
                             const oldId = item.payload.id;
                             const newId = data[0].id;
-                            await db.visit_tests.update(oldId, { id: newId });
-                            
-                            const localResult = await db.test_results.where('visit_test_id').equals(oldId).first();
-                            if(localResult) {
-                                await db.test_results.update(localResult.id, { visit_test_id: newId });
-                            }
-                            const pendingResults = await db.outbox.where('table_name', 'test_results').toArray();
-                            for(let res of pendingResults) {
-                                if(res.payload.visit_test_id == oldId) {
-                                    res.payload.visit_test_id = newId;
-                                    await db.outbox.put(res);
+                            if (oldId !== newId) {
+                                await db.visit_tests.update(oldId, { id: newId });
+                                const localResult = await db.test_results.where('visit_test_id').equals(oldId).first();
+                                if(localResult) {
+                                    await db.test_results.update(localResult.id, { visit_test_id: newId });
+                                }
+                                const pendingResults = await db.outbox.where('table_name', 'test_results').toArray();
+                                for(let res of pendingResults) {
+                                    if(res.payload.visit_test_id == oldId) {
+                                        res.payload.visit_test_id = newId;
+                                        await db.outbox.put(res);
+                                    }
                                 }
                             }
                         }
+                    } else if (item.action === 'UPDATE') {
+                        const { error } = await _supabase.from('visit_tests').update(item.payload).eq('id', item.payload.id).eq('tenant_id', TEBA_CONFIG.tenant.id);
+                        if (error) throw error;
                     } else if (item.action === 'DELETE') {
                         await _supabase.from('visit_tests').delete().eq('id', item.payload.id);
                         await _supabase.from('test_results').delete().eq('visit_test_id', item.payload.id);
                     }
+                }
+                else if (item.table_name === 'test_results') {
+                    const { error } = await _supabase.from('test_results').upsert({
+                        tenant_id: TEBA_CONFIG.tenant.id,
+                        visit_test_id: item.payload.visit_test_id, 
+                        results_data: item.payload.results_data
+                    }, { onConflict: 'visit_test_id' });
+                    if (error) throw error;
                 }
                 else if (item.table_name === 'patients' && item.action === 'UPDATE') {
                     await _supabase.from('patients').update(item.payload).eq('id', item.payload.id).eq('tenant_id', TEBA_CONFIG.tenant.id);
@@ -320,7 +321,20 @@ async function loadData() {
                 
                 try { if (patients) await db.patients.bulkPut(patients); } catch(e) {}
                 try { if (visits) await db.visits.bulkPut(visits); } catch(e) {}
-                try { if (vt) await db.visit_tests.bulkPut(vt); } catch(e) {}
+                
+                // ✅ دعم الشطب: تحديث التحاليل بالحالة الجديدة (سواء نشطة أو ملغية)
+                if (vt) {
+                    const serverVtIds = vt.map(x => x.id);
+                    const localVts = await db.visit_tests.where('visit_id').anyOf(visitIds).toArray();
+                    for(let lvt of localVts) {
+                        if(!serverVtIds.includes(lvt.id)) {
+                            await db.visit_tests.delete(lvt.id);
+                            await db.test_results.where('visit_test_id').equals(lvt.id).delete();
+                        }
+                    }
+                    await db.visit_tests.bulkPut(vt);
+                }
+                
                 try { if (results) await db.test_results.bulkPut(results); } catch(e) {}
             }
         }
@@ -861,7 +875,9 @@ function renderOrderedTests() {
         return;
     }
     
-    let vTestsRaw = visitTests.filter(vt => String(vt.visit_id) === String(selectedVisitId));
+    // ✅ دعم الشطب: إخفاء التحاليل اللي حالتها ملغي
+    let vTestsRaw = visitTests.filter(vt => String(vt.visit_id) === String(selectedVisitId) && vt.is_cancelled !== true);
+    
     const seenCodes = new Set();
     const vTests = [];
     for (const vt of vTestsRaw) {
@@ -895,12 +911,13 @@ function renderOrderedTests() {
 }
 
 async function removeTestFromOrder(vtId) {
-    if (!confirm('حذف هذا التحليل من الطلب؟')) return;
+    if (!confirm('إلغاء هذا التحليل من الطلب؟')) return;
     try {
-        await db.visit_tests.delete(vtId);
-        await db.test_results.where('visit_test_id').equals(vtId).delete();
-        await addToOutbox('visit_tests', 'DELETE', { id: vtId });
-        visitTests = visitTests.filter(v => String(v.id) !== String(vtId));
+        // ✅ دعم الشطب: تحديث الحالة بدل الحذف
+        await db.visit_tests.update(vtId, { is_cancelled: true });
+        await addToOutbox('visit_tests', 'UPDATE', { id: vtId, is_cancelled: true });
+        
+        visitTests = visitTests.map(v => String(v.id) === String(vtId) ? { ...v, is_cancelled: true } : v);
         renderOrderedTests(); 
         if (navigator.onLine) processOutbox();
     } catch (e) { showToast('❌ حدث خطأ', true); }
@@ -911,12 +928,26 @@ async function addTestFromSelect(type) {
     const selectEl = document.getElementById(type === 'single' ? 'singleTestSelect' : 'profileTestSelect');
     const testCode = selectEl.value;
     if (!testCode) return;
-    if (visitTests.find(v => String(v.visit_id) === String(selectedVisitId) && v.test_code === testCode)) {
-        showToast('⚠️ التحليل موجود بالفعل', true);
-        selectEl.value = ''; return;
+    
+    // ✅ دعم الشطب: لو التحليل موجود بس متشطب، نرجعه بدل ما نضيفه من جديد
+    const existingTest = visitTests.find(v => String(v.visit_id) === String(selectedVisitId) && v.test_code === testCode);
+    if (existingTest) {
+        if (existingTest.is_cancelled === true) {
+            await db.visit_tests.update(existingTest.id, { is_cancelled: false });
+            await addToOutbox('visit_tests', 'UPDATE', { id: existingTest.id, is_cancelled: false });
+            existingTest.is_cancelled = false;
+            selectEl.value = '';
+            renderOrderedTests();
+            if (navigator.onLine) processOutbox();
+        } else {
+            showToast('⚠️ التحليل موجود بالفعل', true);
+            selectEl.value = '';
+        }
+        return;
     }
+    
     try {
-        const payload = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), tenant_id: TEBA_CONFIG.tenant.id, visit_id: selectedVisitId, test_code: testCode, price_at_time: 0 };
+        const payload = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), tenant_id: TEBA_CONFIG.tenant.id, visit_id: selectedVisitId, test_code: testCode, price_at_time: 0, is_cancelled: false };
         await db.visit_tests.put(payload);
         await addToOutbox('visit_tests', 'INSERT', payload);
         visitTests.push(payload);
@@ -934,7 +965,7 @@ function selectPatient(visitId) {
     const btnPub = document.getElementById('btnPublishVisit');
     if(btnPub) { btnPub.style.display = 'block'; btnPub.innerHTML = visitObj.is_published ? '🔄 تحديث النشر' : '🌐 نشر الزيارة'; }
 }// ==========================================
-// 🖨️ الطباعة و PDF (ممنوع اللمس)
+// 🖨️ الطباعة و PDF 
 // ==========================================
 function getHeaderHtml(visit, reqDate, printDate) {
     let ageStr = visit.patient.age + ' Years';
@@ -966,7 +997,9 @@ function getFooterHtml() {
 function openPrintModal() {
     if (!selectedVisitId) return alert('اختر مريضاً أولاً!');
     const visit = allVisits.find(v => String(v.visit_id) === String(selectedVisitId));
-    const vTests = visitTests.filter(vt => String(vt.visit_id) === String(selectedVisitId));
+    
+    // ✅ دعم الشطب: استبعاد التحاليل الملغية من الطباعة
+    const vTests = visitTests.filter(vt => String(vt.visit_id) === String(selectedVisitId) && vt.is_cancelled !== true);
     if(!visit) return;
     
     const reqDate = visit.visit_date ? new Date(visit.visit_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('en-GB');

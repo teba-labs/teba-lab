@@ -489,6 +489,33 @@
                             const bc = new BroadcastChannel('teba_sync');
                             bc.postMessage({ type: 'new_order', branch_id: order.branch_id });
                         } 
+                        else if (item.table_name === 'visit_tests') {
+                            if (item.action === 'INSERT') {
+                                const { data, error } = await _supabase.from('visit_tests').upsert([item.payload], { onConflict: 'id' }).select();
+                                if (error) throw error;
+                                if(data && data.length > 0) {
+                                    const oldId = item.payload.id;
+                                    const newId = data[0].id;
+                                    if (oldId !== newId) {
+                                        await db.visit_tests.update(oldId, { id: newId });
+                                        const localResult = await db.test_results.where('visit_test_id').equals(oldId).first();
+                                        if(localResult) {
+                                            await db.test_results.update(localResult.id, { visit_test_id: newId });
+                                        }
+                                        const pendingResults = await db.outbox.where('table_name', 'test_results').toArray();
+                                        for(let res of pendingResults) {
+                                            if(res.payload.visit_test_id == oldId) {
+                                                res.payload.visit_test_id = newId;
+                                                await db.outbox.put(res);
+                                            }
+                                        }
+                                    }
+                                }
+                            } else if (item.action === 'DELETE') {
+                                await _supabase.from('visit_tests').delete().eq('id', item.payload.id);
+                                await _supabase.from('test_results').delete().eq('visit_test_id', item.payload.id);
+                            }
+                        }
                         else if (item.table_name === 'test_results') {
                             const { error } = await _supabase.from('test_results').upsert({
                                 tenant_id: TEBA_CONFIG.tenant.id,
@@ -654,9 +681,28 @@
                 document.getElementById('displayVisitDate').innerText = vData.visit_date ? new Date(vData.visit_date).toLocaleDateString('ar-EG') : new Date().toLocaleDateString('ar-EG');
                 document.getElementById('btnPatientHistory').style.display = 'block';
                 
+                // ✅ التعديل: تحديث التحاليل من السحابة وإخفاء المشطوبة
+                if (navigator.onLine) {
+                    const { data: vt } = await _supabase.from('visit_tests').select('*').eq('visit_id', numericVisitId);
+                    if (vt) {
+                        const serverVtIds = vt.map(x => x.id);
+                        const localVts = await db.visit_tests.where('visit_id').equals(numericVisitId).toArray();
+                        for (let lvt of localVts) {
+                            if (!serverVtIds.includes(lvt.id)) {
+                                await db.visit_tests.delete(lvt.id);
+                                await db.test_results.where('visit_test_id').equals(lvt.id).delete();
+                            }
+                        }
+                        await db.visit_tests.bulkPut(vt);
+                        const { data: results } = await _supabase.from('test_results').select('*').in('visit_test_id', serverVtIds);
+                        if (results) await db.test_results.bulkPut(results);
+                    }
+                }
+
                 const tests = await db.visit_tests.where('visit_id').equals(numericVisitId).toArray();
                 cart = []; 
                 for (const t of tests) {
+                    if (t.is_cancelled === true) continue; // ✅ إخفاء التحاليل المشطوبة
                     let catTest = masterTests.find(m => m.code === t.test_code);
                     if (!catTest) { catTest = await db.catalog.where('code').equals(t.test_code).first(); }
                     if (catTest) {
@@ -777,7 +823,6 @@
 
         function addToCart(test) {
             if (!cart.find(item => item.code === test.code)) { 
-                // ✅ التعديل السحري: إضافة التحليل بدون نسخ الـ ID بتاع الكتالوج لمنع تداخل الزيارات
                 cart.push({ code: test.code, name: test.name, price: test.price, category: test.category }); 
                 renderCart(); 
             } 
@@ -850,7 +895,6 @@
                     visitIdToUse = await getNextSequentialVisitId();
                 }
 
-                // ✅ التعديل السحري: كل تحليل في السلة بياخد ID جديد خاص بالزيارة دي
                 const cartWithIds = cart.map(i => ({ 
                     ...i, 
                     id: i.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())) 
@@ -880,16 +924,34 @@
                 if (isEditing) {
                     const oldVisit = await db.visits.get(currentEditingVisitId);
                     if(oldVisit) { oldVisit.patient_id = localPatientId; oldVisit.branch_id = branchId; await db.visits.put(oldVisit); }
-                    await db.visit_tests.where('visit_id').equals(currentEditingVisitId).delete();
+                    
+                    // ✅ التعديل السحري (الشطب): بدل المسح، بنشطب على اللي اتشال
+                    const oldTests = await db.visit_tests.where('visit_id').equals(currentEditingVisitId).toArray();
+                    const newCartCodes = cart.map(c => c.code);
+
+                    for (let oldTest of oldTests) {
+                        if (!newCartCodes.includes(oldTest.test_code) && oldTest.is_cancelled !== true) {
+                            await db.visit_tests.update(oldTest.id, { is_cancelled: true });
+                            await addToOutbox('visit_tests', 'UPDATE', { id: oldTest.id, is_cancelled: true });
+                        }
+                    }
+
                     for (let item of orderData.cart) {
-                        await db.visit_tests.put({ id: item.id, visit_id: currentEditingVisitId, test_code: item.code, price_at_time: item.price });
+                        let existingTest = oldTests.find(t => t.test_code === item.code);
+                        if (existingTest) {
+                            await db.visit_tests.update(existingTest.id, { is_cancelled: false, price_at_time: item.price });
+                            await addToOutbox('visit_tests', 'UPDATE', { id: existingTest.id, is_cancelled: false, price_at_time: item.price });
+                        } else {
+                            await db.visit_tests.put({ id: item.id, visit_id: currentEditingVisitId, test_code: item.code, price_at_time: item.price, is_cancelled: false });
+                            await addToOutbox('visit_tests', 'INSERT', { id: item.id, tenant_id: TEBA_CONFIG.tenant.id, visit_id: currentEditingVisitId, test_code: item.code, price_at_time: item.price, is_cancelled: false });
+                        }
                     }
                     await addToOutbox('orders_edit', 'UPDATE', orderData);
                     showToast('✅ تم تعديل الطلب محلياً!');
                 } else {
                     await db.visits.put({ visit_id: visitIdToUse, client_uuid: orderData.client_uuid, patient_id: localPatientId, branch_id: branchId, visit_date: visitDateToUse, is_published: false });
                     for (let item of orderData.cart) {
-                        await db.visit_tests.put({ id: item.id, visit_id: visitIdToUse, test_code: item.code, price_at_time: item.price });
+                        await db.visit_tests.put({ id: item.id, visit_id: visitIdToUse, test_code: item.code, price_at_time: item.price, is_cancelled: false });
                     }
                     await addToOutbox('orders', 'INSERT', orderData);
                     showToast('✅ تم حفظ الطلب محلياً!');
