@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
-    <script src="config.js?v=105"></script>
+    <script src="config.js?v=121"></script>
     
     <style>
         :root {
@@ -489,33 +489,6 @@
                             const bc = new BroadcastChannel('teba_sync');
                             bc.postMessage({ type: 'new_order', branch_id: order.branch_id });
                         } 
-                        else if (item.table_name === 'visit_tests') {
-                            if (item.action === 'INSERT') {
-                                const { data, error } = await _supabase.from('visit_tests').upsert([item.payload], { onConflict: 'id' }).select();
-                                if (error) throw error;
-                                if(data && data.length > 0) {
-                                    const oldId = item.payload.id;
-                                    const newId = data[0].id;
-                                    if (oldId !== newId) {
-                                        await db.visit_tests.update(oldId, { id: newId });
-                                        const localResult = await db.test_results.where('visit_test_id').equals(oldId).first();
-                                        if(localResult) {
-                                            await db.test_results.update(localResult.id, { visit_test_id: newId });
-                                        }
-                                        const pendingResults = await db.outbox.where('table_name', 'test_results').toArray();
-                                        for(let res of pendingResults) {
-                                            if(res.payload.visit_test_id == oldId) {
-                                                res.payload.visit_test_id = newId;
-                                                await db.outbox.put(res);
-                                            }
-                                        }
-                                    }
-                                }
-                            } else if (item.action === 'DELETE') {
-                                await _supabase.from('visit_tests').delete().eq('id', item.payload.id);
-                                await _supabase.from('test_results').delete().eq('visit_test_id', item.payload.id);
-                            }
-                        }
                         else if (item.table_name === 'test_results') {
                             const { error } = await _supabase.from('test_results').upsert({
                                 tenant_id: TEBA_CONFIG.tenant.id,
@@ -823,6 +796,7 @@
 
         function addToCart(test) {
             if (!cart.find(item => item.code === test.code)) { 
+                // ✅ التعديل السحري: إضافة التحليل بدون نسخ الـ ID بتاع الكتالوج لمنع تداخل الزيارات
                 cart.push({ code: test.code, name: test.name, price: test.price, category: test.category }); 
                 renderCart(); 
             } 
