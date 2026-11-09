@@ -1,13 +1,15 @@
 ﻿// =====================================================
-// TEBA LABS - Configuration File (v125 - SaaS)
+// TEBA LABS - Configuration File (v125 - Dynamic SaaS)
 // =====================================================
 const _currentTenantId = localStorage.getItem('teba_tenant_id') || "0981e62c-c33d-46c4-8919-2f9fbb0946f6";
 const _currentTenantName = localStorage.getItem('teba_tenant_name') || "معامل طيبة";
+const _currentLogoUrl = localStorage.getItem('teba_logo_url') || "";
 
 const TEBA_CONFIG = {
     tenant: { 
         id: _currentTenantId, 
-        name: _currentTenantName 
+        name: _currentTenantName,
+        logo: _currentLogoUrl
     },
     lab: {
         name: _currentTenantName, 
@@ -26,3 +28,17 @@ const TEBA_CONFIG = {
         sessionTimeout: 2 * 60 * 60 * 1000 
     }
 };
+
+// تحديث الواجهة أوتوماتيك بالاسم واللوجو
+document.addEventListener("DOMContentLoaded", () => {
+    document.title = TEBA_CONFIG.lab.name;
+    
+    // تحديث أي عنصر فيه كلاس dyn-lab-name
+    document.querySelectorAll('.dyn-lab-name').forEach(el => el.textContent = TEBA_CONFIG.lab.name);
+    
+    // تحديث اللوجو لو موجود
+    if(TEBA_CONFIG.tenant.logo) {
+        const logoImg = document.getElementById('labLogo');
+        if(logoImg) logoImg.src = TEBA_CONFIG.tenant.logo;
+    }
+});
