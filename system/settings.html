@@ -1,0 +1,121 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعدادات النظام | معامل طيبة</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js?v=124"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #0f172a; --surface: #1e293b; --primary: #10b981; --text: #f8fafc; --border: #334155; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Almarai', sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 20px; }
+        .container { max-width: 800px; margin: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+        .header h1 { color: var(--primary); }
+        .btn-back { background: var(--border); color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .card h2 { color: var(--primary); font-size: 1.2rem; margin-bottom: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #94a3b8; font-size: 0.9rem; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: white; }
+        .btn-save { background: var(--primary); color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #000; padding: 10px 20px; border-radius: 8px; display: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ إعدادات النظام</h1>
+            <a href="home.html" class="btn-back">عودة للرئيسية</a>
+        </div>
+
+        <div class="card">
+            <h2>بيانات المعمل</h2>
+            <div class="row">
+                <div class="form-group"><label>اسم المعمل</label><input type="text" id="setLabName"></div>
+                <div class="form-group"><label>اسم الدكتور</label><input type="text" id="setDoctorName"></div>
+            </div>
+            <div class="row">
+                <div class="form-group"><label>رقم الهاتف</label><input type="text" id="setPhone"></div>
+                <div class="form-group"><label>رقم الواتساب</label><input type="text" id="setWhatsapp"></div>
+            </div>
+            <div class="form-group"><label>رابط اللوجو (URL)</label><input type="text" id="setLogo" placeholder="https://..."></div>
+            <button class="btn-save" onclick="saveLabInfo()">💾 حفظ البيانات</button>
+        </div>
+
+        <div class="card">
+            <h2>إضافة موظف جديد</h2>
+            <div class="row">
+                <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="empEmail"></div>
+                <div class="form-group"><label>كلمة المرور</label><input type="password" id="empPass"></div>
+            </div>
+            <button class="btn-save" style="background:#3b82f6; color:white;" onclick="addEmployee()">➕ إضافة موظف</button>
+        </div>
+
+        <div class="card">
+            <h2>رفع الداتا القديمة (CSV)</h2>
+            <p style="font-size:0.9rem; color:#94a3b8; margin-bottom:10px;">يجب أن يحتوي الملف على أعمدة (اسم المريض، رقم الزيارة، اسم التحليل، النتيجة).</p>
+            <input type="file" id="csvFile" accept=".csv" style="margin-bottom:10px;">
+            <button class="btn-save" style="background:#d97706; color:white;" onclick="importCSV()">📤 رفع الملف ومعالجته</button>
+        </div>
+    </div>
+    
+    <div id="toast">✅ تم الحفظ</div>
+
+    <!-- الجزء الثاني سيبدأ من هنا (سكريبت) -->    <script>
+        const _supabase = supabase.createClient(TEBA_CONFIG.supabase.url, TEBA_CONFIG.supabase.key);
+        const tenantId = TEBA_CONFIG.tenant.id;
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 3000);
+        }
+
+        // 1. تحميل البيانات الحالية
+        async function loadSettings() {
+            const { data } = await _supabase.from('site_settings').select('*').eq('tenant_id', tenantId).single();
+            if (data) {
+                document.getElementById('setLabName').value = data.lab_name || '';
+                document.getElementById('setDoctorName').value = data.doctor_name || '';
+                document.getElementById('setPhone').value = data.phone || '';
+                document.getElementById('setWhatsapp').value = data.whatsapp || '';
+                document.getElementById('setLogo').value = data.logo_url || '';
+            }
+        }
+
+        // 2. حفظ البيانات
+        async function saveLabInfo() {
+            const updates = {
+                tenant_id: tenantId,
+                lab_name: document.getElementById('setLabName').value,
+                doctor_name: document.getElementById('setDoctorName').value,
+                phone: document.getElementById('setPhone').value,
+                whatsapp: document.getElementById('setWhatsapp').value,
+                logo_url: document.getElementById('setLogo').value
+            };
+            const { error } = await _supabase.from('site_settings').upsert(updates, { onConflict: 'tenant_id' });
+            if (error) alert('خطأ: ' + error.message);
+            else showToast('✅ تم حفظ البيانات بنجاح');
+        }
+
+        // 3. دالة رفع الداتا (سيتم ربطها بالـ SQL لاحقاً)
+        async function importCSV() {
+            const file = document.getElementById('csvFile').files[0];
+            if (!file) return alert('اختر ملف CSV أولاً');
+            alert('جاري تجهيز أداة قراءة الملف... (هنربطها في خطوة السحابة القادمة)');
+        }
+
+        // 4. دالة إضافة موظف (مبدئية)
+        async function addEmployee() {
+            alert('سيتم تفعيلها عبر دالة السحابة في الخطوة القادمة لضمان الأمان.');
+        }
+
+        // تشغيل الدالة عند فتح الصفحة
+        window.onload = loadSettings;
+    </script>
+</body>
+</html>

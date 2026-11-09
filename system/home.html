@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js?v=123"></script>
+    <script src="config.js?v=124"></script>
     <style>
         :root { --bg-body: #f1f5f9; --bg-card: #fff; --bg-input: #f8fafc; --text-main: #0f172a; --text-muted: #64748b; --border-light: #e2e8f0; --primary: #0a6847; --primary-gradient: linear-gradient(135deg, #10b981, #0a6847); --card-shadow: 0 20px 40px -10px rgba(0,0,0,0.05); --card-radius: 24px; --icon-bg: #e0f2fe; --icon-color: #0284c7; --font: 'Almarai', sans-serif; }
         body.dark-mode { --bg-body: #0b1120; --bg-card: #1e293b; --bg-input: #0f172a; --text-main: #f8fafc; --text-muted: #94a3b8; --border-light: #334155; --primary: #10b981; --primary-gradient: linear-gradient(135deg, #34d399, #10b981); --card-shadow: 0 20px 40px -10px rgba(0,0,0,0.4); --icon-bg: rgba(16,185,129,0.1); --icon-color: #34d399; }
@@ -59,8 +59,12 @@
         <h1 id="loginLabName">🔬 جاري التحميل...</h1>
         <p>أدخل بيانات حسابك للدخول إلى النظام</p>
         <div class="input-group"><label>البريد الإلكتروني</label><input type="email" id="loginEmail" placeholder="example@lab.com" autocomplete="username" style="direction: ltr; text-align: center;"></div>
-        <div class="input-group"><label>كلمة المرور</label><input type="password" id="loginPassword" placeholder="********" autocomplete="current-password" style="text-align: center; letter-spacing: 2px;"></div>
+        <div class="input-group"><label>كلمة المرور (حسابك)</label><input type="password" id="loginPassword" placeholder="********" autocomplete="current-password" style="text-align: center; letter-spacing: 2px;"></div>
+        
+        <!-- الحقول الجديدة الخاصة بالفرع -->
         <div class="input-group"><label>الفرع</label><select id="loginBranch"><option value="1">🏥 فرع الجعافرة</option><option value="2">🏥 فرع بهتيم</option></select></div>
+        <div class="input-group"><label>باسورد الفرع</label><input type="password" id="loginBranchPassword" placeholder="******" style="text-align: center; letter-spacing: 2px;"></div>
+        
         <button class="btn-login" onclick="loginUser()">دخول آمن</button>
         <button class="btn-install-pwa" id="pwaInstallBtnLogin" onclick="installPWA()">📲 تثبيت التطبيق</button>
         <div class="error-msg" id="loginError"></div>
@@ -85,7 +89,7 @@
         </div>
     </div>
     
-    <!-- ================= سكريبت النظام ================= -->
+    <!-- الجزء الثاني سيبدأ من هنا (سكريبت النظام) -->    <!-- ================= سكريبت النظام ================= -->
     <script>
         // ==== 1. إعدادات الوضع الليلي والنهاري ====
         const themeBtn = document.getElementById('themeToggleBtn');
@@ -111,6 +115,7 @@
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
             const branch = document.getElementById('loginBranch').value;
+            const branchPwd = document.getElementById('loginBranchPassword').value;
             const errorEl = document.getElementById('loginError');
             const btn = document.querySelector('.btn-login');
 
@@ -125,11 +130,19 @@
             errorEl.style.display = 'none';
 
             try {
-                // 1. تسجيل الدخول من Supabase Auth
+                // 1. التحقق من باسورد الفرع (من السحابة أو كود احتياطي)
+                const { data: branchData } = await _supabase.from('branches').select('branch_password').eq('id', branch).single();
+                const correctBranchPwd = branchData ? branchData.branch_password : (branch === '1' ? '11' : '22');
+                
+                if (branchPwd !== correctBranchPwd) {
+                    throw new Error('❌ باسورد الفرع غير صحيح!');
+                }
+
+                // 2. تسجيل الدخول من Supabase Auth
                 const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({ email, password });
                 if (authError) throw new Error('الإيميل أو الباسورد غير صحيح');
 
-                // 2. جلب بيانات المستخدم (Role & Tenant) من جدول users
+                // 3. جلب بيانات المستخدم (Role & Tenant) من جدول users
                 const { data: userData, error: userError } = await _supabase
                     .from('users')
                     .select('role, tenant_id')
@@ -138,7 +151,7 @@
 
                 if (userError || !userData) throw new Error('لا يوجد صلاحيات مسجلة لهذا الحساب.');
 
-                // 3. حفظ البيانات في المتصفح
+                // 4. حفظ البيانات في المتصفح
                 localStorage.setItem('teba_tenant_id', userData.tenant_id);
                 localStorage.setItem('teba_tenant_name', TEBA_CONFIG.lab.name); 
                 localStorage.setItem('teba_user_role', userData.role);
@@ -147,7 +160,7 @@
                 // تحديث الكونفيج لو محتاج
                 TEBA_CONFIG.tenant.id = userData.tenant_id;
 
-                // 4. عرض الشاشة الرئيسية
+                // 5. عرض الشاشة الرئيسية
                 showDashboard({ name: TEBA_CONFIG.lab.name }, userData.role);
 
             } catch (err) {
@@ -207,6 +220,9 @@
 
         // ==== 7. أحداث الكيبورد ====
         document.getElementById('loginPassword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') loginUser();
+        });
+        document.getElementById('loginBranchPassword').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') loginUser();
         });
 
