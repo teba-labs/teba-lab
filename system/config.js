@@ -15,7 +15,7 @@ const TEBA_CONFIG = {
         whatsapp: "201099003494",
         address: "شبين القناطر، القليوبية",
         // ✅ تم تعديل اللينك هنا ليكون موقعك بدل البوابة القديمة
-        portalUrl: "https://teba-labs.github.io/teba-lab/index.html" 
+        portalUrl: "https://teba-labs.github.io/teba-lab/system/home.html" 
     },
     supabase: {
         url: "https://khjzoleiuiipyodpkieg.supabase.co",
