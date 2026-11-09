@@ -1,8 +1,8 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v120 - Navigation Fix)
+   TEBA LABS - Service Worker (v121 - Offline Master Fix)
    ===================================================== */
 
-const CACHE_VERSION = 'v120'; 
+const CACHE_VERSION = 'v121'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
@@ -47,13 +47,14 @@ self.addEventListener('activate', event => {
   })());
 });
 
+// ✅ تعديل جوهري: جلب صفحات الـ HTML من الكاش فوراً (Cache First) لمنع الشاشة البيضا
 self.addEventListener('fetch', event => {
   const { request } = event;
   if (request.method !== 'GET') return;
   
   const url = new URL(request.url);
 
-  // ✅ التعديل الجديد: تجاهل أي علامات في الرابط (ignoreSearch) عشان زرار الرجوع يشتغل أوفلاين
+  // لو الطلب عبارة عن فتح صفحة (HTML)، هاتها من الكاش فوراً حتى لو النت شغال
   if (request.mode === 'navigate' || (request.headers.get('accept') && request.headers.get('accept').includes('text/html'))) {
     event.respondWith(
       caches.match(request, { ignoreSearch: true }).then(cachedResponse => {
@@ -68,6 +69,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // لباقي الملفات زي الجافاسكريبت والستايل شيت
   if (url.origin === self.location.origin) {
     event.respondWith(networkFirst(request));
     return;
