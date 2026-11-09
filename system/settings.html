@@ -8,7 +8,7 @@
     <script src="config.js?v=125"></script>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #0f172a; --surface: #1e293b; --primary: #10b981; --text: #f8fafc; --border: #334155; --text-muted: #94a3b8;}
+        :root { --bg: #0f172a; --surface: #1e293b; --primary: #10b981; --text: #f8fafc; --border: #334155; --text-muted: #94a3b8; --danger: #ef4444;}
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Almarai', sans-serif; }
         body { background: var(--bg); color: var(--text); padding: 20px; }
         .container { max-width: 900px; margin: auto; }
@@ -63,7 +63,17 @@
             <button class="btn-save" style="background:#3b82f6; color:white;" onclick="addEmployee()">➕ إضافة الموظف</button>
         </div>
 
-        <!-- 3. محرك رفع البيانات القديمة -->
+        <!-- 3. تغيير باسورد الدكتور (جديد) -->
+        <div class="card" style="border-color: var(--danger);">
+            <h2 style="color: var(--danger);">🔑 تغيير كلمة المرور (للدكتور)</h2>
+            <div class="row">
+                <div class="form-group"><label>كلمة المرور الجديدة</label><input type="password" id="newPassword" placeholder="********"></div>
+                <div class="form-group"><label>تأكيد كلمة المرور</label><input type="password" id="confirmPassword" placeholder="********"></div>
+            </div>
+            <button class="btn-save" style="background:var(--danger); color:white;" onclick="changeMyPassword()">🔐 تحديث كلمة المرور</button>
+        </div>
+
+        <!-- 4. محرك رفع البيانات القديمة -->
         <div class="card">
             <h2>محرك رفع البيانات القديمة (CSV)</h2>
             <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:10px;">يرجى رفع ملف CSV يحتوي على أعمدة (اسم المريض، رقم الزيارة، اسم التحليل، النتيجة). سيتم معالجة البيانات وإدخالها فوراً.</p>
@@ -103,7 +113,7 @@
 
         // 2. حفظ البيانات واللوجو
         async function saveLabInfo() {
-            const btn = document.querySelector('.btn-save');
+            const btn = document.querySelector('.card:nth-child(1) .btn-save');
             btn.innerText = '⏳ جاري الحفظ...'; btn.disabled = true;
             
             try {
@@ -111,7 +121,6 @@
                 const fileInput = document.getElementById('logoFile');
                 let finalLogoUrl = currentLogoUrl;
 
-                // رفع اللوجو لو المستخدم اختار صورة جديدة
                 if (fileInput.files.length > 0) {
                     const file = fileInput.files[0];
                     const fileExt = file.name.split('.').pop();
@@ -134,14 +143,11 @@
                     logo_url: finalLogoUrl
                 };
                 
-                // تحديث جدول إعدادات الموقع
                 const { error: settingsErr } = await _supabase.from('site_settings').upsert(updates, { onConflict: 'tenant_id' });
                 if (settingsErr) throw settingsErr;
 
-                // تحديث جدول المعامل (عشان الاسم يتغير في السيستم)
                 await _supabase.from('tenants').update({ name: labName }).eq('id', tenantId);
 
-                // تحديث الذاكرة المحلية عشان الاسم يظهر فوراً
                 localStorage.setItem('teba_tenant_name', labName);
                 TEBA_CONFIG.lab.name = labName;
                 
@@ -184,7 +190,31 @@
             }
         }
 
-        // 4. محرك رفع البيانات القديمة (CSV)
+        // 4. تغيير باسورد الدكتور
+        async function changeMyPassword() {
+            const newPass = document.getElementById('newPassword').value;
+            const confirmPass = document.getElementById('confirmPassword').value;
+
+            if (!newPass || newPass.length < 6) return alert('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+            if (newPass !== confirmPass) return alert('كلمتا المرور غير متطابقتين');
+
+            const btn = document.querySelector('.card:nth-child(3) .btn-save');
+            btn.innerText = '⏳ جاري التحديث...'; btn.disabled = true;
+
+            try {
+                const { error } = await _supabase.auth.updateUser({ password: newPass });
+                if (error) throw error;
+                alert('✅ تم تغيير كلمة المرور بنجاح!');
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+            } catch (err) {
+                alert('❌ خطأ: ' + err.message);
+            } finally {
+                btn.innerText = '🔐 تحديث كلمة المرور'; btn.disabled = false;
+            }
+        }
+
+        // 5. محرك رفع البيانات القديمة (CSV) الذكي
         async function importCSV() {
             const fileInput = document.getElementById('csvFile');
             const progressEl = document.getElementById('importProgress');
@@ -199,63 +229,64 @@
                 const lines = text.split('\n').filter(line => line.trim() !== '');
                 if (lines.length < 2) return alert('الملف فارغ أو غير صالح');
 
-                // افتراض أن أول سطر هو أسماء الأعمدة
-                const headers = lines[0].split(',').map(h => h.trim().replace(/['"]/g, ''));
+                // قراءة أسماء الأعمدة من السطر الأول
+                const headers = lines[0].split(',').map(h => h.trim().replace(/['"]/g, '').toLowerCase());
+                
+                // البحث عن الأعمدة المطلوبة مهما كانت أسمائها
+                const nameIdx = headers.findIndex(h => h.includes('اسم') || h.includes('name') || h.includes('مريض'));
+                const visitIdx = headers.findIndex(h => h.includes('زيار') || h.includes('visit') || h.includes('id') || h.includes('رقم'));
+                const testIdx = headers.findIndex(h => h.includes('تحليل') || h.includes('test') || h.includes('فحص'));
+                const resultIdx = headers.findIndex(h => h.includes('نتيج') || h.includes('result') || h.includes('قيمة'));
+
+                if (nameIdx === -1 || visitIdx === -1 || testIdx === -1 || resultIdx === -1) {
+                    return alert('❌ لم يتم العثور على الأعمدة المطلوبة. تأكد من وجود أعمدة (اسم المريض، رقم الزيارة، التحليل، النتيجة)');
+                }
+
                 const dataRows = lines.slice(1);
                 let successCount = 0;
                 let failCount = 0;
+                const batchSize = 50; // رفع 50 حالة في المرة
 
-                // تجهيز البيانات على دفعات (Batches)
-                const batchSize = 20; // 20 حالة في المرة عشان السيرفر ميهنجش
                 progressEl.innerText = `⏳ جاري معالجة ${dataRows.length} حالة...`;
 
                 for (let i = 0; i < dataRows.length; i += batchSize) {
                     const batch = dataRows.slice(i, i + batchSize);
-                    
+                    let patientsBatch = [], visitsBatch = [], testsBatch = [], resultsBatch = [];
+
                     for (let rowStr of batch) {
                         try {
+                            // تقسيم بسيط (لو فيه مشكلة في الفواصل جوه النص، ممكن يحتاج Regex أقوى لاحقاً)
                             const cols = rowStr.split(',').map(c => c.trim().replace(/['"]/g, ''));
-                            if (cols.length < 4) continue;
-
-                            // هنا بافتراض شكل الأعمدة (تقدر تعدلها بعدين حسب ملفك)
-                            // 0: اسم المريض | 1: رقم الزيارة | 2: اسم التحليل | 3: النتيجة
-                            const pName = cols[0];
-                            const visitId = parseInt(cols[1]);
-                            const testName = cols[2];
-                            const resultVal = cols[3];
+                            
+                            const pName = cols[nameIdx];
+                            const visitId = parseInt(cols[visitIdx]);
+                            const testName = cols[testIdx];
+                            const resultVal = cols[resultIdx];
 
                             if (!pName || !visitId) continue;
 
-                            // 1. إضافة المريض
                             const pId = crypto.randomUUID();
-                            const { error: pErr } = await _supabase.from('patients').insert([{
-                                id: pId, tenant_id: tenantId, name: pName, phone: ''
-                            }]);
-                            if (pErr) throw pErr;
-
-                            // 2. إضافة الزيارة
-                            const { error: vErr } = await _supabase.from('visits').insert([{
-                                client_uuid: crypto.randomUUID(), visit_id: visitId, tenant_id: tenantId, patient_id: pId, branch_id: 1, status: 'Pending', visit_date: new Date().toISOString()
-                            }]);
-                            if (vErr) throw vErr;
-
-                            // 3. إضافة التحليل
                             const vtId = crypto.randomUUID();
-                            const { error: vtErr } = await _supabase.from('visit_tests').insert([{
-                                id: vtId, tenant_id: tenantId, visit_id: visitId, test_code: testName
-                            }]);
-                            if (vtErr) throw vtErr;
 
-                            // 4. إضافة النتيجة
-                            await _supabase.from('test_results').insert([{
-                                id: crypto.randomUUID(), tenant_id: tenantId, visit_test_id: vtId, results_data: { "Result": { value: resultVal } }
-                            }]);
-
+                            patientsBatch.push({ id: pId, tenant_id: tenantId, name: pName, phone: '' });
+                            visitsBatch.push({ client_uuid: crypto.randomUUID(), visit_id: visitId, tenant_id: tenantId, patient_id: pId, branch_id: 1, status: 'Pending', visit_date: new Date().toISOString() });
+                            testsBatch.push({ id: vtId, tenant_id: tenantId, visit_id: visitId, test_code: testName });
+                            resultsBatch.push({ id: crypto.randomUUID(), tenant_id: tenantId, visit_test_id: vtId, results_data: { "Result": { value: resultVal } } });
+                            
                             successCount++;
                         } catch (err) {
                             failCount++;
                         }
                     }
+
+                    // رفع الدفعة للسحابة
+                    if (patientsBatch.length > 0) {
+                        await _supabase.from('patients').insert(patientsBatch);
+                        await _supabase.from('visits').insert(visitsBatch);
+                        await _supabase.from('visit_tests').insert(testsBatch);
+                        await _supabase.from('test_results').insert(resultsBatch);
+                    }
+                    
                     progressEl.innerText = `⏳ تم رفع ${successCount} حالة... (فشل: ${failCount})`;
                 }
                 progressEl.innerText = `✅ انتهى الرفع! نجح: ${successCount} | فشل: ${failCount}`;
