@@ -138,20 +138,31 @@
                 const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({ email, password });
                 if (authError) throw new Error('الإيميل أو الباسورد غير صحيح');
 
-                // 3. جلب الصلاحيات
+                // 3. جلب الصلاحيات والـ Tenant ID
                 const { data: userData, error: userError } = await _supabase.from('users').select('role, tenant_id').eq('id', authData.user.id).single();
                 if (userError || !userData) throw new Error('لا يوجد صلاحيات مسجلة لهذا الحساب.');
 
-                // 4. حفظ البيانات
+                // 4. جلب بيانات المعمل (الاسم واللوجو) من السحابة
+                const { data: tenantData } = await _supabase.from('tenants').select('name').eq('id', userData.tenant_id).single();
+                const { data: settingsData } = await _supabase.from('site_settings').select('logo_url').eq('tenant_id', userData.tenant_id).single();
+
+                const finalTenantName = tenantData ? tenantData.name : "معامل طيبة";
+                const finalLogoUrl = (settingsData && settingsData.logo_url) ? settingsData.logo_url : "";
+
+                // 5. حفظ البيانات في المتصفح (عشان config.js يقراها في كل الصفحات)
                 localStorage.setItem('teba_tenant_id', userData.tenant_id);
-                localStorage.setItem('teba_tenant_name', TEBA_CONFIG.lab.name); 
+                localStorage.setItem('teba_tenant_name', finalTenantName); 
+                localStorage.setItem('teba_logo_url', finalLogoUrl);
                 localStorage.setItem('teba_user_role', userData.role);
                 localStorage.setItem('teba_current_branch', branch);
                 
+                // تحديث الكونفيج فوراً
                 TEBA_CONFIG.tenant.id = userData.tenant_id;
+                TEBA_CONFIG.lab.name = finalTenantName;
+                TEBA_CONFIG.tenant.logo = finalLogoUrl;
 
-                // 5. عرض الشاشة
-                showDashboard({ name: TEBA_CONFIG.lab.name }, userData.role);
+                // 6. عرض الشاشة
+                showDashboard({ name: finalTenantName, logo: finalLogoUrl }, userData.role);
 
             } catch (err) {
                 errorEl.textContent = '❌ ' + err.message;
@@ -166,6 +177,15 @@
             document.getElementById('desktopScreen').style.display = 'block';
             document.getElementById('desktopLabName').innerText = "مرحباً، " + tenant.name;
 
+            // تحديث اللوجو في الشاشة الرئيسية لو موجود
+            if (tenant.logo) {
+                const logoImg = document.getElementById('labLogo');
+                if (logoImg) {
+                    logoImg.src = tenant.logo;
+                    logoImg.style.display = 'block';
+                }
+            }
+
             const dashboardCard = document.getElementById('cardDashboard');
             const settingsCard = document.getElementById('cardSettings');
             
@@ -178,14 +198,26 @@
             }
         }
 
+        // التحقق من الجلسة الحالية (عشان لو عمل ريفريش)
         _supabase.auth.getSession().then(async ({ data: { session } }) => {
             if (session) {
                 const { data: userData } = await _supabase.from('users').select('role, tenant_id').eq('id', session.user.id).single();
                 if (userData) {
+                    // جلب البيانات المحدثة من السحابة
+                    const { data: tenantData } = await _supabase.from('tenants').select('name').eq('id', userData.tenant_id).single();
+                    const { data: settingsData } = await _supabase.from('site_settings').select('logo_url').eq('tenant_id', userData.tenant_id).single();
+                    
+                    const finalTenantName = tenantData ? tenantData.name : "معامل طيبة";
+                    const finalLogoUrl = (settingsData && settingsData.logo_url) ? settingsData.logo_url : "";
+
                     localStorage.setItem('teba_tenant_id', userData.tenant_id);
+                    localStorage.setItem('teba_tenant_name', finalTenantName);
+                    localStorage.setItem('teba_logo_url', finalLogoUrl);
                     localStorage.setItem('teba_user_role', userData.role);
+                    
                     if(!localStorage.getItem('teba_current_branch')) localStorage.setItem('teba_current_branch', '1');
-                    showDashboard({ name: TEBA_CONFIG.lab.name }, userData.role);
+                    
+                    showDashboard({ name: finalTenantName, logo: finalLogoUrl }, userData.role);
                 }
             }
         });
