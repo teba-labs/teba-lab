@@ -1,4 +1,6 @@
-﻿// قراءة الـ tenant_id من المتصفح (لو المعمل مسجل دخول)، أو استخدام معامل طيبة كافتراضي
+﻿// =====================================================
+// TEBA LABS - Configuration File (v2.0 - SaaS Ready)
+// =====================================================
 const _currentTenantId = localStorage.getItem('teba_tenant_id') || "0981e62c-c33d-46c4-8919-2f9fbb0946f6";
 const _currentTenantName = localStorage.getItem('teba_tenant_name') || "معامل طيبة";
 
@@ -14,16 +16,13 @@ const TEBA_CONFIG = {
         phone: "01123702062",
         whatsapp: "201099003494",
         address: "شبين القناطر، القليوبية",
-        // ✅ تم تعديل اللينك هنا ليكون موقعك بدل البوابة القديمة
         portalUrl: "https://teba-labs.github.io/teba-lab/index.html" 
     },
     supabase: {
         url: "https://khjzoleiuiipyodpkieg.supabase.co",
         key: "sb_publishable_2Q7SPvruXJar3gvOxtvl5w_p4CVDfcU"
     },
-    auth: {
-        employeePassword: "123", 
-        doctorPassword: "999", 
+    settings: {
         sessionTimeout: 2 * 60 * 60 * 1000
     }
 };

@@ -1,5 +1,6 @@
-﻿/* =====================================================
-   TEBA LABS - Admin Logic (v71 - Fixed Live Stats)
+﻿
+/* =====================================================
+   TEBA LABS - Admin Logic (v2.0 - SaaS Multi-Tenant)
    ===================================================== */
 
 (function(){
@@ -11,7 +12,7 @@
 
   /* ============= SECURITY CONSTANTS ============= */
   const MAX_FILE_SIZE = 20 * 1024 * 1024;
-  const BACKUP_VERSION = 'v71';
+  const BACKUP_VERSION = 'v123';
 
   let salesWorkbook = null;
   let pricesWorkbook = null;
@@ -133,6 +134,7 @@
     if (file.size === 0) return { ok: false, msg: '❌ الملف فارغ' };
     return { ok: true };
   }
+  
   function validatePasswordStrength(pwd) {
     if (!pwd || pwd.length < 8) return { ok: false, msg: '❌ 8 أحرف على الأقل' };
     if (!/[A-Za-z]/.test(pwd)) return { ok: false, msg: '❌ لازم حروف' };
@@ -170,9 +172,7 @@
     if (!ts) { el.innerHTML = '📅 آخر تحديث: لم يتم الرفع'; return; }
     const date = new Date(parseInt(ts, 10));
     el.innerHTML = `📅 آخر تحديث: ${date.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
-  }
-
-  /* ============= BACKUP / RESTORE ============= */
+  }  /* ============= BACKUP / RESTORE ============= */
   window.exportBackup = async function() {
     showLoading('جاري تصدير النسخة الاحتياطية...');
     try {
@@ -223,6 +223,7 @@
       hideLoading(); alert('❌ خطأ: ' + err.message);
     }
   };  
+
   /* ============= REPORT NAVIGATION ============= */
   window.showReport = function(reportName){
     document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
@@ -244,20 +245,36 @@
     if(reportName === 'needOffers') renderNeedOffers();
     if(reportName === 'lossMakers') renderLossMakers();
     if(reportName === 'security') updateStorageIndicator();
-    if(window.innerWidth <= 900) { const sidebar = document.getElementById('adminSidebar'); const overlay = document.getElementById('mobileOverlay'); if(sidebar) sidebar.classList.remove('open'); if(overlay) overlay.classList.remove('show'); }
+    
+    if(window.innerWidth <= 900) { 
+        const sidebar = document.getElementById('adminSidebar'); 
+        const overlay = document.getElementById('mobileOverlay'); 
+        if(sidebar) sidebar.classList.remove('open'); 
+        if(overlay) overlay.classList.remove('show'); 
+    }
     if (_chartResizeTimer) clearTimeout(_chartResizeTimer);
     _chartResizeTimer = setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 200);
   };
 
-  window.toggleAdminSidebar = function(){ const sidebar = document.getElementById('adminSidebar'); const overlay = document.getElementById('mobileOverlay'); sidebar.classList.toggle('open'); if(sidebar.classList.contains('open')){ overlay.classList.add('show'); } else { overlay.classList.remove('show'); } };
+  window.toggleAdminSidebar = function(){ 
+      const sidebar = document.getElementById('adminSidebar'); 
+      const overlay = document.getElementById('mobileOverlay'); 
+      sidebar.classList.toggle('open'); 
+      if(sidebar.classList.contains('open')){ overlay.classList.add('show'); } 
+      else { overlay.classList.remove('show'); } 
+  };
 
   async function showDashboard(){
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('adminDashboard').style.display = 'flex';
-    await loadSavedDataFromDB(); updateLastUpdatedUI(); window.showReport('reconciliation');
-    if ('requestIdleCallback' in window) requestIdleCallback(() => updateStorageIndicator(), { timeout: 2000 }); else setTimeout(updateStorageIndicator, 1500);
+    await loadSavedDataFromDB(); 
+    updateLastUpdatedUI(); 
+    window.showReport('reconciliation');
+    if ('requestIdleCallback' in window) requestIdleCallback(() => updateStorageIndicator(), { timeout: 2000 }); 
+    else setTimeout(updateStorageIndicator, 1500);
   }
 
+  // ==== لوجيك الدخول الجديد (محمي بـ Supabase Auth & Roles) ====
   window.checkAdminPassword = async function(){
     const emailInput = document.getElementById('adminEmail');
     const passInput = document.getElementById('adminPassword');
@@ -270,14 +287,41 @@
     error.textContent = '';
 
     try {
-      const { data, error: authError } = await _supabase.auth.signInWithPassword({
+      // 1. تسجيل الدخول من Supabase Auth
+      const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({
         email: emailInput.value.trim(),
         password: passInput.value
       });
 
-      if (authError) {
-        throw new Error(authError.message);
+      if (authError) throw new Error('الإيميل أو الباسورد غير صحيح');
+
+      // 2. التحقق من الصلاحيات (Role) من جدول الـ users
+      const { data: userData, error: userError } = await _supabase
+          .from('users')
+          .select('role, tenant_id')
+          .eq('id', authData.user.id)
+          .single();
+
+      if (userError || !userData) {
+          await _supabase.auth.signOut();
+          throw new Error('لا يوجد صلاحيات مسجلة لهذا الحساب.');
       }
+
+      // التحقق إنه دكتور أو مالك
+      if (userData.role !== 'admin' && userData.role !== 'owner') {
+          await _supabase.auth.signOut();
+          throw new Error('🔒 عذراً، هذا الحساب ليس لديه صلاحية الدخول للوحة التحكم.');
+      }
+
+      // 3. التأكد إنه بيحاول يدخل على الـ Tenant بتاعه
+      if(userData.tenant_id !== TEBA_CONFIG.tenant.id) {
+          await _supabase.auth.signOut();
+          throw new Error('🔒 هذا الحساب يتبع لمعمل آخر.');
+      }
+
+      // تحديث البيانات في الذاكرة
+      localStorage.setItem('teba_tenant_id', userData.tenant_id);
+      localStorage.setItem('teba_user_role', userData.role);
 
       passInput.value = ''; 
 
@@ -286,7 +330,7 @@
       passInput.value = '';
       setTimeout(() => { error.textContent = ''; }, 4000);
     } finally { 
-      if (btn) { btn.disabled = false; btn.textContent = 'دخول'; } 
+      if (btn) { btn.disabled = false; btn.textContent = 'دخول آمن'; } 
     }
   };
 
@@ -338,14 +382,13 @@
       if(detail2026Buffer) { detailedWorkbook2026 = XLSX.read(detail2026Buffer, { type: 'array' }); const el = document.getElementById('uploadStatusDetail2026'); if (el) { el.className = 'upload-status success'; el.innerHTML = '✅ تفصيل 2026 محمل.'; } }
       hideLoading();
     } catch(e) { hideLoading(); console.log("لا توجد بيانات محفوظة.", e); }
-  }
-
-  function getSheetData(sheetKey) { 
+  }  function getSheetData(sheetKey) { 
     if (!salesWorkbook) return []; 
     const sheetName = salesWorkbook.SheetNames.find(n => n.includes(sheetKey)); 
     if (!sheetName) return []; 
     return XLSX.utils.sheet_to_json(salesWorkbook.Sheets[sheetName], { header: 1, defval: "" }); 
-  }    // ✅ إصلاح 1: تقارير الأصفار (إزالة المسافات المخفية trim)
+  }    
+
   const extractYearData = memoizeMap(_yearCache, function(year, branch) {
     const annualData = getSheetData('السنوية'); let totalRev = 0, totalExp = 0;
     for (let i = 1; i < annualData.length; i++) { 
@@ -357,7 +400,6 @@
     return { rev: totalRev, exp: totalExp };
   });
 
-  // ✅ إصلاح 2: تقارير الأصفار (إزالة المسافات المخفية trim وتصحيح شرط كل السنة)
   const extractMonthData = memoizeMap(_monthCache, function(year, month, branch) {
     const monthlyData = getSheetData('الشهرية'); let totalRev = 0, totalExp = 0, totalCases = 0;
     for (let i = 1; i < monthlyData.length; i++) { 
@@ -375,11 +417,15 @@
 
   function findLatestReportMonth() {
     const now = new Date(); let year = now.getFullYear(); let month = now.getMonth() + 1;
-    for (let i = 0; i < 120; i++) { const d1 = extractMonthData(year, month, 'الجعافرة'); const d2 = extractMonthData(year, month, 'بهتيم'); if (d1.rev > 0 || d2.rev > 0) return { year, month }; month--; if (month < 1) { month = 12; year--; } }
+    for (let i = 0; i < 120; i++) { 
+        const d1 = extractMonthData(year, month, 'الجعافرة'); 
+        const d2 = extractMonthData(year, month, 'بهتيم'); 
+        if (d1.rev > 0 || d2.rev > 0) return { year, month }; 
+        month--; if (month < 1) { month = 12; year--; } 
+    }
     return null;
   }
 
-  // ✅ إصلاح 3: فلترة تكرار التحاليل بالشهر
   function getTestMovementData(branch, targetMonth = null) {
     const cacheKey = (branch === 'الجعافرة' ? 'jaafara' : 'bahtim') + (targetMonth ? '_' + targetMonth : '');
     if (_testMovementCache[cacheKey]) return _testMovementCache[cacheKey];
@@ -399,7 +445,6 @@
     return testData;
   }
 
-  // ✅ إصلاح 4: التكلفة الحقيقية (الاحتياطي لو ملف التفصيل مش مقروء) + تمرير الشهر
   function getMergedData(branchFilter = 'combined', monthFilter = 'latest') {
     const cacheKey = branchFilter + '_' + monthFilter;
     if (_mergedCache[cacheKey]) return _mergedCache[cacheKey];
@@ -509,6 +554,7 @@
     }
   }
 
+  // ==== المطابقة الشهرية (Live vs Excel) ====
   window.renderReconciliation = async function() {
     if (!salesWorkbook) {
       document.getElementById('recon-approval-area').innerHTML = '<p style="color:red; font-weight:bold; font-size:1.2rem;">⚠️ ارفع ملف المتابعة السنوية أولاً (من تاب رفع الملفات).</p>';
@@ -526,7 +572,7 @@
       const endDate = new Date(year, month, 0, 23, 59, 59);
       
       let query = _supabase.from('visits').select('*')
-        .eq('tenant_id', TEBA_CONFIG.tenant.id)
+        .eq('tenant_id', TEBA_CONFIG.tenant.id) // تأمين العزل
         .gte('visit_date', startDate.toISOString())
         .lte('visit_date', endDate.toISOString());
       
@@ -649,11 +695,10 @@
     }).join('');
   }  
 
-  // 🔥 إصلاح الإحصائيات اللايف (Live Stats) - قراءة is_published بدل published_at
+  // ==== الإحصائيات المباشرة (Live Stats) ====
   async function getBranchLiveStats(branchId) {
       const today = new Date(); today.setHours(0,0,0,0); const todayISO = today.toISOString();
       
-      // 1. جلب زيارات اليوم (للفرع المحدد أو الكل)
       let query = _supabase.from('visits').select('visit_id, paid_amount, is_published').eq('tenant_id', TEBA_CONFIG.tenant.id).gte('visit_date', todayISO);
       if (branchId) query = query.eq('branch_id', branchId);
       const { data: visits, error: vErr } = await query;
@@ -662,14 +707,12 @@
 
       const casesCount = visits ? visits.length : 0;
       const revTotal = visits ? visits.reduce((sum, v) => sum + parseFloat(v.paid_amount || 0), 0) : 0;
-      // حساب المنشور من نفس الداتا اللي جبناها
       const pubCount = visits ? visits.filter(v => v.is_published === true).length : 0; 
       
       const vIds = visits ? visits.map(v => v.visit_id) : [];
       
       let testsCount = 0, pendingCount = 0;
       if (vIds.length > 0) {
-          // 2. جلب التحاليل الخاصة بزيارات اليوم
           const { data: vt, error: vtErr } = await _supabase.from('visit_tests').select('id').eq('tenant_id', TEBA_CONFIG.tenant.id).in('visit_id', vIds);
           if (vtErr) throw vtErr;
           
@@ -677,7 +720,6 @@
           const vtIds = vt ? vt.map(v => v.id) : [];
           
           if (vtIds.length > 0) {
-              // 3. جلب النتائج لمعرفة المتبقي (Pending)
               const { data: res, error: resErr } = await _supabase.from('test_results').select('visit_test_id').eq('tenant_id', TEBA_CONFIG.tenant.id).in('visit_test_id', vtIds);
               if (resErr) throw resErr;
               
@@ -690,7 +732,6 @@
   }
 
   window.renderLiveStats = async function() {
-      // تصفير العدادت مؤقتاً
       ['all','j','b'].forEach(p => {
           ['cases','tests','rev','pending','published'].forEach(m => {
               const el = document.getElementById(`live-${m}-${p}`); if(el) el.innerText = '...';
@@ -698,11 +739,10 @@
       });
 
       try {
-          // جلب البيانات للفرعين + الفرع الأول + الفرع التاني
           const [statsAll, statsJ, statsB] = await Promise.all([
-              getBranchLiveStats(null), // كل الفروع
-              getBranchLiveStats(1),    // الجعافرة
-              getBranchLiveStats(2)     // بهتيم
+              getBranchLiveStats(null),
+              getBranchLiveStats(1),
+              getBranchLiveStats(2)
           ]);
 
           const updateDOM = (prefix, data) => {
@@ -719,16 +759,15 @@
 
       } catch(err) {
           console.error("Live Stats Error:", err);
-          // لو حصل خطأ، تظهر علامة تعجب
           ['all','j','b'].forEach(p => {
               ['cases','tests','rev','pending','published'].forEach(m => {
                   const el = document.getElementById(`live-${m}-${p}`); if(el) el.innerText = '!';
               });
           });
       }
-  };
-
-  window.renderMonthlyAdvisor = function() {    const container = document.getElementById('advisorReport');
+  };  // ==== رسالة المستشار (في تاب النظرة العامة) ====
+  window.renderMonthlyAdvisor = function() {    
+    const container = document.getElementById('advisorReport');
     if (!container) return;
     if (!salesWorkbook) { container.innerHTML = '<div class="advisor-card"><div class="advisor-card-title">👨‍⚕️ رسالة المستشار</div><div class="advisor-card-body">⚠️ ارفع ملف المتابعة السنوية أولاً عشان يظهر التقرير الشهري.</div></div>'; return; }
     const period = findLatestReportMonth();
@@ -800,6 +839,7 @@
     container.innerHTML = messageHtml + finCompareHtml + branchCompareHtml + testsHtml + alertsHtml;
   };  
 
+  // ==== دوال بناء خطة الشهر ====
   function buildWeeklyPlan(ctx) {
     const weeks = [];
     const { refMonthName, refMargin, refExp, losingTests, sleepingTests, topSellers, refRev, refExpRatio, avgInvoice, jRevGrowth, bRevGrowth, refJMargin, refBMargin } = ctx;
@@ -890,8 +930,7 @@
     const targetRev = Math.round(refRev * 1.12);
     points.push(`📈 مستهدف ${monthName}: نمو إيراد 10-15% (${targetRev.toLocaleString()} ج).`);
     return points;
-  }  
-
+  }    // ==== تشغيل خطة الشهر ====
   window.renderMonthlyPlan = function() {
     const container = document.getElementById('planContent');
     const subtitle = document.getElementById('planSubtitle');
@@ -976,7 +1015,7 @@
     const now = new Date();
     container.innerHTML = `<div style="text-align:center; padding: 40px;"><div class="loading-spinner" style="margin: 0 auto 20px; border-top-color: var(--primary-glow);"></div><p style="color:var(--primary-glow); font-weight:bold; font-size:1.1rem;">⏳ جاري استشارة المحلل الذكي...<br><span style="font-size:0.85rem; color:var(--text-muted); font-weight:normal;">بناءً على أرقام الموسمية الحقيقية.</span></p></div>`;
 
-    let prompt = `أنت الآن "مستشار مالي وتشغيلي واستراتيجي" خبير في إدارة المعامل الطبية. أنا الدكتور أحمد طه، صاحب "معامل طيبة".\n`;
+    let prompt = `أنت الآن "مستشار مالي وتشغيلي واستراتيجي" خبير في إدارة المعامل الطبية. أنا الدكتور أحمد طه، صاحب "${TEBA_CONFIG.lab.name}".\n`;
     prompt += `أحتاج منك خطة عمل تنفيذية شاملة لشهر **${planMonthName} ${planY}**.\n\n`;
     prompt += `📊 **[1] بيانات الموسمية (شهر ${planMonthName} في السنين السابقة):**\n`;
     prompt += `- ${planMonthName} ${histY2}: إيراد ${h2Rev} ج، حالات ${h2Cases}، صافي ربح ${h2Rev - h2Exp} ج.\n`;
@@ -1005,6 +1044,7 @@
     });
   };
 
+  // ==== نظرة عامة ====
   function renderOverview() {
     renderMonthlyAdvisor();
     let totalRevAll = 0, totalExpAll = 0, totalCasesAll = 0; let chartLabels = [], chartRevs = [], chartExps = []; let rev2025 = 0, rev2026 = 0;
@@ -1418,7 +1458,7 @@
     }
   };
 
-   window.renderTopSellers = function() {
+  window.renderTopSellers = function() {
     const tbody = document.getElementById('topSellersTableBody'); if (!tbody) return;
     const branchSel = document.getElementById('topSellersBranchSel');
     if (!branchSel) return;
@@ -1593,7 +1633,7 @@
       insights += `<li>📊 عدد التحاليل المطابقة: <strong>${merged.length}</strong></li>`;
       if (losers > 0) insights += `<li style="color:#dc2626;">⚠️ <strong>${losers}</strong> تحليل خاسر بعد حساب الثوابت.</li>`;
     } else { insights += `<li>ℹ️ محتاج ترفع ملف الأسعار عشان أحلل الأرباح</li>`; }
-    insights += `</ul><p style="text-align:center; margin-top:20px; color:var(--text-muted); font-size:0.9rem;">معامل طيبة دايماً في تقدم! 🚀</p>`;
+    insights += `</ul><p style="text-align:center; margin-top:20px; color:var(--text-muted); font-size:0.9rem;">${TEBA_CONFIG.lab.name} دايماً في تقدم! 🚀</p>`;
     body.innerHTML = insights;
   };
 
@@ -1617,7 +1657,7 @@
     const losingTests = merged.filter(t => t.trueCost > t.sell && t.count > 0).sort((a, b) => a.trueProfitUnit - b.trueProfitUnit).slice(0, 5);
     const topSellers = [...merged].sort((a, b) => b.count - a.count).slice(0, 5);
 
-    let prompt = `أنت الآن "مستشار مالي وتشغيلي واستراتيجي" خبير في إدارة المعامل الطبية. أنا الدكتور أحمد طه، صاحب "معامل طيبة".\n`;
+    let prompt = `أنت الآن "مستشار مالي وتشغيلي واستراتيجي" خبير في إدارة المعامل الطبية. أنا الدكتور أحمد طه، صاحب "${TEBA_CONFIG.lab.name}".\n`;
     prompt += `أحتاج منك تقريراً استشارياً شاملاً ومفصلاً. بناءً على البيانات التالية لشهر ${monthName} ${period.year}:\n\n`;
     prompt += `📊 **[1] المؤشرات المالية:**\n`;
     prompt += `- الإيراد: ${currRev.toLocaleString()} ج، المصاريف: ${currExp.toLocaleString()} ج، صافي الربح: ${currProfit.toLocaleString()} ج (هامش الربح ${margin}%).\n`;
@@ -1670,7 +1710,7 @@
     const topProfitable = [...merged].sort((a, b) => b.trueTotalProfit - a.trueTotalProfit).slice(0, 5);
     const losingTests = merged.filter(t => t.trueCost > t.sell && t.count > 0).sort((a, b) => a.trueProfitUnit - b.trueProfitUnit).slice(0, 5);
 
-    let prompt = `أهلاً. أنت الآن "مستشار مالي وتشغيلي" خبير في إدارة المعامل الطبية. أنا الدكتور أحمد طه، صاحب "معامل طيبة".\n`;
+    let prompt = `أهلاً. أنت الآن "مستشار مالي وتشغيلي" خبير في إدارة المعامل الطبية. أنا الدكتور أحمد طه، صاحب "${TEBA_CONFIG.lab.name}".\n`;
     prompt += `أحتاج منك تحليل شامل ودراسة استراتيجية بناءً على البيانات التالية. أرجو أن يكون ردك عملياً ومبنياً على الأرقام، وبدون مقدمات إنشائية.\n\n`;
     prompt += `📍 **[1] بيانات الشهر الحالي (${monthName} ${period.year}):**\n`;
     prompt += `- الإجمالي: إيراد ${currRev.toLocaleString()} ج، مصاريف ${currExp.toLocaleString()} ج، صافي ربح ${currProfit.toLocaleString()} ج (هامش ${margin}%).\n`;

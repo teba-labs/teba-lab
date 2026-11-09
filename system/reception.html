@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
-    <script src="config.js?v=121"></script>
+    <script src="config.js?v=122"></script>
     
     <style>
         :root {
@@ -140,13 +140,17 @@
             <button class="nav-btn logout" onclick="logout()">🚪 خروج</button>
         </div>
     </header>
+    
     <div class="live-ticker-wrap">
         <div class="live-ticker" id="liveTickerContent">
             <div class="ticker-item"><span class="dot online"></span> جاري الاتصال بالسحابة...</div>
         </div>
     </div>
+    
     <div class="toast" id="toastMsg">تم الحفظ بنجاح!</div>
+    
     <div class="main-container">
+        <!-- 1. لوحة بيانات المريض -->
         <div class="panel patient-panel">
             <div class="panel-header">
                 <span>👤 بيانات المريض</span>
@@ -207,6 +211,8 @@
                 جاري التحميل...
             </div>
         </div>        
+        
+        <!-- 2. لوحة سلة التحاليل -->
         <div class="panel cart-panel">
             <div class="panel-header">
                 <span>🛒 سلة التحاليل</span>
@@ -245,6 +251,8 @@
                 </div>
             </div>
         </div>
+        
+        <!-- 3. لوحة كتالوج التحاليل -->
         <div class="panel catalog-panel">
             <div class="panel-header">🔬 كتالوج التحاليل</div>
             <div class="catalog-layout">
@@ -258,7 +266,8 @@
                 </div>
             </div>
         </div>
-    </div>    <div class="modal" id="patientListModal">
+    </div>    <!-- مودال قائمة المرضى -->
+    <div class="modal" id="patientListModal">
         <div class="modal-content" style="max-width: 1000px;">
             <button class="btn-close" style="float:left;" onclick="closeModal('patientListModal')">✕ إغلاق</button>
             <h3 style="color:var(--primary); margin-bottom:20px;">📋 قائمة المرضى (كل الزيارات)</h3>
@@ -276,6 +285,8 @@
             </div>
         </div>
     </div>
+
+    <!-- مودال تعديل بيانات المريض -->
     <div class="modal" id="editPatientModal">
         <div class="modal-content" style="max-width: 500px;">
             <button class="btn-close" style="float:left;" onclick="closeModal('editPatientModal')">✕ إغلاق</button>
@@ -287,6 +298,8 @@
             <button class="nav-btn" style="background: var(--primary-gradient); color: white; border:none; width: 100%; justify-content: center; margin-top:20px; padding: 15px;" onclick="savePatientEdit()">💾 حفظ التعديلات</button>
         </div>
     </div>
+
+    <!-- مودال تاريخ المريض -->
     <div class="modal" id="patientHistoryModal">
         <div class="modal-content" style="max-width: 800px;">
             <button class="btn-close" style="float:left;" onclick="closeModal('patientHistoryModal')">✕ إغلاق</button>
@@ -299,6 +312,8 @@
             </div>
         </div>
     </div>
+
+    <!-- مودال معاينة الفاتورة -->
     <div class="modal" id="invoicePreviewModal">
         <div class="modal-content" style="max-width: 600px;">
             <button class="btn-close" style="float:left;" onclick="closeModal('invoicePreviewModal')">✕ إغلاق</button>
@@ -310,6 +325,8 @@
             </div>
         </div>
     </div>
+
+    <!-- قسم الطباعة (مخفي افتراضياً) -->
     <div id="print-section" style="display: none;">
         <div class="print-header" style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
             <h2 id="printLabName" style="margin: 0;">معامل طيبة للتحاليل الطبية</h2>
@@ -328,9 +345,15 @@
             <p><strong>المدفوع:</strong> <span id="printPaid"></span> ج.م</p>
             <p style="color: #d32f2f;"><strong>الباقي:</strong> <span id="printRemain"></span> ج.م</p>
         </div>
-    </div>
+    </div>    <script>
+        // ==== 1. التحقق من الجلسة والصلاحيات ====
+        if (!localStorage.getItem('teba_tenant_id')) {
+            window.location.href = 'home.html';
+        }
 
-    <script>
+        const userRole = localStorage.getItem('teba_user_role');
+
+        // ==== 2. إعدادات الوضع الليلي والنهاري ====
         const themeBtn = document.getElementById('themeToggleBtn');
         const currentTheme = localStorage.getItem('teba_theme') || 'light';
         if (currentTheme === 'dark') {
@@ -344,20 +367,11 @@
             if(themeBtn) themeBtn.innerText = isDark ? '☀️' : '🌙';
         }
 
-        if (!localStorage.getItem('teba_tenant_id')) {
-            window.location.href = 'home.html';
-        }
-        document.addEventListener("DOMContentLoaded", function() {
-            if (typeof TEBA_CONFIG !== 'undefined') {
-                document.title = "بوابة الاستقبال | " + TEBA_CONFIG.lab.name;
-                document.getElementById('brandInfo').innerText = TEBA_CONFIG.lab.name;
-                document.getElementById('printLabName').innerText = TEBA_CONFIG.lab.name + " للتحاليل الطبية";
-            }
-        });
-
+        // ==== 3. تهيئة السحابة وقاعدة البيانات المحلية ====
         const supabaseUrl = TEBA_CONFIG.supabase.url;
         const supabaseKey = TEBA_CONFIG.supabase.key;
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        
         const db = new Dexie('TebaLabOfflineDB');
         db.version(4).stores({
             patients: 'id, name, phone',
@@ -368,6 +382,7 @@
             outbox: '++id, table_name, action, payload, timestamp'
         });
 
+        // ==== 4. المتغيرات العامة ====
         let masterTests = []; 
         let cart = [];
         let currentPatientId = null;
@@ -376,9 +391,18 @@
         let isSyncing = false; 
         let currentBranch = localStorage.getItem('teba_current_branch') || '1';
 
+        document.addEventListener("DOMContentLoaded", function() {
+            if (typeof TEBA_CONFIG !== 'undefined') {
+                document.title = "بوابة الاستقبال | " + TEBA_CONFIG.lab.name;
+                document.getElementById('brandInfo').innerText = TEBA_CONFIG.lab.name;
+                document.getElementById('printLabName').innerText = TEBA_CONFIG.lab.name + " للتحاليل الطبية";
+            }
+        });
+
+        // ==== 5. دوال مساعدة (الفرع، الأوت بوكس، التنبيهات) ====
         function updateLocalBranch(val) {
-            const role = localStorage.getItem('teba_user_role');
-            if (role !== 'admin') {
+            // التحقق من الصلاحية (admin أو owner)
+            if (userRole !== 'admin' && userRole !== 'owner') {
                 document.getElementById('pBranch').value = currentBranch;
                 return showToast('🔒 لا تملك صلاحية تغيير الفرع', true);
             }
@@ -390,15 +414,47 @@
 
         async function addToOutbox(table_name, action, payload) {
             try {
+                // إضافة الـ tenant_id تلقائياً لكل عملية عشان نضمن العزل
+                if(payload && !payload.tenant_id && table_name !== 'orders' && table_name !== 'orders_edit') {
+                    payload.tenant_id = TEBA_CONFIG.tenant.id;
+                }
                 await db.outbox.add({ table_name, action, payload, timestamp: new Date().toISOString() });
                 updateLiveTicker();
-            } catch(e) { console.error(e); }
+            } catch(e) { console.error("Outbox Error:", e); }
         }
 
+        window.addEventListener('online', () => { processOutbox(); updateLiveTicker(); });
+        window.addEventListener('offline', updateLiveTicker);
+
+        async function logout() {
+            try { await _supabase.auth.signOut(); } catch (e) {}
+            finally { localStorage.clear(); window.location.replace('home.html'); }
+        }
+        
+        document.addEventListener("wheel", function(event){ if(document.activeElement.type === "number"){ document.activeElement.blur(); } });
+        
+        function moveToNext(event, nextId) { 
+            if (event.key === 'Enter') { 
+                event.preventDefault(); 
+                const el = document.getElementById(nextId);
+                if(el) el.focus(); 
+            } 
+        }
+        
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toastMsg');
+            toast.innerText = msg; 
+            toast.className = isError ? 'toast error' : 'toast';
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 4000);
+        }
+
+        // ==== 6. محرك المزامنة (Outbox) ====
         async function processOutbox() {
             if (!navigator.onLine) return showToast('لا يوجد اتصال بالإنترنت!', true);
             if (isSyncing) return; 
             isSyncing = true;
+            
             try {
                 const pending = await db.outbox.toArray();
                 if (pending.length === 0) {
@@ -406,6 +462,7 @@
                     isSyncing = false;
                     return;
                 }
+                
                 const btn = document.getElementById('syncBtn');
                 btn.innerText = '⏳ جاري المزامنة...';
                 let successCount = 0, failCount = 0;
@@ -420,6 +477,8 @@
                         if (item.table_name === 'orders' || item.table_name === 'orders_edit') {
                             const order = item.payload;
                             let patientId = order.patientId;
+                            
+                            // رفع بيانات المريض
                             const { error: pErr } = await _supabase.from('patients').upsert([{
                                 id: patientId, tenant_id: TEBA_CONFIG.tenant.id, name: order.patientName, 
                                 phone: order.phone, age: order.age, age_type: order.age_type, 
@@ -432,6 +491,7 @@
                             let realVisitId = null;
                             let localVisit = await db.visits.get(order.tempVisitId);
                             
+                            // رفع الزيارة
                             if (item.table_name === 'orders') {
                                 const { data: vData, error: vErr } = await _supabase.from('visits').upsert([{
                                     client_uuid: order.client_uuid,
@@ -450,6 +510,7 @@
                                 await _supabase.from('visit_tests').delete().eq('visit_id', realVisitId);
                             }
                             
+                            // رفع التحاليل
                             if (order.cart.length > 0) {
                                 const tests = order.cart.map(i => ({ 
                                     id: i.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())), 
@@ -459,6 +520,7 @@
                                 if (tErr) throw tErr;
                             }
                             
+                            // تحديث الـ IDs محلياً لو كانت زيارة جديدة
                             if (item.table_name === 'orders' && localVisit) {
                                 const oldId = order.tempVisitId;
                                 const newId = realVisitId;
@@ -508,35 +570,31 @@
                             await _supabase.from('visit_tests').delete().eq('visit_id', targetId);
                             await _supabase.from('visits').delete().eq('visit_id', targetId).eq('tenant_id', TEBA_CONFIG.tenant.id);
                         }
+                        
                         await db.outbox.delete(item.id);
                         successCount++;
-                    } catch (e) { console.error(e); failCount++; }
+                    } catch (e) { 
+                        console.error("Sync Item Error:", e); 
+                        failCount++; 
+                    }
                 }
+                
                 if (successCount > 0 && failCount === 0) showToast(`✅ تمت مزامنة ${successCount} عملية بنجاح!`);
                 else if (successCount > 0 && failCount > 0) showToast(`⚠️ نجح ${successCount} وفشل ${failCount}.`, true);
                 else if (failCount > 0) showToast(`❌ فشل مزامنة ${failCount} عملية.`, true);
+                
                 const remaining = await db.outbox.count();
                 if (remaining === 0) btn.style.display = 'none';
                 else btn.innerText = '🔄 مزامنة البيانات';
-                updateLiveTicker(); loadRecentPatients();
-            } catch(e) { console.error(e); } finally { isSyncing = false; }
-        }
-
-        window.addEventListener('online', () => { processOutbox(); updateLiveTicker(); });
-        window.addEventListener('offline', updateLiveTicker);
-
-        async function logout() {
-            try { await _supabase.auth.signOut(); } catch (e) {}
-            finally { localStorage.clear(); window.location.replace('home.html'); }
-        }
-        document.addEventListener("wheel", function(event){ if(document.activeElement.type === "number"){ document.activeElement.blur(); } });
-        function moveToNext(event, nextId) { if (event.key === 'Enter') { event.preventDefault(); document.getElementById(nextId).focus(); } }
-        function showToast(msg, isError = false) {
-            const toast = document.getElementById('toastMsg');
-            toast.innerText = msg; toast.className = isError ? 'toast error' : 'toast';
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 4000);
-        }
+                
+                updateLiveTicker(); 
+                loadRecentPatients();
+            } catch(e) { 
+                console.error("Outbox process error:", e); 
+            } finally { 
+                isSyncing = false; 
+            }
+        }        // ==== 7. دوال عرض المرضى وتوليد أرقام الزيارات ====
         async function getNextSequentialVisitId() {
             try {
                 const lastVisit = await db.visits.orderBy('visit_id').last();
@@ -545,6 +603,7 @@
                 return nextId;
             } catch (e) { return 1; }
         }
+
         async function generateVisitPreview() {
             const dateStr = new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
             document.getElementById('displayVisitDate').innerText = dateStr;
@@ -555,6 +614,7 @@
                 document.getElementById('displayVisitId').innerText = String(nextId).padStart(4, '0') + " (جديد)";
             }
         }
+
         async function startNewPatient() {
             currentPatientId = null;
             currentEditingVisitId = null; 
@@ -570,7 +630,9 @@
             await generateVisitPreview();
             setTimeout(() => { const nameInput = document.getElementById('pName'); if(nameInput) { nameInput.focus(); nameInput.click(); } }, 100);
             showToast('تم تجهيز استمارة مريض جديد');
-        }        async function loadRecentPatients() {
+        }
+
+        async function loadRecentPatients() {
             const container = document.getElementById('recentPatientsList');
             try {
                 if(navigator.onLine) {
@@ -580,25 +642,16 @@
                         .eq('branch_id', currentBranch)
                         .order('visit_id', {ascending: false})
                         .limit(5);
+                        
                     if(!error && data && data.length > 0) {
                         for (let v of data) {
                             if(v.patients) { await db.patients.put({ ...v.patients, id: v.patients.id }); }
                             let localV = await db.visits.where('server_id').equals(Number(v.visit_id)).first();
                             if (!localV) { localV = await db.visits.get(Number(v.visit_id)); }
                             if (localV) {
-                                await db.visits.update(localV.visit_id, { 
-                                    visit_date: v.visit_date, 
-                                    branch_id: Number(currentBranch),
-                                    server_id: Number(v.visit_id)
-                                });
+                                await db.visits.update(localV.visit_id, { visit_date: v.visit_date, branch_id: Number(currentBranch), server_id: Number(v.visit_id) });
                             } else {
-                                await db.visits.put({ 
-                                    visit_id: Number(v.visit_id), 
-                                    visit_date: v.visit_date, 
-                                    patient_id: v.patients ? v.patients.id : null, 
-                                    branch_id: Number(currentBranch),
-                                    server_id: Number(v.visit_id)
-                                });
+                                await db.visits.put({ visit_id: Number(v.visit_id), visit_date: v.visit_date, patient_id: v.patients ? v.patients.id : null, branch_id: Number(currentBranch), server_id: Number(v.visit_id) });
                             }
                         }
                     }
@@ -654,9 +707,8 @@
                 document.getElementById('displayVisitDate').innerText = vData.visit_date ? new Date(vData.visit_date).toLocaleDateString('ar-EG') : new Date().toLocaleDateString('ar-EG');
                 document.getElementById('btnPatientHistory').style.display = 'block';
                 
-                // ✅ التعديل: تحديث التحاليل من السحابة وإخفاء المشطوبة
                 if (navigator.onLine) {
-                    const { data: vt } = await _supabase.from('visit_tests').select('*').eq('visit_id', numericVisitId);
+                    const { data: vt } = await _supabase.from('visit_tests').select('*').eq('visit_id', numericVisitId).eq('tenant_id', TEBA_CONFIG.tenant.id);
                     if (vt) {
                         const serverVtIds = vt.map(x => x.id);
                         const localVts = await db.visit_tests.where('visit_id').equals(numericVisitId).toArray();
@@ -675,7 +727,7 @@
                 const tests = await db.visit_tests.where('visit_id').equals(numericVisitId).toArray();
                 cart = []; 
                 for (const t of tests) {
-                    if (t.is_cancelled === true) continue; // ✅ إخفاء التحاليل المشطوبة
+                    if (t.is_cancelled === true) continue;
                     let catTest = masterTests.find(m => m.code === t.test_code);
                     if (!catTest) { catTest = await db.catalog.where('code').equals(t.test_code).first(); }
                     if (catTest) {
@@ -709,18 +761,22 @@
                     <div class="ticker-item">⏳ عمليات معلقة للمزامنة: ${pendingOutbox}</div>
                     <div class="ticker-item">🕒 ${new Date().toLocaleTimeString('ar-EG')}</div>
                 `;
-                if(pendingOutbox > 0) document.getElementById('syncBtn').style.display = 'flex';
-                else document.getElementById('syncBtn').style.display = 'none';
+                const syncBtn = document.getElementById('syncBtn');
+                if(syncBtn) {
+                    if(pendingOutbox > 0) syncBtn.style.display = 'flex';
+                    else syncBtn.style.display = 'none';
+                }
             } catch(e){}
         }
 
+        // ==== 8. دوال الكتالوج والسلة ====
         function sendSmartWhatsApp() {
             const name = document.getElementById('pName').value.trim();
             if (!name) return showToast('⚠️ يرجى إدخال اسم المريض أولاً', true);
             const visitId = document.getElementById('displayVisitId').innerText.split(' ')[0];
             const phone = document.getElementById('pPhone').value.trim();
             if(!phone) return showToast('⚠️ لا يوجد رقم تليفون مسجل', true);
-            const msg = `أهلاً ${name} 👋،\nنتيجة تحليلك جاهزة 🧪.\nيمكنك استلامها من خلال موقعنا عبر إدخال اسمك ورقم الزيارة (${visitId}):\n${TEBA_CONFIG.lab.portalUrl}\n\nمعامل طيبة - د/ أحمد طه أبوندا`;
+            const msg = `أهلاً ${name} 👋،\nنتيجة تحليلك جاهزة 🧪.\nيمكنك استلامها من خلال موقعنا عبر إدخال اسمك ورقم الزيارة (${visitId}):\n${TEBA_CONFIG.lab.portalUrl}\n\n${TEBA_CONFIG.lab.name} - ${TEBA_CONFIG.lab.doctor}`;
             window.open(`https://wa.me/2${phone.replace(/^0/, '')}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
@@ -753,6 +809,7 @@
 
         function renderCategories() {
             const sidebar = document.getElementById('catalogSidebar');
+            if(!sidebar) return;
             const categories = [...new Set(masterTests.map(t => t.category))];
             let html = `<button class="cat-btn ${currentCategory === 'all' ? 'active' : ''}" onclick="filterByCategory('all', this)">📋 الكل</button>`;
             categories.forEach(cat => { html += `<button class="cat-btn ${currentCategory === cat ? 'active' : ''}" onclick="filterByCategory('${cat}', this)">📁 ${cat}</button>`; });
@@ -768,7 +825,8 @@
 
         function renderCatalog() {
             const grid = document.getElementById('catalogGrid');
-            const searchQuery = document.getElementById('catalogSearch').value.toLowerCase().trim();
+            if(!grid) return;
+            const searchQuery = document.getElementById('catalogSearch') ? document.getElementById('catalogSearch').value.toLowerCase().trim() : '';
             let filtered = masterTests;
             if (currentCategory !== 'all') filtered = filtered.filter(t => t.category === currentCategory);
             if (searchQuery !== '') filtered = filtered.filter(t => t.code.toLowerCase().includes(searchQuery) || t.name.toLowerCase().includes(searchQuery));
@@ -796,7 +854,6 @@
 
         function addToCart(test) {
             if (!cart.find(item => item.code === test.code)) { 
-                // ✅ التعديل السحري: إضافة التحليل بدون نسخ الـ ID بتاع الكتالوج لمنع تداخل الزيارات
                 cart.push({ code: test.code, name: test.name, price: test.price, category: test.category }); 
                 renderCart(); 
             } 
@@ -808,6 +865,7 @@
         function renderCart() {
             const list = document.getElementById('cartList');
             const count = document.getElementById('cartCount');
+            if(!list || !count) return;
             if (cart.length === 0) {
                 list.innerHTML = `<div style="text-align: center; color: var(--text-muted); margin-top: 50px; font-weight: bold;"><div style="font-size: 3rem; margin-bottom: 10px; opacity: 0.3;">🛒</div>السلة فارغة</div>`;
             } else {
@@ -833,11 +891,13 @@
             let netTotal = subTotal - discountAmount;
             if (netTotal < 0) netTotal = 0;
             const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
+            
             document.getElementById('totalAmount').innerText = `${subTotal.toFixed(2)} ج.م`;
             document.getElementById('netTotalAmount').innerText = `${netTotal.toFixed(2)} ج.م`;
             document.getElementById('remainAmount').innerText = `${(netTotal - paid).toFixed(2)} ج.م`;
         }
 
+        // ==== 9. حفظ الطلب ====
         let isSavingOrder = false; 
         async function saveOrder() {
             if (isSavingOrder) return; 
@@ -848,6 +908,7 @@
             isSavingOrder = true;
             const btn = document.getElementById('saveBtn');
             btn.innerText = 'جاري الحفظ...'; btn.disabled = true;
+            
             try {
                 let localPatientId = currentPatientId;
                 if (!localPatientId) { localPatientId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()); }
@@ -869,10 +930,7 @@
                     visitIdToUse = await getNextSequentialVisitId();
                 }
 
-                const cartWithIds = cart.map(i => ({ 
-                    ...i, 
-                    id: i.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())) 
-                }));
+                const cartWithIds = cart.map(i => ({ ...i, id: i.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())) }));
 
                 const orderData = {
                     patientId: localPatientId,
@@ -899,7 +957,6 @@
                     const oldVisit = await db.visits.get(currentEditingVisitId);
                     if(oldVisit) { oldVisit.patient_id = localPatientId; oldVisit.branch_id = branchId; await db.visits.put(oldVisit); }
                     
-                    // ✅ التعديل السحري (الشطب): بدل المسح، بنشطب على اللي اتشال
                     const oldTests = await db.visit_tests.where('visit_id').equals(currentEditingVisitId).toArray();
                     const newCartCodes = cart.map(c => c.code);
 
@@ -935,13 +992,18 @@
                 await startNewPatient();
                 if (navigator.onLine) processOutbox();
                 loadRecentPatients();
-            } catch (e) { console.error(e); showToast('❌ حدث خطأ أثناء الحفظ', true); }
-            finally { 
+            } catch (e) { 
+                console.error(e); 
+                showToast('❌ حدث خطأ أثناء الحفظ', true); 
+            } finally { 
                 btn.innerText = '💾 حفظ الطلب'; 
                 btn.disabled = false; 
                 isSavingOrder = false; 
             }
-        }        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        }
+
+        // ==== 10. قائمة المرضى، البحث، الفواتير ====
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         async function openPatientList() {
             const tbody = document.getElementById('patientListBody');
@@ -1077,9 +1139,11 @@
             }, 100);
         }
 
+        // ==== التشغيل عند فتح الصفحة ====
         window.onload = async () => { 
-            const role = localStorage.getItem('teba_user_role');
-            if (role !== 'admin') document.getElementById('pBranch').style.display = 'none';
+            if (userRole !== 'admin' && userRole !== 'owner') {
+                document.getElementById('pBranch').style.display = 'none';
+            }
             document.getElementById('currentBranchDisplay').innerText = currentBranch === '1' ? 'الجعافرة' : 'بهتيم';
             document.getElementById('pBranch').value = currentBranch;
             await fetchCatalogFromCloud(); 
@@ -1090,6 +1154,7 @@
             if (navigator.onLine) processOutbox();
         };
 
+        // مزامنة تلقائية كل دقيقة لو في نت
         setInterval(() => { if (navigator.onLine && !isSyncing) processOutbox(); }, 60000);
     </script>
 </body>

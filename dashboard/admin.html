@@ -1,9 +1,9 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title id="pageTitle">لوحة التحكم</title>
+<title id="pageTitle">لوحة التحكم | معامل طيبة</title>
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a0e0a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,10 +11,10 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://cdn.sheetjs.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
-<link rel="preload" href="styles.css?v=98" as="style">
-<link rel="preload" href="admin.css?v=98" as="style">
-<link rel="stylesheet" href="styles.css?v=98">
-<link rel="stylesheet" href="admin.css?v=98">
+<link rel="preload" href="styles.css?v=123" as="style">
+<link rel="preload" href="admin.css?v=123" as="style">
+<link rel="stylesheet" href="styles.css?v=123">
+<link rel="stylesheet" href="admin.css?v=123">
 <link rel="manifest" href="../manifest.json">
 <style>
   .chart-container { position: relative; height: 350px; width: 100%; margin-bottom: 20px; }
@@ -32,7 +32,6 @@
   .year-box.green { background: rgba(22, 163, 74, 0.1); border-color: #16a34a; color: #16a34a; }
   .year-box.red { background: rgba(220, 38, 38, 0.1); border-color: #dc2626; color: #dc2626; }
   
-  /* تنسيقات جديدة للـ Live Stats */
   .live-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
   .live-card { background: var(--bg-card); border: 2px solid var(--border); border-radius: 15px; padding: 20px; }
   .live-card h3 { color: var(--primary-glow); text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border); font-size: 1.2rem; }
@@ -44,10 +43,11 @@
   .live-kpi.full-width { grid-column: span 2; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=98"></script>
+<script src="config.js?v=123"></script>
 </head>
 <body class="admin-body">
 
+<!-- شاشة الدخول للدكتور -->
 <div id="loginScreen" class="login-screen">
   <div class="login-box">
     <div class="login-logo"><img id="loginLogo" src="../logo.png" alt="Logo" width="200" height="80" fetchpriority="high"></div>
@@ -55,11 +55,12 @@
     <p id="loginLabName">جاري التحميل...</p>
     <input type="email" id="adminEmail" placeholder="البريد الإلكتروني" autocomplete="username" style="margin-bottom: 10px; text-align: left; direction: ltr;">
     <input type="password" id="adminPassword" placeholder="كلمة المرور" autocomplete="current-password">
-    <button onclick="checkAdminPassword()">دخول</button>
+    <button onclick="checkAdminPassword()">دخول آمن</button>
     <div id="loginError" class="login-error"></div>
   </div>
 </div>
 
+<!-- لوحة التحكم الرئيسية -->
 <div id="adminDashboard" class="admin-dashboard" style="display:none;">
   <header class="admin-header">
     <div class="admin-header-left">
@@ -79,9 +80,8 @@
     </div>
   </header>
 
-  <div id="mobileOverlay" class="sidebar-overlay" onclick="toggleAdminSidebar()"></div>
-
-  <div class="admin-layout">
+  <div id="mobileOverlay" class="sidebar-overlay" onclick="toggleAdminSidebar()"></div>  <div class="admin-layout">
+    <!-- القائمة الجانبية (Sidebar) -->
     <aside class="admin-sidebar" id="adminSidebar">
       <div class="sidebar-header-mobile">
         <h3 style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; color:var(--primary-glow);">
@@ -127,9 +127,10 @@
       </ul>
     </aside>
 
+    <!-- المحتوى الرئيسي -->
     <main class="admin-content">
       
-      <!-- تاب المطابقة الشهرية -->
+      <!-- 1. تاب المطابقة الشهرية -->
       <section class="admin-section active" id="report-reconciliation">
         <div class="admin-section-head">
           <h2>⚖️ المطابقة الشهرية (النظام vs الإكسيل)</h2>
@@ -167,7 +168,7 @@
         </div>
       </section>
 
-      <!-- تاب الإحصائيات المباشرة الجديد -->
+      <!-- 2. تاب الإحصائيات المباشرة Live -->
       <section class="admin-section" id="report-live">
         <div class="admin-section-head">
           <h2>⚡ إحصائيات مباشرة من السحابة (Live)</h2>
@@ -175,7 +176,6 @@
         </div>
         
         <div class="live-grid">
-          <!-- كارت إجمالي الفرعين -->
           <div class="live-card" style="border-color: #3b82f6;">
             <h3>🏥 إجمالي الفرعين</h3>
             <div class="live-kpis">
@@ -187,7 +187,6 @@
             </div>
           </div>
 
-          <!-- كارت الجعافرة -->
           <div class="live-card" style="border-color: #10b981;">
             <h3>🏥 فرع الجعافرة</h3>
             <div class="live-kpis">
@@ -199,7 +198,6 @@
             </div>
           </div>
 
-          <!-- كارت بهتيم -->
           <div class="live-card" style="border-color: #d97706;">
             <h3>🏥 فرع بهتيم</h3>
             <div class="live-kpis">
@@ -217,7 +215,7 @@
         </div>
       </section>
 
-      <!-- (باقي الأقسام في الجزء الثاني) -->      <!-- تاب نظرة عامة -->
+      <!-- 3. تاب نظرة عامة -->
       <section class="admin-section" id="report-overview">
         <div class="admin-section-head">
           <h2>📈 نظرة عامة على الأداء</h2>
@@ -254,7 +252,7 @@
         <div class="chart-container"><canvas id="overviewChart"></canvas></div>
       </section>
 
-      <!-- تاب رفع الملفات -->
+      <!-- 4. تاب رفع الملفات -->
       <section class="admin-section" id="report-upload">
         <div class="admin-section-head"><h2>📤 رفع ملفات الإكسيل</h2></div>
         <div class="upload-grid">
@@ -298,7 +296,7 @@
         <button onclick="clearData()" style="margin-top: 10px; background: rgba(220,38,38,0.2); color: #f87171; border: 1px solid #f87171; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold;">🗑️ مسح كل البيانات المحفوظة</button>
       </section>
 
-      <!-- تاب الأمان -->
+      <!-- 5. تاب الأمان -->
       <section class="admin-section" id="report-security">
         <div class="admin-section-head">
           <h2>🛡️ الأمان والنسخ الاحتياطي</h2>
@@ -340,9 +338,7 @@
             <li>✅ التحقق من صحة نوع وحجم الملفات قبل الرفع</li>
           </ul>
         </div>
-      </section>
-
-      <!-- تاب التقرير الشهري -->
+      </section>      <!-- 6. تاب التقرير الشهري -->
       <section class="admin-section" id="report-financial">
         <div class="admin-section-head">
           <h2>💰 التقرير الشهري</h2>
@@ -379,7 +375,7 @@
         <div class="chart-container"><canvas id="financeChart"></canvas></div>
       </section>
 
-      <!-- تاب التقرير السنوي -->
+      <!-- 7. تاب التقرير السنوي -->
       <section class="admin-section" id="report-annual">
         <div class="admin-section-head">
           <h2>📊 التقرير السنوي</h2>
@@ -409,7 +405,7 @@
         </div>
       </section>
 
-      <!-- تاب تحليل الحالات -->
+      <!-- 8. تاب تحليل الحالات -->
       <section class="admin-section" id="report-cases">
         <div class="admin-section-head">
           <h2>👥 تحليل أعداد الحالات الشهرية</h2>
@@ -448,7 +444,7 @@
         <div class="forecast-card" id="forecastCard"></div>
       </section>
 
-      <!-- تاب تفصيل المصاريف -->
+      <!-- 9. تاب تفصيل المصاريف -->
       <section class="admin-section" id="report-expenseBreakdown">
         <div class="admin-section-head"><h2>🥧 تفصيل المصاريف</h2></div>
         <div class="filter-group">
@@ -475,7 +471,7 @@
         </div>
       </section>
 
-      <!-- تاب BCG -->
+      <!-- 10. تاب BCG -->
       <section class="admin-section" id="report-bcg">
         <div class="admin-section-head">
           <h2>💎 تصنيف التحاليل (BCG Matrix)</h2>
@@ -544,7 +540,7 @@
         </div>
       </section>
 
-      <!-- تاب خطة الشهر -->
+      <!-- 11. تاب خطة الشهر -->
       <section class="admin-section" id="report-monthlyPlan">
         <div class="admin-section-head">
           <h2>📋 خطة الشهر — استراتيجية 3 شهور</h2>
@@ -558,7 +554,7 @@
         <div id="planContent"></div>
       </section>
 
-      <!-- تاب الأكثر مبيعا -->
+      <!-- 12. تاب الأكثر مبيعا -->
       <section class="admin-section" id="report-topSellers">
         <div class="admin-section-head"><h2>🏆 الأكثر مبيعاً</h2></div>
         <div class="filter-group">
@@ -581,7 +577,7 @@
         </div>
       </section>
 
-      <!-- تاب الأكثر ربحا -->
+      <!-- 13. تاب الأكثر ربحا -->
       <section class="admin-section" id="report-mostProfitable">
         <div class="admin-section-head"><h2>💎 الأكثر ربحاً (صافي الربح)</h2></div>
         <div class="filter-group">
@@ -604,7 +600,7 @@
         </div>
       </section>
 
-      <!-- تاب الأقل ربحية -->
+      <!-- 14. تاب الأقل ربحية -->
       <section class="admin-section" id="report-leastProfitable">
         <div class="admin-section-head"><h2>📉 الأقل ربحية (صافي الربح)</h2></div>
         <div class="filter-group">
@@ -627,7 +623,7 @@
         </div>
       </section>
 
-      <!-- تاب محتاجة عروض -->
+      <!-- 15. تاب محتاجة عروض -->
       <section class="admin-section" id="report-needOffers">
         <div class="admin-section-head"><h2>🎯 محتاجة عروض</h2></div>
         <div class="filter-group">
@@ -650,7 +646,7 @@
         </div>
       </section>
 
-      <!-- تاب الخاسرة -->
+      <!-- 16. تاب الخاسرة -->
       <section class="admin-section" id="report-lossMakers">
         <div class="admin-section-head"><h2>📉 التحاليل الخاسرة</h2></div>
         <div class="filter-group">
@@ -676,6 +672,7 @@
   </div>
 </div>
 
+<!-- زر و مودال المحلل الذكي -->
 <button class="ai-float-btn" onclick="openAIAssistant()" title="المحلل الذكي">🤖</button>
 
 <div id="aiModal" class="ai-modal">
@@ -690,10 +687,11 @@
   </div>
 </div>
 
+<!-- السكريبتات الخارجية -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
-<script src="admin.js?v=98" defer></script>
+<script src="admin.js?v=123" defer></script>
 
 <script>
   // تفعيل الـ Service Worker للـ PWA

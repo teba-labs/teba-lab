@@ -1,4 +1,4 @@
-﻿/* ================= Light Mode (Default) ================= */
+﻿/* ================= TEBA LABS - Lab Styles (v2.0 - SaaS) ================= */
 :root {
     --bg: #f1f5f9; 
     --surface: #ffffff; 
@@ -24,7 +24,6 @@
     --shadow: 0 4px 20px rgba(0,0,0,0.05);
 }
 
-/* ================= Dark Mode ================= */
 body.dark-mode {
     --bg: #0f172a; 
     --surface: #1e293b; 
@@ -45,7 +44,6 @@ body.dark-mode {
 * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
 body { font-family: var(--font); background-color: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-/* ================= Header & Buttons ================= */
 header { 
     background: var(--surface); color: var(--text); 
     display: flex; justify-content: space-between; align-items: center; 
@@ -81,12 +79,10 @@ header {
     outline: none; cursor: pointer; background: var(--surface);
 }
 
-/* ================= Main Grid ================= */
 .main-grid { display: grid; grid-template-columns: 340px 1fr 1fr; gap: 20px; padding: 20px; flex-grow: 1; height: calc(100vh - 80px); overflow: hidden; }
 .panel { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; border: 1px solid var(--border-color); overflow: hidden; }
 .panel-header { background: var(--surface); padding: 15px 20px; border-bottom: 1px solid var(--border-color); font-weight: 800; color: var(--primary); text-align: center; font-size: 1.05rem;}
 
-/* ================= Patient Card ================= */
 .patient-list { flex-grow: 1; overflow-y: auto; padding: 15px; }
 .patient-card { padding: 15px; border: 1px solid var(--border-color); border-radius: 14px; margin-bottom: 12px; cursor: pointer; transition: 0.2s; background: var(--bg-input); position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
 .patient-card:hover { border-color: var(--primary); background: var(--surface); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.06);}
@@ -101,7 +97,6 @@ header {
 .btn-card-del { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
 .btn-card-del:hover { background: var(--danger); color: white; }
 
-/* ================= Selector & Test List ================= */
 .selector-area { padding: 15px 20px; background: var(--bg-input); border-bottom: 1px solid var(--border-color); }
 .custom-select { width: 100%; padding: 12px 15px; border: 1.5px solid var(--border-color); border-radius: 10px; font-family: inherit; font-size: 0.95rem; font-weight: bold; outline: none; background: var(--surface); color: var(--text); cursor: pointer; transition: 0.2s;}
 .custom-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
@@ -115,14 +110,12 @@ header {
 .btn-result.done { background: rgba(16, 185, 129, 0.1); color: #16a34a; border-color: #16a34a; }
 .empty-msg { text-align: center; padding: 50px 20px; color: var(--text-muted); font-size: 1.1rem; }
 
-/* ================= Modals ================= */
 .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(8px); padding: 20px;}
 .modal-content { background: var(--surface); padding: 0; border-radius: var(--radius); width: 100%; max-width: 800px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid var(--border-color);}
 .modal-header { padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--surface);}
 .modal-header h3 { margin: 0; color: var(--primary); font-size: 1.2rem;}
 .modal-body { padding: 20px; overflow-y: auto; flex-grow: 1; background: var(--bg);}
 
-/* ================= Form Inputs ================= */
 .form-group-modal { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
 .form-group-modal label { font-size: 0.9rem; font-weight: bold; color: var(--text); }
 .form-group-modal input, .form-group-modal select { padding: 12px 15px; border: 1.5px solid var(--border-color); border-radius: 10px; font-size: 1rem; font-family: inherit; outline: none; font-weight: bold; background: var(--bg-input); color: var(--text); transition: 0.2s;}
@@ -142,7 +135,6 @@ header {
 .range-input-custom { width: 100px; padding: 4px 8px !important; font-size: 0.85rem !important; border-radius: 6px !important; text-align: center; border: 1px solid var(--primary) !important; background: var(--surface) !important;}
 .phase-selector { margin-bottom: 10px; padding: 10px; border-radius: 8px; border: 1px solid var(--warning); background: rgba(243, 156, 18, 0.1); font-size: 0.9rem; font-weight: bold; color: #b45309; width: 100%; text-align: center;}
 
-/* ================= Buttons ================= */
 .btn-save-test { padding: 15px; background: var(--primary-gradient); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-family: inherit; transition: 0.3s; font-size: 1.05rem; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);}
 .btn-save-test:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);}
 .btn-del-test { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); padding: 12px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; font-family: inherit; transition: 0.2s;}
@@ -151,9 +143,6 @@ header {
 #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--primary-gradient); color: white; padding: 15px 30px; border-radius: 50px; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: none; z-index: 1000; border: 1px solid rgba(255,255,255,0.2); }
 #toast.error { background: var(--danger); }
 
-/* ==========================================
-   تنسيقات الطباعة (ممنوع اللمس)
-   ========================================== */
 .print-page { background: #fff; width: 100%; margin: 0; padding: 0; }
 .print-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; gap: 20px; }
 .print-header-left { flex: 1; text-align: left; }

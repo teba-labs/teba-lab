@@ -1,4 +1,4 @@
-﻿﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -18,11 +18,11 @@
 </style>
 
 <link rel="icon" type="image/png" href="logo.png">
-<link rel="stylesheet" href="styles.css?v=99">
+<link rel="stylesheet" href="styles.css?v=123">
 
 <!-- مكتبة السحابة وملف الإعدادات -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=99"></script>
+<script src="config.js?v=123"></script>
 </head>
 <body>
 
@@ -59,6 +59,7 @@
 <div class="sidebar-overlay" id="overlay"></div>
 
 <div class="layout">
+  <!-- القائمة الجانبية اليمين (الأقسام) -->
   <aside class="sidebar-right" id="sidebarRight">
     <h3><span>📋 الأقسام</span><button onclick="closeAllSidebars()" aria-label="إغلاق">✕</button></h3>
     <ul class="nav-list">
@@ -75,9 +76,8 @@
       <li><a onclick="showSection('medical')" data-section="medical" tabindex="0">🩺 معلومات طبية</a></li>
       <li><a onclick="showSection('contact')" data-section="contact" tabindex="0">📞 تواصل معنا</a></li>
     </ul>
-  </aside>
-
-  <main class="main-content">
+  </aside>  <main class="main-content">
+    <!-- 1. القسم الرئيسي (Home) -->
     <section id="section-home" class="section active">
       <div class="hero-split reveal">
         <div class="hero-content">
@@ -113,12 +113,14 @@
       <div class="testimonials-nav"><button onclick="slideTestimonials(-1)" aria-label="السابق">❮</button><button onclick="slideTestimonials(1)" aria-label="التالي">❯</button></div>
     </section>
         
+    <!-- 2. قسم الباقات (Packages) -->
     <section id="section-packages" class="section">
       <div class="section-head"><h2>📦 باقات <span>الفحص الشامل</span></h2><p>وفر 25% مع الباقات المتخصصة — الأسعار شاملة كل الرسوم</p></div>
       <div class="packages-grid" id="packagesGrid"></div>
       <p style="text-align:center;color:var(--text-muted);font-size:.82rem;margin-top:10px;opacity:.8">* الأسعار قابلة للتحديث بدون إشعار مسبق</p>
     </section>
 
+    <!-- 3. قسم التحاليل والأسعار (Tests) -->
     <section id="section-tests" class="section">
       <div class="section-head"><h2>التحاليل <span>والأسعار</span></h2><p>اضغط "!" لمعرفة شروط التحليل قبل الحجز</p></div>
       <div class="tests-controls">
@@ -130,6 +132,7 @@
       <div class="tests-grid" id="testsGrid"></div>
     </section>
 
+    <!-- 4. قسم حجز السحب من المنزل (Booking) -->
     <section id="section-booking" class="section">
       <div class="section-head"><h2>🏠 حجز <span>سحب من المنزل</span></h2><p>اطلب سحب عينة من منزلك بالحجز المسبق</p></div>
       <div class="booking-container">
@@ -144,8 +147,7 @@
         <div class="booking-page" data-step="3"><h3>الموعد المناسب</h3><input type="date" id="bkDate" required><select id="bkTime"><option value="11:00 ص">11:00 ص</option><option value="12:00 م">12:00 م</option><option value="4:00 م">4:00 م</option></select><textarea id="bkNotes" placeholder="ملاحظات إضافية"></textarea><div class="booking-nav"><button class="btn-prev" onclick="goToBookingStep(2)">→ السابق</button><button class="btn-next" onclick="goToBookingStep(4)">التالي ←</button></div></div>
         <div class="booking-page" data-step="4"><h3>تأكيد الحجز</h3><div id="bookingSummary"></div><div class="booking-nav"><button class="btn-prev" onclick="goToBookingStep(3)">→ السابق</button><button class="btn-next" onclick="submitBooking()">💬 تأكيد وإرسال على واتساب</button></div></div>
       </div>
-    </section>
-
+    </section>    <!-- 5. قسم عن المعمل (About) -->
     <section id="section-about" class="section">
       <div class="section-head"><h2>نبذة عن <span class="dyn-lab-name">معامل طيبة</span></h2></div>
       <div class="about-box">
@@ -158,6 +160,7 @@
       </div>
     </section>
 
+    <!-- 6. قسم خدماتنا (Features) -->
     <section id="section-features" class="section">
       <div class="section-head"><h2>خدماتنا <span>المميزة</span></h2><p>كل ما تحتاجه من خدمات التحاليل الطبية في مكان واحد</p></div>
       <div class="features-grid">
@@ -170,6 +173,7 @@
       </div>
     </section>
 
+    <!-- 7. قسم العروض (Offers) -->
     <section id="section-offers" class="section">
       <div class="section-head"><h2>🎉 العروض <span>والخصومات</span></h2></div>
       <div class="offer-box" id="offerActive" style="background:linear-gradient(135deg, #0a2e15, #15803d); border-radius:20px; padding:40px 20px; text-align:center; color:#fff; border:1px solid var(--border-glow);">
@@ -187,6 +191,7 @@
       </div>
     </section>
 
+    <!-- 8. قسم استلام النتائج (Results) -->
     <section id="section-results" class="section">
       <div class="section-head"><h2>📄 استلام <span>النتائج</span></h2><p>أدخل بياناتك لاستلام نتيجتك</p></div>
       <div class="results-form">
@@ -198,6 +203,7 @@
       </div>
     </section>
 
+    <!-- 9. قسم الفروع (Branches) -->
     <section id="section-branches" class="section">
       <div class="section-head"><h2>📍 فروعنا</h2><p>فرعان لخدمتك</p></div>
       <div class="branches-grid">
@@ -218,6 +224,7 @@
       </div>
     </section>
 
+    <!-- 10. قسم الأسئلة الشائعة (FAQ) -->
     <section id="section-faq" class="section">
       <div class="section-head"><h2>❓ الأسئلة <span>الشائعة</span></h2></div>
       <details class="faq-item"><summary>إمتى هتستلم نتيجة التحليل؟</summary><p>معظم التحاليل الروتينية في نفس اليوم. المتخصصة من 24-72 ساعة. المزارع من 3-5 أيام.</p></details>
@@ -225,16 +232,25 @@
       <details class="faq-item"><summary>إيه طرق الدفع المتاحة؟</summary><p>كاش أو محفظة إلكترونية.</p></details>
       <details class="faq-item"><summary>هل لازم صيام قبل التحليل؟</summary><p>بعض التحاليل فقط تحتاج صيام 8-12 ساعة. اضغط على زر "!" جنب أي تحليل لمعرفة شروطه بالتفصيل.</p></details>
       <details class="faq-item"><summary>إيه الفرق بين الباقة والتحليل الفردي؟</summary><p>الباقة توفر لك مجموعة تحاليل بسعر مخفض (خصم 25%)، بدل ما تحجز كل تحليل لوحده بالسعر الكامل.</p></details>
-    </section>
-
+    </section>    <!-- 11. قسم المعلومات الطبية (Medical) -->
     <section id="section-medical" class="section">
       <div class="section-head"><h2>🩺 معلومات <span>طبية</span></h2><p>كل ما تريد معرفته عن التحاليل الطبية وأهميتها</p></div>
       <div class="med-info-header"><div class="badge-med">معلومات موثوقة</div><h3>أهمية الالتزام بشروط التحاليل الطبية</h3><p>الالتزام بشروط التحضير قبل التحليل هو الخطوة الأهم للحصول على نتائج دقيقة. أي خطأ في التحضير قد يؤدي إلى نتائج خاطئة تؤثر على تشخيص حالتك وعلاجك.</p></div>
       <div class="warning-box"><div class="warn-icon">⚠️</div><div><h4>تحذير مهم</h4><p>لا توقف أي دواء أو تغير نظامك الغذائي قبل التحليل إلا بعد استشارة طبيبك المعالج. بعض الأدوية يمكن أن تؤثر على نتائج التحاليل.</p></div></div>
       <div class="articles-grid" id="medicalArticlesGrid"></div>
-      <div class="modal-art" id="articleModal" role="dialog" aria-modal="true"><div class="modal-art-content"><button class="close-art" onclick="closeArticle()" aria-label="إغلاق">✕</button><h3 id="articleTitle"></h3><div id="articleBody"></div><div class="source-note" id="articleSource"></div></div></div>
+      
+      <!-- مودال المقالات الطبية -->
+      <div class="modal-art" id="articleModal" role="dialog" aria-modal="true">
+        <div class="modal-art-content">
+          <button class="close-art" onclick="closeArticle()" aria-label="إغلاق">✕</button>
+          <h3 id="articleTitle"></h3>
+          <div id="articleBody"></div>
+          <div class="source-note" id="articleSource"></div>
+        </div>
+      </div>
     </section>
 
+    <!-- 12. قسم تواصل معنا (Contact) -->
     <section id="section-contact" class="section">
       <div class="section-head"><h2>📞 تواصل <span>معنا</span></h2></div>
       <div class="contact-grid">
@@ -246,18 +262,21 @@
     </section>
   </main>
 
+  <!-- القائمة الجانبية الشمال (روشتتي) -->
   <aside class="sidebar-left" id="sidebarLeft">
     <h3><span>📋 روشتتي</span><button onclick="closeAllSidebars()" aria-label="إغلاق">✕</button></h3>
     <div id="cartContent"><div class="cart-empty"><div>📋</div>روشتتك فاضية<br><small>اضغط "أضف" على أي تحليل أو باقة</small></div></div>
   </aside>
 </div>
 
+<!-- الأزرار العائمة (Floating Buttons) -->
 <div class="floating-buttons-container">
     <a class="float-wa pulse-wa dyn-wa-link" href="#" title="واتساب">💬</a>
     <a class="float-emergency dyn-wa-link" href="#" title="تحليل عاجل">🚨 تحليل عاجل</a>
     <button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">⬆</button>
 </div>
 
+<!-- نافذة العرض المنبثقة (Popup) -->
 <div class="popup-overlay" id="offerPopup">
   <div class="popup-content">
     <button class="popup-close" onclick="closePopupOffer()">✕</button>
@@ -268,6 +287,7 @@
   </div>
 </div>
 
+<!-- الفوتر (Footer) -->
 <footer>
   <div class="footer-grid">
     <div>
@@ -326,11 +346,12 @@
 <!-- مكتبة تحويل الشاشة لـ PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-<script src="data.js?v=99" defer></script>
-<script src="app.js?v=99" defer></script>
-<script src="features.js?v=99" defer></script>
-<script src="site_dynamic.js?v=99" defer></script>
-<script src="patient_portal.js?v=99" defer></script>
+<!-- الملفات الأساسية للواجهة -->
+<script src="data.js?v=123" defer></script>
+<script src="app.js?v=123" defer></script>
+
+<script src="site_dynamic.js?v=123" defer></script>
+<script src="patient_portal.js?v=123" defer></script>
 
 <!-- سكريبت تفعيل الـ PWA وتثبيت التطبيق -->
 <script>

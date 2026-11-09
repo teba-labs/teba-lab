@@ -13,7 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- مكتبة الإكسيل -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="config.js"></script>
+    <script src="config.js?v=123"></script>
     <style>
         :root {
             --bg: #0f172a; --surface: #1e293b; --surface-hover: #334155;
@@ -175,7 +175,7 @@
                 <input type="text" id="newSubdomain" placeholder="مثال: alnoor-labs (حروف إنجليزية فقط)">
             </div>
             <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid var(--gold); color: var(--gold); padding: 10px; border-radius: 8px; font-size: 0.85rem; margin-top: 15px;">
-                ⚠️ <strong>ملاحظة:</strong> بعد الحفظ، يجب إنشاء حساب الدخول (Auth) لصاحب المعمل يدوياً من لوحة Supabase.
+                ⚠️ <strong>ملاحظة:</strong> بعد الحفظ، يجب إنشاء حساب الدخول (Auth) لصاحب المعمل يدوياً من لوحة Supabase وربطه في جدول users.
             </div>
             <div class="modal-actions">
                 <button class="btn-save" onclick="saveNewTenant()">💾 حفظ المعمل</button>
@@ -320,6 +320,7 @@
             btn.innerText = '⏳ جاري الحفظ...'; btn.disabled = true;
 
             try {
+                // التحقق من عدم تكرار الـ subdomain
                 const { data: existing } = await _supabase.from('tenants').select('id').eq('subdomain', subdomain);
                 if (existing && existing.length > 0) throw new Error('هذا الرابط (Subdomain) مستخدم بالفعل لمعمل آخر!');
 
@@ -377,7 +378,7 @@
 
                     overlayText.innerText = 'جاري تجهيز البيانات للرفع...';
 
-                    // تجهيز البيانات عشان تتوافق مع جدول tests_catalog
+                    // تجهيز البيانات لتتطابق مع أعمدة جدول tests_catalog في Supabase
                     const formattedTests = jsonData.map(row => {
                         let paramsArray = [];
                         // معالجة الباراميترز لو كانت مكتوبة كنص مفصول بفواصل
@@ -390,19 +391,22 @@
                             }));
                         }
 
+                        // توليد ID لو مش موجود (مهم جداً عشان السحابة)
+                        const testId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
+
                         return {
+                            id: testId,
                             tenant_id: tenantId,
                             code: String(row.Test_Code || '').trim(),
                             name: String(row.Test_Name || '').trim(),
                             price: parseFloat(row.price) || 0,
                             test_type: row.Test_Type || 'Single',
                             category: row.Category || 'General',
-                            is_calculated: row.Is_Calculated === 1 || row.Is_Calculated === '1' || row.Is_Calculated === true,
-                            formula: row.Formula || null,
-                            // تحويل الرينجات لشكل JSONB المتوافق مع الكود
-                            ref_male: row.Male_Reference_Range ? { range: String(row.Male_Reference_Range) } : null,
-                            ref_female: row.Female_Reference_Range ? { range: String(row.Female_Reference_Range) } : null,
-                            ref_child: row.Child_Reference_Range ? { range: String(row.Child_Reference_Range) } : null,
+                            unit: row.unit || '',
+                            // تحويل الرينجات لشكلها الصح في السحابة
+                            male_reference_range: row.Male_Reference_Range ? String(row.Male_Reference_Range) : null,
+                            female_reference_range: row.Female_Reference_Range ? String(row.Female_Reference_Range) : null,
+                            child_reference_range: row.Child_Reference_Range ? String(row.Child_Reference_Range) : null,
                             parameters: paramsArray.length > 0 ? paramsArray : null
                         };
                     }).filter(t => t.code && t.name); // التأكد إن الكود والاسم موجودين
@@ -411,7 +415,7 @@
 
                     overlayText.innerText = `جاري رفع ${formattedTests.length} تحليل للسحابة...`;
 
-                    // استخدام upsert بدل insert عشان نمنع مشكلة التكرار
+                    // استخدام upsert بدل insert عشان نمنع مشكلة التكرار في نفس المعمل
                     const { error } = await _supabase.from('tests_catalog').upsert(formattedTests, { onConflict: 'code,tenant_id' });
                     
                     if (error) throw error;

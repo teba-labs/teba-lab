@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js?v=117"></script>
+    <script src="config.js?v=122"></script>
     <style>
         :root { --bg-body: #f1f5f9; --bg-card: #fff; --bg-input: #f8fafc; --text-main: #0f172a; --text-muted: #64748b; --border-light: #e2e8f0; --primary: #0a6847; --primary-gradient: linear-gradient(135deg, #10b981, #0a6847); --card-shadow: 0 20px 40px -10px rgba(0,0,0,0.05); --card-radius: 24px; --icon-bg: #e0f2fe; --icon-color: #0284c7; --font: 'Almarai', sans-serif; }
         body.dark-mode { --bg-body: #0b1120; --bg-card: #1e293b; --bg-input: #0f172a; --text-main: #f8fafc; --text-muted: #94a3b8; --border-light: #334155; --primary: #10b981; --primary-gradient: linear-gradient(135deg, #34d399, #10b981); --card-shadow: 0 20px 40px -10px rgba(0,0,0,0.4); --icon-bg: rgba(16,185,129,0.1); --icon-color: #34d399; }
@@ -63,17 +63,18 @@
 </head>
 <body>
     <button id="themeToggleBtn" onclick="toggleTheme()" title="تغيير المظهر">🌙</button>
+    
     <div id="loginScreen">
         <h1 id="loginLabName">🔬 جاري التحميل...</h1>
         <p>أدخل بيانات حسابك للدخول إلى النظام</p>
         <div class="input-group"><label>البريد الإلكتروني</label><input type="email" id="loginEmail" placeholder="example@lab.com" autocomplete="username" style="direction: ltr; text-align: center;"></div>
         <div class="input-group"><label>كلمة المرور</label><input type="password" id="loginPassword" placeholder="********" autocomplete="current-password" style="text-align: center; letter-spacing: 2px;"></div>
         <div class="input-group"><label>الفرع</label><select id="loginBranch"><option value="1">🏥 فرع الجعافرة</option><option value="2">🏥 فرع بهتيم</option></select></div>
-        <div class="input-group"><label>باسورد الفرع (أو باسورد الدكتور)</label><input type="password" id="loginBranchPassword" placeholder="******" style="text-align: center;"></div>
         <button class="btn-login" onclick="loginUser()">دخول آمن</button>
         <button class="btn-install-pwa" id="pwaInstallBtnLogin" onclick="installPWA()">📲 تثبيت التطبيق</button>
         <div class="error-msg" id="loginError"></div>
     </div>
+    
     <div id="desktopScreen">
         <button class="logout-btn" onclick="logout()">🚪 خروج</button>
         <button class="install-btn-desktop" id="pwaInstallBtnDesktop" onclick="installPWA()">📲 تثبيت التطبيق</button>
@@ -92,6 +93,7 @@
             <div class="app-card" id="cardDashboard" onclick="openSecretModal()"><div class="app-icon-box">📊</div><div class="app-name">لوحة التحكم</div><div class="app-desc">التقارير والإحصائيات 🔒</div></div>
         </div>
     </div>
+    
     <div id="secretModal">
         <div class="secret-box">
             <h2>🔒 منطقة محظورة</h2>
@@ -102,7 +104,9 @@
                 <button class="btn-cancel" onclick="closeSecretModal()">إلغاء</button>
             </div>
         </div>
-    </div>    <!-- ================= سكريبت النظام ================= -->
+    </div>
+    
+    <!-- الجزء الثاني سيبدأ من هنا (سكريبت النظام) -->    <!-- ================= سكريبت النظام ================= -->
     <script>
         // ==== 1. إعدادات الوضع الليلي والنهاري ====
         const themeBtn = document.getElementById('themeToggleBtn');
@@ -128,7 +132,6 @@
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
             const branch = document.getElementById('loginBranch').value;
-            const branchPwd = document.getElementById('loginBranchPassword').value;
             const errorEl = document.getElementById('loginError');
             const btn = document.querySelector('.btn-login');
 
@@ -138,34 +141,35 @@
                 return;
             }
 
-            // التحقق من الباسورد وتحديد الصلاحية
-            const validBranchPwd = (branch === '1' ? '11' : '22');
-            const isDoctor = (branchPwd === TEBA_CONFIG.auth.doctorPassword); 
-            const isEmployee = (branchPwd === validBranchPwd);
-
-            if (!isDoctor && !isEmployee) {
-                errorEl.textContent = '❌ باسورد الفرع أو باسورد الدكتور غير صحيح!';
-                errorEl.style.display = 'block';
-                return;
-            }
-
             btn.innerText = '⏳ جاري التحقق...'; 
             btn.disabled = true;
             errorEl.style.display = 'none';
 
             try {
+                // 1. تسجيل الدخول من Supabase Auth
                 const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({ email, password });
                 if (authError) throw new Error('الإيميل أو الباسورد غير صحيح');
 
-                // 🔥 السر هنا: الدور بيتحدد من الباسورد، مش من السحابة
-                const finalRole = isDoctor ? 'admin' : 'lab_tech';
+                // 2. جلب بيانات المستخدم (Role & Tenant) من جدول users
+                const { data: userData, error: userError } = await _supabase
+                    .from('users')
+                    .select('role, tenant_id')
+                    .eq('id', authData.user.id)
+                    .single();
 
-                localStorage.setItem('teba_tenant_id', TEBA_CONFIG.tenant.id);
-                localStorage.setItem('teba_tenant_name', TEBA_CONFIG.lab.name);
-                localStorage.setItem('teba_user_role', finalRole);
+                if (userError || !userData) throw new Error('لا يوجد صلاحيات مسجلة لهذا الحساب.');
+
+                // 3. حفظ البيانات في المتصفح
+                localStorage.setItem('teba_tenant_id', userData.tenant_id);
+                localStorage.setItem('teba_tenant_name', TEBA_CONFIG.lab.name); 
+                localStorage.setItem('teba_user_role', userData.role);
                 localStorage.setItem('teba_current_branch', branch);
+                
+                // تحديث الكونفيج لو محتاج
+                TEBA_CONFIG.tenant.id = userData.tenant_id;
 
-                showDashboard({ name: TEBA_CONFIG.lab.name }, finalRole);
+                // 4. عرض الشاشة الرئيسية
+                showDashboard({ name: TEBA_CONFIG.lab.name }, userData.role);
 
             } catch (err) {
                 errorEl.textContent = '❌ ' + err.message;
@@ -179,10 +183,9 @@
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('desktopScreen').style.display = 'block';
             document.getElementById('desktopLabName').innerText = "مرحباً، " + tenant.name;
-            document.getElementById('loginLabName').innerText = tenant.name;
 
             const dashboardCard = document.getElementById('cardDashboard');
-            if (role === 'admin') {
+            if (role === 'admin' || role === 'owner') {
                 dashboardCard.style.display = 'flex';
             } else {
                 dashboardCard.style.display = 'none'; 
@@ -192,12 +195,16 @@
         // ==== 4. التحقق من الجلسة الحالية (لو عمل ريفرش) ====
         _supabase.auth.getSession().then(async ({ data: { session } }) => {
             if (session) {
-                // بنقرا الدور من الذاكرة اللي حفظناها وقت الدخول
-                const role = localStorage.getItem('teba_user_role') || 'lab_tech';
-                if(!localStorage.getItem('teba_current_branch')) {
-                    localStorage.setItem('teba_current_branch', '1');
+                // جلب الصلاحية المحدثة من السحابة
+                const { data: userData } = await _supabase.from('users').select('role, tenant_id').eq('id', session.user.id).single();
+                
+                if (userData) {
+                    localStorage.setItem('teba_tenant_id', userData.tenant_id);
+                    localStorage.setItem('teba_user_role', userData.role);
+                    if(!localStorage.getItem('teba_current_branch')) localStorage.setItem('teba_current_branch', '1');
+                    
+                    showDashboard({ name: TEBA_CONFIG.lab.name }, userData.role);
                 }
-                showDashboard({ name: TEBA_CONFIG.lab.name }, role);
             }
         });
 
@@ -208,38 +215,24 @@
             location.reload();
         }
 
-        // ==== 6. مودال باسورد الدكتور (للدخول للداشبورد) ====
+        // ==== 6. مودال الدخول للداشبورد ====
         function openSecretModal() {
-            document.getElementById('secretModal').style.display = 'flex';
-            document.getElementById('docPassword').focus();
-        }
-        function closeSecretModal() {
-            document.getElementById('secretModal').style.display = 'none';
-            document.getElementById('docPassword').value = '';
-        }
-        function checkDoctorPassword() {
-            const input = document.getElementById('docPassword').value;
             const role = localStorage.getItem('teba_user_role');
-            
-            if (role === 'admin' || input === TEBA_CONFIG.auth.doctorPassword) {
+            if (role === 'admin' || role === 'owner') {
                 sessionStorage.setItem('doctor_access', 'granted');
                 window.location.href = '../dashboard/admin.html';
             } else {
-                alert('❌ باسورد الدكتور غلط! أو ليس لديك صلاحية.');
-                document.getElementById('docPassword').value = '';
-                document.getElementById('docPassword').focus();
+                alert('❌ ليس لديك صلاحية للدخول إلى لوحة التحكم.');
             }
+        }
+
+        function closeSecretModal() {
+            document.getElementById('secretModal').style.display = 'none';
         }
 
         // ==== 7. أحداث الكيبورد ====
         document.getElementById('loginPassword').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') loginUser();
-        });
-        document.getElementById('loginBranchPassword').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') loginUser();
-        });
-        document.getElementById('docPassword').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') checkDoctorPassword();
         });
 
         // ==== 8. تفعيل الـ PWA ====

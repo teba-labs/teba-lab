@@ -1,6 +1,6 @@
 ﻿/* =====================================================
-   TEBA LABS - Main Application (v51 - Performance Package)
-   معامل طيبة - التطبيق الرئيسي
+   TEBA LABS - Main Application (v123 - SaaS)
+   معامل طيبة - التطبيق الرئيسي للواجهة العامة
    ===================================================== */
 
 (function(){
@@ -8,10 +8,15 @@
 
   /* ============= SHORTCUTS ============= */
   const D = window.TEBA_DATA;
+  if (!D) {
+      console.error("Data.js not loaded!");
+      return;
+  }
+  
   const {
     TESTS, CAT_ICONS, FEATURED_NAMES, PACKAGES, PACKAGE_DISCOUNT,
     TEST_PREPARATION, MEDICAL_ARTICLES, TESTIMONIALS, TRUST_BADGES,
-    APP_CONFIG, OFFER_CONFIG,
+    APP_CONFIG, OFFER_CONFIG, WORKING_HOURS,
     isNumericPrice, getTestByName, getPackagePrice, isOfferActive,
     normalizeArabic
   } = D;
@@ -86,7 +91,7 @@
   }
 
   /* =====================================================
-   2. OFFER & TICKER MANAGEMENT (12 Messages)
+   2. OFFER & TICKER MANAGEMENT
    ===================================================== */
   function renderOffer(){
     const active = isOfferActive();
@@ -225,7 +230,7 @@
   setGreeting();
 
   /* =====================================================
-   6. BACK TO TOP (v51: rAF-throttled)
+   6. BACK TO TOP
    ===================================================== */
   let _scrollRaf = null;
   window.addEventListener('scroll', () => {
@@ -234,9 +239,7 @@
       if(backTop) backTop.classList.toggle('show', window.scrollY > 400);
       _scrollRaf = null;
     });
-  }, { passive: true });
-
-  /* =====================================================
+  }, { passive: true });  /* =====================================================
    7. RENDER PACKAGES
    ===================================================== */
   function renderPackages(){
@@ -464,7 +467,7 @@
   }
 
   /* =====================================================
-   10. CART
+   10. CART (روشتتي)
    ===================================================== */
   function saveCart(){
     localStorage.setItem('teba_cart', JSON.stringify(cart));
@@ -543,10 +546,8 @@
       renderTests();
       if(window.showToast) window.showToast('تم تفريغ روشتتك', 'info');
     }
-  };
-
-  /* =====================================================
-   11. REQUEST RESULT
+  };  /* =====================================================
+   11. REQUEST RESULT (التواصل لطلب النتيجة)
    ===================================================== */
   window.requestResult = function(){
     const nameEl = document.getElementById('rName');
@@ -565,7 +566,7 @@
   };
 
   /* =====================================================
-   12. PREP MODAL
+   12. PREP MODAL (شروط التحاليل)
    ===================================================== */
   window.showPrep = function(testName){
     const prep = TEST_PREPARATION[testName];
@@ -600,7 +601,7 @@
   };
 
   /* =====================================================
-   13. MEDICAL ARTICLES
+   13. MEDICAL ARTICLES (المقالات الطبية)
    ===================================================== */
   function renderMedicalArticles(){
     const gridEl = document.getElementById('medicalArticlesGrid');
@@ -637,7 +638,7 @@
   }
 
   /* =====================================================
-   14. TRUST STRIP
+   14. TRUST STRIP (شريط الثقة)
    ===================================================== */
   function renderTrustStrip(){
     const el = document.getElementById('trustStrip');
@@ -652,7 +653,7 @@
   }
 
   /* =====================================================
-   15. TESTIMONIALS SLIDER
+   15. TESTIMONIALS SLIDER (آراء العملاء)
    ===================================================== */
   let testimonialIndex = 0;
   let testimonialTrack = null;
@@ -688,7 +689,7 @@
   };
 
   /* =====================================================
-   16. WORKING HOURS STATUS
+   16. WORKING HOURS STATUS (حالة الفروع)
    ===================================================== */
   function updateBranchStatus(){
     document.querySelectorAll('[data-branch]').forEach(el=>{
@@ -723,7 +724,7 @@
   setInterval(updateBranchStatus, 5 * 60 * 1000);
 
   /* =====================================================
-   17. NEW FEATURES (Counters, Scroll Reveal, Popup) — v51 optimized
+   17. NEW FEATURES (Counters, Scroll Reveal, Popup)
    ===================================================== */
   function initCounters() {
     const counters = document.querySelectorAll('.counter');
@@ -786,7 +787,7 @@
   };
 
   /* =====================================================
-   18. INIT
+   18. INIT (التشغيل النهائي)
    ===================================================== */
   document.getElementById('year') && (document.getElementById('year').textContent = new Date().getFullYear());
   buildCategories();
@@ -798,11 +799,12 @@
   renderTrustStrip();
   renderTestimonials();
 
-  // تشغيل الميزات الجديدة
+  // تشغيل الميزات الإضافية
   initCounters();
   initScrollReveal();
   initPopupOffer();
 
+  // ضبط القوائم الجانبية بناءً على حجم الشاشة
   if(window.innerWidth > 1000){
     sidebarRight.classList.remove('collapsed');
     sidebarLeft.classList.remove('collapsed');
@@ -812,7 +814,7 @@
   }
 
   if(location.hostname === 'localhost' || location.hostname === '127.0.0.1'){
-    console.log('%c✅ معامل طيبة - app.js v51 loaded', 'color:#00ff7f;font-weight:bold');
+    console.log('%c✅ معامل طيبة - app.js v123 loaded', 'color:#00ff7f;font-weight:bold');
   }
 
 })();

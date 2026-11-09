@@ -1,8 +1,8 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v121 - Offline Master Fix)
+   TEBA LABS - Service Worker (v125 - SaaS Master Fix)
    ===================================================== */
 
-const CACHE_VERSION = 'v121'; 
+const CACHE_VERSION = 'v125'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
@@ -13,8 +13,8 @@ const PRECACHE_ASSETS = [
   './system/home.html', './system/reception.html', './system/lab.html', './system/tests_manage.html', 
   './system/lab.css', './system/lab.js',
   './system/config.js', 
-  './dashboard/admin.html', './dashboard/admin.css', './dashboard/admin.js',
-  './styles.css', './data.js', './app.js', './site_dynamic.js', './patient_portal.js', './config.js',
+  './dashboard/admin.html', './dashboard/admin.css', './dashboard/admin.js', './dashboard/config.js',
+  './styles.css', './data.js', './app.js', './site_dynamic.js', './patient_portal.js', './config.js', './super-admin.html',
   './logo.png', './brand-logo.png', './header.png', './manifest.json'
 ];
 
@@ -47,14 +47,14 @@ self.addEventListener('activate', event => {
   })());
 });
 
-// ✅ تعديل جوهري: جلب صفحات الـ HTML من الكاش فوراً (Cache First) لمنع الشاشة البيضا
+// استراتيجية الجلب (Fetch)
 self.addEventListener('fetch', event => {
   const { request } = event;
   if (request.method !== 'GET') return;
   
   const url = new URL(request.url);
 
-  // لو الطلب عبارة عن فتح صفحة (HTML)، هاتها من الكاش فوراً حتى لو النت شغال
+  // جلب صفحات الـ HTML من الكاش فوراً (Cache First) لمنع الشاشة البيضا
   if (request.mode === 'navigate' || (request.headers.get('accept') && request.headers.get('accept').includes('text/html'))) {
     event.respondWith(
       caches.match(request, { ignoreSearch: true }).then(cachedResponse => {
@@ -69,12 +69,13 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // لباقي الملفات زي الجافاسكريبت والستايل شيت
+  // لباقي الملفات زي الجافاسكريبت والستايل شيت (Network First)
   if (url.origin === self.location.origin) {
     event.respondWith(networkFirst(request));
     return;
   }
   
+  // للملفات الخارجية (CDN & Images)
   if (CDN_ORIGINS.some(o => url.origin === o) || IMG_ORIGINS.some(o => url.origin === o)) {
     event.respondWith(cacheFirst(request));
     return;

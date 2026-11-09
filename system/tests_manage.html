@@ -13,7 +13,7 @@
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
-    <script src="config.js?v=116"></script>
+    <script src="config.js?v=123"></script>
     
     <style>
         :root {
@@ -161,6 +161,7 @@
         </div>
     </div>
 
+    <!-- مودال إضافة/تعديل تحليل -->
     <div class="modal" id="testModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -194,7 +195,7 @@
                     <div class="form-group"><label>الفئة (Category)</label><input type="text" id="testCategory" placeholder="مثال: هرمونات"></div>
                 </div>
 
-                <!-- قسم البارامترات أصبح يظهر دائماً (فردي أو مجمع) -->
+                <!-- قسم البارامترات -->
                 <div class="parameters-section" id="parametersSection">
                     <div class="parameters-header">
                         <h4 style="color:var(--primary);">البارامترات والرينجات</h4>
@@ -211,18 +212,12 @@
     </div>
 
     <div id="toast">✅ تم الحفظ بنجاح</div>    <script>
-        // ==== التحقق من تسجيل الدخول ====
+        // ==== التحقق من تسجيل الدخول والصلاحيات ====
         if (!localStorage.getItem('teba_tenant_id')) {
             window.location.href = 'home.html';
         }
 
-        function generateUUID() {
-            if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-        }
+        const userRole = localStorage.getItem('teba_user_role');
 
         document.addEventListener("DOMContentLoaded", function() {
             if (typeof TEBA_CONFIG !== 'undefined') {
@@ -232,11 +227,11 @@
             }
         });
 
+        // ==== تهيئة السحابة وقاعدة البيانات المحلية ====
         const supabaseUrl = TEBA_CONFIG.supabase.url;
         const supabaseKey = TEBA_CONFIG.supabase.key;
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // ==== تهيئة الداتابيز المحلية ====
         const db = new Dexie('TebaLabOfflineDB');
         db.version(4).stores({
             patients: 'id, name, phone',
@@ -249,6 +244,14 @@
 
         let allTests = [];
         let isDoctorMode = false; 
+
+        function generateUUID() {
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
 
         // ==========================================
         // ⚙️ محرك المزامنة (Outbox)
@@ -273,7 +276,9 @@
                             if (item.action === 'DELETE') {
                                 await _supabase.from('tests_catalog').delete().eq('code', item.payload.code).eq('tenant_id', TEBA_CONFIG.tenant.id);
                             } else {
-                                await _supabase.from('tests_catalog').upsert([item.payload]);
+                                // تأكيد إرسال الـ tenant_id جوه الـ payload
+                                if(!item.payload.tenant_id) item.payload.tenant_id = TEBA_CONFIG.tenant.id;
+                                await _supabase.from('tests_catalog').upsert([item.payload], { onConflict: 'code,tenant_id' });
                             }
                         }
                         await db.outbox.delete(item.id);
@@ -307,10 +312,7 @@
         }
 
         window.addEventListener('online', () => { processOutbox(); });
-        
-        // ==========================================
-        // 📋 دوال العرض والتحميل
-        // ==========================================
+
         function showToast(msg, isError = false) {
             const t = document.getElementById('toast');
             t.innerText = msg;
@@ -319,6 +321,9 @@
             setTimeout(() => t.style.display = 'none', 3000);
         }
 
+        // ==========================================
+        // 📋 دوال العرض والتحميل
+        // ==========================================
         async function loadTests() {
             try {
                 if (navigator.onLine) {
@@ -406,8 +411,7 @@
         // 🔐 الصلاحيات (فتح السعر)
         // ==========================================
         function unlockPriceField() {
-            const role = localStorage.getItem('teba_user_role');
-            if (role === 'admin') {
+            if (userRole === 'admin' || userRole === 'owner') {
                 isDoctorMode = true;
                 document.getElementById('testPrice').disabled = false;
                 document.getElementById('testPrice').classList.add('unlocked');
@@ -421,24 +425,24 @@
         }
 
         function togglePriceLock() {
-            if (isDoctorMode) {
-                isDoctorMode = false;
-                document.getElementById('testPrice').disabled = true;
-                document.getElementById('testPrice').classList.remove('unlocked');
-                document.getElementById('lockBtn').innerText = '🔒';
-                return;
+            // لو المستخدم أصلاً دكتور/أونر، يقدر يقفل ويفتح براحته
+            if (userRole === 'admin' || userRole === 'owner') {
+                if (isDoctorMode) {
+                    isDoctorMode = false;
+                    document.getElementById('testPrice').disabled = true;
+                    document.getElementById('testPrice').classList.remove('unlocked');
+                    document.getElementById('lockBtn').innerText = '🔒';
+                } else {
+                    unlockPriceField();
+                    document.getElementById('testPrice').focus();
+                }
+            } else {
+                // لو موظف، ميتفعش يعدل السعر
+                alert('🔒 تعديل السعر متاح للدكتور/المالك فقط.');
             }
-            const pwd = prompt('أدخل باسورد الطبيب لتعديل السعر:');
-            if (pwd === TEBA_CONFIG.auth.doctorPassword) {
-                isDoctorMode = true;
-                document.getElementById('testPrice').disabled = false;
-                document.getElementById('testPrice').classList.add('unlocked');
-                document.getElementById('lockBtn').innerText = '🔓';
-                document.getElementById('testPrice').focus();
-            } else if (pwd !== null) {
-                alert('❌ باسورد خطأ!');
-            }
-        }        // ==========================================
+        }
+
+        // ==========================================
         // ➕ إدارة الباراميترز والرينجات (الديناميكية)
         // ==========================================
         function addRangeRow(container, data = null) {
@@ -487,7 +491,6 @@
             const div = document.createElement('div');
             div.className = 'param-card';
             
-            // لو التحليل فردي، الاسم البرمجي لازم يكون Result
             const isSingle = document.getElementById('testType').value === 'Single';
             const name = data?.name || (isSingle ? 'Result' : '');
             const label = data?.label || '';
@@ -495,7 +498,6 @@
             const formula = data?.formula || '';
             const isCalc = data?.is_calc ? 'checked' : '';
 
-            // تجهيز الرينجات
             const ranges = data?.ranges || [];
 
             div.innerHTML = `
@@ -528,7 +530,7 @@
             const rangesContainer = div.querySelector('.ranges-container');
             
             if (ranges.length === 0) {
-                addRangeRow(rangesContainer); // إضافة رينج فاضي افتراضي
+                addRangeRow(rangesContainer); 
             } else {
                 ranges.forEach(r => addRangeRow(rangesContainer, r));
             }
@@ -546,7 +548,7 @@
                 document.getElementById('testId').value = '';
                 document.getElementById('testCode').readOnly = false;
                 document.getElementById('testType').value = 'Single';
-                addParameterRow(); // إضافة باراميتر افتراضي
+                addParameterRow(); 
             } else if (mode === 'edit') {
                 document.getElementById('modalTitle').innerText = 'تعديل بيانات التحليل';
                 document.getElementById('testId').value = test.id || '';
@@ -592,13 +594,11 @@
 
                 let parameters = [];
                 
-                // الكود ده بيشتغل مع الفردي والمجمع عشان نجمع الرينجات
                 const paramCards = document.querySelectorAll('#parametersContainer .param-card');
                 paramCards.forEach(card => {
                     const pName = card.querySelector('.p-name').value.trim();
                     if (!pName) return; 
                     
-                    // تجميع الرينجات
                     const rangesArray = [];
                     const rangeRows = card.querySelectorAll('.range-row');
                     rangeRows.forEach(row => {
