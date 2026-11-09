@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js?v=122"></script>
+    <script src="config.js?v=123"></script>
     <style>
         :root { --bg-body: #f1f5f9; --bg-card: #fff; --bg-input: #f8fafc; --text-main: #0f172a; --text-muted: #64748b; --border-light: #e2e8f0; --primary: #0a6847; --primary-gradient: linear-gradient(135deg, #10b981, #0a6847); --card-shadow: 0 20px 40px -10px rgba(0,0,0,0.05); --card-radius: 24px; --icon-bg: #e0f2fe; --icon-color: #0284c7; --font: 'Almarai', sans-serif; }
         body.dark-mode { --bg-body: #0b1120; --bg-card: #1e293b; --bg-input: #0f172a; --text-main: #f8fafc; --text-muted: #94a3b8; --border-light: #334155; --primary: #10b981; --primary-gradient: linear-gradient(135deg, #34d399, #10b981); --card-shadow: 0 20px 40px -10px rgba(0,0,0,0.4); --icon-bg: rgba(16,185,129,0.1); --icon-color: #34d399; }
@@ -49,15 +49,6 @@
         .app-card:nth-child(4) .app-icon-box { background: rgba(217,119,6,0.1); color: #d97706; }
         .app-name { font-size: 1.25rem; font-weight: 800; color: var(--text-main); }
         .app-desc { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; line-height: 1.5; }
-        #secretModal { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.7); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
-        .secret-box { background: var(--bg-card); padding: 35px 30px; border-radius: var(--card-radius); text-align: center; width: 90%; max-width: 400px; border: 1px solid var(--border-light); }
-        .secret-box h2 { color: var(--primary); margin-bottom: 10px; font-size: 1.8rem; font-weight: 800; }
-        .secret-box p { color: var(--text-muted); margin-bottom: 25px; font-size: 0.95rem; font-weight: 600; }
-        .secret-box input { width: 100%; padding: 15px; border-radius: 14px; border: 2px solid var(--border-light); background: var(--bg-input); color: var(--text-main); text-align: center; font-size: 1.2rem; margin-bottom: 25px; outline: none; letter-spacing: 5px; font-weight: bold; }
-        .modal-actions { display: flex; gap: 12px; }
-        .secret-box button { padding: 14px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; width: 100%; font-size: 1rem; font-family: inherit; }
-        .btn-confirm { background: var(--primary-gradient); color: white; }
-        .btn-cancel { background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-light); }
         @media (max-width: 600px) { .apps-grid { grid-template-columns: 1fr; } #loginScreen { padding: 35px 25px; } }
     </style>
 </head>
@@ -94,19 +85,7 @@
         </div>
     </div>
     
-    <div id="secretModal">
-        <div class="secret-box">
-            <h2>🔒 منطقة محظورة</h2>
-            <p>مخصصة للدكتور فقط</p>
-            <input type="password" id="docPassword" placeholder="******">
-            <div class="modal-actions">
-                <button class="btn-confirm" onclick="checkDoctorPassword()">دخول</button>
-                <button class="btn-cancel" onclick="closeSecretModal()">إلغاء</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- الجزء الثاني سيبدأ من هنا (سكريبت النظام) -->    <!-- ================= سكريبت النظام ================= -->
+    <!-- ================= سكريبت النظام ================= -->
     <script>
         // ==== 1. إعدادات الوضع الليلي والنهاري ====
         const themeBtn = document.getElementById('themeToggleBtn');
@@ -224,10 +203,6 @@
             } else {
                 alert('❌ ليس لديك صلاحية للدخول إلى لوحة التحكم.');
             }
-        }
-
-        function closeSecretModal() {
-            document.getElementById('secretModal').style.display = 'none';
         }
 
         // ==== 7. أحداث الكيبورد ====
