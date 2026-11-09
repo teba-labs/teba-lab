@@ -5,13 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إعدادات الموقع | معامل طيبة</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js?v=123"></script>
+    <script src="config.js?v=125"></script>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg: #0f172a; --surface: #1e293b; --primary: #10b981; --danger: #ef4444;
-            --text: #f8fafc; --text-muted: #94a3b8; --border: #334155;
-        }
+        :root { --bg: #0f172a; --surface: #1e293b; --primary: #10b981; --danger: #ef4444; --text: #f8fafc; --text-muted: #94a3b8; --border: #334155; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Almarai', sans-serif; }
         body { background: var(--bg); color: var(--text); padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         
@@ -39,7 +36,6 @@
     </style>
 </head>
 <body>
-
     <!-- شاشة الدخول (محمية بـ Supabase Auth) -->
     <div id="loginScreen" class="login-box">
         <h2>🔒 منطقة محظورة</h2>
@@ -89,14 +85,11 @@
         </div>
     </div>
 
-    <div id="toast" class="toast">✅ تم الحفظ بنجاح</div>
-
-    <script>
+    <div id="toast" class="toast">✅ تم الحفظ بنجاح</div>    <script>
         const supabaseUrl = TEBA_CONFIG.supabase.url;
         const supabaseKey = TEBA_CONFIG.supabase.key;
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // دالة التحقق من الصلاحيات والدخول عبر Supabase Auth
         async function checkPass() {
             const email = document.getElementById('adminEmail').value.trim();
             const pass = document.getElementById('adminPass').value;
@@ -112,24 +105,16 @@
             btn.innerText = '⏳ جاري التحقق...'; btn.disabled = true;
 
             try {
-                // 1. تسجيل الدخول
                 const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({ email, password: pass });
                 if (authError) throw new Error('الإيميل أو الباسورد غير صحيح');
 
-                // 2. التحقق من الصلاحية (Role)
-                const { data: userData, error: userError } = await _supabase
-                    .from('users')
-                    .select('role, tenant_id')
-                    .eq('id', authData.user.id)
-                    .single();
-
+                const { data: userData, error: userError } = await _supabase.from('users').select('role').eq('id', authData.user.id).single();
                 if (userError || !userData) throw new Error('لا يوجد صلاحيات لهذا الحساب.');
                 if (userData.role !== 'admin' && userData.role !== 'owner') {
                     await _supabase.auth.signOut();
                     throw new Error('🔒 هذا الحساب ليس لديه صلاحية إدارة الإعدادات.');
                 }
 
-                // 3. عرض الواجهة
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('settingsApp').style.display = 'block';
                 loadSettings();
@@ -143,7 +128,6 @@
             }
         }
 
-        // التحقق من الجلسة لو المستخدم عامل ريفريش
         _supabase.auth.getSession().then(async ({ data: { session } }) => {
             if (session) {
                 const { data: userData } = await _supabase.from('users').select('role').eq('id', session.user.id).single();
@@ -163,12 +147,7 @@
         }
 
         async function loadSettings() {
-            const { data, error } = await _supabase
-                .from('site_settings')
-                .select('*')
-                .eq('tenant_id', TEBA_CONFIG.tenant.id)
-                .single();
-                
+            const { data } = await _supabase.from('site_settings').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id).single();
             if (data) {
                 document.getElementById('labName').value = data.lab_name || '';
                 document.getElementById('doctorName').value = data.doctor_name || '';
@@ -189,19 +168,13 @@
                 facebook_url: document.getElementById('facebook').value,
                 address: document.getElementById('address').value
             };
-            // نستخدم upsert عشان لو المعمل ده لسه جديد ينشئله إعدادات
             const { error } = await _supabase.from('site_settings').upsert(updates, { onConflict: 'tenant_id' });
             if (error) alert('خطأ: ' + error.message);
             else showToast();
         }
 
         async function loadOffers() {
-            const { data } = await _supabase
-                .from('offers')
-                .select('*')
-                .eq('tenant_id', TEBA_CONFIG.tenant.id)
-                .order('created_at', { ascending: false });
-                
+            const { data } = await _supabase.from('offers').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id).order('created_at', { ascending: false });
             const list = document.getElementById('offersList');
             if (!data || data.length === 0) { list.innerHTML = '<p style="color:var(--text-muted);">لا توجد عروض.</p>'; return; }
             list.innerHTML = data.map(o => `
@@ -222,7 +195,7 @@
             if (!title || !start || !end) return alert('يرجى ملء البيانات الأساسية');
             
             const { error } = await _supabase.from('offers').insert([{ 
-                tenant_id: TEBA_CONFIG.tenant.id, // ربط العرض بالمعمل
+                tenant_id: TEBA_CONFIG.tenant.id,
                 title, 
                 description: desc, 
                 discount_pct: discount, 

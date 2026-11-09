@@ -10,11 +10,10 @@ const IMG_CACHE     = `teba-img-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
   './', './index.html', 
-  './system/home.html', './system/reception.html', './system/lab.html', './system/tests_manage.html', 
-  './system/lab.css', './system/lab.js',
-  './system/config.js', 
+  './system/home.html', './system/reception.html', './system/lab.html', './system/tests_manage.html', './system/settings.html',
+  './system/lab.css', './system/lab.js', './system/config.js', 
   './dashboard/admin.html', './dashboard/admin.css', './dashboard/admin.js', './dashboard/config.js',
-  './styles.css', './data.js', './app.js', './site_dynamic.js', './patient_portal.js', './config.js', './super-admin.html',
+  './styles.css', './data.js', './app.js', './features.js', './site_dynamic.js', './patient_portal.js', './config.js', './super-admin.html',
   './logo.png', './brand-logo.png', './header.png', './manifest.json'
 ];
 
@@ -47,14 +46,13 @@ self.addEventListener('activate', event => {
   })());
 });
 
-// استراتيجية الجلب (Fetch)
 self.addEventListener('fetch', event => {
   const { request } = event;
   if (request.method !== 'GET') return;
   
   const url = new URL(request.url);
 
-  // جلب صفحات الـ HTML من الكاش فوراً (Cache First) لمنع الشاشة البيضا
+  // استراتيجية صفحات الـ HTML (Cache First لمنع الشاشة البيضا)
   if (request.mode === 'navigate' || (request.headers.get('accept') && request.headers.get('accept').includes('text/html'))) {
     event.respondWith(
       caches.match(request, { ignoreSearch: true }).then(cachedResponse => {
@@ -69,7 +67,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // لباقي الملفات زي الجافاسكريبت والستايل شيت (Network First)
+  // لباقي الملفات (Network First)
   if (url.origin === self.location.origin) {
     event.respondWith(networkFirst(request));
     return;

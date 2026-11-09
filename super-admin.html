@@ -5,15 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم الشركة | Super Admin</title>
     
-    <!-- الخط الموحد -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- مكتبة الإكسيل -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="config.js?v=123"></script>
+    <script src="config.js?v=125"></script>
     <style>
         :root {
             --bg: #0f172a; --surface: #1e293b; --surface-hover: #334155;
@@ -100,7 +98,6 @@
         <h3 id="loadingText" style="color: var(--primary);">جاري رفع ومعالجة البيانات...</h3>
     </div>
 
-    <!-- شاشة الدخول للمالك -->
     <div id="loginScreen">
         <div class="login-box">
             <h2>👑 Super Admin</h2>
@@ -112,7 +109,6 @@
         </div>
     </div>
 
-    <!-- لوحة التحكم الرئيسية -->
     <div id="dashboardScreen">
         <header>
             <div class="brand">
@@ -125,7 +121,6 @@
         </header>
 
         <div class="container">
-            <!-- الإحصائيات السريعة -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <h3>إجمالي المعامل المشتركة</h3>
@@ -137,7 +132,6 @@
                 </div>
             </div>
 
-            <!-- جدول المعامل -->
             <h2 style="margin-bottom: 15px; color: var(--text);">قائمة المعامل (Tenants)</h2>
             <div class="table-container">
                 <table>
@@ -159,7 +153,6 @@
         </div>
     </div>
 
-    <!-- مودال إضافة معمل جديد -->
     <div class="modal" id="addTenantModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -184,7 +177,6 @@
         </div>
     </div>
 
-    <!-- مودال رفع ملف الإكسيل -->
     <div class="modal" id="uploadExcelModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -320,7 +312,6 @@
             btn.innerText = '⏳ جاري الحفظ...'; btn.disabled = true;
 
             try {
-                // التحقق من عدم تكرار الـ subdomain
                 const { data: existing } = await _supabase.from('tenants').select('id').eq('subdomain', subdomain);
                 if (existing && existing.length > 0) throw new Error('هذا الرابط (Subdomain) مستخدم بالفعل لمعمل آخر!');
 
@@ -337,7 +328,7 @@
             }
         }
 
-        // ==== رفع ملف الإكسيل (سحب البيانات) ====
+        // ==== رفع ملف الإكسيل ====
         function openUploadModal(tenantId, tenantName) {
             document.getElementById('targetTenantId').value = tenantId;
             document.getElementById('targetTenantName').innerText = tenantName;
@@ -370,28 +361,17 @@
                     const workbook = XLSX.read(data, { type: 'array' });
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
-                    
-                    // تحويل الشيت لبيانات JSON
                     const jsonData = XLSX.utils.sheet_to_json(worksheet);
                     
                     if (jsonData.length === 0) throw new Error('الملف فارغ أو لا يحتوي على بيانات صالحة.');
-
                     overlayText.innerText = 'جاري تجهيز البيانات للرفع...';
 
-                    // تجهيز البيانات لتتطابق مع أعمدة جدول tests_catalog في Supabase
                     const formattedTests = jsonData.map(row => {
                         let paramsArray = [];
-                        // معالجة الباراميترز لو كانت مكتوبة كنص مفصول بفواصل
                         if (row.Internal_Parameters && typeof row.Internal_Parameters === 'string') {
                             const pNames = row.Internal_Parameters.split(',').map(s => s.trim()).filter(s => s);
-                            paramsArray = pNames.map(name => ({
-                                name: name,
-                                label: name,
-                                type: 'text'
-                            }));
+                            paramsArray = pNames.map(name => ({ name: name, label: name, type: 'text' }));
                         }
-
-                        // توليد ID لو مش موجود (مهم جداً عشان السحابة)
                         const testId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
 
                         return {
@@ -403,45 +383,35 @@
                             test_type: row.Test_Type || 'Single',
                             category: row.Category || 'General',
                             unit: row.unit || '',
-                            // تحويل الرينجات لشكلها الصح في السحابة
                             male_reference_range: row.Male_Reference_Range ? String(row.Male_Reference_Range) : null,
                             female_reference_range: row.Female_Reference_Range ? String(row.Female_Reference_Range) : null,
                             child_reference_range: row.Child_Reference_Range ? String(row.Child_Reference_Range) : null,
                             parameters: paramsArray.length > 0 ? paramsArray : null
                         };
-                    }).filter(t => t.code && t.name); // التأكد إن الكود والاسم موجودين
+                    }).filter(t => t.code && t.name);
 
                     if (formattedTests.length === 0) throw new Error('لم يتم العثور على بيانات صالحة (تأكد من أسماء الأعمدة).');
-
                     overlayText.innerText = `جاري رفع ${formattedTests.length} تحليل للسحابة...`;
 
-                    // استخدام upsert بدل insert عشان نمنع مشكلة التكرار في نفس المعمل
                     const { error } = await _supabase.from('tests_catalog').upsert(formattedTests, { onConflict: 'code,tenant_id' });
-                    
                     if (error) throw error;
 
                     overlay.style.display = 'none';
                     statusEl.innerHTML = `<span style="color: var(--primary);">✅ تم رفع ${formattedTests.length} تحليل بنجاح!</span>`;
-                    
-                    setTimeout(() => {
-                        closeUploadModal();
-                    }, 2500);
+                    setTimeout(() => { closeUploadModal(); }, 2500);
 
                 } catch (err) {
                     overlay.style.display = 'none';
                     statusEl.innerHTML = `<span style="color: var(--danger);">❌ خطأ: ${err.message}</span>`;
-                    console.error(err);
                 }
             };
             reader.readAsArrayBuffer(file);
         }
 
-        // إغلاق المودال لو دوس بره
         window.onclick = function(event) {
             if (event.target === document.getElementById('addTenantModal')) closeAddTenantModal();
             if (event.target === document.getElementById('uploadExcelModal')) closeUploadModal();
         }
     </script>
-
 </body>
 </html>
