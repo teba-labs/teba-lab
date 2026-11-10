@@ -5,11 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مركز التحكم الشامل | معامل طيبة</title>
     
-    <!-- مكتبات السحابة وقراءة الإكسيل -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="config.js?v=131"></script>
+    <script src="config.js?v=132"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <style>
@@ -20,85 +19,72 @@
             --font: 'Almarai', sans-serif; --radius: 12px;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); }
-        body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
         
-        /* الهيدر */
-        header { background: var(--surface); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        /* منع أي سكرول أفقي نهائياً */
+        html, body { width: 100%; max-width: 100vw; overflow-x: hidden; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+        
+        header { background: var(--surface); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
         .header-title { color: var(--primary); font-size: 1.4rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
-        .btn-back { background: var(--bg-input); color: var(--text); border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; transition: 0.2s; }
+        .btn-back { background: var(--bg-input); color: var(--text); border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; transition: 0.2s; white-space: nowrap; }
         .btn-back:hover { background: var(--surface-hover); }
 
-        /* التنقل بين التابات */
-        .tabs-nav { display: flex; gap: 10px; overflow-x: auto; background: var(--surface); padding: 10px 20px; border-bottom: 1px solid var(--border); }
+        .tabs-nav { display: flex; gap: 10px; overflow-x: auto; background: var(--surface); padding: 10px 20px; border-bottom: 1px solid var(--border); -webkit-overflow-scrolling: touch; }
         .tab-btn { background: transparent; color: var(--text-muted); border: 1px solid transparent; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; white-space: nowrap; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
         .tab-btn:hover { background: var(--surface-hover); color: var(--text); }
         .tab-btn.active { background: rgba(16, 185, 129, 0.1); color: var(--primary); border-color: var(--primary); }
 
-        /* المحتوى */
         .main-container { padding: 30px; max-width: 1200px; margin: 0 auto; width: 100%; flex-grow: 1; }
         .tab-content { display: none; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* الكروت والفورم */
         .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .card h3 { color: var(--primary); font-size: 1.2rem; margin-bottom: 20px; border-bottom: 1px dashed var(--border); padding-bottom: 10px; display: flex; align-items: center; gap: 8px; }
         
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
+        /* السحر كله هنا: auto-fit ب تخلي المتصفح يظبط نفسه */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; width: 100%; }
         .form-group label { color: var(--text-muted); font-size: 0.9rem; font-weight: bold; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text); font-size: 1rem; outline: none; transition: 0.2s; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; max-width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text); font-size: 1rem; outline: none; transition: 0.2s; }
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
         
-        .btn-save { background: var(--primary); color: #000; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-save { background: var(--primary); color: #000; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-save:hover { background: var(--primary-hover); color: #fff; transform: translateY(-2px); }
         .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-danger:hover { background: var(--danger); color: #fff; }
         
-        /* اللوجو */
         .logo-preview { height: 80px; width: auto; max-width: 200px; border-radius: 8px; background: #fff; padding: 5px; object-fit: contain; margin-bottom: 10px; display: none; }
         
-        /* الجداول */
-        .table-responsive { overflow-x: auto; margin-top: 15px; }
-        table { width: 100%; border-collapse: collapse; text-align: right; }
+        .table-responsive { overflow-x: auto; margin-top: 15px; width: 100%; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; text-align: right; min-width: 600px; }
         th, td { padding: 12px 15px; border-bottom: 1px solid var(--border); }
         th { background: rgba(255,255,255,0.02); color: var(--primary); font-weight: bold; }
         tr:hover { background: rgba(255,255,255,0.02); }
 
-        /* التنبيهات */
-        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #000; padding: 15px 30px; border-radius: 8px; font-weight: bold; display: none; z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #000; padding: 15px 30px; border-radius: 8px; font-weight: bold; display: none; z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center; width: 90%; max-width: 400px; }
         
-        /* لودينج */
         .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 9999; align-items: center; justify-content: center; flex-direction: column; backdrop-filter: blur(5px); }
         .spinner { width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;}
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* شاشة الدخول */
-        #loginScreen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); z-index: 10000; }
-        .login-box { background: var(--surface); border: 2px solid var(--primary); padding: 40px; border-radius: var(--radius); text-align: center; width: 100%; max-width: 400px; }
+        #loginScreen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); z-index: 10000; padding: 20px; }
+        .login-box { background: var(--surface); border: 2px solid var(--primary); padding: 40px 20px; border-radius: var(--radius); text-align: center; width: 100%; max-width: 400px; }
         .login-box h2 { color: var(--primary); margin-bottom: 20px; }
         .login-box input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text); margin-bottom: 15px; text-align: center; font-size: 1rem; outline: none; }
         .login-box button { width: 100%; padding: 12px; background: var(--primary); color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
         .login-error { color: var(--danger); font-size: 0.85rem; margin-top: 10px; display: none; }
 
-        /* ===== التعديل السحري للموبايل عشان الشكل يظبط ===== */
         @media (max-width: 768px) {
-            header { flex-direction: column; gap: 15px; text-align: center; padding: 15px 10px; }
-            .header-title { font-size: 1.2rem; }
-            .tabs-nav { padding: 10px; gap: 8px; }
-            .tab-btn { padding: 8px 12px; font-size: 0.85rem; }
+            header { flex-direction: column; text-align: center; padding: 15px 10px; }
             .main-container { padding: 15px 10px; }
             .card { padding: 15px; }
             .form-grid { grid-template-columns: 1fr; gap: 10px; }
-            .form-group input, .form-group select, .form-group textarea { font-size: 0.9rem; padding: 10px; }
-            .btn-save { width: 100%; justify-content: center; }
-            th, td { padding: 10px 8px; font-size: 0.85rem; }
+            .btn-save { width: 100%; }
         }
     </style>
 </head>
 <body>
 
-    <!-- شاشة الدخول (محمية بـ Supabase Auth) -->
     <div id="loginScreen">
         <div class="login-box">
             <h2>🔒 منطقة محظورة</h2>
@@ -110,20 +96,17 @@
         </div>
     </div>
 
-    <!-- اللودينج -->
     <div id="loadingOverlay" class="loading-overlay">
         <div class="spinner"></div>
         <h3 style="color: var(--primary);" id="loadingText">جاري المعالجة...</h3>
     </div>
 
-    <!-- واجهة الإعدادات (مخفية) -->
     <div id="settingsApp" style="display: none; flex-direction: column; height: 100vh;">
         <header>
             <div class="header-title">🛠️ مركز التحكم الشامل</div>
             <a href="home.html" class="btn-back">عودة للرئيسية</a>
         </header>
 
-        <!-- التابات -->
         <div class="tabs-nav">
             <button class="tab-btn active" onclick="openTab('tab-branding', this)">🎨 الهوية والبيانات</button>
             <button class="tab-btn" onclick="openTab('tab-branches', this)">📍 إدارة الفروع</button>
@@ -143,7 +126,7 @@
                         <div class="form-group"><label>اسم الدكتور</label><input type="text" id="setDoctorName"></div>
                         <div class="form-group"><label>رقم التليفون</label><input type="text" id="setPhone"></div>
                         <div class="form-group"><label>رقم الواتساب</label><input type="text" id="setWhatsapp"></div>
-                        <div class="form-group" style="grid-column: span 2;"><label>العنوان بالتفصيل</label><input type="text" id="setAddress"></div>
+                        <div class="form-group" style="grid-column: 1 / -1;"><label>العنوان بالتفصيل</label><input type="text" id="setAddress"></div>
                     </div>
                 </div>
                 
@@ -276,27 +259,22 @@
                         ارفع ملف الحالات القديم. النظام هيتعرف على الأعمدة أوتوماتيك، وهيسألك تربط كل عمود بالبيانات الصح في السيستم عشان نمنع اللخبطة.
                     </p>
                     
-                    <div style="border: 2px dashed var(--primary); border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; background: rgba(16, 185, 129, 0.05); transition: 0.2s;" onclick="document.getElementById('importFileInput').click()">
+                    <div style="border: 2px dashed var(--primary); border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; background: rgba(16, 185, 129, 0.05); transition: 0.2s;" onclick="document.getElementById('importFileInput').click()">
                         <div style="font-size: 3rem; margin-bottom: 10px;">📁</div>
                         <h4 style="color: var(--primary); margin-bottom: 5px;">اضغط لاختيار الملف (Excel / CSV)</h4>
                         <p style="font-size: 0.85rem; color: var(--text-muted);">يدعم حتى 100,000 حالة</p>
                         <input type="file" id="importFileInput" accept=".csv, .xlsx, .xls" style="display: none;" onchange="handleImportFile(event)">
                     </div>
 
-                    <!-- قسم مطابقة الأعمدة (يظهر بعد رفع الملف) -->
                     <div id="mappingSection" style="display: none; margin-top: 30px; background: var(--bg-input); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
                         <h4 style="color: var(--warning); margin-bottom: 15px;">⚙️ مطابقة الأعمدة (Column Mapping)</h4>
                         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">يرجى تحديد أي عمود في الملف يقابل أي حقل في النظام:</p>
-                        <div class="form-grid" id="mappingGrid">
-                            <!-- سيتم توليد القوائم المنسدلة هنا بالـ JS -->
-                        </div>
-                        
+                        <div class="form-grid" id="mappingGrid"></div>
                         <div style="margin-top: 20px;">
                             <button class="btn-save" id="btnStartImport" onclick="startImport()">🚀 بدء الترحيل الذكي</button>
                         </div>
                     </div>
 
-                    <!-- شريط التقدم -->
                     <div id="importProgressContainer" style="display: none; margin-top: 20px;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; font-weight: bold;">
                             <span id="importProgressText">جاري الترحيل...</span>
