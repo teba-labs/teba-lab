@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="config.js?v=130"></script>
+    <script src="config.js?v=131"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <style>
@@ -21,21 +21,25 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); }
         body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
         
-        header { background: var(--surface); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        /* الهيدر */
+        header { background: var(--surface); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; }
         .header-title { color: var(--primary); font-size: 1.4rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
         .btn-back { background: var(--bg-input); color: var(--text); border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; transition: 0.2s; }
         .btn-back:hover { background: var(--surface-hover); }
 
-        .tabs-nav { display: flex; gap: 10px; overflow-x: auto; background: var(--surface); padding: 10px 20px; border-bottom: 1px solid var(--border); }
+        /* التنقل بين التابات - تم تصليحه */
+        .tabs-nav { display: flex; gap: 10px; overflow-x: auto; background: var(--surface); padding: 10px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
         .tab-btn { background: transparent; color: var(--text-muted); border: 1px solid transparent; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; white-space: nowrap; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
         .tab-btn:hover { background: var(--surface-hover); color: var(--text); }
         .tab-btn.active { background: rgba(16, 185, 129, 0.1); color: var(--primary); border-color: var(--primary); }
 
+        /* المحتوى */
         .main-container { padding: 30px; max-width: 1200px; margin: 0 auto; width: 100%; flex-grow: 1; }
         .tab-content { display: none; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* الكروت والفورم */
         .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .card h3 { color: var(--primary); font-size: 1.2rem; margin-bottom: 20px; border-bottom: 1px dashed var(--border); padding-bottom: 10px; display: flex; align-items: center; gap: 8px; }
         
@@ -50,20 +54,25 @@
         .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-danger:hover { background: var(--danger); color: #fff; }
         
+        /* اللوجو */
         .logo-preview { height: 80px; width: auto; max-width: 200px; border-radius: 8px; background: #fff; padding: 5px; object-fit: contain; margin-bottom: 10px; display: none; }
         
+        /* الجداول */
         .table-responsive { overflow-x: auto; margin-top: 15px; }
         table { width: 100%; border-collapse: collapse; text-align: right; }
         th, td { padding: 12px 15px; border-bottom: 1px solid var(--border); }
         th { background: rgba(255,255,255,0.02); color: var(--primary); font-weight: bold; }
         tr:hover { background: rgba(255,255,255,0.02); }
 
+        /* التنبيهات */
         #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #000; padding: 15px 30px; border-radius: 8px; font-weight: bold; display: none; z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         
+        /* لودينج */
         .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 9999; align-items: center; justify-content: center; flex-direction: column; backdrop-filter: blur(5px); }
         .spinner { width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;}
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* شاشة الدخول */
         #loginScreen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); z-index: 10000; }
         .login-box { background: var(--surface); border: 2px solid var(--primary); padding: 40px; border-radius: var(--radius); text-align: center; width: 100%; max-width: 400px; }
         .login-box h2 { color: var(--primary); margin-bottom: 20px; }
@@ -96,7 +105,7 @@
         <h3 style="color: var(--primary);" id="loadingText">جاري المعالجة...</h3>
     </div>
 
-    <div id="settingsApp" style="display: none; flex-direction: column; height: 100vh;">
+    <div id="settingsApp" style="display: none; flex-direction: column; min-height: 100vh;">
         <header>
             <div class="header-title">🛠️ مركز التحكم الشامل</div>
             <a href="home.html" class="btn-back">عودة للرئيسية</a>
@@ -302,9 +311,7 @@
         </div>
     </div>
 
-    <div id="toast">✅ تم الحفظ بنجاح</div>
-
-    <script>
+    <div id="toast">✅ تم الحفظ بنجاح</div>    <script>
         const _supabase = supabase.createClient(TEBA_CONFIG.supabase.url, TEBA_CONFIG.supabase.key);
         const tenantId = TEBA_CONFIG.tenant.id;
 
