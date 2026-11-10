@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مركز التحكم الشامل | معامل طيبة</title>
     
+    <!-- مكتبات السحابة وقراءة الإكسيل -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -22,13 +23,13 @@
         body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
         
         /* الهيدر */
-        header { background: var(--surface); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        header { background: var(--surface); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
         .header-title { color: var(--primary); font-size: 1.4rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
         .btn-back { background: var(--bg-input); color: var(--text); border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; transition: 0.2s; }
         .btn-back:hover { background: var(--surface-hover); }
 
-        /* التنقل بين التابات - تم تصليحه */
-        .tabs-nav { display: flex; gap: 10px; overflow-x: auto; background: var(--surface); padding: 10px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        /* التنقل بين التابات */
+        .tabs-nav { display: flex; gap: 10px; overflow-x: auto; background: var(--surface); padding: 10px 20px; border-bottom: 1px solid var(--border); }
         .tab-btn { background: transparent; color: var(--text-muted); border: 1px solid transparent; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; white-space: nowrap; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
         .tab-btn:hover { background: var(--surface-hover); color: var(--text); }
         .tab-btn.active { background: rgba(16, 185, 129, 0.1); color: var(--primary); border-color: var(--primary); }
@@ -80,15 +81,24 @@
         .login-box button { width: 100%; padding: 12px; background: var(--primary); color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
         .login-error { color: var(--danger); font-size: 0.85rem; margin-top: 10px; display: none; }
 
+        /* ===== التعديل السحري للموبايل عشان الشكل يظبط ===== */
         @media (max-width: 768px) {
-            .form-grid { grid-template-columns: 1fr; }
-            .main-container { padding: 15px; }
-            header { flex-direction: column; gap: 10px; text-align: center; }
+            header { flex-direction: column; gap: 15px; text-align: center; padding: 15px 10px; }
+            .header-title { font-size: 1.2rem; }
+            .tabs-nav { padding: 10px; gap: 8px; }
+            .tab-btn { padding: 8px 12px; font-size: 0.85rem; }
+            .main-container { padding: 15px 10px; }
+            .card { padding: 15px; }
+            .form-grid { grid-template-columns: 1fr; gap: 10px; }
+            .form-group input, .form-group select, .form-group textarea { font-size: 0.9rem; padding: 10px; }
+            .btn-save { width: 100%; justify-content: center; }
+            th, td { padding: 10px 8px; font-size: 0.85rem; }
         }
     </style>
 </head>
 <body>
 
+    <!-- شاشة الدخول (محمية بـ Supabase Auth) -->
     <div id="loginScreen">
         <div class="login-box">
             <h2>🔒 منطقة محظورة</h2>
@@ -100,17 +110,20 @@
         </div>
     </div>
 
+    <!-- اللودينج -->
     <div id="loadingOverlay" class="loading-overlay">
         <div class="spinner"></div>
         <h3 style="color: var(--primary);" id="loadingText">جاري المعالجة...</h3>
     </div>
 
-    <div id="settingsApp" style="display: none; flex-direction: column; min-height: 100vh;">
+    <!-- واجهة الإعدادات (مخفية) -->
+    <div id="settingsApp" style="display: none; flex-direction: column; height: 100vh;">
         <header>
             <div class="header-title">🛠️ مركز التحكم الشامل</div>
             <a href="home.html" class="btn-back">عودة للرئيسية</a>
         </header>
 
+        <!-- التابات -->
         <div class="tabs-nav">
             <button class="tab-btn active" onclick="openTab('tab-branding', this)">🎨 الهوية والبيانات</button>
             <button class="tab-btn" onclick="openTab('tab-branches', this)">📍 إدارة الفروع</button>
@@ -121,8 +134,7 @@
             <button class="tab-btn" onclick="openTab('tab-audit', this)">📜 سجل التعديلات (Audit Log)</button>
         </div>
 
-        <div class="main-container">
-            
+        <div class="main-container">            <!-- 1. تاب الهوية والبيانات -->
             <div id="tab-branding" class="tab-content active">
                 <div class="card">
                     <h3>🏥 بيانات المعمل</h3>
@@ -152,6 +164,7 @@
                 <button class="btn-save" onclick="saveBranding(event)">💾 حفظ البيانات واللوجو</button>
             </div>
 
+            <!-- 2. تاب إدارة الفروع -->
             <div id="tab-branches" class="tab-content">
                 <div class="card">
                     <h3>📍 الفروع الحالية</h3>
@@ -173,6 +186,7 @@
                 </div>
             </div>
 
+            <!-- 3. تاب إدارة الموظفين والصلاحيات -->
             <div id="tab-employees" class="tab-content">
                 <div class="card">
                     <h3>👥 الموظفين الحاليين</h3>
@@ -203,6 +217,7 @@
                 </div>
             </div>
 
+            <!-- 4. تاب بنود المصاريف -->
             <div id="tab-expenses" class="tab-content">
                 <div class="card">
                     <h3>💸 بنود المصاريف الحالية</h3>
@@ -232,6 +247,7 @@
                 </div>
             </div>
 
+            <!-- 5. تاب إعدادات الطباعة -->
             <div id="tab-print" class="tab-content">
                 <div class="card">
                     <h3>🖨️ إعدادات الطباعة والتقرير</h3>
@@ -252,6 +268,7 @@
                 </div>
             </div>
 
+            <!-- 6. تاب ترحيل البيانات (Excel/CSV) -->
             <div id="tab-import" class="tab-content">
                 <div class="card">
                     <h3>📤 ترحيل البيانات القديمة (Excel / CSV)</h3>
@@ -266,15 +283,20 @@
                         <input type="file" id="importFileInput" accept=".csv, .xlsx, .xls" style="display: none;" onchange="handleImportFile(event)">
                     </div>
 
+                    <!-- قسم مطابقة الأعمدة (يظهر بعد رفع الملف) -->
                     <div id="mappingSection" style="display: none; margin-top: 30px; background: var(--bg-input); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
                         <h4 style="color: var(--warning); margin-bottom: 15px;">⚙️ مطابقة الأعمدة (Column Mapping)</h4>
                         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">يرجى تحديد أي عمود في الملف يقابل أي حقل في النظام:</p>
-                        <div class="form-grid" id="mappingGrid"></div>
+                        <div class="form-grid" id="mappingGrid">
+                            <!-- سيتم توليد القوائم المنسدلة هنا بالـ JS -->
+                        </div>
+                        
                         <div style="margin-top: 20px;">
                             <button class="btn-save" id="btnStartImport" onclick="startImport()">🚀 بدء الترحيل الذكي</button>
                         </div>
                     </div>
 
+                    <!-- شريط التقدم -->
                     <div id="importProgressContainer" style="display: none; margin-top: 20px;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; font-weight: bold;">
                             <span id="importProgressText">جاري الترحيل...</span>
@@ -287,6 +309,7 @@
                 </div>
             </div>
 
+            <!-- 7. تاب سجل التعديلات (Audit Log) -->
             <div id="tab-audit" class="tab-content">
                 <div class="card">
                     <h3>📜 سجل التعديلات (Audit Log)</h3>
@@ -308,16 +331,18 @@
                 </div>
             </div>
 
-        </div>
-    </div>
+        </div> <!-- نهاية main-container -->
+    </div> <!-- نهاية settingsApp -->
 
     <div id="toast">✅ تم الحفظ بنجاح</div>    <script>
+        // ==== تهيئة السحابة ====
         const _supabase = supabase.createClient(TEBA_CONFIG.supabase.url, TEBA_CONFIG.supabase.key);
         const tenantId = TEBA_CONFIG.tenant.id;
 
         let currentLogoUrl = '';
         let currentSignatureUrl = '';
 
+        // ==== أدوات مساعدة (Toast & Loading) ====
         function showToast(msg, isError = false) {
             const t = document.getElementById('toast');
             t.innerText = msg;
@@ -335,6 +360,7 @@
             document.getElementById('loadingOverlay').style.display = 'none';
         }
 
+        // ==== 1. تسجيل الدخول ====
         async function checkPass() {
             const email = document.getElementById('adminEmail').value.trim();
             const pass = document.getElementById('adminPass').value;
@@ -373,6 +399,7 @@
             }
         }
 
+        // التحقق من الجلسة الحالية
         _supabase.auth.getSession().then(async ({ data: { session } }) => {
             if (session) {
                 const { data: userData } = await _supabase.from('users').select('role').eq('id', session.user.id).single();
@@ -384,6 +411,7 @@
             }
         });
 
+        // ==== 2. التنقل بين التابات ====
         function openTab(tabId, btnElement) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -398,6 +426,7 @@
             if (tabId === 'tab-audit') loadAuditLog();
         }
 
+        // ==== 3. الهوية والبيانات (Branding) ====
         async function loadBranding() {
             try {
                 const { data } = await _supabase.from('site_settings').select('*').eq('tenant_id', tenantId).single();
@@ -477,6 +506,7 @@
             }
         }
 
+        // ==== 4. إدارة الفروع ====
         async function loadBranches() {
             const tbody = document.getElementById('branchesListBody');
             tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">جاري التحميل...</td></tr>';
@@ -539,10 +569,12 @@
             }
         }
 
+        // ==== 5. التشغيل الأولي ====
         function initSettingsPage() {
             loadBranding();
         }
 
+        // ==== 6. إدارة الموظفين ====
         async function loadEmployees() {
             const tbody = document.getElementById('employeesListBody');
             tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">جاري التحميل...</td></tr>';
@@ -607,6 +639,7 @@
             } catch(e) { showToast('❌ خطأ: ' + e.message, true); }
         }
 
+        // ==== 7. إدارة بنود المصاريف ====
         async function loadExpenses() {
             const tbody = document.getElementById('expensesListBody');
             tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">جاري التحميل...</td></tr>';
@@ -666,6 +699,7 @@
             } catch(e) { showToast('❌ خطأ: ' + e.message, true); }
         }
 
+        // ==== 8. إعدادات الطباعة ====
         async function loadPrintSettings() {
             try {
                 const { data } = await _supabase.from('site_settings').select('*').eq('tenant_id', tenantId).single();
@@ -726,6 +760,7 @@
             }
         }
 
+        // ==== 9. محرك ترحيل البيانات (PapaParse + Excel) ====
         let parsedImportData = [];
         let detectedHeaders = [];
 
@@ -863,6 +898,7 @@
             }, 4000);
         }
 
+        // ==== 10. سجل التعديلات (Audit Log) ====
         async function loadAuditLog() {
             const tbody = document.getElementById('auditLogBody');
             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">جاري التحميل...</td></tr>';
