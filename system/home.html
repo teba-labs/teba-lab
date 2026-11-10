@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js?v=130"></script>
+    <script src="config.js?v=134"></script>
     <style>
         :root { --bg-body: #f1f5f9; --bg-card: #fff; --bg-input: #f8fafc; --text-main: #0f172a; --text-muted: #64748b; --border-light: #e2e8f0; --primary: #0a6847; --primary-gradient: linear-gradient(135deg, #10b981, #0a6847); --card-shadow: 0 20px 40px -10px rgba(0,0,0,0.05); --card-radius: 24px; --icon-bg: #e0f2fe; --icon-color: #0284c7; --font: 'Almarai', sans-serif; }
         body.dark-mode { --bg-body: #0b1120; --bg-card: #1e293b; --bg-input: #0f172a; --text-main: #f8fafc; --text-muted: #94a3b8; --border-light: #334155; --primary: #10b981; --primary-gradient: linear-gradient(135deg, #34d399, #10b981); --card-shadow: 0 20px 40px -10px rgba(0,0,0,0.4); --icon-bg: rgba(16,185,129,0.1); --icon-color: #34d399; }
@@ -62,7 +62,12 @@
         <div class="input-group"><label>البريد الإلكتروني</label><input type="email" id="loginEmail" placeholder="example@lab.com" autocomplete="username" style="direction: ltr; text-align: center;"></div>
         <div class="input-group"><label>كلمة المرور (حسابك)</label><input type="password" id="loginPassword" placeholder="********" autocomplete="current-password" style="text-align: center; letter-spacing: 2px;"></div>
         
-        <div class="input-group"><label>الفرع</label><select id="loginBranch"><option value="1">🏥 فرع الجعافرة</option><option value="2">🏥 فرع بهتيم</option></select></div>
+        <div class="input-group">
+            <label>الفرع</label>
+            <select id="loginBranch">
+                <option value="">⏳ جاري تحميل الفروع...</option>
+            </select>
+        </div>
         <div class="input-group"><label>باسورد الفرع</label><input type="password" id="loginBranchPassword" placeholder="******" style="text-align: center; letter-spacing: 2px;"></div>
         
         <button class="btn-login" onclick="loginUser()">دخول آمن</button>
@@ -105,11 +110,41 @@
         }
 
         // ==== 2. تهيئة السحابة ====
-        const supabaseUrl = TEBA_CONFIG.supabase.url;
-        const supabaseKey = TEBA_CONFIG.supabase.key;
-        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        const _supabase = supabase.createClient(TEBA_CONFIG.supabase.url, TEBA_CONFIG.supabase.key);
 
-        // ==== 3. دوال تسجيل الدخول ====
+        // ==== 3. جلب الفروع من السحابة (ديناميكي) ====
+        async function loadBranchesForLogin() {
+            const branchSelect = document.getElementById('loginBranch');
+            try {
+                const { data: branches, error } = await _supabase
+                    .from('branches')
+                    .select('id, name')
+                    .eq('tenant_id', TEBA_CONFIG.tenant.id)
+                    .order('id', { ascending: true });
+
+                if (error) throw error;
+
+                if (!branches || branches.length === 0) {
+                    branchSelect.innerHTML = '<option value="">لا توجد فروع مسجلة</option>';
+                    return;
+                }
+
+                branchSelect.innerHTML = branches.map(b => 
+                    `<option value="${b.id}">🏥 ${b.name}</option>`
+                ).join('');
+                
+                // لو في فرع محفوظ من قبل، نختاره أوتوماتيك
+                const savedBranch = localStorage.getItem('teba_current_branch');
+                if (savedBranch && branches.find(b => b.id == savedBranch)) {
+                    branchSelect.value = savedBranch;
+                }
+            } catch (err) {
+                console.error("Error loading branches:", err);
+                branchSelect.innerHTML = '<option value="1">🏥 فرع الجعافرة</option><option value="2">🏥 فرع بهتيم</option>';
+            }
+        }
+
+        // ==== 4. دوال تسجيل الدخول ====
         async function loginUser() {
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
@@ -118,8 +153,8 @@
             const errorEl = document.getElementById('loginError');
             const btn = document.querySelector('.btn-login');
 
-            if (!email || !password) {
-                errorEl.textContent = 'يرجى إدخال الإيميل والباسورد';
+            if (!email || !password || !branch) {
+                errorEl.textContent = 'يرجى إدخال الإيميل والباسورد واختيار الفرع';
                 errorEl.style.display = 'block';
                 return;
             }
@@ -129,7 +164,7 @@
             errorEl.style.display = 'none';
 
             try {
-                // 1. التحقق من باسورد الفرع (عبر دالة RPC آمنة في السيرفر)
+                // 1. التحقق من باسورد الفرع (عبر دالة RPC آمنة)
                 const { data: isBranchPwdCorrect, error: rpcErr } = await _supabase.rpc('verify_branch_password', { 
                     branch_id: parseInt(branch), 
                     input_password: branchPwd 
@@ -146,26 +181,42 @@
                 const { data: userData, error: userError } = await _supabase.from('users').select('role, tenant_id').eq('id', authData.user.id).single();
                 if (userError || !userData) throw new Error('لا يوجد صلاحيات مسجلة لهذا الحساب.');
 
-                // 4. جلب بيانات المعمل (الاسم واللوجو) من السحابة
+                // 4. جلب أحدث بيانات المعمل (الاسم، اللوجو، الفون) من السحابة
                 const { data: tenantData } = await _supabase.from('tenants').select('name').eq('id', userData.tenant_id).single();
-                const { data: settingsData } = await _supabase.from('site_settings').select('logo_url').eq('tenant_id', userData.tenant_id).single();
+                const { data: settingsData } = await _supabase.from('site_settings').select('logo_url, phone, whatsapp, primary_color').eq('tenant_id', userData.tenant_id).single();
 
                 const finalTenantName = tenantData ? tenantData.name : "معامل طيبة";
                 const finalLogoUrl = (settingsData && settingsData.logo_url) ? settingsData.logo_url : "";
+                const finalPhone = (settingsData && settingsData.phone) ? settingsData.phone : "01123702062";
+                const finalWhatsapp = (settingsData && settingsData.whatsapp) ? settingsData.whatsapp : "201099003494";
+                const finalColor = (settingsData && settingsData.primary_color) ? settingsData.primary_color : "#0a6847";
 
-                // 5. حفظ البيانات في المتصفح
+                // 5. حفظ البيانات في المتصفح (عشان تفتح في كل الصفحات)
                 localStorage.setItem('teba_tenant_id', userData.tenant_id);
                 localStorage.setItem('teba_tenant_name', finalTenantName); 
                 localStorage.setItem('teba_logo_url', finalLogoUrl);
+                localStorage.setItem('teba_phone', finalPhone);
+                localStorage.setItem('teba_whatsapp', finalWhatsapp);
+                localStorage.setItem('teba_primary_color', finalColor);
                 localStorage.setItem('teba_user_role', userData.role);
                 localStorage.setItem('teba_current_branch', branch);
                 
-                TEBA_CONFIG.tenant.id = userData.tenant_id;
-                TEBA_CONFIG.lab.name = finalTenantName;
-                TEBA_CONFIG.tenant.logo = finalLogoUrl;
+                // 6. عرض الشاشة (بدون الحاجة لتحديث الصفحة)
+                document.getElementById('desktopLabName').innerText = "مرحباً، " + finalTenantName;
 
-                // 6. عرض الشاشة
-                showDashboard({ name: finalTenantName, logo: finalLogoUrl }, userData.role);
+                if (finalLogoUrl) {
+                    const logoImg = document.getElementById('labLogo');
+                    if (logoImg) {
+                        logoImg.src = finalLogoUrl;
+                        logoImg.style.display = 'block';
+                        logoImg.nextElementSibling.style.display = 'none';
+                    }
+                }
+
+                // تطبيق اللون فوراً
+                document.documentElement.style.setProperty('--primary', finalColor);
+
+                showDashboard(userData.role);
 
             } catch (err) {
                 errorEl.textContent = '❌ ' + err.message;
@@ -175,20 +226,9 @@
             }
         }
 
-        function showDashboard(tenant, role) {
+        function showDashboard(role) {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('desktopScreen').style.display = 'block';
-            document.getElementById('desktopLabName').innerText = "مرحباً، " + tenant.name;
-
-            // تحديث اللوجو في الشاشة الرئيسية لو موجود
-            if (tenant.logo) {
-                const logoImg = document.getElementById('labLogo');
-                if (logoImg) {
-                    logoImg.src = tenant.logo;
-                    logoImg.style.display = 'block';
-                    logoImg.nextElementSibling.style.display = 'none'; // إخفاء النص البديل
-                }
-            }
 
             const dashboardCard = document.getElementById('cardDashboard');
             const settingsCard = document.getElementById('cardSettings');
@@ -202,37 +242,49 @@
             }
         }
 
-        // ==== 4. التحقق من الجلسة الحالية ====
+        // ==== 5. التحقق من الجلسة الحالية ====
         _supabase.auth.getSession().then(async ({ data: { session } }) => {
             if (session) {
                 const { data: userData } = await _supabase.from('users').select('role, tenant_id').eq('id', session.user.id).single();
                 if (userData) {
                     const { data: tenantData } = await _supabase.from('tenants').select('name').eq('id', userData.tenant_id).single();
-                    const { data: settingsData } = await _supabase.from('site_settings').select('logo_url').eq('tenant_id', userData.tenant_id).single();
+                    const { data: settingsData } = await _supabase.from('site_settings').select('logo_url, phone, whatsapp, primary_color').eq('tenant_id', userData.tenant_id).single();
                     
                     const finalTenantName = tenantData ? tenantData.name : "معامل طيبة";
                     const finalLogoUrl = (settingsData && settingsData.logo_url) ? settingsData.logo_url : "";
+                    const finalPhone = (settingsData && settingsData.phone) ? settingsData.phone : "01123702062";
+                    const finalWhatsapp = (settingsData && settingsData.whatsapp) ? settingsData.whatsapp : "201099003494";
+                    const finalColor = (settingsData && settingsData.primary_color) ? settingsData.primary_color : "#0a6847";
 
                     localStorage.setItem('teba_tenant_id', userData.tenant_id);
                     localStorage.setItem('teba_tenant_name', finalTenantName);
                     localStorage.setItem('teba_logo_url', finalLogoUrl);
+                    localStorage.setItem('teba_phone', finalPhone);
+                    localStorage.setItem('teba_whatsapp', finalWhatsapp);
+                    localStorage.setItem('teba_primary_color', finalColor);
                     localStorage.setItem('teba_user_role', userData.role);
                     
                     if(!localStorage.getItem('teba_current_branch')) localStorage.setItem('teba_current_branch', '1');
                     
-                    showDashboard({ name: finalTenantName, logo: finalLogoUrl }, userData.role);
+                    document.getElementById('desktopLabName').innerText = "مرحباً، " + finalTenantName;
+                    if (finalLogoUrl) {
+                        const logoImg = document.getElementById('labLogo');
+                        if (logoImg) { logoImg.src = finalLogoUrl; logoImg.style.display = 'block'; logoImg.nextElementSibling.style.display = 'none'; }
+                    }
+                    document.documentElement.style.setProperty('--primary', finalColor);
+                    showDashboard(userData.role);
                 }
             }
         });
 
-        // ==== 5. تسجيل الخروج ====
+        // ==== 6. تسجيل الخروج ====
         async function logout() {
             await _supabase.auth.signOut();
             localStorage.clear();
             location.reload();
         }
 
-        // ==== 6. فتح الداشبورد ====
+        // ==== 7. فتح الداشبورد ====
         function openSecretModal() {
             const role = localStorage.getItem('teba_user_role');
             if (role === 'admin' || role === 'owner') {
@@ -243,7 +295,7 @@
             }
         }
 
-        // ==== 7. أحداث الكيبورد ====
+        // ==== 8. أحداث الكيبورد ====
         document.getElementById('loginPassword').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') loginUser();
         });
@@ -251,7 +303,7 @@
             if (e.key === 'Enter') loginUser();
         });
 
-        // ==== 8. تفعيل الـ PWA ====
+        // ==== 9. تفعيل الـ PWA ====
         let deferredPrompt;
         const btnLogin = document.getElementById('pwaInstallBtnLogin');
         const btnDesktop = document.getElementById('pwaInstallBtnDesktop');
@@ -272,9 +324,13 @@
             deferredPrompt = null;
         };
 
-        // ==== 9. تسجيل الـ Service Worker ====
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
+        // ==== 10. التشغيل عند فتح الصفحة ====
+        window.addEventListener('load', () => {
+            // تحميل الفروع أول ما الصفحة تفتح
+            loadBranchesForLogin();
+
+            // تسجيل الـ Service Worker
+            if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('../service-worker.js').then(reg => {
                     reg.onupdatefound = () => {
                         const installingWorker = reg.installing;
@@ -285,8 +341,8 @@
                         };
                     };
                 }).catch(err => console.warn('SW Error:', err));
-            });
-        }
+            }
+        });
     </script>
 </body>
 </html>

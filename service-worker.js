@@ -1,24 +1,44 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v200 - Force Update)
+   TEBA LABS - Service Worker (v3.0 - Smart Offline PC)
    ===================================================== */
 
-const CACHE_VERSION = 'v200'; 
+const CACHE_VERSION = 'v3.0'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
 
-// الملفات الأساسية اللي هنخزنها عشان تفتح أوفلاين
+// الملفات الأساسية اللي لازم تتخزن عشان النظام يفتح أوفلاين
 const PRECACHE_ASSETS = [
-  './', './index.html', 
-  './system/home.html', './system/reception.html', './system/lab.html', './system/tests_manage.html', './system/settings.html',
-  './system/lab.css', './system/lab.js', './system/config.js', 
-  './dashboard/admin.html', './dashboard/admin.css', './dashboard/admin.js', './dashboard/config.js',
-  './styles.css', './data.js', './app.js', './features.js', './site_dynamic.js', './patient_portal.js', './config.js', './super-admin.html',
-  './logo.png', './brand-logo.png', './header.png', './manifest.json'
+  './', 
+  './index.html', 
+  './system/home.html', 
+  './system/reception.html', 
+  './system/lab.html', 
+  './system/tests_manage.html', 
+  './system/settings.html',
+  './system/lab.css', 
+  './system/lab.js', 
+  './system/config.js', 
+  './dashboard/admin.html', 
+  './dashboard/admin.css', 
+  './dashboard/admin.js', 
+  './dashboard/config.js',
+  './styles.css', 
+  './data.js', 
+  './app.js', 
+  './features.js', 
+  './site_dynamic.js', 
+  './patient_portal.js', 
+  './config.js', 
+  './super-admin.html',
+  './logo.png', 
+  './brand-logo.png', 
+  './header.png', 
+  './manifest.json'
 ];
 
-// التثبيت: مسح أي كاش قديم وتخزين الجديد
+// التثبيت
 self.addEventListener('install', event => {
-  self.skipWaiting(); // إجبار المتصفح إنه يستخدم النسخة دي فوراً
+  self.skipWaiting(); 
   event.waitUntil(
     caches.open(STATIC_CACHE).then(cache => {
       return Promise.all(
@@ -30,7 +50,7 @@ self.addEventListener('install', event => {
   );
 });
 
-// التفعيل: مسح الكاش القديم نهائياً
+// التفعيل: مسح أي كاش قديم
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -46,7 +66,7 @@ self.addEventListener('activate', event => {
   );
 });
 
-// استراتيجية الجلب (Fetch)
+// استراتيجية الجلب
 self.addEventListener('fetch', event => {
   const { request } = event;
   
@@ -54,8 +74,7 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(request.url);
 
-  // 1. لو الطلب صفحات (HTML) -> استخدم Network First
-  // يعني جرب تجيب الجديد من النت الأول، لو مفيش نت، هات من الكاش
+  // 1. لو الطلب صفحات (HTML) -> Network First مع Fallback سريع للكاش
   if (request.mode === 'navigate' || (request.headers.get('accept') && request.headers.get('accept').includes('text/html'))) {
     event.respondWith(
       fetch(request)
@@ -65,8 +84,10 @@ self.addEventListener('fetch', event => {
           return response;
         })
         .catch(() => {
+          // لو النت فصل، هات الصفحة فوراً من الكاش
           return caches.match(request).then(cached => {
             if (cached) return cached;
+            // لو الصفحة مش موجودة، رجع للصفحة الرئيسية
             return caches.match('./system/home.html') || caches.match('./index.html');
           });
         })
@@ -74,18 +95,27 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 2. لو طلب ملفات (CSS, JS, صور) -> استخدم Network First برضه عشان نضمن أحدث نسخة
+  // 2. لو طلب ملفات (CSS, JS, صور) -> Stale-While-Revalidate
   event.respondWith(
-    fetch(request)
-      .then(networkResponse => {
+    caches.match(request).then(cachedResponse => {
+      const fetchPromise = fetch(request).then(networkResponse => {
         if (networkResponse && networkResponse.status === 200) {
           const responseClone = networkResponse.clone();
           caches.open(RUNTIME_CACHE).then(cache => cache.put(request, responseClone));
         }
         return networkResponse;
-      })
-      .catch(() => {
-        return caches.match(request); // لو النت قطع، هات من الكاش
-      })
+      }).catch(() => {
+         // لو النت فصل، مفيش مشكلة، الكاش شغال
+      });
+
+      return cachedResponse || fetchPromise;
+    })
   );
+});
+
+// الاستماع لحدث قطع الاتصال عشان نطمن
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });

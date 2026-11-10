@@ -11,10 +11,10 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://cdn.sheetjs.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
-<link rel="preload" href="styles.css?v=130" as="style">
-<link rel="preload" href="admin.css?v=130" as="style">
-<link rel="stylesheet" href="styles.css?v=130">
-<link rel="stylesheet" href="admin.css?v=130">
+<link rel="preload" href="styles.css?v=136" as="style">
+<link rel="preload" href="admin.css?v=136" as="style">
+<link rel="stylesheet" href="styles.css?v=136">
+<link rel="stylesheet" href="admin.css?v=136">
 <link rel="manifest" href="../manifest.json">
 <style>
   .chart-container { position: relative; height: 350px; width: 100%; margin-bottom: 20px; }
@@ -43,7 +43,7 @@
   .live-kpi.full-width { grid-column: span 2; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=130"></script>
+<script src="config.js?v=136"></script>
 </head>
 <body class="admin-body">
 
@@ -113,6 +113,8 @@
       <ul class="admin-nav">
         <li><button data-report="expenseBreakdown" onclick="showReport('expenseBreakdown')">🥧 تفصيل المصاريف</button></li>
         <li><button data-report="bcg" onclick="showReport('bcg')">💎 تصنيف التحاليل (BCG)</button></li>
+        <!-- التاب الجديد هنا -->
+        <li><button data-report="testReport" onclick="showReport('testReport')">📊 تقرير التحاليل التفصيلي</button></li>
       </ul>
       <h3>📋 التخطيط والتنفيذ</h3>
       <ul class="admin-nav">
@@ -137,7 +139,7 @@
     </aside>
 
     <!-- المحتوى الرئيسي -->
-    <main class="admin-content">      <!-- 0. تاب الإدارة المالية اليومية (جديد) -->
+    <main class="admin-content">      <!-- 0. تاب الإدارة المالية اليومية -->
       <section class="admin-section active" id="report-dailyFinance">
         <div class="admin-section-head">
           <h2>💰 الإدارة المالية اليومية (اللايف)</h2>
@@ -145,8 +147,6 @@
         </div>
 
         <div class="live-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start;">
-          
-          <!-- كارت التحصيل اليومي -->
           <div class="live-card" style="border-color: #10b981;">
             <h3>💵 تسجيل تحصيل / إيراد</h3>
             <div class="form-group"><label>الفرع</label><select id="dailyRevBranch"><option value="1">🏥 الجعافرة</option><option value="2">🏥 بهتيم</option></select></div>
@@ -155,7 +155,6 @@
             <button class="btn-export" style="width: 100%; justify-content: center; margin-top: 10px; background: linear-gradient(135deg, #10b981, #059669);" onclick="saveDailyFinance('revenue')">✅ تسجيل التحصيل</button>
           </div>
 
-          <!-- كارت المصروفات اليومية (للموظف) -->
           <div class="live-card" style="border-color: #f59e0b;">
             <h3>🛒 تسجيل مصروف يومي</h3>
             <div class="form-group"><label>الفرع</label><select id="dailyExpBranch"><option value="1">🏥 الجعافرة</option><option value="2">🏥 بهتيم</option></select></div>
@@ -164,7 +163,6 @@
             <button class="btn-export" style="width: 100%; justify-content: center; margin-top: 10px; background: linear-gradient(135deg, #f59e0b, #d97706);" onclick="saveDailyFinance('expense_daily')">✅ تسجيل المصروف</button>
           </div>
 
-          <!-- كارت المصاريف الثابتة (للدكتور فقط) -->
           <div class="live-card" style="border-color: #dc2626;">
             <h3>🏢 تسجيل مصروف ثابت</h3>
             <div class="form-group"><label>الفرع</label><select id="fixedExpBranch"><option value="1">🏥 الجعافرة</option><option value="2">🏥 بهتيم</option></select></div>
@@ -172,10 +170,8 @@
             <div class="form-group"><label>المبلغ (ج.م)</label><input type="number" id="fixedExpAmount" placeholder="مثال: 5000" min="0"></div>
             <button class="btn-export" style="width: 100%; justify-content: center; margin-top: 10px; background: linear-gradient(135deg, #dc2626, #b91c1c);" onclick="saveDailyFinance('expense_fixed')">✅ تسجيل الثابت</button>
           </div>
-
         </div>
 
-        <!-- جدول عرض الحركات المالية -->
         <div class="cases-section-card" style="margin-top: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h4 style="margin: 0;">📋 سجل الحركات المالية (آخر 50 حركة)</h4>
@@ -226,7 +222,9 @@
           <h4>📅 حالة الشهور في سنة <span id="recon-year-title">2026</span></h4>
           <div class="year-grid" id="recon-year-grid"></div>
         </div>
-      </section>      <!-- 2. تاب الإحصائيات المباشرة Live (تم تحديثه) -->
+      </section>
+
+      <!-- 2. تاب الإحصائيات المباشرة Live -->
       <section class="admin-section" id="report-live">
         <div class="admin-section-head">
           <h2>⚡ إحصائيات مباشرة من السحابة (Live)</h2>
@@ -239,11 +237,8 @@
             <div class="live-kpis">
               <div class="live-kpi"><div class="live-kpi-label">حالات اليوم</div><div class="live-kpi-value" id="live-cases-all" style="color:#3b82f6;">0</div></div>
               <div class="live-kpi"><div class="live-kpi-label">إجمالي التحاليل</div><div class="live-kpi-value" id="live-tests-all" style="color:#a78bfa;">0</div></div>
-              
-              <!-- الأرقام المالية الجديدة -->
               <div class="live-kpi full-width" style="background: rgba(16,185,129,0.1); border-color: #10b981;"><div class="live-kpi-label">💰 إجمالي التحصيل (اليوم)</div><div class="live-kpi-value" id="live-rev-all" style="color:#10b981;">0 ج</div></div>
               <div class="live-kpi full-width" style="background: rgba(239,68,68,0.1); border-color: #ef4444;"><div class="live-kpi-label">📉 إجمالي المصاريف (اليوم)</div><div class="live-kpi-value" id="live-exp-all" style="color:#ef4444;">0 ج</div></div>
-              
               <div class="live-kpi"><div class="live-kpi-label">قيد التشغيل</div><div class="live-kpi-value" id="live-pending-all" style="color:#fbbf24;">0</div></div>
               <div class="live-kpi"><div class="live-kpi-label">تم نشرها</div><div class="live-kpi-value" id="live-published-all" style="color:#16a34a;">0</div></div>
             </div>
@@ -254,10 +249,8 @@
             <div class="live-kpis">
               <div class="live-kpi"><div class="live-kpi-label">حالات اليوم</div><div class="live-kpi-value" id="live-cases-j" style="color:#10b981;">0</div></div>
               <div class="live-kpi"><div class="live-kpi-label">إجمالي التحاليل</div><div class="live-kpi-value" id="live-tests-j" style="color:#a78bfa;">0</div></div>
-              
               <div class="live-kpi full-width" style="background: rgba(16,185,129,0.1); border-color: #10b981;"><div class="live-kpi-label">💰 إجمالي التحصيل</div><div class="live-kpi-value" id="live-rev-j" style="color:#10b981;">0 ج</div></div>
               <div class="live-kpi full-width" style="background: rgba(239,68,68,0.1); border-color: #ef4444;"><div class="live-kpi-label">📉 إجمالي المصاريف</div><div class="live-kpi-value" id="live-exp-j" style="color:#ef4444;">0 ج</div></div>
-              
               <div class="live-kpi"><div class="live-kpi-label">قيد التشغيل</div><div class="live-kpi-value" id="live-pending-j" style="color:#fbbf24;">0</div></div>
               <div class="live-kpi"><div class="live-kpi-label">تم نشرها</div><div class="live-kpi-value" id="live-published-j" style="color:#16a34a;">0</div></div>
             </div>
@@ -268,10 +261,8 @@
             <div class="live-kpis">
               <div class="live-kpi"><div class="live-kpi-label">حالات اليوم</div><div class="live-kpi-value" id="live-cases-b" style="color:#d97706;">0</div></div>
               <div class="live-kpi"><div class="live-kpi-label">إجمالي التحاليل</div><div class="live-kpi-value" id="live-tests-b" style="color:#a78bfa;">0</div></div>
-              
               <div class="live-kpi full-width" style="background: rgba(16,185,129,0.1); border-color: #10b981;"><div class="live-kpi-label">💰 إجمالي التحصيل</div><div class="live-kpi-value" id="live-rev-b" style="color:#10b981;">0 ج</div></div>
               <div class="live-kpi full-width" style="background: rgba(239,68,68,0.1); border-color: #ef4444;"><div class="live-kpi-label">📉 إجمالي المصاريف</div><div class="live-kpi-value" id="live-exp-b" style="color:#ef4444;">0 ج</div></div>
-              
               <div class="live-kpi"><div class="live-kpi-label">قيد التشغيل</div><div class="live-kpi-value" id="live-pending-b" style="color:#fbbf24;">0</div></div>
               <div class="live-kpi"><div class="live-kpi-label">تم نشرها</div><div class="live-kpi-value" id="live-published-b" style="color:#16a34a;">0</div></div>
             </div>
@@ -406,7 +397,9 @@
             <li>✅ التحقق من صحة نوع وحجم الملفات قبل الرفع</li>
           </ul>
         </div>
-      </section>      <!-- 6. تاب التقرير الشهري -->
+      </section>
+
+      <!-- 6. تاب التقرير الشهري -->
       <section class="admin-section" id="report-financial">
         <div class="admin-section-head">
           <h2>💰 التقرير الشهري</h2>
@@ -535,6 +528,33 @@
         <div class="filter-group"><div><label>الفرع:</label><select id="lossMakersBranchSel" onchange="renderLossMakers()"><option value="combined">🏥 إجمالي الفرعين</option><option value="jaafara">🏥 فرع الجعافرة</option><option value="bahtim">🏥 فرع بهتيم</option></select></div></div>
         <div style="background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);"><input type="text" class="table-search-input" placeholder="🔍 ابحث..." onkeyup="filterTable(this, 'lossMakersTableBody')"><div class="table-responsive"><table class="fin-table"><thead><tr><th>اسم التحليل</th><th>سعر البيع</th><th>التكلفة الحقيقية</th><th>صافي الخسارة/تحليل</th></tr></thead><tbody id="lossMakersTableBody"></tbody></table></div></div>
       </section>
+
+      <!-- 17. تاب تقرير التحاليل التفصيلي (الجديد) -->
+      <section class="admin-section" id="report-testReport">
+        <div class="admin-section-head">
+          <h2>📊 تقرير التحاليل التفصيلي</h2>
+          <button class="btn-export" onclick="exportTableToExcel('testReportTable', 'تقرير_التحاليل')">📊 تصدير Excel</button>
+        </div>
+        
+        <div class="filter-group">
+          <div><label>من تاريخ:</label><input type="date" id="testReportFrom" style="padding:10px; border-radius:8px; background:var(--bg-input); color:var(--text); border:1px solid var(--border);"></div>
+          <div><label>إلى تاريخ:</label><input type="date" id="testReportTo" style="padding:10px; border-radius:8px; background:var(--bg-input); color:var(--text); border:1px solid var(--border);"></div>
+          <div style="flex-grow: 1;"><label>بحث باسم التحليل (اختياري):</label><input type="text" id="testReportSearch" placeholder="مثلاً: صورة دم كاملة..." style="width:100%; padding:10px; border-radius:8px; background:var(--bg-input); color:var(--text); border:1px solid var(--border);"></div>
+          <div><button class="btn-export" style="background:var(--primary); color:#000;" onclick="renderTestReport()">🔍 بحث</button></div>
+        </div>
+        
+        <div class="cases-section-card" style="margin-top:20px;">
+          <div class="table-responsive">
+            <table class="fin-table" id="testReportTable">
+              <thead><tr><th>اسم التحليل</th><th>عدد المرات</th><th>إجمالي المبلغ المحصل (ج.م)</th></tr></thead>
+              <tbody id="testReportBody">
+                <tr><td colspan="3" style="text-align:center;">اختر التاريخ واضغط بحث</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 </div>
@@ -558,7 +578,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
-<script src="admin.js?v=130" defer></script>
+<script src="admin.js?v=136" defer></script>
 
 <script>
   if ('serviceWorker' in navigator) {

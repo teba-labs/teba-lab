@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="config.js?v=132"></script>
+    <script src="config.js?v=134"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <style>
@@ -41,7 +41,6 @@
         .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .card h3 { color: var(--primary); font-size: 1.2rem; margin-bottom: 20px; border-bottom: 1px dashed var(--border); padding-bottom: 10px; display: flex; align-items: center; gap: 8px; }
         
-        /* السحر كله هنا: auto-fit ب تخلي المتصفح يظبط نفسه */
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
         .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; width: 100%; }
         .form-group label { color: var(--text-muted); font-size: 0.9rem; font-weight: bold; }
@@ -113,7 +112,7 @@
             <button class="tab-btn" onclick="openTab('tab-employees', this)">👥 الموظفين والصلاحيات</button>
             <button class="tab-btn" onclick="openTab('tab-expenses', this)">💸 بنود المصاريف</button>
             <button class="tab-btn" onclick="openTab('tab-print', this)">🖨️ إعدادات الطباعة</button>
-            <button class="tab-btn" onclick="openTab('tab-import', this)">📤 ترحيل البيانات (Excel)</button>
+            <button class="tab-btn" onclick="openTab('tab-import', this)">📤 البيانات والنسخ الاحتياطي</button>
             <button class="tab-btn" onclick="openTab('tab-audit', this)">📜 سجل التعديلات (Audit Log)</button>
         </div>
 
@@ -140,7 +139,7 @@
                         </div>
                         <div class="form-group">
                             <label>اللون الأساسي للنظام (Hex)</label>
-                            <input type="color" id="setPrimaryColor" value="#10b981" style="height: 45px; cursor: pointer;">
+                            <input type="color" id="setPrimaryColor" value="#0a6847" style="height: 45px; cursor: pointer;">
                         </div>
                     </div>
                 </div>
@@ -251,12 +250,27 @@
                 </div>
             </div>
 
-            <!-- 6. تاب ترحيل البيانات (Excel/CSV) -->
+            <!-- 6. تاب البيانات والنسخ الاحتياطي (تم إضافة تصدير المرضى هنا) -->
             <div id="tab-import" class="tab-content">
+                
+                <!-- قسم تصدير داتا المرضى الجديد -->
+                <div class="card" style="border-color: var(--primary);">
+                    <h3>📥 تصدير داتا المرضى (ملكك الخاص)</h3>
+                    <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:20px;">
+                        يمكنك تصدير كل بيانات المرضى، الزيارات، والتحاليل المسجلة في فترة معينة إلى ملف Excel للاحتفاظ بها.
+                    </p>
+                    <div class="form-grid">
+                        <div class="form-group"><label>من تاريخ</label><input type="date" id="exportFromDate"></div>
+                        <div class="form-group"><label>إلى تاريخ</label><input type="date" id="exportToDate"></div>
+                    </div>
+                    <button class="btn-save" onclick="exportPatientsData()" style="background: #3b82f6; color: #fff;">📥 تصدير داتا المرضى (Excel)</button>
+                </div>
+
+                <!-- قسم ترحيل البيانات القديمة -->
                 <div class="card">
                     <h3>📤 ترحيل البيانات القديمة (Excel / CSV)</h3>
                     <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:20px;">
-                        ارفع ملف الحالات القديم. النظام هيتعرف على الأعمدة أوتوماتيك، وهيسألك تربط كل عمود بالبيانات الصح في السيستم عشان نمنع اللخبطة.
+                        ارفع ملف الحالات القديم. النظام هيتعرف على الأعمدة أوتوماتيك.
                     </p>
                     
                     <div style="border: 2px dashed var(--primary); border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; background: rgba(16, 185, 129, 0.05); transition: 0.2s;" onclick="document.getElementById('importFileInput').click()">
@@ -268,7 +282,6 @@
 
                     <div id="mappingSection" style="display: none; margin-top: 30px; background: var(--bg-input); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
                         <h4 style="color: var(--warning); margin-bottom: 15px;">⚙️ مطابقة الأعمدة (Column Mapping)</h4>
-                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">يرجى تحديد أي عمود في الملف يقابل أي حقل في النظام:</p>
                         <div class="form-grid" id="mappingGrid"></div>
                         <div style="margin-top: 20px;">
                             <button class="btn-save" id="btnStartImport" onclick="startImport()">🚀 بدء الترحيل الذكي</button>
@@ -470,6 +483,8 @@
                 localStorage.setItem('teba_tenant_name', labName);
                 localStorage.setItem('teba_logo_url', finalLogoUrl);
                 localStorage.setItem('teba_primary_color', primaryColor);
+                localStorage.setItem('teba_phone', document.getElementById('setPhone').value);
+                localStorage.setItem('teba_whatsapp', document.getElementById('setWhatsapp').value);
                 
                 showToast('✅ تم حفظ البيانات واللوجو بنجاح');
                 
@@ -738,7 +753,68 @@
             }
         }
 
-        // ==== 9. محرك ترحيل البيانات (PapaParse + Excel) ====
+        // ==== 9. تصدير داتا المرضى (جديد) ====
+        async function exportPatientsData() {
+            const fromDate = document.getElementById('exportFromDate').value;
+            const toDate = document.getElementById('exportToDate').value;
+
+            if (!fromDate || !toDate) {
+                return showToast('يرجى تحديد تاريخ البداية والنهاية', true);
+            }
+
+            showLoading('جاري تجهيز ملف المرضى...');
+
+            try {
+                let query = _supabase.from('visits')
+                    .select(`
+                        visit_id,
+                        visit_date,
+                        total_amount,
+                        paid_amount,
+                        patients ( name, phone, age, gender, doctor_name )
+                    `)
+                    .eq('tenant_id', tenantId)
+                    .gte('visit_date', new Date(fromDate).toISOString())
+                    .lte('visit_date', new Date(toDate + 'T23:59:59').toISOString())
+                    .order('visit_date', { ascending: false });
+
+                const { data, error } = await query;
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    hideLoading();
+                    return showToast('لا توجد بيانات في هذه الفترة', true);
+                }
+
+                const excelData = data.map(v => ({
+                    'رقم الزيارة': v.visit_id,
+                    'تاريخ الزيارة': new Date(v.visit_date).toLocaleDateString('ar-EG'),
+                    'اسم المريض': v.patients ? v.patients.name : 'غير معروف',
+                    'رقم الموبايل': v.patients ? v.patients.phone : '',
+                    'العمر': v.patients ? v.patients.age : '',
+                    'النوع': v.patients ? (v.patients.gender === 'male' ? 'ذكر' : 'أنثى') : '',
+                    'الطبيب المحول': v.patients ? v.patients.doctor_name : '',
+                    'الإجمالي': v.total_amount,
+                    'المدفوع': v.paid_amount,
+                    'الباقي': (v.total_amount || 0) - (v.paid_amount || 0)
+                }));
+
+                const ws = XLSX.utils.json_to_sheet(excelData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "المرضى");
+                XLSX.writeFile(wb, `Patients_${fromDate}_to_${toDate}.xlsx`);
+
+                hideLoading();
+                showToast('✅ تم تصدير البيانات بنجاح');
+            } catch (err) {
+                hideLoading();
+                console.error(err);
+                showToast('❌ خطأ في تصدير البيانات: ' + err.message, true);
+            }
+        }
+
+        // ==== 10. محرك ترحيل البيانات (PapaParse + Excel) ====
         let parsedImportData = [];
         let detectedHeaders = [];
 
@@ -876,7 +952,7 @@
             }, 4000);
         }
 
-        // ==== 10. سجل التعديلات (Audit Log) ====
+        // ==== 11. سجل التعديلات (Audit Log) ====
         async function loadAuditLog() {
             const tbody = document.getElementById('auditLogBody');
             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">جاري التحميل...</td></tr>';

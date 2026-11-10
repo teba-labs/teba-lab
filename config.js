@@ -1,22 +1,28 @@
 ﻿// =====================================================
-// TEBA LABS - Configuration File (v130 - SaaS Stable)
+// TEBA LABS - Configuration File (v134 - Final Fix)
 // =====================================================
+
+// قراءة البيانات من ذاكرة المتصفح، ولو مش موجودة نستخدم القيم الافتراضية
 const _currentTenantId = localStorage.getItem('teba_tenant_id') || "0981e62c-c33d-46c4-8919-2f9fbb0946f6";
 const _currentTenantName = localStorage.getItem('teba_tenant_name') || "معامل طيبة";
 const _currentLogoUrl = localStorage.getItem('teba_logo_url') || "";
+const _currentPrimaryColor = localStorage.getItem('teba_primary_color') || "#0a6847";
+const _currentPhone = localStorage.getItem('teba_phone') || "01123702062";
+const _currentWhatsapp = localStorage.getItem('teba_whatsapp') || "201099003494";
 
 const TEBA_CONFIG = {
     tenant: { 
         id: _currentTenantId, 
         name: _currentTenantName,
-        logo: _currentLogoUrl
+        logo: _currentLogoUrl,
+        primaryColor: _currentPrimaryColor
     },
     lab: {
         name: _currentTenantName, 
         nameEn: "TEBA LABS", 
         doctor: "د/ أحمد طه أبوندا",
-        phone: "01123702062", 
-        whatsapp: "201099003494", 
+        phone: _currentPhone, 
+        whatsapp: _currentWhatsapp, 
         address: "شبين القناطر، القليوبية",
         portalUrl: "https://teba-labs.github.io/teba-lab/index.html" 
     },
@@ -25,24 +31,36 @@ const TEBA_CONFIG = {
         key: "sb_publishable_2Q7SPvruXJar3gvOxtvl5w_p4CVDfcU"
     },
     settings: { 
-        sessionTimeout: 2 * 60 * 60 * 1000 // ساعتين
+        sessionTimeout: 2 * 60 * 60 * 1000 
     }
 };
 
-// تحديث الواجهة أوتوماتيك بالاسم واللوجو في أي صفحة
+// تطبيق الهوية فوراً وبقوة عشان نمنع اللون إنه يرجع أخضر
 document.addEventListener("DOMContentLoaded", () => {
-    // تحديث عنوان الصفحة
-    if (typeof TEBA_CONFIG !== 'undefined' && TEBA_CONFIG.lab.name) {
+    // 1. حقن كود CSS إجباري عشان نغصب المتصفح يغير اللون في كل الصفحات
+    const style = document.createElement('style');
+    style.innerHTML = `
+        :root { 
+            --primary: ${TEBA_CONFIG.tenant.primaryColor} !important; 
+            --primary-hover: ${TEBA_CONFIG.tenant.primaryColor} !important;
+            --primary-gradient: linear-gradient(135deg, ${TEBA_CONFIG.tenant.primaryColor}, #0a6847) !important;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // 2. تحديث عنوان الصفحة
+    if (TEBA_CONFIG.lab.name) {
         document.title = TEBA_CONFIG.lab.name;
     }
     
-    // تحديث أي عنصر يحمل كلاس dyn-lab-name
+    // 3. تحديث الأسماء في كل الصفحات
     document.querySelectorAll('.dyn-lab-name').forEach(el => el.textContent = TEBA_CONFIG.lab.name);
+    if(document.getElementById('loginLabName')) document.getElementById('loginLabName').textContent = "🔬 " + TEBA_CONFIG.lab.name;
+    if(document.getElementById('desktopLabName')) document.getElementById('desktopLabName').textContent = "مرحباً، " + TEBA_CONFIG.lab.name;
     
-    // تحديث اللوجو لو موجود في المتصفح
+    // 4. تحديث اللوجو
     if(TEBA_CONFIG.tenant.logo) {
-        const logos = document.querySelectorAll('.dyn-logo');
-        logos.forEach(logoImg => {
+        document.querySelectorAll('.dyn-logo').forEach(logoImg => {
             logoImg.src = TEBA_CONFIG.tenant.logo;
             logoImg.style.display = 'block';
         });

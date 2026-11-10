@@ -1795,4 +1795,93 @@
     if (outcome === 'accepted') { const installBtn = document.getElementById('pwaInstallBtn'); if (installBtn) installBtn.style.display = 'none'; }
     deferredPrompt = null;
   };
+  // ==== تقرير التحاليل التفصيلي (الجديد) ====
+  window.renderTestReport = async function() {
+      const fromDate = document.getElementById('testReportFrom').value;
+      const toDate = document.getElementById('testReportTo').value;
+      const searchQuery = document.getElementById('testReportSearch').value.trim().toLowerCase();
+      const tbody = document.getElementById('testReportBody');
+
+      if (!fromDate || !toDate) return alert('يرجى اختيار تاريخ البداية والنهاية أولاً');
+
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">جاري البحث في السحابة...</td></tr>';
+      showLoading('جاري تجهيز تقرير التحاليل...');
+
+      try {
+          // 1. جلب الزيارات في الفترة المحددة
+          const { data: visits, error: vErr } = await _supabase.from('visits')
+              .select('visit_id')
+              .eq('tenant_id', TEBA_CONFIG.tenant.id)
+              .gte('visit_date', new Date(fromDate).toISOString())
+              .lte('visit_date', new Date(toDate + 'T23:59:59').toISOString());
+
+          if (vErr) throw vErr;
+          if (!visits || visits.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--danger);">لا توجد زيارات في هذه الفترة</td></tr>';
+              hideLoading();
+              return;
+          }
+
+          const visitIds = visits.map(v => v.visit_id);
+          let allVTs = [];
+
+          // 2. جلب التحاليل التابعة لهذه الزيارات (على دفعات لتجنب مشاكل السحابة لو العدد كبير)
+          for (let i = 0; i < visitIds.length; i += 500) {
+              const chunk = visitIds.slice(i, i + 500);
+              const { data: vts, error: vtErr } = await _supabase.from('visit_tests')
+                  .select('test_code, price_at_time')
+                  .eq('tenant_id', TEBA_CONFIG.tenant.id)
+                  .in('visit_id', chunk)
+                  .eq('is_cancelled', false); // استبعاد التحاليل الملغية
+              if (vtErr) throw vtErr;
+              if (vts) allVTs = allVTs.concat(vts);
+          }
+
+          // 3. جلب أسماء التحاليل من الكتالوج
+          const { data: catalog, error: cErr } = await _supabase.from('tests_catalog')
+              .select('code, name')
+              .eq('tenant_id', TEBA_CONFIG.tenant.id);
+          if (cErr) throw cErr;
+
+          const nameMap = {};
+          catalog.forEach(c => { nameMap[c.code] = c.name; });
+
+          // 4. حساب الإحصائيات
+          const report = {};
+          allVTs.forEach(vt => {
+              const code = vt.test_code;
+              const name = nameMap[code] || code;
+              
+              // فلترة البحث
+              if (searchQuery && !name.toLowerCase().includes(searchQuery) && !code.toLowerCase().includes(searchQuery)) return;
+
+              if (!report[code]) {
+                  report[code] = { name: name, count: 0, total: 0 };
+              }
+              report[code].count += 1;
+              report[code].total += parseFloat(vt.price_at_time || 0);
+          });
+
+          const results = Object.values(report).sort((a,b) => b.count - a.count);
+
+          // 5. عرض النتائج
+          if (results.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">لا توجد نتائج مطابقة للبحث</td></tr>';
+          } else {
+              tbody.innerHTML = results.map(r => `
+                  <tr>
+                      <td style="text-align:right; font-weight:bold; color:var(--text);">${r.name}</td>
+                      <td style="color:#0284c7; font-weight:bold;">${r.count}</td>
+                      <td style="color:#16a34a; font-weight:bold;">${r.total.toLocaleString()} ج</td>
+                  </tr>
+              `).join('');
+          }
+
+      } catch(err) {
+          console.error(err);
+          tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:red;">حدث خطأ أثناء البحث</td></tr>';
+      } finally {
+          hideLoading();
+      }
+  };
 })();

@@ -12,7 +12,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
-    <script src="config.js?v=130"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="config.js?v=135"></script>
     
     <style>
         :root {
@@ -121,7 +122,8 @@
             .print-table th { background: #eee; }
         }
     </style>
-</head><body>
+</head>
+<body>
     <header>
         <div class="brand">
             <img src="../brand-logo.png" alt="Logo" onerror="this.style.display='none'">
@@ -134,7 +136,6 @@
             <button id="themeToggleBtn" onclick="toggleTheme()" title="تغيير المظهر">🌙</button>
             <button class="nav-btn sync" id="syncBtn" onclick="processOutbox()">🔄 مزامنة</button>
             
-            <!-- الأزرار المالية -->
             <button class="nav-btn" style="background:#d4a843; color:white; border:none;" onclick="openCollectionModal()">💰 التحصيل والبواقي</button>
             <button class="nav-btn" style="background:#eab308; color:white; border:none;" onclick="openExpenseModal()">💸 مصاريف يومية</button>
             
@@ -327,17 +328,33 @@
         </div>
     </div>
 
-    <!-- مودال قائمة المرضى -->
+    <!-- مودال قائمة المرضى (مع الفلاتر الجديدة) -->
     <div class="modal" id="patientListModal">
-        <div class="modal-content" style="max-width: 1000px;">
+        <div class="modal-content" style="max-width: 1100px;">
             <button class="btn-close" style="float:left;" onclick="closeModal('patientListModal')">✕ إغلاق</button>
-            <h3 style="color:var(--primary); margin-bottom:20px;">📋 قائمة المرضى (كل الزيارات)</h3>
-            <div style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; text-align: right; font-size: 0.9rem;">
+            <h3 style="color:var(--primary); margin-bottom:20px;">📋 قائمة المرضى والزيارات</h3>
+            
+            <!-- فلاتر التاريخ والتصدير -->
+            <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap; background:var(--bg-input); padding:15px; border-radius:12px; align-items:flex-end;">
+                <div class="form-group" style="margin:0; flex:1; min-width:150px;">
+                    <label style="font-size:0.8rem;">من تاريخ</label>
+                    <input type="date" id="filterDateFrom" style="padding:8px; font-size:0.9rem;">
+                </div>
+                <div class="form-group" style="margin:0; flex:1; min-width:150px;">
+                    <label style="font-size:0.8rem;">إلى تاريخ</label>
+                    <input type="date" id="filterDateTo" style="padding:8px; font-size:0.9rem;">
+                </div>
+                <button class="nav-btn" style="background:var(--primary); color:white; border:none; padding:10px 20px;" onclick="filterPatientList()">🔍 بحث</button>
+                <button class="nav-btn" style="background:#0284c7; color:white; border:none; padding:10px 20px;" onclick="exportPatientsExcel()">📥 تصدير إكسيل</button>
+            </div>
+
+            <div style="overflow-x: auto; max-height: 400px;">
+                <table style="width: 100%; border-collapse: collapse; text-align: right; font-size: 0.9rem;" id="patientListTable">
                     <thead><tr style="background: var(--bg-input); color: var(--primary);">
                         <th style="padding:12px; border-bottom:2px solid var(--border-color);">الزيارة</th>
                         <th style="padding:12px; border-bottom:2px solid var(--border-color);">المريض</th>
                         <th style="padding:12px; border-bottom:2px solid var(--border-color);">الفرع</th>
+                        <th style="padding:12px; border-bottom:2px solid var(--border-color);">التاريخ</th>
                         <th style="padding:12px; border-bottom:2px solid var(--border-color);">الصافي</th>
                         <th style="padding:12px; border-bottom:2px solid var(--border-color);">إجراءات</th>
                     </tr></thead>
@@ -472,7 +489,7 @@
                 let successCount = 0, failCount = 0;
                 
                 pending.sort((a, b) => {
-                    const order = { 'orders': 1, 'orders_edit': 1, 'patients': 1, 'visits': 2, 'visit_tests': 3, 'test_results': 4, 'financial_ledger': 5, 'payments': 5 };
+                    const order = { 'orders': 1, 'orders_edit': 1, 'patients': 1, 'visits': 2, 'visit_tests': 3, 'test_results': 4, 'financial_ledger': 5, 'payments': 5, 'audit_logs': 6 };
                     return (order[a.table_name] || 99) - (order[b.table_name] || 99);
                 });
 
@@ -544,10 +561,8 @@
                             await _supabase.from('patients').update(item.payload).eq('id', item.payload.id).eq('tenant_id', TEBA_CONFIG.tenant.id);
                         }
                         else if (item.table_name === 'visits' && item.action === 'DELETE') {
-                            // مسح الحالة من السحابة (بس مش بنلمس الخزنة)
                             const localVisit = await db.visits.get(item.payload.visit_id);
                             const targetId = localVisit && localVisit.server_id ? localVisit.server_id : item.payload.visit_id;
-                            
                             const { data: vt } = await _supabase.from('visit_tests').select('id').eq('visit_id', targetId);
                             if(vt && vt.length > 0) { await _supabase.from('test_results').delete().in('visit_test_id', vt.map(x => x.id)); }
                             await _supabase.from('visit_tests').delete().eq('visit_id', targetId);
@@ -558,13 +573,14 @@
                         }
                         else if (item.table_name === 'financial_ledger') {
                             if (item.action === 'UPDATE') {
-                                // تحديث حركة مالية موجودة (في حالة تصحيح حالة حديثة)
                                 await _supabase.from('financial_ledger').update({ amount: item.payload.amount, item_name: item.payload.item_name }).eq('visit_id', item.payload.visit_id).eq('tenant_id', TEBA_CONFIG.tenant.id).eq('type', 'revenue');
                             } else {
-                                // إضافة حركة مالية جديدة
                                 const { error } = await _supabase.from('financial_ledger').insert([item.payload]);
                                 if (error) throw error;
                             }
+                        }
+                        else if (item.table_name === 'audit_logs') {
+                            await _supabase.from('audit_logs').insert([item.payload]);
                         }
                         await db.outbox.delete(item.id);
                         successCount++;
@@ -582,7 +598,7 @@
         window.openCollectionModal = function() {
             document.getElementById('collectionModal').style.display = 'flex';
             document.getElementById('collectionSearch').value = '';
-            searchBalances(); // تحميل البواقي فوراً
+            searchBalances(); 
         }
 
         window.searchBalances = async function() {
@@ -615,7 +631,6 @@
                     return;
                 }
                 
-                // عرض 20 حالة بس لو مفيش بحث
                 const displayResults = query === '' ? results.slice(0, 20) : results;
                 
                 tbody.innerHTML = displayResults.map(r => `
@@ -643,16 +658,10 @@
                 await db.visits.put(visit);
                 
                 await addToOutbox('payments', 'UPDATE', { visit_id: visitId, newPaid: newPaid });
-                
-                // تسجيل المبلغ في الخزنة اللايف
                 await addToOutbox('financial_ledger', 'INSERT', {
-                    tenant_id: TEBA_CONFIG.tenant.id,
-                    branch_id: visit.branch_id || parseInt(currentBranch),
-                    visit_id: visitId,
-                    type: 'revenue',
-                    item_name: `تحصيل بواقي زيارة #${visitId}`,
-                    amount: Number(amount),
-                    created_at: new Date().toISOString()
+                    tenant_id: TEBA_CONFIG.tenant.id, branch_id: visit.branch_id || parseInt(currentBranch),
+                    visit_id: visitId, type: 'revenue', item_name: `تحصيل بواقي زيارة #${visitId}`,
+                    amount: Number(amount), created_at: new Date().toISOString()
                 });
 
                 showToast('✅ تم تسجيل التحصيل');
@@ -687,12 +696,8 @@
 
             try {
                 await addToOutbox('financial_ledger', 'INSERT', {
-                    tenant_id: TEBA_CONFIG.tenant.id,
-                    branch_id: parseInt(branchId),
-                    type: 'expense_daily',
-                    item_name: item,
-                    amount: amount,
-                    created_at: new Date().toISOString()
+                    tenant_id: TEBA_CONFIG.tenant.id, branch_id: parseInt(branchId),
+                    type: 'expense_daily', item_name: item, amount: amount, created_at: new Date().toISOString()
                 });
 
                 showToast('✅ تم تسجيل المصروف');
@@ -809,9 +814,7 @@
             document.getElementById('totalAmount').innerText = `${subTotal.toFixed(2)} ج.م`;
             document.getElementById('netTotalAmount').innerText = `${netTotal.toFixed(2)} ج.م`;
             document.getElementById('remainAmount').innerText = `${(netTotal - paid).toFixed(2)} ج.م`;
-        }
-
-        // ==== حفظ الطلب (وتصحيحه لو كان تعديل) ====
+        }        // ==== حفظ الطلب (وتصحيحه لو كان تعديل) ====
         let isSavingOrder = false; 
         window.saveOrder = async function() {
             if (isSavingOrder) return; 
@@ -848,23 +851,12 @@
                 
                 if (paid > 0) {
                     if (isEditing) {
-                        // لو تعديل: نطلب من السحابة تعدل الفلوس في الخزنة
                         await addToOutbox('financial_ledger', 'UPDATE', {
-                            tenant_id: TEBA_CONFIG.tenant.id,
-                            visit_id: visitIdToUse,
-                            amount: paid,
-                            item_name: `تحصيل زيارة #${visitIdToUse} - ${pName} (تعديل)`
+                            tenant_id: TEBA_CONFIG.tenant.id, visit_id: visitIdToUse, amount: paid, item_name: `تحصيل زيارة #${visitIdToUse} - ${pName} (تعديل)`
                         });
                     } else {
-                        // لو جديدة: نسجل حركة جديدة
                         await addToOutbox('financial_ledger', 'INSERT', {
-                            tenant_id: TEBA_CONFIG.tenant.id,
-                            branch_id: branchId,
-                            visit_id: visitIdToUse,
-                            type: 'revenue',
-                            item_name: `تحصيل زيارة #${visitIdToUse} - ${pName}`,
-                            amount: paid,
-                            created_at: new Date().toISOString()
+                            tenant_id: TEBA_CONFIG.tenant.id, branch_id: branchId, visit_id: visitIdToUse, type: 'revenue', item_name: `تحصيل زيارة #${visitIdToUse} - ${pName}`, amount: paid, created_at: new Date().toISOString()
                         });
                     }
                 }
@@ -912,7 +904,6 @@
         // ==== باقي الدوال المساعدة ====
         window.closeModal = function(id) { document.getElementById(id).style.display = 'none'; }
         
-        // حذف الحالة (مسح البيانات فقط وتوفير المساحة، دون المساس بالخزنة)
         window.deleteVisit = async function(visitId) {
             if(!confirm('حذف هذه الحالة من السيستم؟ (تنبيه: الفلوس المسجلة في الخزنة لن تتأثر وستظل في الداشبورد)')) return;
             try {
@@ -1006,22 +997,67 @@
             } catch(e) { showToast('❌ حدث خطأ أثناء فتح الحالة', true); }
         }
 
+        // ================= قائمة المرضى والفلاتر الجديدة =================
+        let allFilteredVisits = []; // متغير عشان نحفظ فيه الداتا للتصدير
+
         window.openPatientList = async function() {
             const tbody = document.getElementById('patientListBody');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">جاري التحميل...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">جاري التحميل...</td></tr>';
             document.getElementById('patientListModal').style.display = 'flex';
+            document.getElementById('filterDateFrom').value = '';
+            document.getElementById('filterDateTo').value = '';
+            
+            await filterPatientList();
+        }
+
+        window.filterPatientList = async function() {
+            const fromDate = document.getElementById('filterDateFrom').value;
+            const toDate = document.getElementById('filterDateTo').value;
+            const tbody = document.getElementById('patientListBody');
+            
             try {
-                const visits = await db.visits.filter(v => String(v.branch_id) === String(currentBranch)).toArray();
+                let visits = await db.visits.filter(v => String(v.branch_id) === String(currentBranch)).toArray();
+                
+                // تطبيق فلتر التاريخ
+                if (fromDate) {
+                    const fromTime = new Date(fromDate).setHours(0,0,0,0);
+                    visits = visits.filter(v => new Date(v.visit_date).getTime() >= fromTime);
+                }
+                if (toDate) {
+                    const toTime = new Date(toDate).setHours(23,59,59,999);
+                    visits = visits.filter(v => new Date(v.visit_date).getTime() <= toTime);
+                }
+
+                // ترتيب تنازلي
+                visits.sort((a, b) => new Date(b.visit_date) - new Date(a.visit_date));
+
                 let html = '';
+                allFilteredVisits = []; // تصفير المتغير قبل التعبئة
+
                 for (let v of visits) {
                     const p = await db.patients.get(v.patient_id);
-                    const branchName = v.branch_id === 2 ? 'بهتيم' : 'الجعافرة';
+                    const branchName = v.branch_id === 1 ? 'الجعافرة' : 'بهتيم';
                     const paddedId = String(v.visit_id).padStart(4, '0');
+                    const dateStr = v.visit_date ? new Date(v.visit_date).toLocaleDateString('ar-EG') : '---';
+                    
+                    // تجهيز الداتا للتصدير
+                    allFilteredVisits.push({
+                        'رقم الزيارة': paddedId,
+                        'اسم المريض': p ? p.name : 'غير معروف',
+                        'رقم الموبايل': p ? p.phone : '',
+                        'الفرع': branchName,
+                        'التاريخ': dateStr,
+                        'الصافي': v.total_amount || 0,
+                        'المدفوع': v.paid_amount || 0,
+                        'الباقي': (v.total_amount || 0) - (v.paid_amount || 0)
+                    });
+
                     html += `
                     <tr style="border-bottom:1px solid var(--border-color);">
                         <td style="padding:12px;">${paddedId}</td>
                         <td style="padding:12px;">${p ? p.name : 'غير معروف'}</td>
                         <td style="padding:12px;">${branchName}</td>
+                        <td style="padding:12px; direction:ltr; text-align:right;">${dateStr}</td>
                         <td style="padding:12px;">${v.total_amount || 0} ج</td>
                         <td style="padding:12px; display:flex; gap:8px;">
                             <button style="padding: 6px 12px; background:var(--danger); color:white; border:none; border-radius:8px; cursor:pointer;" onclick="deleteVisit(${v.visit_id})">حذف</button>
@@ -1029,8 +1065,16 @@
                         </td>
                     </tr>`;
                 }
-                tbody.innerHTML = html || '<tr><td colspan="5" style="text-align:center; padding:20px;">لا توجد بيانات لهذا الفرع</td></tr>';
-            } catch (e) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">حدث خطأ</td></tr>'; }
+                tbody.innerHTML = html || '<tr><td colspan="6" style="text-align:center; padding:20px;">لا توجد زيارات في هذه الفترة</td></tr>';
+            } catch (e) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">حدث خطأ</td></tr>'; }
+        }
+
+        window.exportPatientsExcel = function() {
+            if (allFilteredVisits.length === 0) return alert('لا توجد بيانات لتصديرها. قم بالبحث أولاً.');
+            const ws = XLSX.utils.json_to_sheet(allFilteredVisits);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "المرضى");
+            XLSX.writeFile(wb, `Patients_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
         window.searchPatient = async function() {
