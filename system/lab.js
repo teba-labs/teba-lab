@@ -1,5 +1,5 @@
 ﻿// =====================================================
-// TEBA LABS - Lab Logic (v130 - SaaS Multi-Tenant)
+// TEBA LABS - Lab Logic (v140 - SaaS Multi-Tenant)
 // =====================================================
 
 // ==== التحقق من تسجيل الدخول ====
@@ -37,8 +37,30 @@ let selectedVisitId = null;
 let currentLabBranch = localStorage.getItem('teba_current_branch') || '1'; 
 let isSyncing = false; 
 let showHiddenVisits = false; 
+let labBranchesList = []; // لتخزين الفروع
+
+// متغيرات الطباعة
+let printSettings = {
+    header: "معامل طيبة للتحاليل الطبية",
+    footer: "النتيجة لا تغني عن استشارة الطبيب المعالج."
+};
 
 window.customRanges = {}; 
+
+// ==== جلب الفروع من السحابة ====
+async function loadLabBranches() {
+    try {
+        const { data: branches, error } = await _supabase.from('branches').select('id, name').eq('tenant_id', TEBA_CONFIG.tenant.id).order('id', { ascending: true });
+        if (!error && branches && branches.length > 0) {
+            labBranchesList = branches;
+            const branchSelect = document.getElementById('labBranch');
+            if (branchSelect) {
+                branchSelect.innerHTML = branches.map(b => `<option value="${b.id}">🏥 ${b.name}</option>`).join('');
+                branchSelect.value = currentLabBranch;
+            }
+        }
+    } catch(e) { console.error("Error loading lab branches:", e); }
+}
 
 // ==== تغيير الفرع (للدكتور فقط) ====
 function changeLabBranch(val) {
@@ -58,7 +80,7 @@ function changeLabBranch(val) {
 }
 
 // ==========================================
-// ⚙️ محرك المزامنة الشامل (Outbox)
+// ⚙️ محرك المزامنة الشامل (Outbox) - تم تصحيح المالية
 // ==========================================
 async function addToOutbox(table_name, action, payload) {
     try {
@@ -91,7 +113,7 @@ async function processOutbox() {
         let failCount = 0;
 
         pending.sort((a, b) => {
-            const order = { 'orders': 1, 'orders_edit': 1, 'patients': 1, 'visits': 2, 'visit_tests': 3, 'test_results': 4, 'audit_logs': 5 };
+            const order = { 'orders': 1, 'orders_edit': 1, 'patients': 1, 'visits': 2, 'visit_tests': 3, 'test_results': 4, 'financial_ledger': 5, 'payments': 5, 'audit_logs': 6 };
             return (order[a.table_name] || 99) - (order[b.table_name] || 99);
         });
 
@@ -229,8 +251,26 @@ async function processOutbox() {
                         await _supabase.from('visits').delete().eq('visit_id', targetId).eq('tenant_id', TEBA_CONFIG.tenant.id);
                     }
                 }
+                else if (item.table_name === 'financial_ledger') {
+                    // التعديل السحري: لو الحركة مش موجودة، هنضيفها. لو موجودة، هنحدثها.
+                    if (item.action === 'UPDATE') {
+                        const { data: existing } = await _supabase.from('financial_ledger').select('id').eq('visit_id', item.payload.visit_id).eq('tenant_id', TEBA_CONFIG.tenant.id).eq('type', 'revenue').single();
+                        if (existing) {
+                            await _supabase.from('financial_ledger').update({ amount: item.payload.amount, item_name: item.payload.item_name }).eq('id', existing.id);
+                        } else {
+                            const newPayload = { ...item.payload, type: 'revenue', created_at: new Date().toISOString() };
+                            await _supabase.from('financial_ledger').insert([newPayload]);
+                        }
+                    } else {
+                        const { data: existing } = await _supabase.from('financial_ledger').select('id').eq('visit_id', item.payload.visit_id).eq('tenant_id', TEBA_CONFIG.tenant.id).eq('type', 'revenue').single();
+                        if (existing) {
+                             await _supabase.from('financial_ledger').update({ amount: item.payload.amount, item_name: item.payload.item_name }).eq('id', existing.id);
+                        } else {
+                             await _supabase.from('financial_ledger').insert([item.payload]);
+                        }
+                    }
+                }
                 else if (item.table_name === 'audit_logs') {
-                    // حفظ سجل التعديلات
                     const { error } = await _supabase.from('audit_logs').insert([item.payload]);
                     if (error) console.warn('Audit log failed', error);
                 }
@@ -405,6 +445,28 @@ setInterval(() => {
 }, 60000);
 
 // ==========================================
+// ⚙️ جلب إعدادات الطباعة
+// ==========================================
+async function loadPrintSettings() {
+    try {
+        // جلب من المحلي أولاً
+        const localHeader = localStorage.getItem('teba_print_header');
+        const localFooter = localStorage.getItem('teba_print_footer');
+        if(localHeader) printSettings.header = localHeader;
+        if(localFooter) printSettings.footer = localFooter;
+
+        // جلب من السحابة لو متاح
+        if(navigator.onLine) {
+            const { data } = await _supabase.from('site_settings').select('print_header, print_footer').eq('tenant_id', TEBA_CONFIG.tenant.id).single();
+            if(data) {
+                if(data.print_header) { printSettings.header = data.print_header; localStorage.setItem('teba_print_header', data.print_header); }
+                if(data.print_footer) { printSettings.footer = data.print_footer; localStorage.setItem('teba_print_footer', data.print_footer); }
+            }
+        }
+    } catch(e) { console.log("Print settings error:", e); }
+}
+
+// ==========================================
 // 🖥️ واجهة المستخدم وعرض المرضى
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
@@ -497,7 +559,6 @@ async function publishVisit() {
             await db.visits.put(visit);
             await addToOutbox('visits', 'UPDATE', { visit_id: parseInt(selectedVisitId), is_published: true });
             
-            // تسجيل النشر في سجل التعديلات
             await addToOutbox('audit_logs', 'INSERT', {
                 tenant_id: TEBA_CONFIG.tenant.id,
                 action_type: 'نشر نتيجة',
@@ -942,7 +1003,6 @@ async function removeTestFromOrder(vtId, testName) {
         await db.visit_tests.update(vtId, { is_cancelled: true });
         await addToOutbox('visit_tests', 'UPDATE', { id: vtId, is_cancelled: true });
         
-        // تسجيل الإجراء في سجل التعديلات
         await addToOutbox('audit_logs', 'INSERT', {
             tenant_id: TEBA_CONFIG.tenant.id,
             action_type: 'إلغاء تحليل',
@@ -999,7 +1059,7 @@ function selectPatient(visitId) {
 }
 
 // ==========================================
-// 🖨️ الطباعة و PDF 
+// 🖨️ الطباعة و PDF (تم تعديلها لتقرأ من الإعدادات)
 // ==========================================
 function getHeaderHtml(visit, reqDate, printDate) {
     let ageStr = visit.patient.age + ' Years';
@@ -1010,6 +1070,8 @@ function getHeaderHtml(visit, reqDate, printDate) {
             <div class="print-header-left">
                 <h1>${TEBA_CONFIG.lab.nameEn || 'TEBA LABS'}</h1>
                 <p style="font-size: 15px;">For Medical Analyzes</p>
+                <!-- هنا بنستخدم الهيدر اللي إنت كتبته في الإعدادات -->
+                <p style="font-size: 14px; font-weight: bold;">${printSettings.header}</p>
                 <p>${TEBA_CONFIG.lab.doctor || ''}</p>
             </div>
             <div class="print-header-right">
@@ -1031,7 +1093,11 @@ function getHeaderHtml(visit, reqDate, printDate) {
 }
 
 function getFooterHtml() {
-    return `<div class="print-footer"><div class="print-footer-phones"><p>📞 ${TEBA_CONFIG.lab.phone}</p><p>📱 ${TEBA_CONFIG.lab.whatsapp}</p></div><div class="print-footer-addresses"><p>الفرع الأول: الجعافرة - الطريق العمومي - أعلى صيدلية الصحابة</p><p>الفرع الثاني: بهتيم - مساكن اسكو - أمام مدرسة ابن الخطاب - عيادة د. محمد رمضان</p></div></div>`;
+    // هنا بنستخدم الفوتر اللي إنت كتبته في الإعدادات، وبيتحول لأسطر لو فيه Enter
+    const footerText = printSettings.footer.replace(/\n/g, '<br>');
+    return `<div class="print-footer" style="justify-content: center; text-align: center; border-top: 2px solid #000; padding-top: 10px; margin-top: 30px; font-size: 13px; font-weight: bold; color: #000;">
+        <p>${footerText}</p>
+    </div>`;
 }
 
 function openPrintModal() {
@@ -1123,8 +1189,11 @@ window.onload = async () => {
         if(branchSelect) branchSelect.style.display = 'none';
     }
     
-    const branchSelect = document.getElementById('labBranch');
-    if(branchSelect) branchSelect.value = currentLabBranch;
+    // تحميل الفروع من السحابة
+    await loadLabBranches();
+    
+    // تحميل إعدادات الطباعة
+    await loadPrintSettings();
     
     await loadData(); 
     checkSyncStatus();

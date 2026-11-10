@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="config.js?v=134"></script>
+    <script src="config.js?v=150"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <style>
@@ -250,7 +250,7 @@
                 </div>
             </div>
 
-            <!-- 6. تاب البيانات والنسخ الاحتياطي (تم إضافة تصدير المرضى هنا) -->
+            <!-- 6. تاب البيانات والنسخ الاحتياطي -->
             <div id="tab-import" class="tab-content">
                 
                 <!-- قسم تصدير داتا المرضى الجديد -->
@@ -486,6 +486,9 @@
                 localStorage.setItem('teba_phone', document.getElementById('setPhone').value);
                 localStorage.setItem('teba_whatsapp', document.getElementById('setWhatsapp').value);
                 
+                // تطبيق اللون فوراً على الشاشة
+                document.documentElement.style.setProperty('--primary', primaryColor);
+                
                 showToast('✅ تم حفظ البيانات واللوجو بنجاح');
                 
                 if(finalLogoUrl) {
@@ -699,6 +702,11 @@
                 if (data) {
                     document.getElementById('setPrintHeader').value = data.print_header || 'معامل طيبة للتحاليل الطبية';
                     document.getElementById('setPrintFooter').value = data.print_footer || 'النتيجة لا تغني عن استشارة الطبيب المعالج.';
+                    
+                    // تخزين في المحلي عشان صفحة المعمل تقراها
+                    localStorage.setItem('teba_print_header', document.getElementById('setPrintHeader').value);
+                    localStorage.setItem('teba_print_footer', document.getElementById('setPrintFooter').value);
+                    
                     if (data.signature_url) {
                         currentSignatureUrl = data.signature_url;
                         const preview = document.getElementById('signaturePreview');
@@ -741,6 +749,10 @@
                 const { error } = await _supabase.from('site_settings').update(updates).eq('tenant_id', tenantId);
                 if (error) throw error;
 
+                // حفظ في المحلي فوراً عشان المعمل يقراها
+                localStorage.setItem('teba_print_header', header);
+                localStorage.setItem('teba_print_footer', footer);
+
                 showToast('✅ تم حفظ إعدادات الطباعة');
                 if(finalSigUrl) {
                     const preview = document.getElementById('signaturePreview');
@@ -753,7 +765,7 @@
             }
         }
 
-        // ==== 9. تصدير داتا المرضى (جديد) ====
+        // ==== 9. تصدير داتا المرضى ====
         async function exportPatientsData() {
             const fromDate = document.getElementById('exportFromDate').value;
             const toDate = document.getElementById('exportToDate').value;

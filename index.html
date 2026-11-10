@@ -18,11 +18,11 @@
 </style>
 
 <link rel="icon" type="image/png" href="logo.png">
-<link rel="stylesheet" href="styles.css?v=130">
+<link rel="stylesheet" href="styles.css?v=150">
 
 <!-- مكتبة السحابة وملف الإعدادات -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=130"></script>
+<script src="config.js?v=150"></script>
 </head>
 <body>
 
@@ -73,8 +73,7 @@
     </ul>
   </aside>
 
-  <main class="main-content">
-    <!-- 1. القسم الرئيسي (Home) -->
+  <main class="main-content">    <!-- 1. القسم الرئيسي (Home) -->
     <section id="section-home" class="section active">
       <div class="hero-split reveal">
         <div class="hero-content">
@@ -151,11 +150,7 @@
       <div class="section-head"><h2>نبذة عن <span class="dyn-lab-name">معامل طيبة</span></h2></div>
       <div class="about-box">
         <p><span class="dyn-lab-name">معامل طيبة</span> (TEBA LABS) هو معمل تحاليل طبية متخصص يقدم خدمات التحاليل بأعلى جودة ودقة. بقيادة <strong class="dyn-doctor-name">د/ أحمد طه أبوندا</strong>، نلتزم بأحدث المعايير العالمية لضمان نتائج موثوقة.</p>
-        <p>نخدم أهل شبين القناطر والقليوبية من خلال فرعين:</p>
-        <ul class="about-list">
-          <li><span class="diamond">◆</span><span><strong>فرع الجعافرة</strong> — الطريق العمومي، أعلى صيدلية الصحابة</span></li>
-          <li><span class="diamond">◆</span><span><strong>فرع بهتيم</strong> — مساكن اسكو، أمام مدرسة بن الخطاب</span></li>
-        </ul>
+        <p>نخدم أهل شبين القناطر والقليوبية من خلال فروعنا:</p>
       </div>
     </section>
 
@@ -202,24 +197,11 @@
       </div>
     </section>
 
-    <!-- 9. قسم الفروع (Branches) -->
+    <!-- 9. قسم الفروع (Branches) - بيتم تحميله ديناميكياً من السحابة -->
     <section id="section-branches" class="section">
-      <div class="section-head"><h2>📍 فروعنا</h2><p>فرعان لخدمتك</p></div>
-      <div class="branches-grid">
-        <div class="branch-card">
-          <h4>🏥 فرع الجعافرة <span class="branch-status" data-branch="jaafra"></span></h4>
-          <a class="branch-map-link" href="https://www.google.com/maps/search/?api=1&query=معامل+طيبة+د/احمد+طه+ابوندا+شبين+القناطر" target="_blank">
-            <div class="branch-map-preview"><span class="map-pin">📍</span><span class="map-text">اضغط لفتح الموقع على الخريطة</span></div>
-          </a>
-          <div class="content"><p><strong>📍</strong> الطريق العمومي، أعلى صيدلية الصحابة</p><p><strong>🕒</strong> السبت-الخميس: 11ص-11م | الجمعة: 4م-10م</p></div>
-        </div>
-        <div class="branch-card">
-          <h4>🏥 فرع بهتيم <span class="branch-status" data-branch="bahtim"></span></h4>
-          <a class="branch-map-link" href="https://www.google.com/maps?q=30.154034951369837,31.278476534038386" target="_blank">
-            <div class="branch-map-preview"><span class="map-pin">📍</span><span class="map-text">اضغط لفتح الموقع على الخريطة</span></div>
-          </a>
-          <div class="content"><p><strong>📍</strong> مساكن اسكو، أمام مدرسة بن الخطاب</p><p><strong>🕒</strong> السبت-الخميس: 12م-12ص | الجمعة: إجازة</p></div>
-        </div>
+      <div class="section-head"><h2>📍 فروعنا</h2><p>نخدمك في كل مكان</p></div>
+      <div class="branches-grid" id="branchesGrid">
+          <p style="text-align:center; width: 100%; color: var(--text-muted);">جاري تحميل الفروع...</p>
       </div>
     </section>
 
@@ -231,7 +213,9 @@
       <details class="faq-item"><summary>إيه طرق الدفع المتاحة؟</summary><p>كاش أو محفظة إلكترونية.</p></details>
       <details class="faq-item"><summary>هل لازم صيام قبل التحليل؟</summary><p>بعض التحاليل فقط تحتاج صيام 8-12 ساعة. اضغط على زر "!" جنب أي تحليل لمعرفة شروطه بالتفصيل.</p></details>
       <details class="faq-item"><summary>إيه الفرق بين الباقة والتحليل الفردي؟</summary><p>الباقة توفر لك مجموعة تحاليل بسعر مخفض (خصم 25%)، بدل ما تحجز كل تحليل لوحده بالسعر الكامل.</p></details>
-    </section>    <!-- 11. قسم المعلومات الطبية (Medical) -->
+    </section>
+
+    <!-- 11. قسم المعلومات الطبية (Medical) -->
     <section id="section-medical" class="section">
       <div class="section-head"><h2>🩺 معلومات <span>طبية</span></h2><p>كل ما تريد معرفته عن التحاليل الطبية وأهميتها</p></div>
       <div class="med-info-header"><div class="badge-med">معلومات موثوقة</div><h3>أهمية الالتزام بشروط التحاليل الطبية</h3><p>الالتزام بشروط التحضير قبل التحليل هو الخطوة الأهم للحصول على نتائج دقيقة. أي خطأ في التحضير قد يؤدي إلى نتائج خاطئة تؤثر على تشخيص حالتك وعلاجك.</p></div>
@@ -266,9 +250,7 @@
     <h3><span>📋 روشتتي</span><button onclick="closeAllSidebars()" aria-label="إغلاق">✕</button></h3>
     <div id="cartContent"><div class="cart-empty"><div>📋</div>روشتتك فاضية<br><small>اضغط "أضف" على أي تحليل أو باقة</small></div></div>
   </aside>
-</div>
-
-<!-- الأزرار العائمة (Floating Buttons) -->
+</div><!-- الأزرار العائمة (Floating Buttons) -->
 <div class="floating-buttons-container">
     <a class="float-wa pulse-wa dyn-wa-link" href="#" title="واتساب">💬</a>
     <a class="float-emergency dyn-wa-link" href="#" title="تحليل عاجل">🚨 تحليل عاجل</a>
@@ -340,14 +322,17 @@
         <button onclick="downloadPDF()" style="background:#16a34a; color:#fff; padding:12px 30px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1.1rem;">📥 تحميل النتيجة PDF</button>
         <button onclick="document.getElementById('resultModal').style.display='none'" style="background:#dc2626; color:#fff; padding:12px 30px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1.1rem;">✕ إغلاق</button>
     </div>
-</div><!-- مكتبة تحويل الشاشة لـ PDF -->
+</div>
+
+<!-- مكتبة تحويل الشاشة لـ PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <!-- الملفات الأساسية للواجهة -->
 <script src="data.js?v=130" defer></script>
 <script src="app.js?v=130" defer></script>
 <script src="features.js?v=130" defer></script>
-<script src="site_dynamic.js?v=130" defer></script>
+<!-- ربط ملف الفروع الجديد -->
+<script src="site_dynamic.js?v=151" defer></script>
 <script src="patient_portal.js?v=130" defer></script>
 
 <!-- سكريبت تفعيل الـ PWA وتثبيت التطبيق -->

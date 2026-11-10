@@ -13,7 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="config.js?v=135"></script>
+    <script src="config.js?v=140"></script>
     
     <style>
         :root {
@@ -187,8 +187,7 @@
                     <div class="form-group">
                         <label>الفرع</label>
                         <select id="pBranch" onchange="updateLocalBranch(this.value)">
-                            <option value="1">🏥 الجعافرة</option>
-                            <option value="2">🏥 بهتيم</option>
+                            <!-- سيتم تحميل الفروع هنا ديناميكياً -->
                         </select>
                     </div>
                     <div class="form-group">
@@ -309,14 +308,12 @@
             <div class="form-group">
                 <label>الفرع</label>
                 <select id="expBranch">
-                    <option value="1">🏥 الجعافرة</option>
-                    <option value="2">🏥 بهتيم</option>
+                    <!-- سيتم تحميل الفروع هنا ديناميكياً -->
                 </select>
             </div>
             <div class="form-group">
                 <label>بند المصروف</label>
                 <select id="expCategorySelect">
-                    <!-- سيتم تحميل البنود هنا من السحابة -->
                     <option value="">جاري التحميل...</option>
                 </select>
             </div>
@@ -454,6 +451,25 @@
         let currentCategory = 'all', currentEditingVisitId = null, isSyncing = false; 
         let currentBranch = localStorage.getItem('teba_current_branch') || '1';
 
+        // ==== جلب الفروع ديناميكياً ====
+        async function loadBranchesForReception() {
+            const branchSelects = [document.getElementById('pBranch'), document.getElementById('expBranch')];
+            try {
+                const { data: branches, error } = await _supabase.from('branches').select('id, name').eq('tenant_id', TEBA_CONFIG.tenant.id).order('id', { ascending: true });
+                
+                if (!error && branches && branches.length > 0) {
+                    branchSelects.forEach(select => {
+                        if(!select) return;
+                        select.innerHTML = branches.map(b => `<option value="${b.id}">🏥 ${b.name}</option>`).join('');
+                        select.value = currentBranch;
+                    });
+                    // تحديث اسم الفرع في الهيدر
+                    const currentB = branches.find(b => String(b.id) === String(currentBranch));
+                    if(currentB) document.getElementById('currentBranchDisplay').innerText = currentB.name;
+                }
+            } catch(e) { console.error("Error loading branches:", e); }
+        }
+
         function updateLocalBranch(val) {
             if (userRole !== 'admin' && userRole !== 'owner') {
                 document.getElementById('pBranch').value = currentBranch;
@@ -461,7 +477,9 @@
             }
             currentBranch = val;
             localStorage.setItem('teba_current_branch', val);
-            document.getElementById('currentBranchDisplay').innerText = val === '1' ? 'الجعافرة' : 'بهتيم';
+            const select = document.getElementById('pBranch');
+            const selectedText = select.options[select.selectedIndex].text.replace('🏥 ', '');
+            document.getElementById('currentBranchDisplay').innerText = selectedText;
             loadRecentPatients(); 
         }
 
@@ -572,11 +590,24 @@
                             await _supabase.from('visits').update({ paid_amount: item.payload.newPaid }).eq('visit_id', item.payload.visit_id).eq('tenant_id', TEBA_CONFIG.tenant.id);
                         }
                         else if (item.table_name === 'financial_ledger') {
+                            // التعديل السحري: لو الحركة مش موجودة، هنضيفها. لو موجودة، هنحدثها.
                             if (item.action === 'UPDATE') {
-                                await _supabase.from('financial_ledger').update({ amount: item.payload.amount, item_name: item.payload.item_name }).eq('visit_id', item.payload.visit_id).eq('tenant_id', TEBA_CONFIG.tenant.id).eq('type', 'revenue');
+                                const { data: existing } = await _supabase.from('financial_ledger').select('id').eq('visit_id', item.payload.visit_id).eq('tenant_id', TEBA_CONFIG.tenant.id).eq('type', 'revenue').single();
+                                if (existing) {
+                                    await _supabase.from('financial_ledger').update({ amount: item.payload.amount, item_name: item.payload.item_name }).eq('id', existing.id);
+                                } else {
+                                    // لو مفيش حركة قديمة، ننشئ واحدة جديدة
+                                    const newPayload = { ...item.payload, type: 'revenue', created_at: new Date().toISOString() };
+                                    await _supabase.from('financial_ledger').insert([newPayload]);
+                                }
                             } else {
-                                const { error } = await _supabase.from('financial_ledger').insert([item.payload]);
-                                if (error) throw error;
+                                // لو جديدة، نضيفها (بس نتأكد الأول إنها مش متكررة)
+                                const { data: existing } = await _supabase.from('financial_ledger').select('id').eq('visit_id', item.payload.visit_id).eq('tenant_id', TEBA_CONFIG.tenant.id).eq('type', 'revenue').single();
+                                if (existing) {
+                                     await _supabase.from('financial_ledger').update({ amount: item.payload.amount, item_name: item.payload.item_name }).eq('id', existing.id);
+                                } else {
+                                     await _supabase.from('financial_ledger').insert([item.payload]);
+                                }
                             }
                         }
                         else if (item.table_name === 'audit_logs') {
@@ -658,6 +689,8 @@
                 await db.visits.put(visit);
                 
                 await addToOutbox('payments', 'UPDATE', { visit_id: visitId, newPaid: newPaid });
+                
+                // التعديل هنا: بنبعت الحركة كـ INSERT، والمزامنة هتتصرف (هتحدث أو تضيف)
                 await addToOutbox('financial_ledger', 'INSERT', {
                     tenant_id: TEBA_CONFIG.tenant.id, branch_id: visit.branch_id || parseInt(currentBranch),
                     visit_id: visitId, type: 'revenue', item_name: `تحصيل بواقي زيارة #${visitId}`,
@@ -998,7 +1031,7 @@
         }
 
         // ================= قائمة المرضى والفلاتر الجديدة =================
-        let allFilteredVisits = []; // متغير عشان نحفظ فيه الداتا للتصدير
+        let allFilteredVisits = [];
 
         window.openPatientList = async function() {
             const tbody = document.getElementById('patientListBody');
@@ -1018,7 +1051,6 @@
             try {
                 let visits = await db.visits.filter(v => String(v.branch_id) === String(currentBranch)).toArray();
                 
-                // تطبيق فلتر التاريخ
                 if (fromDate) {
                     const fromTime = new Date(fromDate).setHours(0,0,0,0);
                     visits = visits.filter(v => new Date(v.visit_date).getTime() >= fromTime);
@@ -1028,11 +1060,10 @@
                     visits = visits.filter(v => new Date(v.visit_date).getTime() <= toTime);
                 }
 
-                // ترتيب تنازلي
                 visits.sort((a, b) => new Date(b.visit_date) - new Date(a.visit_date));
 
                 let html = '';
-                allFilteredVisits = []; // تصفير المتغير قبل التعبئة
+                allFilteredVisits = [];
 
                 for (let v of visits) {
                     const p = await db.patients.get(v.patient_id);
@@ -1040,7 +1071,6 @@
                     const paddedId = String(v.visit_id).padStart(4, '0');
                     const dateStr = v.visit_date ? new Date(v.visit_date).toLocaleDateString('ar-EG') : '---';
                     
-                    // تجهيز الداتا للتصدير
                     allFilteredVisits.push({
                         'رقم الزيارة': paddedId,
                         'اسم المريض': p ? p.name : 'غير معروف',
@@ -1175,8 +1205,10 @@
 
         window.onload = async () => { 
             if (userRole !== 'admin' && userRole !== 'owner') document.getElementById('pBranch').style.display = 'none';
-            document.getElementById('currentBranchDisplay').innerText = currentBranch === '1' ? 'الجعافرة' : 'بهتيم';
-            document.getElementById('pBranch').value = currentBranch;
+            
+            // تحميل الفروع
+            await loadBranchesForReception();
+            
             await fetchCatalogFromCloud(); renderCart(); updateLiveTicker(); await startNewPatient(); await loadRecentPatients();
             if (navigator.onLine) processOutbox();
         };

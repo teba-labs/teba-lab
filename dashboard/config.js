@@ -1,14 +1,14 @@
 ﻿// =====================================================
-// TEBA LABS - Configuration File (v134 - Final Fix)
+// TEBA LABS - Configuration File (v150 - Dynamic & Force Color)
 // =====================================================
 
 // قراءة البيانات من ذاكرة المتصفح، ولو مش موجودة نستخدم القيم الافتراضية
 const _currentTenantId = localStorage.getItem('teba_tenant_id') || "0981e62c-c33d-46c4-8919-2f9fbb0946f6";
-const _currentTenantName = localStorage.getItem('teba_tenant_name') || "معامل طيبة";
+const _currentTenantName = localStorage.getItem('teba_tenant_name') || "معمل التحاليل الطبية"; // اسم افتراضي عام
 const _currentLogoUrl = localStorage.getItem('teba_logo_url') || "";
 const _currentPrimaryColor = localStorage.getItem('teba_primary_color') || "#0a6847";
-const _currentPhone = localStorage.getItem('teba_phone') || "01123702062";
-const _currentWhatsapp = localStorage.getItem('teba_whatsapp') || "201099003494";
+const _currentPhone = localStorage.getItem('teba_phone') || "";
+const _currentWhatsapp = localStorage.getItem('teba_whatsapp') || "";
 
 const TEBA_CONFIG = {
     tenant: { 
@@ -43,7 +43,14 @@ document.addEventListener("DOMContentLoaded", () => {
         :root { 
             --primary: ${TEBA_CONFIG.tenant.primaryColor} !important; 
             --primary-hover: ${TEBA_CONFIG.tenant.primaryColor} !important;
-            --primary-gradient: linear-gradient(135deg, ${TEBA_CONFIG.tenant.primaryColor}, #0a6847) !important;
+            --primary-gradient: linear-gradient(135deg, ${TEBA_CONFIG.tenant.primaryColor}, #085a3d) !important;
+        }
+        /* إجبار العناصر الأساسية على أخذ اللون */
+        .btn-login, .btn-save, .nav-btn.sync, .app-icon-box {
+            background-color: ${TEBA_CONFIG.tenant.primaryColor} !important;
+        }
+        .header-title, .brand-info, h1.dyn-lab-name {
+            color: ${TEBA_CONFIG.tenant.primaryColor} !important;
         }
     `;
     document.head.appendChild(style);

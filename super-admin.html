@@ -11,7 +11,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="config.js?v=125"></script>
+    <script src="config.js?v=150"></script>
     <style>
         :root {
             --bg: #0f172a; --surface: #1e293b; --surface-hover: #334155;
@@ -23,17 +23,15 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: var(--font); background-color: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* شاشة الدخول */
         #loginScreen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 30%, rgba(16,185,129,.1), transparent 60%), var(--bg); z-index: 9999; }
         .login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 40px 30px; max-width: 400px; width: 100%; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border-top: 5px solid var(--gold); }
         .login-box h2 { color: var(--gold); font-size: 1.8rem; margin-bottom: 10px; }
         .login-box p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px; }
-        .login-box input { width: 100%; padding: 14px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); font-size: 1rem; margin-bottom: 15px; outline: none; text-align: center;}
+        .login-box input { width: 100%; padding: 14px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); font-size: 1rem; margin-bottom: 15px; outline: none; text-align: center; direction: ltr;}
         .login-box input:focus { border-color: var(--gold); }
         .login-box button { width: 100%; padding: 14px; border-radius: 10px; background: var(--gold); color: #000; font-weight: bold; font-size: 1rem; border: none; cursor: pointer; transition: 0.2s;}
         .login-box button:hover { background: #eab308; transform: translateY(-2px); }
 
-        /* الهيكل الرئيسي */
         #dashboardScreen { display: none; flex-direction: column; height: 100vh; }
         
         header { background: var(--surface); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
@@ -52,7 +50,6 @@
         .stat-card h3 { color: var(--text-muted); font-size: 1rem; margin-bottom: 10px; }
         .stat-card .value { color: var(--primary); font-size: 2.5rem; font-weight: bold; }
 
-        /* الجدول */
         .table-container { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; text-align: right; }
         th, td { padding: 15px 20px; border-bottom: 1px solid var(--border); }
@@ -65,7 +62,6 @@
         .btn-upload-excel { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: inherit; transition: 0.2s; display: flex; align-items: center; gap: 5px;}
         .btn-upload-excel:hover { background: #2563eb; }
 
-        /* المودال */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .modal-content { background: var(--surface); padding: 30px; border-radius: var(--radius); width: 90%; max-width: 600px; border-top: 4px solid var(--primary); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -80,7 +76,6 @@
         .btn-save:hover { background: var(--primary-dark); color: #fff; }
         .btn-cancel { background: var(--surface-hover); color: var(--text); padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; }
 
-        /* Upload Zone */
         .upload-zone { border: 2px dashed var(--accent); background: rgba(59, 130, 246, 0.05); border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; transition: 0.2s; margin-bottom: 20px;}
         .upload-zone:hover { background: rgba(59, 130, 246, 0.1); border-color: #60a5fa; }
         .upload-zone .icon { font-size: 3rem; margin-bottom: 10px; }
@@ -102,8 +97,8 @@
         <div class="login-box">
             <h2>👑 Super Admin</h2>
             <p>لوحة تحكم مالك الشركة (خاصة)</p>
-            <input type="email" id="masterEmail" placeholder="إيميل المالك">
-            <input type="password" id="masterPassword" placeholder="كلمة المرور">
+            <input type="email" id="masterEmail" placeholder="إيميل المالك" style="direction: ltr;">
+            <input type="password" id="masterPassword" placeholder="كلمة المرور" style="direction: ltr;">
             <button onclick="loginMaster()">دخول آمن</button>
             <div id="loginError" style="color: var(--danger); margin-top: 10px; font-size: 0.9rem; display: none;"></div>
         </div>
@@ -126,10 +121,6 @@
                     <h3>إجمالي المعامل المشتركة</h3>
                     <div class="value" id="statTotalTenants">0</div>
                 </div>
-                <div class="stat-card">
-                    <h3>المعامل النشطة حالياً</h3>
-                    <div class="value" id="statActiveTenants" style="color: var(--gold);">0</div>
-                </div>
             </div>
 
             <h2 style="margin-bottom: 15px; color: var(--text);">قائمة المعامل (Tenants)</h2>
@@ -137,22 +128,22 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>ID (المعمل)</th>
                             <th>اسم المعمل</th>
-                            <th>الدومين / الرابط</th>
+                            <th>الرابط (Subdomain)</th>
                             <th>تاريخ الاشتراك</th>
                             <th>الحالة</th>
                             <th>إجراءات</th>
                         </tr>
                     </thead>
                     <tbody id="tenantsTableBody">
-                        <tr><td colspan="6" style="text-align: center;">جاري تحميل البيانات...</td></tr>
+                        <tr><td colspan="5" style="text-align: center;">جاري تحميل البيانات...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
+    <!-- مودال إضافة معمل جديد (بالإيميل والباسورد) -->
     <div class="modal" id="addTenantModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -164,19 +155,26 @@
                 <input type="text" id="newLabName" placeholder="مثال: معامل النور">
             </div>
             <div class="form-group">
-                <label>اسم المعمل (بالإنجليزي - للرابط)</label>
-                <input type="text" id="newSubdomain" placeholder="مثال: alnoor-labs (حروف إنجليزية فقط)">
+                <label>الرابط المختصر (إنجليزي بدون مسافات)</label>
+                <input type="text" id="newSubdomain" placeholder="مثال: alnoor-labs">
             </div>
-            <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid var(--gold); color: var(--gold); padding: 10px; border-radius: 8px; font-size: 0.85rem; margin-top: 15px;">
-                ⚠️ <strong>ملاحظة:</strong> بعد الحفظ، يجب إنشاء حساب الدخول (Auth) لصاحب المعمل يدوياً من لوحة Supabase وربطه في جدول users.
+            <div class="form-group">
+                <label>إيميل صاحب المعمل (للدخول)</label>
+                <input type="email" id="newOwnerEmail" placeholder="admin@alnoor.com" style="direction: ltr;">
             </div>
+            <div class="form-group">
+                <label>باسورد صاحب المعمل</label>
+                <input type="password" id="newOwnerPass" placeholder="********" style="direction: ltr;">
+            </div>
+            
             <div class="modal-actions">
-                <button class="btn-save" onclick="saveNewTenant()">💾 حفظ المعمل</button>
+                <button class="btn-save" id="btnSaveTenant" onclick="saveNewTenant()">💾 إنشاء المعمل والحساب</button>
                 <button class="btn-cancel" onclick="closeAddTenantModal()">إلغاء</button>
             </div>
         </div>
     </div>
 
+    <!-- مودال رفع الإكسيل -->
     <div class="modal" id="uploadExcelModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -194,7 +192,9 @@
             </div>
             <div id="uploadStatus" style="text-align: center; font-weight: bold; margin-top: 10px;"></div>
         </div>
-    </div>    <script>
+    </div>
+
+    <script>
         const supabaseUrl = TEBA_CONFIG.supabase.url;
         const supabaseKey = TEBA_CONFIG.supabase.key;
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -217,6 +217,14 @@
             try {
                 const { data, error } = await _supabase.auth.signInWithPassword({ email: email, password: password });
                 if (error) throw error;
+                
+                // التحقق إن ده حساب سوبر أدمن
+                const { data: userData, error: userError } = await _supabase.from('users').select('role').eq('id', data.user.id).single();
+                if (userError || !userData || userData.role !== 'super_admin') {
+                    await _supabase.auth.signOut();
+                    throw new Error('🔒 هذا الحساب ليس لديه صلاحية Super Admin.');
+                }
+
                 errorEl.style.display = 'none';
                 showDashboard();
             } catch (err) {
@@ -238,7 +246,6 @@
             loadTenants();
         }
 
-        // ==== مراقبة حالة الجلسة ====
         _supabase.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_IN') showDashboard();
             else if (event === 'SIGNED_OUT') {
@@ -254,17 +261,16 @@
         // ==== جلب وعرض المعامل ====
         async function loadTenants() {
             const tbody = document.getElementById('tenantsTableBody');
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">⏳ جاري التحميل...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">⏳ جاري التحميل...</td></tr>';
 
             try {
                 const { data: tenants, error } = await _supabase.from('tenants').select('*').order('created_at', { ascending: false });
                 if (error) throw error;
 
                 document.getElementById('statTotalTenants').innerText = tenants.length;
-                document.getElementById('statActiveTenants').innerText = tenants.length; 
 
                 if (tenants.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">لا توجد معامل مسجلة حتى الآن.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">لا توجد معامل مسجلة حتى الآن.</td></tr>';
                     return;
                 }
 
@@ -272,7 +278,6 @@
                     const date = new Date(t.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
                     return `
                         <tr>
-                            <td style="font-size: 0.8rem; color: var(--text-muted); direction: ltr; text-align: right;">${t.id}</td>
                             <td style="font-weight: bold; color: var(--gold);">${t.name}</td>
                             <td style="direction: ltr; text-align: right;">${t.subdomain || '---'}</td>
                             <td>${date}</td>
@@ -286,7 +291,7 @@
                     `;
                 }).join('');
             } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger);">❌ خطأ: ${err.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">❌ خطأ: ${err.message}</td></tr>`;
             }
         }
 
@@ -294,8 +299,9 @@
         function openAddTenantModal() {
             document.getElementById('newLabName').value = '';
             document.getElementById('newSubdomain').value = '';
+            document.getElementById('newOwnerEmail').value = '';
+            document.getElementById('newOwnerPass').value = '';
             document.getElementById('addTenantModal').style.display = 'flex';
-            document.getElementById('newLabName').focus();
         }
 
         function closeAddTenantModal() {
@@ -305,26 +311,32 @@
         async function saveNewTenant() {
             const name = document.getElementById('newLabName').value.trim();
             const subdomain = document.getElementById('newSubdomain').value.trim().toLowerCase().replace(/\s+/g, '-');
+            const email = document.getElementById('newOwnerEmail').value.trim();
+            const pass = document.getElementById('newOwnerPass').value;
             
-            if (!name || !subdomain) return alert('يرجى إدخال اسم المعمل والرابط (Subdomain)');
+            if (!name || !subdomain || !email || !pass) return alert('يرجى ملء جميع الحقول');
 
-            const btn = document.querySelector('#addTenantModal .btn-save');
-            btn.innerText = '⏳ جاري الحفظ...'; btn.disabled = true;
+            const btn = document.getElementById('btnSaveTenant');
+            btn.innerText = '⏳ جاري الإنشاء...'; btn.disabled = true;
 
             try {
-                const { data: existing } = await _supabase.from('tenants').select('id').eq('subdomain', subdomain);
-                if (existing && existing.length > 0) throw new Error('هذا الرابط (Subdomain) مستخدم بالفعل لمعمل آخر!');
-
-                const { data, error } = await _supabase.from('tenants').insert([{ name: name, subdomain: subdomain }]).select();
+                // استدعاء الدالة السحرية اللي عملناها في السحابة
+                const { data, error } = await _supabase.rpc('create_new_tenant', {
+                    lab_name: name,
+                    subdomain: subdomain,
+                    owner_email: email,
+                    owner_password: pass
+                });
+                
                 if (error) throw error;
 
-                alert('✅ تم إضافة المعمل بنجاح!');
+                alert('✅ تم إنشاء المعمل وحساب صاحبه بنجاح!');
                 closeAddTenantModal();
                 loadTenants(); 
             } catch (err) {
                 alert('❌ خطأ: ' + err.message);
             } finally {
-                btn.innerText = '💾 حفظ المعمل'; btn.disabled = false;
+                btn.innerText = '💾 إنشاء المعمل والحساب'; btn.disabled = false;
             }
         }
 
