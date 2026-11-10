@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
-    <script src="config.js?v=125"></script>
+    <script src="config.js?v=130"></script>
     
     <style>
         :root {
@@ -134,7 +134,7 @@
             <button id="themeToggleBtn" onclick="toggleTheme()" title="تغيير المظهر">🌙</button>
             <button class="nav-btn sync" id="syncBtn" onclick="processOutbox()">🔄 مزامنة</button>
             
-            <!-- الأزرار المالية الجديدة -->
+            <!-- الأزرار المالية -->
             <button class="nav-btn" style="background:#d4a843; color:white; border:none;" onclick="openCollectionModal()">💰 التحصيل والبواقي</button>
             <button class="nav-btn" style="background:#eab308; color:white; border:none;" onclick="openExpenseModal()">💸 مصاريف يومية</button>
             
@@ -271,16 +271,20 @@
                 </div>
             </div>
         </div>
-    </div>    <!-- مودال التحصيل والبواقي -->
+    </div>
+
+    <!-- مودال التحصيل والبواقي -->
     <div class="modal" id="collectionModal">
         <div class="modal-content">
             <button class="btn-close" style="float:left;" onclick="closeModal('collectionModal')">✕ إغلاق</button>
             <h3 style="color:var(--primary); margin-bottom:20px;">💰 تحصيل بواقي المرضى</h3>
+            
             <div style="display:flex; gap:10px; margin-bottom:15px;">
                 <input type="text" id="collectionSearch" placeholder="ابحث باسم المريض أو رقم الزيارة..." style="flex:1; padding:12px; border:1.5px solid var(--border-color); border-radius:10px; outline:none; background:var(--bg-input); color:var(--text);">
                 <button class="nav-btn" style="background:var(--primary); color:white; border:none;" onclick="searchBalances()">🔍 بحث</button>
             </div>
-            <div style="overflow-x: auto;">
+            
+            <div style="overflow-x: auto; max-height: 400px;">
                 <table style="width: 100%; border-collapse: collapse; text-align: right; font-size: 0.9rem;">
                     <thead><tr style="background: var(--bg-input); color: var(--primary);">
                         <th style="padding:12px; border-bottom:2px solid var(--border-color);">الزيارة</th>
@@ -295,12 +299,11 @@
         </div>
     </div>
 
-    <!-- مودال تسجيل المصاريف اليومية (جديد للموظف) -->
+    <!-- مودال تسجيل المصاريف اليومية -->
     <div class="modal" id="expenseModal">
         <div class="modal-content" style="max-width: 450px;">
             <button class="btn-close" style="float:left;" onclick="closeModal('expenseModal')">✕ إغلاق</button>
             <h3 style="color:var(--primary); margin-bottom:20px;">💸 تسجيل مصروف يومي</h3>
-            <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:15px;">سجل هنا المصاريف البسيطة (بوفيه، كيماويات مستهلكة، إلخ).</p>
             
             <div class="form-group">
                 <label>الفرع</label>
@@ -310,8 +313,11 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>البند / البيان</label>
-                <input type="text" id="expItem" placeholder="مثال: بوفيه، كيماويات...">
+                <label>بند المصروف</label>
+                <select id="expCategorySelect">
+                    <!-- سيتم تحميل البنود هنا من السحابة -->
+                    <option value="">جاري التحميل...</option>
+                </select>
             </div>
             <div class="form-group">
                 <label>المبلغ (ج.م)</label>
@@ -333,7 +339,7 @@
                         <th style="padding:12px; border-bottom:2px solid var(--border-color);">المريض</th>
                         <th style="padding:12px; border-bottom:2px solid var(--border-color);">الفرع</th>
                         <th style="padding:12px; border-bottom:2px solid var(--border-color);">الصافي</th>
-                        <th style="padding:12px; border-bottom:2px solid var(--border-color);">إجراء</th>
+                        <th style="padding:12px; border-bottom:2px solid var(--border-color);">إجراءات</th>
                     </tr></thead>
                     <tbody id="patientListBody"></tbody>
                 </table>
@@ -466,7 +472,7 @@
                 let successCount = 0, failCount = 0;
                 
                 pending.sort((a, b) => {
-                    const order = { 'orders': 1, 'orders_edit': 1, 'patients': 1, 'visits': 2, 'visit_tests': 3, 'test_results': 4, 'financial_ledger': 5 };
+                    const order = { 'orders': 1, 'orders_edit': 1, 'patients': 1, 'visits': 2, 'visit_tests': 3, 'test_results': 4, 'financial_ledger': 5, 'payments': 5 };
                     return (order[a.table_name] || 99) - (order[b.table_name] || 99);
                 });
 
@@ -538,21 +544,27 @@
                             await _supabase.from('patients').update(item.payload).eq('id', item.payload.id).eq('tenant_id', TEBA_CONFIG.tenant.id);
                         }
                         else if (item.table_name === 'visits' && item.action === 'DELETE') {
+                            // مسح الحالة من السحابة (بس مش بنلمس الخزنة)
                             const localVisit = await db.visits.get(item.payload.visit_id);
                             const targetId = localVisit && localVisit.server_id ? localVisit.server_id : item.payload.visit_id;
+                            
                             const { data: vt } = await _supabase.from('visit_tests').select('id').eq('visit_id', targetId);
                             if(vt && vt.length > 0) { await _supabase.from('test_results').delete().in('visit_test_id', vt.map(x => x.id)); }
                             await _supabase.from('visit_tests').delete().eq('visit_id', targetId);
                             await _supabase.from('visits').delete().eq('visit_id', targetId).eq('tenant_id', TEBA_CONFIG.tenant.id);
                         }
                         else if (item.table_name === 'payments') {
-                            // تحصيل بواقي
                             await _supabase.from('visits').update({ paid_amount: item.payload.newPaid }).eq('visit_id', item.payload.visit_id).eq('tenant_id', TEBA_CONFIG.tenant.id);
                         }
                         else if (item.table_name === 'financial_ledger') {
-                            // المزامنة اللايف للداشبورد
-                            const { error } = await _supabase.from('financial_ledger').insert([item.payload]);
-                            if (error) throw error;
+                            if (item.action === 'UPDATE') {
+                                // تحديث حركة مالية موجودة (في حالة تصحيح حالة حديثة)
+                                await _supabase.from('financial_ledger').update({ amount: item.payload.amount, item_name: item.payload.item_name }).eq('visit_id', item.payload.visit_id).eq('tenant_id', TEBA_CONFIG.tenant.id).eq('type', 'revenue');
+                            } else {
+                                // إضافة حركة مالية جديدة
+                                const { error } = await _supabase.from('financial_ledger').insert([item.payload]);
+                                if (error) throw error;
+                            }
                         }
                         await db.outbox.delete(item.id);
                         successCount++;
@@ -570,7 +582,7 @@
         window.openCollectionModal = function() {
             document.getElementById('collectionModal').style.display = 'flex';
             document.getElementById('collectionSearch').value = '';
-            document.getElementById('collectionBody').innerHTML = '';
+            searchBalances(); // تحميل البواقي فوراً
         }
 
         window.searchBalances = async function() {
@@ -587,19 +599,26 @@
                 for (let v of localVisits) {
                     const p = patientMap.get(v.patient_id);
                     if (!p) continue;
-                    if (p.name.toLowerCase().includes(query) || String(v.visit_id).includes(query)) {
-                        const total = v.total_amount || 0;
-                        const paid = v.paid_amount || 0;
-                        const remain = total - paid;
-                        if (remain > 0) results.push({ v, p, remain });
+                    const total = v.total_amount || 0;
+                    const paid = v.paid_amount || 0;
+                    const remain = total - paid;
+                    
+                    if (remain > 0) {
+                        if (query === '' || p.name.toLowerCase().includes(query) || String(v.visit_id).includes(query)) {
+                            results.push({ v, p, remain });
+                        }
                     }
                 }
                 
                 if (results.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">لا توجد بواقي مستحقة لهذا البحث</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">لا توجد بواقي مستحقة</td></tr>';
                     return;
                 }
-                tbody.innerHTML = results.map(r => `
+                
+                // عرض 20 حالة بس لو مفيش بحث
+                const displayResults = query === '' ? results.slice(0, 20) : results;
+                
+                tbody.innerHTML = displayResults.map(r => `
                     <tr style="border-bottom:1px solid var(--border-color);">
                         <td style="padding:12px;">${String(r.v.visit_id).padStart(4, '0')}</td>
                         <td style="padding:12px;">${r.p.name}</td>
@@ -623,36 +642,45 @@
                 visit.paid_amount = newPaid;
                 await db.visits.put(visit);
                 
-                // 1. تحديث الزيارة
                 await addToOutbox('payments', 'UPDATE', { visit_id: visitId, newPaid: newPaid });
                 
-                // 2. تسجيل المبلغ في الخزنة اللايف (عشان يسمع في الداشبورد)
+                // تسجيل المبلغ في الخزنة اللايف
                 await addToOutbox('financial_ledger', 'INSERT', {
                     tenant_id: TEBA_CONFIG.tenant.id,
                     branch_id: visit.branch_id || parseInt(currentBranch),
+                    visit_id: visitId,
                     type: 'revenue',
                     item_name: `تحصيل بواقي زيارة #${visitId}`,
                     amount: Number(amount),
                     created_at: new Date().toISOString()
                 });
 
-                showToast('✅ تم تسجيل التحصيل محلياً');
+                showToast('✅ تم تسجيل التحصيل');
                 if(navigator.onLine) processOutbox();
                 searchBalances();
             }
         };
 
-        // ==== دوال المصاريف اليومية (جديد) ====
-        window.openExpenseModal = function() {
+        // ==== دوال المصاريف اليومية ====
+        window.openExpenseModal = async function() {
             document.getElementById('expenseModal').style.display = 'flex';
-            document.getElementById('expItem').value = '';
             document.getElementById('expAmount').value = '';
             document.getElementById('expBranch').value = currentBranch;
+            
+            const select = document.getElementById('expCategorySelect');
+            select.innerHTML = '<option value="">جاري التحميل...</option>';
+            
+            const { data } = await _supabase.from('expense_categories').select('*').eq('tenant_id', TEBA_CONFIG.tenant.id);
+            if(data && data.length > 0) {
+                select.innerHTML = data.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join('');
+            } else {
+                select.innerHTML = '<option value="مصاريف أخرى">مصاريف أخرى (لم يتم إضافة بنود)</option>';
+            }
         };
 
         window.saveDailyExpense = async function() {
             const branchId = document.getElementById('expBranch').value;
-            const item = document.getElementById('expItem').value.trim();
+            const item = document.getElementById('expCategorySelect').value;
             const amount = parseFloat(document.getElementById('expAmount').value);
 
             if (!item || isNaN(amount) || amount <= 0) return alert('يرجى إدخال بند ومبلغ صحيح');
@@ -667,11 +695,13 @@
                     created_at: new Date().toISOString()
                 });
 
-                showToast('✅ تم تسجيل المصروف اليومي');
+                showToast('✅ تم تسجيل المصروف');
                 closeModal('expenseModal');
                 if(navigator.onLine) processOutbox();
             } catch(e) { console.error(e); alert('حدث خطأ'); }
-        };        // ==== دوال الكتالوج والسلة ====
+        };
+
+        // ==== دوال الكتالوج والسلة ====
         function sendSmartWhatsApp() {
             const name = document.getElementById('pName').value.trim();
             if (!name) return showToast('⚠️ يرجى إدخال اسم المريض أولاً', true);
@@ -781,7 +811,7 @@
             document.getElementById('remainAmount').innerText = `${(netTotal - paid).toFixed(2)} ج.م`;
         }
 
-        // ==== حفظ الطلب ====
+        // ==== حفظ الطلب (وتصحيحه لو كان تعديل) ====
         let isSavingOrder = false; 
         window.saveOrder = async function() {
             if (isSavingOrder) return; 
@@ -816,16 +846,27 @@
 
                 await db.patients.put({ id: localPatientId, name: orderData.patientName, phone: orderData.phone, age: orderData.age, age_type: orderData.age_type, gender: orderData.gender, doctor_name: orderData.doctor_name });
                 
-                // تسجيل الدفع في الخزنة اللايف
-                if (paid > 0 && !isEditing) {
-                    await addToOutbox('financial_ledger', 'INSERT', {
-                        tenant_id: TEBA_CONFIG.tenant.id,
-                        branch_id: branchId,
-                        type: 'revenue',
-                        item_name: `تحصيل زيارة #${visitIdToUse} - ${pName}`,
-                        amount: paid,
-                        created_at: new Date().toISOString()
-                    });
+                if (paid > 0) {
+                    if (isEditing) {
+                        // لو تعديل: نطلب من السحابة تعدل الفلوس في الخزنة
+                        await addToOutbox('financial_ledger', 'UPDATE', {
+                            tenant_id: TEBA_CONFIG.tenant.id,
+                            visit_id: visitIdToUse,
+                            amount: paid,
+                            item_name: `تحصيل زيارة #${visitIdToUse} - ${pName} (تعديل)`
+                        });
+                    } else {
+                        // لو جديدة: نسجل حركة جديدة
+                        await addToOutbox('financial_ledger', 'INSERT', {
+                            tenant_id: TEBA_CONFIG.tenant.id,
+                            branch_id: branchId,
+                            visit_id: visitIdToUse,
+                            type: 'revenue',
+                            item_name: `تحصيل زيارة #${visitIdToUse} - ${pName}`,
+                            amount: paid,
+                            created_at: new Date().toISOString()
+                        });
+                    }
                 }
 
                 if (isEditing) {
@@ -871,13 +912,15 @@
         // ==== باقي الدوال المساعدة ====
         window.closeModal = function(id) { document.getElementById(id).style.display = 'none'; }
         
+        // حذف الحالة (مسح البيانات فقط وتوفير المساحة، دون المساس بالخزنة)
         window.deleteVisit = async function(visitId) {
-            if(!confirm('حذف هذه الزيارة نهائياً؟')) return;
+            if(!confirm('حذف هذه الحالة من السيستم؟ (تنبيه: الفلوس المسجلة في الخزنة لن تتأثر وستظل في الداشبورد)')) return;
             try {
                 await db.visits.delete(Number(visitId));
                 await db.visit_tests.where('visit_id').equals(Number(visitId)).delete();
                 await addToOutbox('visits', 'DELETE', { visit_id: Number(visitId) });
-                showToast('🗑️ تم الحذف!'); 
+                
+                showToast('🗑️ تم حذف الحالة من السيستم، والفلوس باقية في الخزنة!'); 
                 document.getElementById('patientListModal').style.display = 'none';
                 loadRecentPatients(); if (navigator.onLine) processOutbox(); 
             } catch(e) { console.error(e); }
@@ -937,6 +980,7 @@
                 document.getElementById('pName').value = p.name || ''; document.getElementById('pPhone').value = p.phone || ''; document.getElementById('pDoctor').value = p.doctor_name || '';
                 document.getElementById('pAge').value = p.age || 30; document.getElementById('pAgeType').value = p.age_type || 'Years'; document.getElementById('pGender').value = p.gender || 'male';
                 if(vData.branch_id) document.getElementById('pBranch').value = vData.branch_id; 
+                document.getElementById('paidAmount').value = vData.paid_amount || 0; 
                 
                 await generateVisitPreview(); document.getElementById('displayVisitDate').innerText = vData.visit_date ? new Date(vData.visit_date).toLocaleDateString('ar-EG') : new Date().toLocaleDateString('ar-EG');
                 document.getElementById('btnPatientHistory').style.display = 'block';
@@ -978,7 +1022,7 @@
                         <td style="padding:12px;">${paddedId}</td>
                         <td style="padding:12px;">${p ? p.name : 'غير معروف'}</td>
                         <td style="padding:12px;">${branchName}</td>
-                        <td style="padding:12px;">---</td>
+                        <td style="padding:12px;">${v.total_amount || 0} ج</td>
                         <td style="padding:12px; display:flex; gap:8px;">
                             <button style="padding: 6px 12px; background:var(--danger); color:white; border:none; border-radius:8px; cursor:pointer;" onclick="deleteVisit(${v.visit_id})">حذف</button>
                             <button style="padding: 6px 12px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer;" onclick="loadPatientToForm(${v.visit_id}); closeModal('patientListModal');">فتح</button>

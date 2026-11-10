@@ -3,121 +3,424 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إعدادات النظام | معامل طيبة</title>
+    <title>مركز التحكم الشامل | معامل طيبة</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js?v=125"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="config.js?v=130"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #0f172a; --surface: #1e293b; --primary: #10b981; --text: #f8fafc; --border: #334155; --text-muted: #94a3b8; --danger: #ef4444;}
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Almarai', sans-serif; }
-        body { background: var(--bg); color: var(--text); padding: 20px; }
-        .container { max-width: 900px; margin: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
-        .header h1 { color: var(--primary); }
-        .btn-back { background: var(--border); color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; }
-        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-        .card h2 { color: var(--primary); font-size: 1.2rem; margin-bottom: 15px; border-bottom: 1px dashed var(--border); padding-bottom: 10px;}
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; color: var(--text-muted); font-size: 0.9rem; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: white; }
-        .btn-save { background: var(--primary); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px;}
-        .btn-save:hover { background: #059669; color: white; }
-        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #000; padding: 10px 20px; border-radius: 8px; display: none; font-weight: bold; z-index: 1000; }
-        .logo-preview { height: 80px; margin-bottom: 15px; border-radius: 8px; background: #fff; padding: 5px; display: none; }
+        :root { 
+            --bg: #0f172a; --surface: #1e293b; --surface-hover: #334155; --bg-input: #0b1120;
+            --primary: #10b981; --primary-hover: #059669; --text: #f8fafc; --text-muted: #94a3b8; 
+            --border: #334155; --danger: #ef4444; --warning: #f59e0b; --gold: #fbbf24;
+            --font: 'Almarai', sans-serif; --radius: 12px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+        
+        header { background: var(--surface); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .header-title { color: var(--primary); font-size: 1.4rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .btn-back { background: var(--bg-input); color: var(--text); border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; transition: 0.2s; }
+        .btn-back:hover { background: var(--surface-hover); }
+
+        .tabs-nav { display: flex; gap: 10px; overflow-x: auto; background: var(--surface); padding: 10px 20px; border-bottom: 1px solid var(--border); }
+        .tab-btn { background: transparent; color: var(--text-muted); border: 1px solid transparent; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; white-space: nowrap; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+        .tab-btn:hover { background: var(--surface-hover); color: var(--text); }
+        .tab-btn.active { background: rgba(16, 185, 129, 0.1); color: var(--primary); border-color: var(--primary); }
+
+        .main-container { padding: 30px; max-width: 1200px; margin: 0 auto; width: 100%; flex-grow: 1; }
+        .tab-content { display: none; animation: fadeIn 0.3s; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .card h3 { color: var(--primary); font-size: 1.2rem; margin-bottom: 20px; border-bottom: 1px dashed var(--border); padding-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
+        .form-group label { color: var(--text-muted); font-size: 0.9rem; font-weight: bold; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text); font-size: 1rem; outline: none; transition: 0.2s; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
+        
+        .btn-save { background: var(--primary); color: #000; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-save:hover { background: var(--primary-hover); color: #fff; transform: translateY(-2px); }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-danger:hover { background: var(--danger); color: #fff; }
+        
+        .logo-preview { height: 80px; width: auto; max-width: 200px; border-radius: 8px; background: #fff; padding: 5px; object-fit: contain; margin-bottom: 10px; display: none; }
+        
+        .table-responsive { overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; text-align: right; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid var(--border); }
+        th { background: rgba(255,255,255,0.02); color: var(--primary); font-weight: bold; }
+        tr:hover { background: rgba(255,255,255,0.02); }
+
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #000; padding: 15px 30px; border-radius: 8px; font-weight: bold; display: none; z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        
+        .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 9999; align-items: center; justify-content: center; flex-direction: column; backdrop-filter: blur(5px); }
+        .spinner { width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;}
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #loginScreen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); z-index: 10000; }
+        .login-box { background: var(--surface); border: 2px solid var(--primary); padding: 40px; border-radius: var(--radius); text-align: center; width: 100%; max-width: 400px; }
+        .login-box h2 { color: var(--primary); margin-bottom: 20px; }
+        .login-box input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text); margin-bottom: 15px; text-align: center; font-size: 1rem; outline: none; }
+        .login-box button { width: 100%; padding: 12px; background: var(--primary); color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+        .login-error { color: var(--danger); font-size: 0.85rem; margin-top: 10px; display: none; }
+
+        @media (max-width: 768px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .main-container { padding: 15px; }
+            header { flex-direction: column; gap: 10px; text-align: center; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>⚙️ إعدادات النظام</h1>
-            <a href="home.html" class="btn-back">عودة للرئيسية</a>
-        </div>
 
-        <!-- 1. بيانات المعمل واللوجو -->
-        <div class="card">
-            <h2>بيانات المعمل واللوجو</h2>
-            <div class="row">
-                <div class="form-group"><label>اسم المعمل</label><input type="text" id="setLabName"></div>
-                <div class="form-group"><label>اسم الدكتور</label><input type="text" id="setDoctorName"></div>
-            </div>
-            <div class="row">
-                <div class="form-group"><label>رقم الهاتف</label><input type="text" id="setPhone"></div>
-                <div class="form-group"><label>رقم الواتساب</label><input type="text" id="setWhatsapp"></div>
-            </div>
-            <div class="form-group">
-                <label>رفع لوجو المعمل (PNG / JPG)</label>
-                <img id="logoPreview" class="logo-preview" src="" alt="Logo Preview">
-                <input type="file" id="logoFile" accept="image/*" style="border: none; padding: 5px;">
-            </div>
-            <button class="btn-save" onclick="saveLabInfo()">💾 حفظ البيانات واللوجو</button>
-        </div>
-
-        <!-- 2. إدارة الموظفين -->
-        <div class="card">
-            <h2>إضافة موظف جديد</h2>
-            <div class="row">
-                <div class="form-group"><label>إيميل الموظف</label><input type="email" id="empEmail" placeholder="emp@teba.com"></div>
-                <div class="form-group"><label>باسورد الموظف</label><input type="password" id="empPass" placeholder="********"></div>
-            </div>
-            <button class="btn-save" style="background:#3b82f6; color:white;" onclick="addEmployee()">➕ إضافة الموظف</button>
-        </div>
-
-        <!-- 3. تغيير باسورد الدكتور (جديد) -->
-        <div class="card" style="border-color: var(--danger);">
-            <h2 style="color: var(--danger);">🔑 تغيير كلمة المرور (للدكتور)</h2>
-            <div class="row">
-                <div class="form-group"><label>كلمة المرور الجديدة</label><input type="password" id="newPassword" placeholder="********"></div>
-                <div class="form-group"><label>تأكيد كلمة المرور</label><input type="password" id="confirmPassword" placeholder="********"></div>
-            </div>
-            <button class="btn-save" style="background:var(--danger); color:white;" onclick="changeMyPassword()">🔐 تحديث كلمة المرور</button>
-        </div>
-
-        <!-- 4. محرك رفع البيانات القديمة -->
-        <div class="card">
-            <h2>محرك رفع البيانات القديمة (CSV)</h2>
-            <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:10px;">يرجى رفع ملف CSV يحتوي على أعمدة (اسم المريض، رقم الزيارة، اسم التحليل، النتيجة). سيتم معالجة البيانات وإدخالها فوراً.</p>
-            <input type="file" id="csvFile" accept=".csv" style="margin-bottom:10px;">
-            <button class="btn-save" style="background:#d97706; color:white;" onclick="importCSV()">📤 بدء الرفع والمعالجة</button>
-            <div id="importProgress" style="margin-top:10px; font-weight:bold; color:var(--primary);"></div>
+    <div id="loginScreen">
+        <div class="login-box">
+            <h2>🔒 منطقة محظورة</h2>
+            <p style="color:var(--text-muted); margin-bottom:20px;">أدخل بيانات حساب المالك للدخول</p>
+            <input type="email" id="adminEmail" placeholder="البريد الإلكتروني" style="direction: ltr;">
+            <input type="password" id="adminPass" placeholder="كلمة المرور" onkeydown="if(event.key==='Enter') checkPass()" style="direction: ltr;">
+            <button onclick="checkPass()">دخول آمن</button>
+            <div id="loginError" class="login-error"></div>
         </div>
     </div>
-    
-    <div id="toast">✅ تم الحفظ</div>    <script>
+
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <h3 style="color: var(--primary);" id="loadingText">جاري المعالجة...</h3>
+    </div>
+
+    <div id="settingsApp" style="display: none; flex-direction: column; height: 100vh;">
+        <header>
+            <div class="header-title">🛠️ مركز التحكم الشامل</div>
+            <a href="home.html" class="btn-back">عودة للرئيسية</a>
+        </header>
+
+        <div class="tabs-nav">
+            <button class="tab-btn active" onclick="openTab('tab-branding', this)">🎨 الهوية والبيانات</button>
+            <button class="tab-btn" onclick="openTab('tab-branches', this)">📍 إدارة الفروع</button>
+            <button class="tab-btn" onclick="openTab('tab-employees', this)">👥 الموظفين والصلاحيات</button>
+            <button class="tab-btn" onclick="openTab('tab-expenses', this)">💸 بنود المصاريف</button>
+            <button class="tab-btn" onclick="openTab('tab-print', this)">🖨️ إعدادات الطباعة</button>
+            <button class="tab-btn" onclick="openTab('tab-import', this)">📤 ترحيل البيانات (Excel)</button>
+            <button class="tab-btn" onclick="openTab('tab-audit', this)">📜 سجل التعديلات (Audit Log)</button>
+        </div>
+
+        <div class="main-container">
+            
+            <div id="tab-branding" class="tab-content active">
+                <div class="card">
+                    <h3>🏥 بيانات المعمل</h3>
+                    <div class="form-grid">
+                        <div class="form-group"><label>اسم المعمل (بالعربي)</label><input type="text" id="setLabName"></div>
+                        <div class="form-group"><label>اسم الدكتور</label><input type="text" id="setDoctorName"></div>
+                        <div class="form-group"><label>رقم التليفون</label><input type="text" id="setPhone"></div>
+                        <div class="form-group"><label>رقم الواتساب</label><input type="text" id="setWhatsapp"></div>
+                        <div class="form-group" style="grid-column: span 2;"><label>العنوان بالتفصيل</label><input type="text" id="setAddress"></div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>🖼️ اللوجو والألوان</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>رفع اللوجو (PNG / JPG)</label>
+                            <img id="logoPreview" class="logo-preview" src="" alt="Logo Preview">
+                            <input type="file" id="logoFile" accept="image/*" style="border: none; padding: 5px;">
+                        </div>
+                        <div class="form-group">
+                            <label>اللون الأساسي للنظام (Hex)</label>
+                            <input type="color" id="setPrimaryColor" value="#10b981" style="height: 45px; cursor: pointer;">
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-save" onclick="saveBranding(event)">💾 حفظ البيانات واللوجو</button>
+            </div>
+
+            <div id="tab-branches" class="tab-content">
+                <div class="card">
+                    <h3>📍 الفروع الحالية</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>اسم الفرع</th><th>باسورد الفرع</th><th>إجراءات</th></tr></thead>
+                            <tbody id="branchesListBody"><tr><td colspan="3" style="text-align: center;">جاري التحميل...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>➕ إضافة فرع جديد</h3>
+                    <div class="form-grid">
+                        <div class="form-group"><label>اسم الفرع</label><input type="text" id="newBranchName" placeholder="مثال: فرع شبين"></div>
+                        <div class="form-group"><label>باسورد الفرع (للدخول)</label><input type="text" id="newBranchPass" placeholder="مثال: 33"></div>
+                    </div>
+                    <button class="btn-save" onclick="addBranch(event)">➕ إضافة الفرع</button>
+                </div>
+            </div>
+
+            <div id="tab-employees" class="tab-content">
+                <div class="card">
+                    <h3>👥 الموظفين الحاليين</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>البريد الإلكتروني</th><th>الصلاحية (Role)</th><th>إجراءات</th></tr></thead>
+                            <tbody id="employeesListBody"><tr><td colspan="3" style="text-align: center;">جاري التحميل...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>➕ إضافة موظف جديد</h3>
+                    <div class="form-grid">
+                        <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="newEmpEmail" placeholder="emp@teba.com" style="direction: ltr;"></div>
+                        <div class="form-group"><label>كلمة المرور</label><input type="password" id="newEmpPass" placeholder="********" style="direction: ltr;"></div>
+                        <div class="form-group">
+                            <label>الصلاحية</label>
+                            <select id="newEmpRole">
+                                <option value="employee">موظف (استقبال ومعمل)</option>
+                                <option value="reception">استقبال فقط</option>
+                                <option value="lab">معمل فقط</option>
+                                <option value="admin">مدير (كل الصلاحيات)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn-save" onclick="addEmployee(event)">➕ إضافة الموظف</button>
+                </div>
+            </div>
+
+            <div id="tab-expenses" class="tab-content">
+                <div class="card">
+                    <h3>💸 بنود المصاريف الحالية</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">هنا تحدد أسماء المعامل الخارجية (Lab-to-Lab) والبنود الثابتة (مرتبات، إيجار) والمصاريف اليومية (بوفيه).</p>
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>اسم البند</th><th>النوع</th><th>إجراءات</th></tr></thead>
+                            <tbody id="expensesListBody"><tr><td colspan="3" style="text-align: center;">جاري التحميل...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>➕ إضافة بند مصروف جديد</h3>
+                    <div class="form-grid">
+                        <div class="form-group"><label>اسم البند</label><input type="text" id="newExpName" placeholder="مثال: معمل المختبر، بوفيه، مرتبات"></div>
+                        <div class="form-group">
+                            <label>النوع</label>
+                            <select id="newExpType">
+                                <option value="lab">معمل خارجي (Lab-to-Lab)</option>
+                                <option value="other">مصروفات أخرى (بوفيه، ورق)</option>
+                                <option value="fixed">مصروف ثابت (مرتبات، إيجار)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn-save" onclick="addExpenseCategory(event)">➕ إضافة البند</button>
+                </div>
+            </div>
+
+            <div id="tab-print" class="tab-content">
+                <div class="card">
+                    <h3>🖨️ إعدادات الطباعة والتقرير</h3>
+                    <div class="form-group">
+                        <label>نص الهيدر (أعلى التقرير)</label>
+                        <textarea id="setPrintHeader" rows="2" placeholder="مثال: معامل طيبة للتحاليل الطبية - ترخيص رقم 123"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>نص الفوتر (أسفل التقرير)</label>
+                        <textarea id="setPrintFooter" rows="3" placeholder="مثال: العنوان، أرقام التليفون، ملاحظة (النتيجة لا تغني عن استشارة الطبيب)"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>رفع توقيع الدكتور (صورة شفافة PNG يفضل)</label>
+                        <img id="signaturePreview" class="logo-preview" src="" alt="Signature Preview" style="height: 60px;">
+                        <input type="file" id="signatureFile" accept="image/*" style="border: none; padding: 5px;">
+                    </div>
+                    <button class="btn-save" onclick="savePrintSettings(event)">💾 حفظ إعدادات الطباعة</button>
+                </div>
+            </div>
+
+            <div id="tab-import" class="tab-content">
+                <div class="card">
+                    <h3>📤 ترحيل البيانات القديمة (Excel / CSV)</h3>
+                    <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:20px;">
+                        ارفع ملف الحالات القديم. النظام هيتعرف على الأعمدة أوتوماتيك، وهيسألك تربط كل عمود بالبيانات الصح في السيستم عشان نمنع اللخبطة.
+                    </p>
+                    
+                    <div style="border: 2px dashed var(--primary); border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; background: rgba(16, 185, 129, 0.05); transition: 0.2s;" onclick="document.getElementById('importFileInput').click()">
+                        <div style="font-size: 3rem; margin-bottom: 10px;">📁</div>
+                        <h4 style="color: var(--primary); margin-bottom: 5px;">اضغط لاختيار الملف (Excel / CSV)</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">يدعم حتى 100,000 حالة</p>
+                        <input type="file" id="importFileInput" accept=".csv, .xlsx, .xls" style="display: none;" onchange="handleImportFile(event)">
+                    </div>
+
+                    <div id="mappingSection" style="display: none; margin-top: 30px; background: var(--bg-input); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
+                        <h4 style="color: var(--warning); margin-bottom: 15px;">⚙️ مطابقة الأعمدة (Column Mapping)</h4>
+                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">يرجى تحديد أي عمود في الملف يقابل أي حقل في النظام:</p>
+                        <div class="form-grid" id="mappingGrid"></div>
+                        <div style="margin-top: 20px;">
+                            <button class="btn-save" id="btnStartImport" onclick="startImport()">🚀 بدء الترحيل الذكي</button>
+                        </div>
+                    </div>
+
+                    <div id="importProgressContainer" style="display: none; margin-top: 20px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; font-weight: bold;">
+                            <span id="importProgressText">جاري الترحيل...</span>
+                            <span id="importProgressPercent">0%</span>
+                        </div>
+                        <div style="width: 100%; height: 15px; background: var(--bg-input); border-radius: 10px; overflow: hidden;">
+                            <div id="importProgressBar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.3s;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-audit" class="tab-content">
+                <div class="card">
+                    <h3>📜 سجل التعديلات (Audit Log)</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">هنا يظهر كل حركة حصلت في النظام (مين عدل سعر، مين مسح حالة، وامتى).</p>
+                    
+                    <div class="form-grid" style="margin-bottom: 15px;">
+                        <div class="form-group">
+                            <label>بحث (اسم الموظف / الإجراء)</label>
+                            <input type="text" id="auditSearchInput" placeholder="ابحث..." onkeyup="filterAuditLog()">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table>
+                            <thead><tr><th>التاريخ والوقت</th><th>الموظف</th><th>الإجراء</th><th>التفاصيل</th></tr></thead>
+                            <tbody id="auditLogBody"><tr><td colspan="4" style="text-align: center;">جاري التحميل...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="toast">✅ تم الحفظ بنجاح</div>
+
+    <script>
         const _supabase = supabase.createClient(TEBA_CONFIG.supabase.url, TEBA_CONFIG.supabase.key);
         const tenantId = TEBA_CONFIG.tenant.id;
-        let currentLogoUrl = '';
 
-        function showToast(msg) {
+        let currentLogoUrl = '';
+        let currentSignatureUrl = '';
+
+        function showToast(msg, isError = false) {
             const t = document.getElementById('toast');
-            t.innerText = msg; t.style.display = 'block';
+            t.innerText = msg;
+            t.style.background = isError ? 'var(--danger)' : 'var(--primary)';
+            t.style.color = isError ? '#fff' : '#000';
+            t.style.display = 'block';
             setTimeout(() => t.style.display = 'none', 3000);
         }
 
-        // 1. تحميل البيانات الحالية
-        async function loadSettings() {
-            const { data } = await _supabase.from('site_settings').select('*').eq('tenant_id', tenantId).single();
-            if (data) {
-                document.getElementById('setLabName').value = data.lab_name || '';
-                document.getElementById('setDoctorName').value = data.doctor_name || '';
-                document.getElementById('setPhone').value = data.phone || '';
-                document.getElementById('setWhatsapp').value = data.whatsapp || '';
-                if (data.logo_url) {
-                    currentLogoUrl = data.logo_url;
-                    const preview = document.getElementById('logoPreview');
-                    preview.src = data.logo_url;
-                    preview.style.display = 'block';
+        function showLoading(msg) {
+            document.getElementById('loadingText').innerText = msg;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        async function checkPass() {
+            const email = document.getElementById('adminEmail').value.trim();
+            const pass = document.getElementById('adminPass').value;
+            const errorEl = document.getElementById('loginError');
+            const btn = document.querySelector('.login-box button');
+
+            if (!email || !pass) {
+                errorEl.textContent = 'يرجى إدخال الإيميل والباسورد';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            btn.innerText = '⏳ جاري التحقق...'; btn.disabled = true;
+
+            try {
+                const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({ email, password: pass });
+                if (authError) throw new Error('الإيميل أو الباسورد غير صحيح');
+
+                const { data: userData, error: userError } = await _supabase.from('users').select('role').eq('id', authData.user.id).single();
+                if (userError || !userData) throw new Error('لا يوجد صلاحيات لهذا الحساب.');
+                
+                if (userData.role !== 'admin' && userData.role !== 'owner') {
+                    await _supabase.auth.signOut();
+                    throw new Error('🔒 هذا الحساب ليس لديه صلاحية إدارة الإعدادات.');
                 }
+
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('settingsApp').style.display = 'flex';
+                initSettingsPage();
+
+            } catch (err) {
+                errorEl.textContent = '❌ ' + err.message;
+                errorEl.style.display = 'block';
+            } finally {
+                btn.innerText = 'دخول آمن'; btn.disabled = false;
             }
         }
 
-        // 2. حفظ البيانات واللوجو
-        async function saveLabInfo() {
-            const btn = document.querySelector('.card:nth-child(1) .btn-save');
+        _supabase.auth.getSession().then(async ({ data: { session } }) => {
+            if (session) {
+                const { data: userData } = await _supabase.from('users').select('role').eq('id', session.user.id).single();
+                if (userData && (userData.role === 'admin' || userData.role === 'owner')) {
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('settingsApp').style.display = 'flex';
+                    initSettingsPage();
+                }
+            }
+        });
+
+        function openTab(tabId, btnElement) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            if(btnElement) btnElement.classList.add('active');
+
+            if (tabId === 'tab-branches') loadBranches();
+            if (tabId === 'tab-employees') loadEmployees();
+            if (tabId === 'tab-expenses') loadExpenses();
+            if (tabId === 'tab-print') loadPrintSettings();
+            if (tabId === 'tab-audit') loadAuditLog();
+        }
+
+        async function loadBranding() {
+            try {
+                const { data } = await _supabase.from('site_settings').select('*').eq('tenant_id', tenantId).single();
+                if (data) {
+                    document.getElementById('setLabName').value = data.lab_name || '';
+                    document.getElementById('setDoctorName').value = data.doctor_name || '';
+                    document.getElementById('setPhone').value = data.phone || '';
+                    document.getElementById('setWhatsapp').value = data.whatsapp || '';
+                    document.getElementById('setAddress').value = data.address || '';
+                    
+                    if (data.logo_url) {
+                        currentLogoUrl = data.logo_url;
+                        const preview = document.getElementById('logoPreview');
+                        preview.src = data.logo_url;
+                        preview.style.display = 'block';
+                    }
+                    if (data.primary_color) {
+                        document.getElementById('setPrimaryColor').value = data.primary_color;
+                    }
+                }
+            } catch(e) { console.log(e); }
+        }
+
+        async function saveBranding(event) {
+            const btn = event.target;
             btn.innerText = '⏳ جاري الحفظ...'; btn.disabled = true;
             
             try {
                 const labName = document.getElementById('setLabName').value;
+                const primaryColor = document.getElementById('setPrimaryColor').value;
                 const fileInput = document.getElementById('logoFile');
                 let finalLogoUrl = currentLogoUrl;
 
@@ -140,6 +443,8 @@
                     doctor_name: document.getElementById('setDoctorName').value,
                     phone: document.getElementById('setPhone').value,
                     whatsapp: document.getElementById('setWhatsapp').value,
+                    address: document.getElementById('setAddress').value,
+                    primary_color: primaryColor,
                     logo_url: finalLogoUrl
                 };
                 
@@ -149,27 +454,121 @@
                 await _supabase.from('tenants').update({ name: labName }).eq('id', tenantId);
 
                 localStorage.setItem('teba_tenant_name', labName);
-                TEBA_CONFIG.lab.name = labName;
+                localStorage.setItem('teba_logo_url', finalLogoUrl);
+                localStorage.setItem('teba_primary_color', primaryColor);
                 
                 showToast('✅ تم حفظ البيانات واللوجو بنجاح');
+                
                 if(finalLogoUrl) {
                     const preview = document.getElementById('logoPreview');
                     preview.src = finalLogoUrl; preview.style.display = 'block';
                 }
             } catch (err) {
-                alert('❌ خطأ: ' + err.message);
+                showToast('❌ خطأ: ' + err.message, true);
             } finally {
                 btn.innerText = '💾 حفظ البيانات واللوجو'; btn.disabled = false;
             }
         }
 
-        // 3. إضافة موظف جديد
-        async function addEmployee() {
-            const email = document.getElementById('empEmail').value.trim();
-            const password = document.getElementById('empPass').value;
-            if (!email || !password) return alert('يرجى إدخال الإيميل والباسورد');
+        async function loadBranches() {
+            const tbody = document.getElementById('branchesListBody');
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">جاري التحميل...</td></tr>';
+            
+            try {
+                const { data, error } = await _supabase.from('branches').select('*').eq('tenant_id', tenantId).order('id', { ascending: true });
+                if (error) throw error;
+                
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">لا توجد فروع مسجلة.</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = data.map(b => `
+                    <tr>
+                        <td style="font-weight:bold; color:var(--primary);">🏥 ${b.name}</td>
+                        <td style="direction:ltr; text-align:right;">${b.branch_password || 'غير محدد'}</td>
+                        <td><button class="btn-danger" onclick="deleteBranch(${b.id})">🗑️ مسح</button></td>
+                    </tr>
+                `).join('');
+            } catch(e) { 
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:red;">خطأ في التحميل</td></tr>'; 
+            }
+        }
 
-            const btn = document.querySelector('.card:nth-child(2) .btn-save');
+        async function addBranch(event) {
+            const name = document.getElementById('newBranchName').value.trim();
+            const pass = document.getElementById('newBranchPass').value.trim();
+            if(!name || !pass) return showToast('يرجى إدخال اسم وباسورد الفرع', true);
+
+            const btn = event.target;
+            btn.innerText = '⏳...'; btn.disabled = true;
+
+            try {
+                const { error } = await _supabase.from('branches').insert([{
+                    tenant_id: tenantId, name: name, branch_password: pass
+                }]);
+                if (error) throw error;
+                
+                showToast('✅ تم إضافة الفرع بنجاح');
+                document.getElementById('newBranchName').value = '';
+                document.getElementById('newBranchPass').value = '';
+                loadBranches();
+            } catch(err) {
+                showToast('❌ خطأ: ' + err.message, true);
+            } finally {
+                btn.innerText = '➕ إضافة الفرع'; btn.disabled = false;
+            }
+        }
+
+        async function deleteBranch(id) {
+            if(!confirm('هل أنت متأكد من مسح هذا الفرع نهائياً؟ (لن يؤثر على البيانات المسجلة سابقاً)')) return;
+            try {
+                const { error } = await _supabase.from('branches').delete().eq('id', id).eq('tenant_id', tenantId);
+                if (error) throw error;
+                showToast('✅ تم مسح الفرع');
+                loadBranches();
+            } catch(e) {
+                showToast('❌ خطأ: ' + e.message, true);
+            }
+        }
+
+        function initSettingsPage() {
+            loadBranding();
+        }
+
+        async function loadEmployees() {
+            const tbody = document.getElementById('employeesListBody');
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">جاري التحميل...</td></tr>';
+            try {
+                const { data, error } = await _supabase.from('users').select('*').eq('tenant_id', tenantId);
+                if (error) throw error;
+                
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">لا يوجد موظفين مسجلين.</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = data.map(emp => {
+                    let roleAr = emp.role === 'admin' ? 'مدير' : (emp.role === 'reception' ? 'استقبال' : (emp.role === 'lab' ? 'معمل' : 'موظف'));
+                    return `
+                    <tr>
+                        <td style="direction:ltr; text-align:right;">${emp.email}</td>
+                        <td><span style="background:rgba(16,185,129,0.1); color:var(--primary); padding:4px 10px; border-radius:10px; font-size:0.85rem; font-weight:bold;">${roleAr}</span></td>
+                        <td><button class="btn-danger" onclick="deleteEmployee('${emp.id}')">🗑️ مسح</button></td>
+                    </tr>`;
+                }).join('');
+            } catch(e) { 
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:red;">خطأ في التحميل</td></tr>'; 
+            }
+        }
+
+        async function addEmployee(event) {
+            const email = document.getElementById('newEmpEmail').value.trim();
+            const password = document.getElementById('newEmpPass').value;
+            const role = document.getElementById('newEmpRole').value;
+            if (!email || !password) return showToast('يرجى إدخال الإيميل والباسورد', true);
+
+            const btn = event.target;
             btn.innerText = '⏳ جاري الإضافة...'; btn.disabled = true;
 
             try {
@@ -177,126 +576,336 @@
                     emp_email: email,
                     emp_password: password,
                     emp_tenant_id: tenantId,
-                    emp_role: 'employee'
+                    emp_role: role
                 });
                 if (error) throw error;
-                alert('✅ تم إضافة الموظف بنجاح!');
-                document.getElementById('empEmail').value = '';
-                document.getElementById('empPass').value = '';
+                
+                showToast('✅ تم إضافة الموظف بنجاح!');
+                document.getElementById('newEmpEmail').value = '';
+                document.getElementById('newEmpPass').value = '';
+                loadEmployees();
             } catch (err) {
-                alert('❌ خطأ: ' + err.message);
+                showToast('❌ خطأ: ' + err.message, true);
             } finally {
                 btn.innerText = '➕ إضافة الموظف'; btn.disabled = false;
             }
         }
 
-        // 4. تغيير باسورد الدكتور
-        async function changeMyPassword() {
-            const newPass = document.getElementById('newPassword').value;
-            const confirmPass = document.getElementById('confirmPassword').value;
-
-            if (!newPass || newPass.length < 6) return alert('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
-            if (newPass !== confirmPass) return alert('كلمتا المرور غير متطابقتين');
-
-            const btn = document.querySelector('.card:nth-child(3) .btn-save');
-            btn.innerText = '⏳ جاري التحديث...'; btn.disabled = true;
-
+        async function deleteEmployee(id) {
+            if(!confirm('هل أنت متأكد من مسح هذا الموظف؟ (لن يستطيع الدخول للنظام بعد ذلك)')) return;
             try {
-                const { error } = await _supabase.auth.updateUser({ password: newPass });
+                await _supabase.from('users').delete().eq('id', id).eq('tenant_id', tenantId);
+                showToast('✅ تم مسح الموظف');
+                loadEmployees();
+            } catch(e) { showToast('❌ خطأ: ' + e.message, true); }
+        }
+
+        async function loadExpenses() {
+            const tbody = document.getElementById('expensesListBody');
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">جاري التحميل...</td></tr>';
+            try {
+                const { data, error } = await _supabase.from('expense_categories').select('*').eq('tenant_id', tenantId);
                 if (error) throw error;
-                alert('✅ تم تغيير كلمة المرور بنجاح!');
-                document.getElementById('newPassword').value = '';
-                document.getElementById('confirmPassword').value = '';
-            } catch (err) {
-                alert('❌ خطأ: ' + err.message);
-            } finally {
-                btn.innerText = '🔐 تحديث كلمة المرور'; btn.disabled = false;
+                
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">لا توجد بنود مسجلة.</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = data.map(exp => {
+                    let typeLabel = exp.type === 'lab' ? 'معمل خارجي' : (exp.type === 'fixed' ? 'مصروف ثابت' : 'مصاريف أخرى');
+                    let typeColor = exp.type === 'lab' ? '#3b82f6' : (exp.type === 'fixed' ? '#ef4444' : '#f59e0b');
+                    return `
+                    <tr>
+                        <td style="font-weight:bold;">${exp.name}</td>
+                        <td style="color:${typeColor}; font-weight:bold;">${typeLabel}</td>
+                        <td><button class="btn-danger" onclick="deleteExpense(${exp.id})">🗑️ مسح</button></td>
+                    </tr>`;
+                }).join('');
+            } catch(e) { 
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:red;">خطأ في التحميل</td></tr>'; 
             }
         }
 
-        // 5. محرك رفع البيانات القديمة (CSV) الذكي
-        async function importCSV() {
-            const fileInput = document.getElementById('csvFile');
-            const progressEl = document.getElementById('importProgress');
-            if (!fileInput.files.length) return alert('اختر ملف CSV أولاً');
-            
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-            progressEl.innerText = '⏳ جاري قراءة الملف...';
+        async function addExpenseCategory(event) {
+            const name = document.getElementById('newExpName').value.trim();
+            const type = document.getElementById('newExpType').value;
+            if(!name) return showToast('يرجى إدخال اسم البند', true);
 
-            reader.onload = async function(e) {
-                const text = e.target.result;
-                const lines = text.split('\n').filter(line => line.trim() !== '');
-                if (lines.length < 2) return alert('الملف فارغ أو غير صالح');
+            const btn = event.target;
+            btn.innerText = '⏳...'; btn.disabled = true;
 
-                // قراءة أسماء الأعمدة من السطر الأول
-                const headers = lines[0].split(',').map(h => h.trim().replace(/['"]/g, '').toLowerCase());
-                
-                // البحث عن الأعمدة المطلوبة مهما كانت أسمائها
-                const nameIdx = headers.findIndex(h => h.includes('اسم') || h.includes('name') || h.includes('مريض'));
-                const visitIdx = headers.findIndex(h => h.includes('زيار') || h.includes('visit') || h.includes('id') || h.includes('رقم'));
-                const testIdx = headers.findIndex(h => h.includes('تحليل') || h.includes('test') || h.includes('فحص'));
-                const resultIdx = headers.findIndex(h => h.includes('نتيج') || h.includes('result') || h.includes('قيمة'));
-
-                if (nameIdx === -1 || visitIdx === -1 || testIdx === -1 || resultIdx === -1) {
-                    return alert('❌ لم يتم العثور على الأعمدة المطلوبة. تأكد من وجود أعمدة (اسم المريض، رقم الزيارة، التحليل، النتيجة)');
-                }
-
-                const dataRows = lines.slice(1);
-                let successCount = 0;
-                let failCount = 0;
-                const batchSize = 50; // رفع 50 حالة في المرة
-
-                progressEl.innerText = `⏳ جاري معالجة ${dataRows.length} حالة...`;
-
-                for (let i = 0; i < dataRows.length; i += batchSize) {
-                    const batch = dataRows.slice(i, i + batchSize);
-                    let patientsBatch = [], visitsBatch = [], testsBatch = [], resultsBatch = [];
-
-                    for (let rowStr of batch) {
-                        try {
-                            // تقسيم بسيط (لو فيه مشكلة في الفواصل جوه النص، ممكن يحتاج Regex أقوى لاحقاً)
-                            const cols = rowStr.split(',').map(c => c.trim().replace(/['"]/g, ''));
-                            
-                            const pName = cols[nameIdx];
-                            const visitId = parseInt(cols[visitIdx]);
-                            const testName = cols[testIdx];
-                            const resultVal = cols[resultIdx];
-
-                            if (!pName || !visitId) continue;
-
-                            const pId = crypto.randomUUID();
-                            const vtId = crypto.randomUUID();
-
-                            patientsBatch.push({ id: pId, tenant_id: tenantId, name: pName, phone: '' });
-                            visitsBatch.push({ client_uuid: crypto.randomUUID(), visit_id: visitId, tenant_id: tenantId, patient_id: pId, branch_id: 1, status: 'Pending', visit_date: new Date().toISOString() });
-                            testsBatch.push({ id: vtId, tenant_id: tenantId, visit_id: visitId, test_code: testName });
-                            resultsBatch.push({ id: crypto.randomUUID(), tenant_id: tenantId, visit_test_id: vtId, results_data: { "Result": { value: resultVal } } });
-                            
-                            successCount++;
-                        } catch (err) {
-                            failCount++;
-                        }
-                    }
-
-                    // رفع الدفعة للسحابة
-                    if (patientsBatch.length > 0) {
-                        await _supabase.from('patients').insert(patientsBatch);
-                        await _supabase.from('visits').insert(visitsBatch);
-                        await _supabase.from('visit_tests').insert(testsBatch);
-                        await _supabase.from('test_results').insert(resultsBatch);
-                    }
-                    
-                    progressEl.innerText = `⏳ تم رفع ${successCount} حالة... (فشل: ${failCount})`;
-                }
-                progressEl.innerText = `✅ انتهى الرفع! نجح: ${successCount} | فشل: ${failCount}`;
-                fileInput.value = '';
-            };
-            reader.readAsText(file);
+            try {
+                const { error } = await _supabase.from('expense_categories').insert([{
+                    tenant_id: tenantId, name: name, type: type
+                }]);
+                if (error) throw error;
+                showToast('✅ تم إضافة البند');
+                document.getElementById('newExpName').value = '';
+                loadExpenses();
+            } catch(err) {
+                showToast('❌ خطأ: ' + err.message, true);
+            } finally {
+                btn.innerText = '➕ إضافة البند'; btn.disabled = false;
+            }
         }
 
-        // تشغيل الدالة عند فتح الصفحة
-        window.onload = loadSettings;
+        async function deleteExpense(id) {
+            if(!confirm('مسح هذا البند؟')) return;
+            try {
+                await _supabase.from('expense_categories').delete().eq('id', id).eq('tenant_id', tenantId);
+                showToast('✅ تم المسح');
+                loadExpenses();
+            } catch(e) { showToast('❌ خطأ: ' + e.message, true); }
+        }
+
+        async function loadPrintSettings() {
+            try {
+                const { data } = await _supabase.from('site_settings').select('*').eq('tenant_id', tenantId).single();
+                if (data) {
+                    document.getElementById('setPrintHeader').value = data.print_header || 'معامل طيبة للتحاليل الطبية';
+                    document.getElementById('setPrintFooter').value = data.print_footer || 'النتيجة لا تغني عن استشارة الطبيب المعالج.';
+                    if (data.signature_url) {
+                        currentSignatureUrl = data.signature_url;
+                        const preview = document.getElementById('signaturePreview');
+                        preview.src = data.signature_url;
+                        preview.style.display = 'block';
+                    }
+                }
+            } catch(e) { console.log(e); }
+        }
+
+        async function savePrintSettings(event) {
+            const btn = event.target;
+            btn.innerText = '⏳ جاري الحفظ...'; btn.disabled = true;
+            
+            try {
+                const header = document.getElementById('setPrintHeader').value;
+                const footer = document.getElementById('setPrintFooter').value;
+                const fileInput = document.getElementById('signatureFile');
+                let finalSigUrl = currentSignatureUrl;
+
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `sig_${tenantId}_${Date.now()}.${fileExt}`;
+                    
+                    const { error: uploadError } = await _supabase.storage.from('lab-assets').upload(fileName, file);
+                    if (uploadError) throw uploadError;
+
+                    const { data: urlData } = _supabase.storage.from('lab-assets').getPublicUrl(fileName);
+                    finalSigUrl = urlData.publicUrl;
+                    currentSignatureUrl = finalSigUrl;
+                }
+
+                const updates = {
+                    print_header: header,
+                    print_footer: footer,
+                    signature_url: finalSigUrl
+                };
+                
+                const { error } = await _supabase.from('site_settings').update(updates).eq('tenant_id', tenantId);
+                if (error) throw error;
+
+                showToast('✅ تم حفظ إعدادات الطباعة');
+                if(finalSigUrl) {
+                    const preview = document.getElementById('signaturePreview');
+                    preview.src = finalSigUrl; preview.style.display = 'block';
+                }
+            } catch (err) {
+                showToast('❌ خطأ: ' + err.message, true);
+            } finally {
+                btn.innerText = '💾 حفظ إعدادات الطباعة'; btn.disabled = false;
+            }
+        }
+
+        let parsedImportData = [];
+        let detectedHeaders = [];
+
+        function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            showLoading('جاري قراءة الملف وتحليل الأعمدة...');
+            const fileExt = file.name.split('.').pop().toLowerCase();
+
+            if (fileExt === 'csv') {
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    worker: true,
+                    complete: function(results) {
+                        hideLoading();
+                        if (results.errors.length > 0) return showToast('حدث خطأ في قراءة الملف', true);
+                        processParsedData(results.data);
+                    }
+                });
+            } else if (fileExt === 'xlsx' || fileExt === 'xls') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+                    hideLoading();
+                    processParsedData(jsonData);
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                hideLoading();
+                showToast('صيغة الملف غير مدعومة. يرجى استخدام CSV أو Excel.', true);
+            }
+        }
+
+        function processParsedData(data) {
+            if (!data || data.length === 0) return showToast('الملف فارغ أو لا يحتوي على بيانات', true);
+            
+            parsedImportData = data;
+            detectedHeaders = Object.keys(data[0]);
+            
+            const mappingGrid = document.getElementById('mappingGrid');
+            const systemFields = [
+                { key: 'patient_name', label: 'اسم المريض (مطلوب)' },
+                { key: 'patient_phone', label: 'رقم الهاتف' },
+                { key: 'visit_date', label: 'تاريخ الزيارة' },
+                { key: 'test_name', label: 'اسم التحليل' },
+                { key: 'result_value', label: 'النتيجة' },
+                { key: 'reference_range', label: 'المعدل الطبيعي (Range)' }
+            ];
+
+            mappingGrid.innerHTML = systemFields.map(field => `
+                <div class="form-group">
+                    <label style="color:var(--primary);">${field.label}</label>
+                    <select id="map_${field.key}">
+                        <option value="">-- تجاهل هذا الحقل --</option>
+                        ${detectedHeaders.map(h => `<option value="${h}">${h}</option>`).join('')}
+                    </select>
+                </div>
+            `).join('');
+
+            detectedHeaders.forEach(h => {
+                const lowerH = h.toLowerCase();
+                if(lowerH.includes('name') || h.includes('اسم')) document.getElementById('map_patient_name').value = h;
+                if(lowerH.includes('phone') || h.includes('موبايل') || h.includes('تليفون')) document.getElementById('map_patient_phone').value = h;
+                if(lowerH.includes('date') || h.includes('تاريخ')) document.getElementById('map_visit_date').value = h;
+                if(lowerH.includes('test') || h.includes('تحليل')) document.getElementById('map_test_name').value = h;
+                if(lowerH.includes('result') || h.includes('نتيجة')) document.getElementById('map_result_value').value = h;
+                if(lowerH.includes('range') || h.includes('معدل')) document.getElementById('map_reference_range').value = h;
+            });
+
+            document.getElementById('mappingSection').style.display = 'block';
+            showToast(`✅ تم قراءة ${data.length} صف. يرجى مراجعة مطابقة الأعمدة.`);
+        }
+
+        async function startImport() {
+            const nameCol = document.getElementById('map_patient_name').value;
+            if (!nameCol) return showToast('يجب اختيار عمود اسم المريض على الأقل', true);
+
+            const phoneCol = document.getElementById('map_patient_phone').value;
+            const dateCol = document.getElementById('map_visit_date').value;
+            const testCol = document.getElementById('map_test_name').value;
+            const resultCol = document.getElementById('map_result_value').value;
+            const rangeCol = document.getElementById('map_reference_range').value;
+
+            const btn = document.getElementById('btnStartImport');
+            btn.disabled = true;
+            document.getElementById('importProgressContainer').style.display = 'block';
+
+            const total = parsedImportData.length;
+            const batchSize = 2000; 
+            let processed = 0;
+
+            for (let i = 0; i < total; i += batchSize) {
+                const batch = parsedImportData.slice(i, i + batchSize);
+                
+                const recordsToInsert = batch.map(row => ({
+                    tenant_id: tenantId,
+                    patient_name: row[nameCol] || '',
+                    patient_phone: phoneCol ? row[phoneCol] : null,
+                    visit_date: dateCol ? row[dateCol] : null,
+                    test_name: testCol ? row[testCol] : null,
+                    result_value: resultCol ? String(row[resultCol]) : null,
+                    reference_range: rangeCol ? row[rangeCol] : null
+                })).filter(r => r.patient_name !== '');
+
+                if (recordsToInsert.length > 0) {
+                    const { error } = await _supabase.from('historical_results').insert(recordsToInsert);
+                    if (error) {
+                        console.error('Batch insert error:', error);
+                    }
+                }
+
+                processed += batch.length;
+                let pct = Math.round((processed / total) * 100);
+                if (pct > 100) pct = 100;
+                
+                document.getElementById('importProgressBar').style.width = pct + '%';
+                document.getElementById('importProgressPercent').innerText = pct + '%';
+                document.getElementById('importProgressText').innerText = `تم رفع ${processed} من ${total} حالة...`;
+            }
+
+            btn.disabled = false;
+            document.getElementById('importProgressText').innerText = '✅ اكتمل الترحيل بنجاح!';
+            showToast('✅ تم ترحيل البيانات بنجاح للسيستم');
+            
+            setTimeout(() => {
+                document.getElementById('mappingSection').style.display = 'none';
+                document.getElementById('importProgressContainer').style.display = 'none';
+                document.getElementById('importFileInput').value = '';
+                parsedImportData = [];
+            }, 4000);
+        }
+
+        async function loadAuditLog() {
+            const tbody = document.getElementById('auditLogBody');
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">جاري التحميل...</td></tr>';
+            
+            try {
+                const { data, error } = await _supabase.from('audit_logs')
+                    .select(`*, users (email)`)
+                    .eq('tenant_id', tenantId)
+                    .order('created_at', { ascending: false })
+                    .limit(100);
+
+                if (error) {
+                    if (error.code === '42P01') { 
+                        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">سجل التعديلات سيتم تفعيله قريباً.</td></tr>';
+                        return;
+                    }
+                    throw error;
+                }
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">لا توجد حركات مسجلة.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.map(log => {
+                    const dateStr = new Date(log.created_at).toLocaleString('ar-EG');
+                    const userName = log.users ? log.users.email : 'غير معروف';
+                    return `
+                        <tr>
+                            <td style="direction:ltr; text-align:right;">${dateStr}</td>
+                            <td>${userName}</td>
+                            <td style="color:var(--warning); font-weight:bold;">${log.action_type}</td>
+                            <td>${log.details}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch(e) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">حدث خطأ في تحميل السجل</td></tr>';
+            }
+        }
+
+        function filterAuditLog() {
+            const query = document.getElementById('auditSearchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#auditLogBody tr');
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
+        }
     </script>
 </body>
 </html>

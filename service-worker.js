@@ -1,113 +1,116 @@
 ﻿/* =====================================================
-   TEBA LABS - Service Worker (v125 - SaaS Master Fix)
+   TEBA LABS - Service Worker (v130 - Smart Stable)
    ===================================================== */
 
-const CACHE_VERSION = 'v125'; 
+const CACHE_VERSION = 'v130'; 
 const STATIC_CACHE  = `teba-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `teba-runtime-${CACHE_VERSION}`;
-const CDN_CACHE     = `teba-cdn-${CACHE_VERSION}`;
-const IMG_CACHE     = `teba-img-${CACHE_VERSION}`;
 
+// الملفات الأساسية اللي لازم تتخزن عشان النظام يفتح أوفلاين
 const PRECACHE_ASSETS = [
-  './', './index.html', 
-  './system/home.html', './system/reception.html', './system/lab.html', './system/tests_manage.html', './system/settings.html',
-  './system/lab.css', './system/lab.js', './system/config.js', 
-  './dashboard/admin.html', './dashboard/admin.css', './dashboard/admin.js', './dashboard/config.js',
-  './styles.css', './data.js', './app.js', './features.js', './site_dynamic.js', './patient_portal.js', './config.js', './super-admin.html',
-  './logo.png', './brand-logo.png', './header.png', './manifest.json'
+  './', 
+  './index.html', 
+  './system/home.html', 
+  './system/reception.html', 
+  './system/lab.html', 
+  './system/tests_manage.html', 
+  './system/settings.html',
+  './system/lab.css', 
+  './system/lab.js', 
+  './system/config.js', 
+  './dashboard/admin.html', 
+  './dashboard/admin.css', 
+  './dashboard/admin.js', 
+  './dashboard/config.js',
+  './styles.css', 
+  './data.js', 
+  './app.js', 
+  './features.js', 
+  './site_dynamic.js', 
+  './patient_portal.js', 
+  './config.js', 
+  './super-admin.html',
+  './logo.png', 
+  './brand-logo.png', 
+  './header.png', 
+  './manifest.json'
 ];
 
-const PRECACHE_CDN = [
-  'https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap',
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
-  'https://unpkg.com/dexie/dist/dexie.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
-];
-
-const CDN_ORIGINS = ['https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com', 'https://unpkg.com'];
-const IMG_ORIGINS = ['https://images.unsplash.com'];
-
+// التثبيت: تخزين الملفات الأساسية
 self.addEventListener('install', event => {
   self.skipWaiting(); 
-  event.waitUntil((async () => {
-    const sc = await caches.open(STATIC_CACHE);
-    await Promise.all(PRECACHE_ASSETS.map(url => sc.add(url).catch(e => console.warn('Cache Fail:', url))));
-    const cc = await caches.open(CDN_CACHE);
-    await Promise.all(PRECACHE_CDN.map(url => cc.add(url).catch(e => console.warn(e))));
-  })());
+  event.waitUntil(
+    caches.open(STATIC_CACHE).then(cache => {
+      return Promise.all(
+        PRECACHE_ASSETS.map(url => {
+          return cache.add(url).catch(err => console.warn('Precache fail:', url, err));
+        })
+      );
+    })
+  );
 });
 
+// التفعيل: مسح الكاش القديم
 self.addEventListener('activate', event => {
-  event.waitUntil((async () => {
-    const valid = [STATIC_CACHE, RUNTIME_CACHE, CDN_CACHE, IMG_CACHE];
-    const keys = await caches.keys();
-    await Promise.all(keys.filter(k => !valid.includes(k)).map(k => caches.delete(k)));
-    await self.clients.claim();
-  })());
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== STATIC_CACHE && cacheName !== RUNTIME_CACHE) {
+            console.log('Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
+  );
 });
 
+// استراتيجية الجلب (Fetch)
 self.addEventListener('fetch', event => {
   const { request } = event;
-  if (request.method !== 'GET') return;
   
+  // تجاهل الطلبات اللي مش GET (زي الـ POST في Supabase)
+  if (request.method !== 'GET') return;
+
   const url = new URL(request.url);
 
-  // استراتيجية صفحات الـ HTML (Cache First لمنع الشاشة البيضا)
+  // 1. لو الطلب صفحات (HTML) -> استخدم Network First
+  // يعني جرب تجيب الجديد من النت، لو مفيش نت، هات من الكاش
   if (request.mode === 'navigate' || (request.headers.get('accept') && request.headers.get('accept').includes('text/html'))) {
     event.respondWith(
-      caches.match(request, { ignoreSearch: true }).then(cachedResponse => {
-        if (cachedResponse) {
-          return cachedResponse; 
-        }
-        return fetch(request).catch(() => {
-          return caches.match('./system/home.html') || new Response('Offline', { status: 503 });
-        });
-      })
+      fetch(request)
+        .then(response => {
+          const responseClone = response.clone();
+          caches.open(RUNTIME_CACHE).then(cache => cache.put(request, responseClone));
+          return response;
+        })
+        .catch(() => {
+          return caches.match(request).then(cached => {
+            if (cached) return cached;
+            // لو الصفحة مش موجودة في الكاش، رجع للصفحة الرئيسية أو صفحة الهوم
+            return caches.match('./system/home.html') || caches.match('./index.html');
+          });
+        })
     );
     return;
   }
 
-  // لباقي الملفات (Network First)
-  if (url.origin === self.location.origin) {
-    event.respondWith(networkFirst(request));
-    return;
-  }
-  
-  // للملفات الخارجية (CDN & Images)
-  if (CDN_ORIGINS.some(o => url.origin === o) || IMG_ORIGINS.some(o => url.origin === o)) {
-    event.respondWith(cacheFirst(request));
-    return;
-  }
-  
-  event.respondWith(fetch(request).catch(() => caches.match(request)));
+  // 2. لو طلب ملفات (CSS, JS, صور, CDN) -> استخدم Stale-While-Revalidate
+  // يعني هات من الكاش فوراً عشان السرعة، وفي نفس الوقت نزل النسخة الجديدة في الخلفية
+  event.respondWith(
+    caches.match(request).then(cachedResponse => {
+      const fetchPromise = fetch(request).then(networkResponse => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseClone = networkResponse.clone();
+          caches.open(RUNTIME_CACHE).then(cache => cache.put(request, responseClone));
+        }
+        return networkResponse;
+      }).catch(() => {
+         // لو النت قطع، مفيش مشكلة، الكاش شغال
+      });
+
+      return cachedResponse || fetchPromise;
+    })
+  );
 });
-
-async function networkFirst(request) {
-  try {
-    const response = await fetch(request);
-    if (response && response.status === 200) {
-      const cache = await caches.open(STATIC_CACHE);
-      cache.put(request, response.clone());
-    }
-    return response;
-  } catch (err) {
-    const cached = await caches.match(request);
-    if (cached) return cached;
-    
-    if (request.mode === 'navigate') {
-      return caches.match('./system/home.html') || new Response('Offline', { status: 503 });
-    }
-    return new Response('Offline', { status: 503 });
-  }
-}
-
-async function cacheFirst(request) {
-  const cached = await caches.match(request);
-  if (cached) return cached;
-  const response = await fetch(request);
-  if (response && (response.status === 200 || response.type === 'opaque')) {
-    const cache = await caches.open(RUNTIME_CACHE);
-    cache.put(request, response.clone());
-  }
-  return response;
-}

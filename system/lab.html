@@ -13,10 +13,10 @@
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
-    <script src="config.js?v=124"></script>
+    <script src="config.js?v=126"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
-    <link rel="stylesheet" href="lab.css?v=124">
+    <link rel="stylesheet" href="lab.css?v=126">
 </head>
 <body>
 
@@ -74,6 +74,7 @@
         </div>
     </div>
 
+    <!-- مودال تسجيل نتيجة الفردي -->
     <div class="modal" id="singleResultModal">
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
@@ -87,6 +88,7 @@
         </div>
     </div>
 
+    <!-- مودال تسجيل نتيجة البروفايل -->
     <div class="modal" id="profileResultModal">
         <div class="modal-content" style="max-width: 700px;">
             <div class="modal-header">
@@ -100,6 +102,7 @@
         </div>
     </div>
 
+    <!-- مودال تعديل المريض -->
     <div class="modal" id="editPatientModal">
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
@@ -126,6 +129,7 @@
         </div>
     </div>
 
+    <!-- مودال الطباعة -->
     <div class="modal" id="printModal">
         <div class="modal-content" style="background: #e0e0e0; max-width: 1000px; padding: 20px;">
             <div id="print-area" style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; width: 100%;"></div>
@@ -133,7 +137,7 @@
         </div>
     </div>
 
-    <script src="lab.js?v=124"></script>
+    <script src="lab.js?v=126"></script>
     
     <script>
       if ('serviceWorker' in navigator) {

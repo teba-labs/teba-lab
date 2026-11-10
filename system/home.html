@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js?v=125"></script>
+    <script src="config.js?v=130"></script>
     <style>
         :root { --bg-body: #f1f5f9; --bg-card: #fff; --bg-input: #f8fafc; --text-main: #0f172a; --text-muted: #64748b; --border-light: #e2e8f0; --primary: #0a6847; --primary-gradient: linear-gradient(135deg, #10b981, #0a6847); --card-shadow: 0 20px 40px -10px rgba(0,0,0,0.05); --card-radius: 24px; --icon-bg: #e0f2fe; --icon-color: #0284c7; --font: 'Almarai', sans-serif; }
         body.dark-mode { --bg-body: #0b1120; --bg-card: #1e293b; --bg-input: #0f172a; --text-main: #f8fafc; --text-muted: #94a3b8; --border-light: #334155; --primary: #10b981; --primary-gradient: linear-gradient(135deg, #34d399, #10b981); --card-shadow: 0 20px 40px -10px rgba(0,0,0,0.4); --icon-bg: rgba(16,185,129,0.1); --icon-color: #34d399; }
@@ -34,7 +34,7 @@
         .install-btn-desktop { position: absolute; top: 0; left: 120px; background: var(--icon-bg); color: var(--icon-color); border: 1px solid var(--border-light); padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 0.9rem; z-index: 10; font-family: inherit; display: none; }
         .desktop-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 40px; text-align: center; padding-top: 40px; }
         .logo-container { margin-bottom: 20px; display: flex; align-items: center; justify-content: center; height: 90px; }
-        .logo-container img { height: 90px; width: auto; object-fit: contain; }
+        .logo-container img { height: 90px; width: auto; object-fit: contain; border-radius: 12px;}
         .logo-fallback { display: flex; flex-direction: column; align-items: center; }
         .logo-fallback .en { font-size: 2.8rem; font-weight: 800; color: var(--primary); letter-spacing: 2px; line-height: 1; }
         .logo-fallback .ar { font-size: 1.4rem; font-weight: 700; color: var(--text-main); margin-top: 4px; }
@@ -47,7 +47,7 @@
         .app-card:nth-child(2) .app-icon-box { background: rgba(16,185,129,0.1); color: #10b981; }
         .app-card:nth-child(3) .app-icon-box { background: rgba(147,51,234,0.1); color: #9333ea; }
         .app-card:nth-child(4) .app-icon-box { background: rgba(217,119,6,0.1); color: #d97706; }
-        .app-card:nth-child(5) .app-icon-box { background: rgba(16,185,129,0.1); color: #10b981; }
+        .app-card:nth-child(5) .app-icon-box { background: rgba(100,116,139,0.1); color: #64748b; }
         .app-name { font-size: 1.25rem; font-weight: 800; color: var(--text-main); }
         .app-desc { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; line-height: 1.5; }
         @media (max-width: 600px) { .apps-grid { grid-template-columns: 1fr; } #loginScreen { padding: 35px 25px; } }
@@ -75,21 +75,22 @@
         <button class="install-btn-desktop" id="pwaInstallBtnDesktop" onclick="installPWA()">📲 تثبيت التطبيق</button>
         <div class="desktop-header">
             <div class="logo-container">
-                <img id="labLogo" src="../brand-logo.png" alt="TEBA LABS" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <img id="labLogo" class="dyn-logo" src="../brand-logo.png" alt="TEBA LABS" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 <div class="logo-fallback" style="display:none;"><span class="en">TEBA LABS</span><span class="ar">معامل طيبة</span></div>
             </div>
-            <h1 id="desktopLabName">مرحباً، معامل طيبة</h1>
+            <h1 id="desktopLabName">مرحباً، جاري التحميل...</h1>
             <p>النظام الرئيسي لإدارة المعامل</p>
         </div>
         <div class="apps-grid">
             <a href="reception.html" class="app-card"><div class="app-icon-box">🏥</div><div class="app-name">الاستقبال</div><div class="app-desc">تسجيل المرضى وإصدار الفواتير</div></a>
             <a href="lab.html" class="app-card"><div class="app-icon-box">🔬</div><div class="app-name">المعمل</div><div class="app-desc">إدخال النتائج ونشرها</div></a>
             <a href="tests_manage.html" class="app-card" id="cardManageTests"><div class="app-icon-box">⚙️</div><div class="app-name">إدارة التحاليل</div><div class="app-desc">الأسعار والباراميترز</div></a>
-            <a href="settings.html" class="app-card" id="cardSettings"><div class="app-icon-box">🛠️</div><div class="app-name">إعدادات النظام</div><div class="app-desc">تغيير اللوجو ورفع البيانات</div></a>
+            <a href="settings.html" class="app-card" id="cardSettings"><div class="app-icon-box">🛠️</div><div class="app-name">إعدادات النظام</div><div class="app-desc">التحكم الكامل في النظام</div></a>
             <div class="app-card" id="cardDashboard" onclick="openSecretModal()"><div class="app-icon-box">📊</div><div class="app-name">لوحة التحكم</div><div class="app-desc">التقارير والإحصائيات 🔒</div></div>
         </div>
     </div>    <!-- ================= سكريبت النظام ================= -->
     <script>
+        // ==== 1. إعدادات الوضع الليلي والنهاري ====
         const themeBtn = document.getElementById('themeToggleBtn');
         const currentTheme = localStorage.getItem('teba_theme') || 'light';
         if (currentTheme === 'dark') {
@@ -103,10 +104,12 @@
             if(themeBtn) themeBtn.innerText = isDark ? '☀️' : '🌙';
         }
 
+        // ==== 2. تهيئة السحابة ====
         const supabaseUrl = TEBA_CONFIG.supabase.url;
         const supabaseKey = TEBA_CONFIG.supabase.key;
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        // ==== 3. دوال تسجيل الدخول ====
         async function loginUser() {
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
@@ -126,19 +129,20 @@
             errorEl.style.display = 'none';
 
             try {
-                // 1. التحقق من باسورد الفرع
-                const { data: branchData } = await _supabase.from('branches').select('branch_password').eq('id', branch).single();
-                const correctBranchPwd = branchData ? branchData.branch_password : (branch === '1' ? '11' : '22');
+                // 1. التحقق من باسورد الفرع (عبر دالة RPC آمنة في السيرفر)
+                const { data: isBranchPwdCorrect, error: rpcErr } = await _supabase.rpc('verify_branch_password', { 
+                    branch_id: parseInt(branch), 
+                    input_password: branchPwd 
+                });
                 
-                if (branchPwd !== correctBranchPwd) {
-                    throw new Error('❌ باسورد الفرع غير صحيح!');
-                }
+                if (rpcErr) throw new Error('حدث خطأ في التحقق من باسورد الفرع.');
+                if (!isBranchPwdCorrect) throw new Error('❌ باسورد الفرع غير صحيح!');
 
                 // 2. تسجيل الدخول
                 const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({ email, password });
                 if (authError) throw new Error('الإيميل أو الباسورد غير صحيح');
 
-                // 3. جلب الصلاحيات والـ Tenant ID
+                // 3. جلب الصلاحيات
                 const { data: userData, error: userError } = await _supabase.from('users').select('role, tenant_id').eq('id', authData.user.id).single();
                 if (userError || !userData) throw new Error('لا يوجد صلاحيات مسجلة لهذا الحساب.');
 
@@ -149,14 +153,13 @@
                 const finalTenantName = tenantData ? tenantData.name : "معامل طيبة";
                 const finalLogoUrl = (settingsData && settingsData.logo_url) ? settingsData.logo_url : "";
 
-                // 5. حفظ البيانات في المتصفح (عشان config.js يقراها في كل الصفحات)
+                // 5. حفظ البيانات في المتصفح
                 localStorage.setItem('teba_tenant_id', userData.tenant_id);
                 localStorage.setItem('teba_tenant_name', finalTenantName); 
                 localStorage.setItem('teba_logo_url', finalLogoUrl);
                 localStorage.setItem('teba_user_role', userData.role);
                 localStorage.setItem('teba_current_branch', branch);
                 
-                // تحديث الكونفيج فوراً
                 TEBA_CONFIG.tenant.id = userData.tenant_id;
                 TEBA_CONFIG.lab.name = finalTenantName;
                 TEBA_CONFIG.tenant.logo = finalLogoUrl;
@@ -183,6 +186,7 @@
                 if (logoImg) {
                     logoImg.src = tenant.logo;
                     logoImg.style.display = 'block';
+                    logoImg.nextElementSibling.style.display = 'none'; // إخفاء النص البديل
                 }
             }
 
@@ -190,20 +194,19 @@
             const settingsCard = document.getElementById('cardSettings');
             
             if (role === 'admin' || role === 'owner') {
-                dashboardCard.style.display = 'flex';
-                settingsCard.style.display = 'flex'; // إظهار الإعدادات للدكتور
+                if(dashboardCard) dashboardCard.style.display = 'flex';
+                if(settingsCard) settingsCard.style.display = 'flex'; 
             } else {
-                dashboardCard.style.display = 'none'; 
-                settingsCard.style.display = 'none'; // إخفاء الإعدادات عن الموظف
+                if(dashboardCard) dashboardCard.style.display = 'none'; 
+                if(settingsCard) settingsCard.style.display = 'none'; 
             }
         }
 
-        // التحقق من الجلسة الحالية (عشان لو عمل ريفريش)
+        // ==== 4. التحقق من الجلسة الحالية ====
         _supabase.auth.getSession().then(async ({ data: { session } }) => {
             if (session) {
                 const { data: userData } = await _supabase.from('users').select('role, tenant_id').eq('id', session.user.id).single();
                 if (userData) {
-                    // جلب البيانات المحدثة من السحابة
                     const { data: tenantData } = await _supabase.from('tenants').select('name').eq('id', userData.tenant_id).single();
                     const { data: settingsData } = await _supabase.from('site_settings').select('logo_url').eq('tenant_id', userData.tenant_id).single();
                     
@@ -222,12 +225,14 @@
             }
         });
 
+        // ==== 5. تسجيل الخروج ====
         async function logout() {
             await _supabase.auth.signOut();
             localStorage.clear();
             location.reload();
         }
 
+        // ==== 6. فتح الداشبورد ====
         function openSecretModal() {
             const role = localStorage.getItem('teba_user_role');
             if (role === 'admin' || role === 'owner') {
@@ -238,6 +243,7 @@
             }
         }
 
+        // ==== 7. أحداث الكيبورد ====
         document.getElementById('loginPassword').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') loginUser();
         });
@@ -245,6 +251,7 @@
             if (e.key === 'Enter') loginUser();
         });
 
+        // ==== 8. تفعيل الـ PWA ====
         let deferredPrompt;
         const btnLogin = document.getElementById('pwaInstallBtnLogin');
         const btnDesktop = document.getElementById('pwaInstallBtnDesktop');
@@ -265,6 +272,7 @@
             deferredPrompt = null;
         };
 
+        // ==== 9. تسجيل الـ Service Worker ====
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('../service-worker.js').then(reg => {

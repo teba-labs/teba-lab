@@ -18,11 +18,11 @@
 </style>
 
 <link rel="icon" type="image/png" href="logo.png">
-<link rel="stylesheet" href="styles.css?v=123">
+<link rel="stylesheet" href="styles.css?v=130">
 
 <!-- مكتبة السحابة وملف الإعدادات -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=123"></script>
+<script src="config.js?v=130"></script>
 </head>
 <body>
 
@@ -37,11 +37,6 @@
       <img src="brand-logo.png" alt="معامل طيبة" style="height: 65px; width: auto; max-width: 100%; object-fit: contain;" fetchpriority="high" width="200" height="65">
     </a>
     <div class="top-actions">
-      <!-- بوابة دخول الموظفين للنظام -->
-      <a href="system/home.html" class="action-btn" style="background:#3498db; color:#fff; text-decoration:none; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:5px;">
-        👨‍⚕️ دخول النظام
-      </a>
-      
       <!-- زرار تثبيت التطبيق PWA -->
       <button class="action-btn" id="pwaInstallBtn" onclick="installPWA()" style="display: none; background: linear-gradient(135deg, #0284c7, #0369a1); color: white; border-color: #38bdf8;">
         📲 تثبيت التطبيق
@@ -76,7 +71,9 @@
       <li><a onclick="showSection('medical')" data-section="medical" tabindex="0">🩺 معلومات طبية</a></li>
       <li><a onclick="showSection('contact')" data-section="contact" tabindex="0">📞 تواصل معنا</a></li>
     </ul>
-  </aside>  <main class="main-content">
+  </aside>
+
+  <main class="main-content">
     <!-- 1. القسم الرئيسي (Home) -->
     <section id="section-home" class="section active">
       <div class="hero-split reveal">
@@ -147,7 +144,9 @@
         <div class="booking-page" data-step="3"><h3>الموعد المناسب</h3><input type="date" id="bkDate" required><select id="bkTime"><option value="11:00 ص">11:00 ص</option><option value="12:00 م">12:00 م</option><option value="4:00 م">4:00 م</option></select><textarea id="bkNotes" placeholder="ملاحظات إضافية"></textarea><div class="booking-nav"><button class="btn-prev" onclick="goToBookingStep(2)">→ السابق</button><button class="btn-next" onclick="goToBookingStep(4)">التالي ←</button></div></div>
         <div class="booking-page" data-step="4"><h3>تأكيد الحجز</h3><div id="bookingSummary"></div><div class="booking-nav"><button class="btn-prev" onclick="goToBookingStep(3)">→ السابق</button><button class="btn-next" onclick="submitBooking()">💬 تأكيد وإرسال على واتساب</button></div></div>
       </div>
-    </section>    <!-- 5. قسم عن المعمل (About) -->
+    </section>
+
+    <!-- 5. قسم عن المعمل (About) -->
     <section id="section-about" class="section">
       <div class="section-head"><h2>نبذة عن <span class="dyn-lab-name">معامل طيبة</span></h2></div>
       <div class="about-box">
@@ -341,17 +340,15 @@
         <button onclick="downloadPDF()" style="background:#16a34a; color:#fff; padding:12px 30px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1.1rem;">📥 تحميل النتيجة PDF</button>
         <button onclick="document.getElementById('resultModal').style.display='none'" style="background:#dc2626; color:#fff; padding:12px 30px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1.1rem;">✕ إغلاق</button>
     </div>
-</div>
-
-<!-- مكتبة تحويل الشاشة لـ PDF -->
+</div><!-- مكتبة تحويل الشاشة لـ PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-<!-- الملفات الأساسية للواجهة (تمت إضافة features.js هنا) -->
-<script src="data.js?v=123" defer></script>
-<script src="app.js?v=123" defer></script>
-<script src="features.js?v=123" defer></script>
-<script src="site_dynamic.js?v=123" defer></script>
-<script src="patient_portal.js?v=123" defer></script>
+<!-- الملفات الأساسية للواجهة -->
+<script src="data.js?v=130" defer></script>
+<script src="app.js?v=130" defer></script>
+<script src="features.js?v=130" defer></script>
+<script src="site_dynamic.js?v=130" defer></script>
+<script src="patient_portal.js?v=130" defer></script>
 
 <!-- سكريبت تفعيل الـ PWA وتثبيت التطبيق -->
 <script>
