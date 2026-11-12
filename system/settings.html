@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مركز التحكم الشامل | معامل طيبة</title>
+    <title>مركز التحكم الشامل | معمل الشفاء</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="config.js?v=150"></script>
+    <script src="config.js?v=155"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <style>
@@ -20,7 +20,6 @@
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); }
         
-        /* منع أي سكرول أفقي نهائياً */
         html, body { width: 100%; max-width: 100vw; overflow-x: hidden; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
         
         header { background: var(--surface); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
@@ -51,11 +50,13 @@
         .btn-save:hover { background: var(--primary-hover); color: #fff; transform: translateY(-2px); }
         .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-danger:hover { background: var(--danger); color: #fff; }
+        .btn-edit { background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-edit:hover { background: var(--warning); color: #fff; }
         
         .logo-preview { height: 80px; width: auto; max-width: 200px; border-radius: 8px; background: #fff; padding: 5px; object-fit: contain; margin-bottom: 10px; display: none; }
         
         .table-responsive { overflow-x: auto; margin-top: 15px; width: 100%; -webkit-overflow-scrolling: touch; }
-        table { width: 100%; border-collapse: collapse; text-align: right; min-width: 600px; }
+        table { width: 100%; border-collapse: collapse; text-align: right; min-width: 800px; }
         th, td { padding: 12px 15px; border-bottom: 1px solid var(--border); }
         th { background: rgba(255,255,255,0.02); color: var(--primary); font-weight: bold; }
         tr:hover { background: rgba(255,255,255,0.02); }
@@ -116,16 +117,18 @@
             <button class="tab-btn" onclick="openTab('tab-audit', this)">📜 سجل التعديلات (Audit Log)</button>
         </div>
 
-        <div class="main-container">            <!-- 1. تاب الهوية والبيانات -->
+        <div class="main-container">            
+            <!-- 1. تاب الهوية والبيانات -->
             <div id="tab-branding" class="tab-content active">
                 <div class="card">
                     <h3>🏥 بيانات المعمل</h3>
                     <div class="form-grid">
                         <div class="form-group"><label>اسم المعمل (بالعربي)</label><input type="text" id="setLabName"></div>
+                        <div class="form-group"><label>اسم المعمل (بالإنجليزي)</label><input type="text" id="setLabNameEn" style="direction: ltr; text-align: left;"></div>
                         <div class="form-group"><label>اسم الدكتور</label><input type="text" id="setDoctorName"></div>
                         <div class="form-group"><label>رقم التليفون</label><input type="text" id="setPhone"></div>
                         <div class="form-group"><label>رقم الواتساب</label><input type="text" id="setWhatsapp"></div>
-                        <div class="form-group" style="grid-column: 1 / -1;"><label>العنوان بالتفصيل</label><input type="text" id="setAddress"></div>
+                        <div class="form-group" style="grid-column: 1 / -1;"><label>العنوان بالتفصيل (العنوان الرئيسي)</label><input type="text" id="setAddress"></div>
                     </div>
                 </div>
                 
@@ -152,23 +155,27 @@
                     <h3>📍 الفروع الحالية</h3>
                     <div class="table-responsive">
                         <table>
-                            <thead><tr><th>اسم الفرع</th><th>باسورد الفرع</th><th>إجراءات</th></tr></thead>
-                            <tbody id="branchesListBody"><tr><td colspan="3" style="text-align: center;">جاري التحميل...</td></tr></tbody>
+                            <thead><tr><th>اسم الفرع</th><th>باسورد الفرع</th><th>العنوان</th><th>رقم التليفون</th><th>إجراءات</th></tr></thead>
+                            <tbody id="branchesListBody"><tr><td colspan="5" style="text-align: center;">جاري التحميل...</td></tr></tbody>
                         </table>
                     </div>
                 </div>
                 
                 <div class="card">
-                    <h3>➕ إضافة فرع جديد</h3>
+                    <h3 id="branchFormTitle">➕ إضافة فرع جديد</h3>
+                    <input type="hidden" id="editBranchId">
                     <div class="form-grid">
-                        <div class="form-group"><label>اسم الفرع</label><input type="text" id="newBranchName" placeholder="مثال: فرع شبين"></div>
-                        <div class="form-group"><label>باسورد الفرع (للدخول)</label><input type="text" id="newBranchPass" placeholder="مثال: 33"></div>
+                        <div class="form-group"><label>اسم الفرع</label><input type="text" id="branchName" placeholder="مثال: فرع السلام"></div>
+                        <div class="form-group"><label>باسورد الفرع (للدخول)</label><input type="text" id="branchPass" placeholder="مثال: 33"></div>
+                        <div class="form-group"><label>العنوان بالتفصيل</label><input type="text" id="branchAddress" placeholder="مثال: شارع الجيش"></div>
+                        <div class="form-group"><label>رقم التليفون</label><input type="text" id="branchPhone" placeholder="مثال: 01000000000"></div>
                     </div>
-                    <button class="btn-save" onclick="addBranch(event)">➕ إضافة الفرع</button>
+                    <button class="btn-save" id="btnSaveBranch" onclick="saveBranch(event)">➕ إضافة الفرع</button>
+                    <button class="btn-danger" id="btnCancelEdit" onclick="resetBranchForm()" style="display:none; margin-right:10px;">إلغاء التعديل</button>
                 </div>
             </div>
 
-            <!-- 3. تاب إدارة الموظفين والصلاحيات -->
+            <!-- 3. تاب إدارة الموظفين -->
             <div id="tab-employees" class="tab-content">
                 <div class="card">
                     <h3>👥 الموظفين الحاليين</h3>
@@ -183,7 +190,7 @@
                 <div class="card">
                     <h3>➕ إضافة موظف جديد</h3>
                     <div class="form-grid">
-                        <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="newEmpEmail" placeholder="emp@teba.com" style="direction: ltr;"></div>
+                        <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="newEmpEmail" placeholder="emp@lab.com" style="direction: ltr;"></div>
                         <div class="form-group"><label>كلمة المرور</label><input type="password" id="newEmpPass" placeholder="********" style="direction: ltr;"></div>
                         <div class="form-group">
                             <label>الصلاحية</label>
@@ -203,7 +210,6 @@
             <div id="tab-expenses" class="tab-content">
                 <div class="card">
                     <h3>💸 بنود المصاريف الحالية</h3>
-                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">هنا تحدد أسماء المعامل الخارجية (Lab-to-Lab) والبنود الثابتة (مرتبات، إيجار) والمصاريف اليومية (بوفيه).</p>
                     <div class="table-responsive">
                         <table>
                             <thead><tr><th>اسم البند</th><th>النوع</th><th>إجراءات</th></tr></thead>
@@ -220,7 +226,7 @@
                             <label>النوع</label>
                             <select id="newExpType">
                                 <option value="lab">معمل خارجي (Lab-to-Lab)</option>
-                                <option value="other">مصروفات أخرى (بوفيه، ورق)</option>
+                                <option value="other">مصاريف أخرى (بوفيه، ورق)</option>
                                 <option value="fixed">مصروف ثابت (مرتبات، إيجار)</option>
                             </select>
                         </div>
@@ -233,13 +239,26 @@
             <div id="tab-print" class="tab-content">
                 <div class="card">
                     <h3>🖨️ إعدادات الطباعة والتقرير</h3>
+                    
+                    <!-- الخانات الجديدة الخاصة بالفروع والتليفونات -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>أسماء وعناوين الفروع (كل فرع في سطر)</label>
+                            <textarea id="setPrintBranches" rows="3" placeholder="مثال:&#10;فرع الجعافرة - شبين القناطر&#10;فرع بهتيم - مساكن اسكو"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>أرقام التليفونات (كل 2 في سطر)</label>
+                            <textarea id="setPrintPhones" rows="3" placeholder="مثال:&#10;01123702062 - 01099003494"></textarea>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label>نص الهيدر (أعلى التقرير)</label>
-                        <textarea id="setPrintHeader" rows="2" placeholder="مثال: معامل طيبة للتحاليل الطبية - ترخيص رقم 123"></textarea>
+                        <textarea id="setPrintHeader" rows="2" placeholder="مثال: معمل الشفاء للتحاليل الطبية - ترخيص رقم 123"></textarea>
                     </div>
                     <div class="form-group">
-                        <label>نص الفوتر (أسفل التقرير)</label>
-                        <textarea id="setPrintFooter" rows="3" placeholder="مثال: العنوان، أرقام التليفون، ملاحظة (النتيجة لا تغني عن استشارة الطبيب)"></textarea>
+                        <label>نص الفوتر الإضافي (اختياري)</label>
+                        <textarea id="setPrintFooter" rows="2" placeholder="أي ملاحظات إضافية أسفل التقرير"></textarea>
                     </div>
                     <div class="form-group">
                         <label>رفع توقيع الدكتور (صورة شفافة PNG يفضل)</label>
@@ -252,13 +271,8 @@
 
             <!-- 6. تاب البيانات والنسخ الاحتياطي -->
             <div id="tab-import" class="tab-content">
-                
-                <!-- قسم تصدير داتا المرضى الجديد -->
                 <div class="card" style="border-color: var(--primary);">
                     <h3>📥 تصدير داتا المرضى (ملكك الخاص)</h3>
-                    <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:20px;">
-                        يمكنك تصدير كل بيانات المرضى، الزيارات، والتحاليل المسجلة في فترة معينة إلى ملف Excel للاحتفاظ بها.
-                    </p>
                     <div class="form-grid">
                         <div class="form-group"><label>من تاريخ</label><input type="date" id="exportFromDate"></div>
                         <div class="form-group"><label>إلى تاريخ</label><input type="date" id="exportToDate"></div>
@@ -266,17 +280,11 @@
                     <button class="btn-save" onclick="exportPatientsData()" style="background: #3b82f6; color: #fff;">📥 تصدير داتا المرضى (Excel)</button>
                 </div>
 
-                <!-- قسم ترحيل البيانات القديمة -->
                 <div class="card">
                     <h3>📤 ترحيل البيانات القديمة (Excel / CSV)</h3>
-                    <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:20px;">
-                        ارفع ملف الحالات القديم. النظام هيتعرف على الأعمدة أوتوماتيك.
-                    </p>
-                    
                     <div style="border: 2px dashed var(--primary); border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; background: rgba(16, 185, 129, 0.05); transition: 0.2s;" onclick="document.getElementById('importFileInput').click()">
                         <div style="font-size: 3rem; margin-bottom: 10px;">📁</div>
                         <h4 style="color: var(--primary); margin-bottom: 5px;">اضغط لاختيار الملف (Excel / CSV)</h4>
-                        <p style="font-size: 0.85rem; color: var(--text-muted);">يدعم حتى 100,000 حالة</p>
                         <input type="file" id="importFileInput" accept=".csv, .xlsx, .xls" style="display: none;" onchange="handleImportFile(event)">
                     </div>
 
@@ -300,19 +308,16 @@
                 </div>
             </div>
 
-            <!-- 7. تاب سجل التعديلات (Audit Log) -->
+            <!-- 7. تاب سجل التعديلات -->
             <div id="tab-audit" class="tab-content">
                 <div class="card">
                     <h3>📜 سجل التعديلات (Audit Log)</h3>
-                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">هنا يظهر كل حركة حصلت في النظام (مين عدل سعر، مين مسح حالة، وامتى).</p>
-                    
                     <div class="form-grid" style="margin-bottom: 15px;">
                         <div class="form-group">
-                            <label>بحث (اسم الموظف / الإجراء)</label>
+                            <label>بحث</label>
                             <input type="text" id="auditSearchInput" placeholder="ابحث..." onkeyup="filterAuditLog()">
                         </div>
                     </div>
-
                     <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
                         <table>
                             <thead><tr><th>التاريخ والوقت</th><th>الموظف</th><th>الإجراء</th><th>التفاصيل</th></tr></thead>
@@ -325,15 +330,14 @@
         </div> <!-- نهاية main-container -->
     </div> <!-- نهاية settingsApp -->
 
-    <div id="toast">✅ تم الحفظ بنجاح</div>    <script>
-        // ==== تهيئة السحابة ====
+    <div id="toast">✅ تم الحفظ بنجاح</div>    
+    <script>
         const _supabase = supabase.createClient(TEBA_CONFIG.supabase.url, TEBA_CONFIG.supabase.key);
         const tenantId = TEBA_CONFIG.tenant.id;
 
         let currentLogoUrl = '';
         let currentSignatureUrl = '';
 
-        // ==== أدوات مساعدة (Toast & Loading) ====
         function showToast(msg, isError = false) {
             const t = document.getElementById('toast');
             t.innerText = msg;
@@ -351,7 +355,6 @@
             document.getElementById('loadingOverlay').style.display = 'none';
         }
 
-        // ==== 1. تسجيل الدخول ====
         async function checkPass() {
             const email = document.getElementById('adminEmail').value.trim();
             const pass = document.getElementById('adminPass').value;
@@ -390,7 +393,6 @@
             }
         }
 
-        // التحقق من الجلسة الحالية
         _supabase.auth.getSession().then(async ({ data: { session } }) => {
             if (session) {
                 const { data: userData } = await _supabase.from('users').select('role').eq('id', session.user.id).single();
@@ -402,7 +404,6 @@
             }
         });
 
-        // ==== 2. التنقل بين التابات ====
         function openTab(tabId, btnElement) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -417,12 +418,12 @@
             if (tabId === 'tab-audit') loadAuditLog();
         }
 
-        // ==== 3. الهوية والبيانات (Branding) ====
         async function loadBranding() {
             try {
                 const { data } = await _supabase.from('site_settings').select('*').eq('tenant_id', tenantId).single();
                 if (data) {
                     document.getElementById('setLabName').value = data.lab_name || '';
+                    document.getElementById('setLabNameEn').value = data.lab_name_en || '';
                     document.getElementById('setDoctorName').value = data.doctor_name || '';
                     document.getElementById('setPhone').value = data.phone || '';
                     document.getElementById('setWhatsapp').value = data.whatsapp || '';
@@ -447,6 +448,7 @@
             
             try {
                 const labName = document.getElementById('setLabName').value;
+                const labNameEn = document.getElementById('setLabNameEn').value;
                 const primaryColor = document.getElementById('setPrimaryColor').value;
                 const fileInput = document.getElementById('logoFile');
                 let finalLogoUrl = currentLogoUrl;
@@ -467,6 +469,7 @@
                 const updates = {
                     tenant_id: tenantId,
                     lab_name: labName,
+                    lab_name_en: labNameEn,
                     doctor_name: document.getElementById('setDoctorName').value,
                     phone: document.getElementById('setPhone').value,
                     whatsapp: document.getElementById('setWhatsapp').value,
@@ -481,14 +484,13 @@
                 await _supabase.from('tenants').update({ name: labName }).eq('id', tenantId);
 
                 localStorage.setItem('teba_tenant_name', labName);
+                localStorage.setItem('teba_tenant_name_en', labNameEn);
                 localStorage.setItem('teba_logo_url', finalLogoUrl);
                 localStorage.setItem('teba_primary_color', primaryColor);
                 localStorage.setItem('teba_phone', document.getElementById('setPhone').value);
                 localStorage.setItem('teba_whatsapp', document.getElementById('setWhatsapp').value);
                 
-                // تطبيق اللون فوراً على الشاشة
                 document.documentElement.style.setProperty('--primary', primaryColor);
-                
                 showToast('✅ تم حفظ البيانات واللوجو بنجاح');
                 
                 if(finalLogoUrl) {
@@ -502,17 +504,16 @@
             }
         }
 
-        // ==== 4. إدارة الفروع ====
         async function loadBranches() {
             const tbody = document.getElementById('branchesListBody');
-            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">جاري التحميل...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">جاري التحميل...</td></tr>';
             
             try {
                 const { data, error } = await _supabase.from('branches').select('*').eq('tenant_id', tenantId).order('id', { ascending: true });
                 if (error) throw error;
                 
                 if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">لا توجد فروع مسجلة.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">لا توجد فروع مسجلة.</td></tr>';
                     return;
                 }
                 
@@ -520,36 +521,83 @@
                     <tr>
                         <td style="font-weight:bold; color:var(--primary);">🏥 ${b.name}</td>
                         <td style="direction:ltr; text-align:right;">${b.branch_password || 'غير محدد'}</td>
-                        <td><button class="btn-danger" onclick="deleteBranch(${b.id})">🗑️ مسح</button></td>
+                        <td>${b.address || 'غير مسجل'}</td>
+                        <td>${b.map_link || 'غير مسجل'}</td>
+                        <td>
+                            <button class="btn-edit" onclick='editBranch(${JSON.stringify(b).replace(/'/g, "&#39;")})'>✏️ تعديل</button>
+                            <button class="btn-danger" style="margin-right:5px;" onclick="deleteBranch(${b.id})">🗑️ مسح</button>
+                        </td>
                     </tr>
                 `).join('');
             } catch(e) { 
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:red;">خطأ في التحميل</td></tr>'; 
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">خطأ في التحميل</td></tr>'; 
             }
         }
 
-        async function addBranch(event) {
-            const name = document.getElementById('newBranchName').value.trim();
-            const pass = document.getElementById('newBranchPass').value.trim();
+        window.editBranch = function(branch) {
+            document.getElementById('editBranchId').value = branch.id;
+            document.getElementById('branchName').value = branch.name;
+            document.getElementById('branchPass').value = branch.branch_password || '';
+            document.getElementById('branchAddress').value = branch.address || '';
+            document.getElementById('branchPhone').value = branch.map_link || '';
+            
+            document.getElementById('branchFormTitle').innerText = '✏️ تعديل الفرع: ' + branch.name;
+            document.getElementById('btnSaveBranch').innerText = '💾 حفظ التعديلات';
+            document.getElementById('btnCancelEdit').style.display = 'inline-block';
+            window.scrollTo({ top: document.getElementById('branchFormTitle').offsetTop - 50, behavior: 'smooth' });
+        }
+
+        window.resetBranchForm = function() {
+            document.getElementById('editBranchId').value = '';
+            document.getElementById('branchName').value = '';
+            document.getElementById('branchPass').value = '';
+            document.getElementById('branchAddress').value = '';
+            document.getElementById('branchPhone').value = '';
+            
+            document.getElementById('branchFormTitle').innerText = '➕ إضافة فرع جديد';
+            document.getElementById('btnSaveBranch').innerText = '➕ إضافة الفرع';
+            document.getElementById('btnCancelEdit').style.display = 'none';
+        }
+
+        async function saveBranch(event) {
+            const id = document.getElementById('editBranchId').value;
+            const name = document.getElementById('branchName').value.trim();
+            const pass = document.getElementById('branchPass').value.trim();
+            const address = document.getElementById('branchAddress').value.trim();
+            const phone = document.getElementById('branchPhone').value.trim();
+            
             if(!name || !pass) return showToast('يرجى إدخال اسم وباسورد الفرع', true);
 
             const btn = event.target;
             btn.innerText = '⏳...'; btn.disabled = true;
 
             try {
-                const { error } = await _supabase.from('branches').insert([{
-                    tenant_id: tenantId, name: name, branch_password: pass
-                }]);
+                const payload = {
+                    tenant_id: tenantId, 
+                    name: name, 
+                    branch_password: pass,
+                    address: address,
+                    map_link: phone 
+                };
+
+                let error;
+                if (id) {
+                    const res = await _supabase.from('branches').update(payload).eq('id', id).eq('tenant_id', tenantId);
+                    error = res.error;
+                } else {
+                    const res = await _supabase.from('branches').insert([payload]);
+                    error = res.error;
+                }
+                
                 if (error) throw error;
                 
-                showToast('✅ تم إضافة الفرع بنجاح');
-                document.getElementById('newBranchName').value = '';
-                document.getElementById('newBranchPass').value = '';
+                showToast(id ? '✅ تم تعديل الفرع بنجاح' : '✅ تم إضافة الفرع بنجاح');
+                resetBranchForm();
                 loadBranches();
             } catch(err) {
                 showToast('❌ خطأ: ' + err.message, true);
             } finally {
-                btn.innerText = '➕ إضافة الفرع'; btn.disabled = false;
+                btn.innerText = id ? '💾 حفظ التعديلات' : '➕ إضافة الفرع'; btn.disabled = false;
             }
         }
 
@@ -565,12 +613,10 @@
             }
         }
 
-        // ==== 5. التشغيل الأولي ====
         function initSettingsPage() {
             loadBranding();
         }
 
-        // ==== 6. إدارة الموظفين ====
         async function loadEmployees() {
             const tbody = document.getElementById('employeesListBody');
             tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">جاري التحميل...</td></tr>';
@@ -635,7 +681,6 @@
             } catch(e) { showToast('❌ خطأ: ' + e.message, true); }
         }
 
-        // ==== 7. إدارة بنود المصاريف ====
         async function loadExpenses() {
             const tbody = document.getElementById('expensesListBody');
             tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">جاري التحميل...</td></tr>';
@@ -695,15 +740,15 @@
             } catch(e) { showToast('❌ خطأ: ' + e.message, true); }
         }
 
-        // ==== 8. إعدادات الطباعة ====
         async function loadPrintSettings() {
             try {
                 const { data } = await _supabase.from('site_settings').select('*').eq('tenant_id', tenantId).single();
                 if (data) {
-                    document.getElementById('setPrintHeader').value = data.print_header || 'معامل طيبة للتحاليل الطبية';
-                    document.getElementById('setPrintFooter').value = data.print_footer || 'النتيجة لا تغني عن استشارة الطبيب المعالج.';
+                    document.getElementById('setPrintBranches').value = data.print_branches || '';
+                    document.getElementById('setPrintPhones').value = data.print_phones || '';
+                    document.getElementById('setPrintHeader').value = data.print_header || 'معمل التحاليل الطبية';
+                    document.getElementById('setPrintFooter').value = data.print_footer || '';
                     
-                    // تخزين في المحلي عشان صفحة المعمل تقراها
                     localStorage.setItem('teba_print_header', document.getElementById('setPrintHeader').value);
                     localStorage.setItem('teba_print_footer', document.getElementById('setPrintFooter').value);
                     
@@ -722,6 +767,8 @@
             btn.innerText = '⏳ جاري الحفظ...'; btn.disabled = true;
             
             try {
+                const branches = document.getElementById('setPrintBranches').value;
+                const phones = document.getElementById('setPrintPhones').value;
                 const header = document.getElementById('setPrintHeader').value;
                 const footer = document.getElementById('setPrintFooter').value;
                 const fileInput = document.getElementById('signatureFile');
@@ -741,6 +788,8 @@
                 }
 
                 const updates = {
+                    print_branches: branches,
+                    print_phones: phones,
                     print_header: header,
                     print_footer: footer,
                     signature_url: finalSigUrl
@@ -749,7 +798,6 @@
                 const { error } = await _supabase.from('site_settings').update(updates).eq('tenant_id', tenantId);
                 if (error) throw error;
 
-                // حفظ في المحلي فوراً عشان المعمل يقراها
                 localStorage.setItem('teba_print_header', header);
                 localStorage.setItem('teba_print_footer', footer);
 
@@ -765,7 +813,6 @@
             }
         }
 
-        // ==== 9. تصدير داتا المرضى ====
         async function exportPatientsData() {
             const fromDate = document.getElementById('exportFromDate').value;
             const toDate = document.getElementById('exportToDate').value;
@@ -826,7 +873,6 @@
             }
         }
 
-        // ==== 10. محرك ترحيل البيانات (PapaParse + Excel) ====
         let parsedImportData = [];
         let detectedHeaders = [];
 
@@ -874,7 +920,8 @@
             const mappingGrid = document.getElementById('mappingGrid');
             const systemFields = [
                 { key: 'patient_name', label: 'اسم المريض (مطلوب)' },
-                { key: 'patient_phone', label: 'رقم الهاتف' },
+                { key: 'age', label: 'السن' },
+                { key: 'gender', label: 'النوع' },
                 { key: 'visit_date', label: 'تاريخ الزيارة' },
                 { key: 'test_name', label: 'اسم التحليل' },
                 { key: 'result_value', label: 'النتيجة' },
@@ -893,12 +940,13 @@
 
             detectedHeaders.forEach(h => {
                 const lowerH = h.toLowerCase();
-                if(lowerH.includes('name') || h.includes('اسم')) document.getElementById('map_patient_name').value = h;
-                if(lowerH.includes('phone') || h.includes('موبايل') || h.includes('تليفون')) document.getElementById('map_patient_phone').value = h;
-                if(lowerH.includes('date') || h.includes('تاريخ')) document.getElementById('map_visit_date').value = h;
-                if(lowerH.includes('test') || h.includes('تحليل')) document.getElementById('map_test_name').value = h;
-                if(lowerH.includes('result') || h.includes('نتيجة')) document.getElementById('map_result_value').value = h;
-                if(lowerH.includes('range') || h.includes('معدل')) document.getElementById('map_reference_range').value = h;
+                if(lowerH.includes('name') || h.includes('اسم')) { const el = document.getElementById('map_patient_name'); if(el) el.value = h; }
+                if(lowerH === 'age' || lowerH === 'ag' || h.includes('سن') || h.includes('عمر')) { const el = document.getElementById('map_age'); if(el) el.value = h; }
+                if(lowerH === 'sex' || lowerH === 'gender' || h.includes('نوع') || h.includes('جنس')) { const el = document.getElementById('map_gender'); if(el) el.value = h; }
+                if(lowerH.includes('date') || h.includes('تاريخ')) { const el = document.getElementById('map_visit_date'); if(el) el.value = h; }
+                if(lowerH.includes('test') || h.includes('تحليل')) { const el = document.getElementById('map_test_name'); if(el) el.value = h; }
+                if(lowerH.includes('result') || h.includes('نتيجة')) { const el = document.getElementById('map_result_value'); if(el) el.value = h; }
+                if(lowerH.includes('range') || lowerH.includes('normal') || h.includes('معدل')) { const el = document.getElementById('map_reference_range'); if(el) el.value = h; }
             });
 
             document.getElementById('mappingSection').style.display = 'block';
@@ -909,7 +957,8 @@
             const nameCol = document.getElementById('map_patient_name').value;
             if (!nameCol) return showToast('يجب اختيار عمود اسم المريض على الأقل', true);
 
-            const phoneCol = document.getElementById('map_patient_phone').value;
+            const ageCol = document.getElementById('map_age') ? document.getElementById('map_age').value : null;
+            const genderCol = document.getElementById('map_gender') ? document.getElementById('map_gender').value : null;
             const dateCol = document.getElementById('map_visit_date').value;
             const testCol = document.getElementById('map_test_name').value;
             const resultCol = document.getElementById('map_result_value').value;
@@ -929,7 +978,8 @@
                 const recordsToInsert = batch.map(row => ({
                     tenant_id: tenantId,
                     patient_name: row[nameCol] || '',
-                    patient_phone: phoneCol ? row[phoneCol] : null,
+                    age: ageCol ? row[ageCol] : null,
+                    gender: genderCol ? row[genderCol] : null,
                     visit_date: dateCol ? row[dateCol] : null,
                     test_name: testCol ? row[testCol] : null,
                     result_value: resultCol ? String(row[resultCol]) : null,
@@ -940,6 +990,10 @@
                     const { error } = await _supabase.from('historical_results').insert(recordsToInsert);
                     if (error) {
                         console.error('Batch insert error:', error);
+                        hideLoading();
+                        btn.disabled = false;
+                        document.getElementById('importProgressContainer').style.display = 'none';
+                        return alert('❌ فشل الرفع: السحابة رفضت البيانات.\nالسبب: ' + error.message + '\nتأكد من مطابقة الأعمدة.');
                     }
                 }
 
@@ -964,7 +1018,6 @@
             }, 4000);
         }
 
-        // ==== 11. سجل التعديلات (Audit Log) ====
         async function loadAuditLog() {
             const tbody = document.getElementById('auditLogBody');
             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">جاري التحميل...</td></tr>';
