@@ -8,7 +8,7 @@
 
 <!-- PWA Tags -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#22c55e">
+<meta name="theme-color" content="#059669">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +18,7 @@
 </style>
 
 <link rel="icon" type="image/png" href="logo.png">
-<link rel="stylesheet" href="styles.css?v=150">
+<link rel="stylesheet" href="styles.css?v=151"> <!-- غيرت الإصدار عشان المتصفح ميعملش كاش -->
 
 <!-- مكتبة السحابة وملف الإعدادات -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -91,7 +91,8 @@
           </div>
         </div>
         <div class="hero-image-wrapper">
-          <div class="hero-image-box"><img src="https://images.unsplash.com/photo-1579154204601-01588f351e67?q=80&w=800&auto=format&fit=crop" alt="معامل طيبة - أجهزة تحاليل" loading="eager" fetchpriority="high" width="800" height="533"></div>
+          <!-- تم تغيير الصورة لدكتور بيطمن مريض -->
+          <div class="hero-image-box"><img src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?q=80&w=800&auto=format&fit=crop" alt="معامل طيبة - رعاية واطمئنان" loading="eager" fetchpriority="high" width="800" height="533"></div>
         </div>
       </div>
       <div class="trust-strip reveal" id="trustStrip"></div>
@@ -170,7 +171,7 @@
     <!-- 7. قسم العروض (Offers) -->
     <section id="section-offers" class="section">
       <div class="section-head"><h2>🎉 العروض <span>والخصومات</span></h2></div>
-      <div class="offer-box" id="offerActive" style="background:linear-gradient(135deg, #0a2e15, #15803d); border-radius:20px; padding:40px 20px; text-align:center; color:#fff; border:1px solid var(--border-glow);">
+      <div class="offer-box" id="offerActive" style="background:linear-gradient(135deg, #041f11, #047857); border-radius:20px; padding:40px 20px; text-align:center; color:#fff; border:1px solid var(--border-glow);">
         <div class="pct" id="offerPct" style="font-size:3.5rem; font-weight:900; color:#fef08a; line-height:1; margin-bottom:10px;">20%</div>
         <h3 id="offerTitle" style="font-size:1.8rem; margin-bottom:15px; color:#fff;">خصم خاص</h3>
         <p id="offerDesc" style="font-size:1.1rem; margin-bottom:20px; color:#e2e8f0;">خصم على كل التحاليل</p>
@@ -194,6 +195,13 @@
         <input type="text" id="rName" placeholder="الاسم بالكامل (كما في المعمل)" onkeydown="if(event.key==='Enter') fetchPatientResult()">
         <input type="text" id="rId" placeholder="رقم الزيارة / الفاتورة" onkeydown="if(event.key==='Enter') fetchPatientResult()">
         <button onclick="fetchPatientResult()">🔍 عرض النتيجة</button>
+        
+        <!-- زرار المساعد الذكي (في صفحة النتائج) -->
+        <div style="margin-top: 15px; text-align: center;">
+            <a href="test.html" class="btn-green" style="display: flex; justify-content: center; gap: 8px; width: 100%; border-radius: var(--radius-sm); padding: 14px; text-decoration: none;">
+                💡 مش عارف تكشف عند مين؟ اسأل المساعد الذكي
+            </a>
+        </div>
       </div>
     </section>
 
@@ -314,12 +322,20 @@
 </footer>
 
 <!-- نافذة عرض النتيجة (مخفية افتراضياً) -->
-<div id="resultModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; padding:20px; overflow-y:auto;">
+<div id="resultModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; padding:20px; overflow-y:auto;">
     <div style="background:#fff; color:#000; max-width:800px; margin:0 auto; padding:20px; border-radius:10px;" id="print-area">
         <!-- سيتم حقن النتيجة هنا -->
     </div>
-    <div style="text-align:center; margin-top:20px; display:flex; justify-content:center; gap:10px;">
-        <button onclick="downloadPDF()" style="background:#16a34a; color:#fff; padding:12px 30px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1.1rem;">📥 تحميل النتيجة PDF</button>
+    
+    <!-- أزرار المودال (تحميل - المساعد الذكي - إغلاق) -->
+    <div style="text-align:center; margin-top:20px; display:flex; justify-content:center; flex-wrap:wrap; gap:10px;">
+        <button onclick="downloadPDF()" style="background:#059669; color:#fff; padding:12px 30px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1.1rem;">📥 تحميل النتيجة PDF</button>
+        
+        <!-- زرار المساعد الذكي (جوه شاشة النتيجة) -->
+        <a href="test.html" style="background:#0284c7; color:#fff; padding:12px 30px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1.1rem; text-decoration:none; display:inline-block;">
+            💡 اعرف تخصصك
+        </a>
+
         <button onclick="document.getElementById('resultModal').style.display='none'" style="background:#dc2626; color:#fff; padding:12px 30px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1.1rem;">✕ إغلاق</button>
     </div>
 </div>
